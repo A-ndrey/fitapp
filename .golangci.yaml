@@ -1,0 +1,28 @@
+# https://golangci-lint.run/usage/linters/
+linters:
+  enable:
+    - asasalint
+    - dupl
+    - errname
+    - gocognit
+    - godox
+    - gofmt
+    - goimports
+    - gosec
+    - misspell
+    - mnd
+    - nestif
+    - nlreturn
+    - perfsprint
+    - prealloc
+    - predeclared
+    - protogetter
+    - reassign
+    - recvcheck
+    - sloglint
+    - unparam
+    - usestdlibvars
+    - whitespace
+    - wrapcheck
+    - wsl
+
