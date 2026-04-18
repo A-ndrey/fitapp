@@ -180,7 +180,7 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
             child: ListView.separated(
               shrinkWrap: true,
               itemCount: results.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final item = results[index];
                 return ListTile(

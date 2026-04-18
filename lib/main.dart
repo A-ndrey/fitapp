@@ -19,6 +19,12 @@ class _FitAppState extends State<FitApp> {
   final AppStore _store = AppStore();
 
   @override
+  void dispose() {
+    _store.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'FitApp',
