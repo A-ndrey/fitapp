@@ -131,8 +131,12 @@ class AppStore extends ChangeNotifier {
 
   void updateFood(FoodItem food) {
     _validateFood(food);
-    if (!_catalog.containsKey(food.id)) {
+    final existing = _catalog[food.id];
+    if (existing == null) {
       throw ArgumentError('Missing item id: ${food.id}');
+    }
+    if (!existing.isFood) {
+      throw ArgumentError('Item id is not a food: ${food.id}');
     }
     _catalog[food.id] = CatalogItem.food(food);
     notifyListeners();
@@ -149,8 +153,12 @@ class AppStore extends ChangeNotifier {
 
   void updateDish(DishItem dish) {
     _validateDish(dish);
-    if (!_catalog.containsKey(dish.id)) {
+    final existing = _catalog[dish.id];
+    if (existing == null) {
       throw ArgumentError('Missing item id: ${dish.id}');
+    }
+    if (!existing.isDish) {
+      throw ArgumentError('Item id is not a dish: ${dish.id}');
     }
     _catalog[dish.id] = CatalogItem.dish(_freezeDish(dish));
     notifyListeners();

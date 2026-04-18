@@ -269,6 +269,33 @@ void main() {
     expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
   });
 
+  testWidgets('rejects non-finite meal amounts without crashing', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const FitApp());
+
+    await tester.tap(find.byTooltip('Add meal item'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.bySemanticsLabel('Search foods and dishes'),
+      'Rice',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Rice'));
+    await tester.pumpAndSettle();
+
+    for (final value in ['NaN', 'Infinity']) {
+      await tester.enterText(find.bySemanticsLabel('Grams'), value);
+      await tester.tap(find.text('Add to meal'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Rice'), findsNothing);
+      expect(find.text('No meal entries yet'), findsOneWidget);
+    }
+  });
+
   testWidgets('deleting a logged item keeps meal snapshot', (tester) async {
     await tester.pumpWidget(const FitApp());
 

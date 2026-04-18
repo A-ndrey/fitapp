@@ -325,7 +325,7 @@ class _LogAmountDialogState extends State<_LogAmountDialog> {
         FilledButton(
           onPressed: () {
             final amount = double.tryParse(_amountController.text.trim());
-            if (amount == null || amount <= 0) {
+            if (amount == null || !amount.isFinite || amount <= 0) {
               return;
             }
             widget.onAdd(_mode, amount);
