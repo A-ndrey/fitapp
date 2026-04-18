@@ -83,6 +83,27 @@ void main() {
     await enterLabeledText(tester, 'Carbs', '3.9');
   }
 
+  Future<void> createSimpleSalad(WidgetTester tester) async {
+    await openFoodTab(tester);
+    await tester.tap(find.byTooltip('Add food or dish'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dish'));
+    await tester.pumpAndSettle();
+
+    await enterLabeledText(tester, 'Dish name', 'Simple salad');
+    await enterLabeledText(tester, 'Dish description', 'Carrot');
+    await enterLabeledText(tester, 'Dish serving size grams', '100');
+    await tester.tap(find.text('Add component'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Carrot').last);
+    await tester.pumpAndSettle();
+    await enterLabeledText(tester, 'Component grams', '100');
+    await tester.tap(find.text('Save component'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save dish'));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('shows Meal and Food tabs with sample content', (tester) async {
     await tester.pumpWidget(const FitApp());
 
@@ -355,5 +376,34 @@ void main() {
 
     expect(find.widgetWithText(ListTile, 'Carrot salad'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Simple salad'), findsNothing);
+  });
+
+  testWidgets('editing a dish component updates dish nutrition', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const FitApp());
+
+    await createSimpleSalad(tester);
+    await scrollToText(tester, 'Simple salad');
+    expect(find.textContaining('41 kcal per serving'), findsOneWidget);
+
+    await tapRowAction(
+      tester,
+      'Simple salad',
+      'Edit Simple salad',
+      Icons.edit_outlined,
+    );
+    await tester.tap(find.byTooltip('Edit Carrot component'));
+    await tester.pumpAndSettle();
+    await enterLabeledText(tester, 'Component grams', '50');
+    await tester.tap(find.text('Save component'));
+    await tester.pumpAndSettle();
+    await enterLabeledText(tester, 'Dish name', 'Half carrot salad');
+    await tester.tap(find.text('Save dish'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(ListTile, 'Half carrot salad'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Simple salad'), findsNothing);
+    expect(find.textContaining('20.5 kcal per serving'), findsOneWidget);
   });
 }

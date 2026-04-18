@@ -81,13 +81,37 @@ class _DishFormState extends State<DishForm> {
               label: const Text('Add component'),
             ),
             const SizedBox(height: 8),
-            ..._components.map((component) {
+            ..._components.indexed.map((entry) {
+              final index = entry.$1;
+              final component = entry.$2;
               final item = widget.store.itemById(component.itemId);
               return ListTile(
                 dense: true,
                 contentPadding: EdgeInsets.zero,
                 title: Text(item?.name ?? component.itemId),
                 subtitle: Text('${_format(component.grams)} g'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip:
+                          'Edit ${item?.name ?? component.itemId} component',
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: () => _openComponentDialog(index: index),
+                    ),
+                    IconButton(
+                      tooltip:
+                          'Remove ${item?.name ?? component.itemId} component',
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: () {
+                        setState(() {
+                          _components.removeAt(index);
+                          _errorText = null;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               );
             }),
             if (_errorText != null) ...[
@@ -110,18 +134,26 @@ class _DishFormState extends State<DishForm> {
     );
   }
 
-  Future<void> _openComponentDialog() async {
+  Future<void> _openComponentDialog({int? index}) async {
+    final initialComponent = index == null ? null : _components[index];
     final component = await showDialog<DishComponent>(
       context: context,
       builder: (context) {
-        return _DishComponentDialog(items: widget.store.items);
+        return _DishComponentDialog(
+          items: widget.store.items,
+          initialComponent: initialComponent,
+        );
       },
     );
     if (!mounted || component == null) {
       return;
     }
     setState(() {
-      _components.add(component);
+      if (index == null) {
+        _components.add(component);
+      } else {
+        _components[index] = component;
+      }
       _errorText = null;
     });
   }
@@ -176,9 +208,10 @@ class _DishFormState extends State<DishForm> {
 }
 
 class _DishComponentDialog extends StatefulWidget {
-  const _DishComponentDialog({required this.items});
+  const _DishComponentDialog({required this.items, this.initialComponent});
 
   final List<CatalogItem> items;
+  final DishComponent? initialComponent;
 
   @override
   State<_DishComponentDialog> createState() => _DishComponentDialogState();
@@ -196,9 +229,26 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    final component = widget.initialComponent;
+    if (component != null) {
+      for (final item in widget.items) {
+        if (item.id == component.itemId) {
+          _selectedItem = item;
+          break;
+        }
+      }
+      _gramsController.text = _format(component.grams);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add component'),
+      title: Text(
+        widget.initialComponent == null ? 'Add component' : 'Edit component',
+      ),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
@@ -272,5 +322,12 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
     Navigator.of(
       context,
     ).pop(DishComponent(itemId: _selectedItem!.id, grams: grams));
+  }
+
+  String _format(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toStringAsFixed(0);
+    }
+    return value.toStringAsFixed(1);
   }
 }
