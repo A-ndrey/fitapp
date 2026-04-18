@@ -78,16 +78,16 @@ class MealScreen extends StatelessWidget {
     if (name.isEmpty) {
       return;
     }
-    final saved = await showDialog<bool>(
+    final createdId = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
         return FoodForm(store: store, initialName: name);
       },
     );
-    if (!context.mounted || saved != true) {
+    if (!context.mounted || createdId == null) {
       return;
     }
-    final created = _findItemByName(store.items, name);
+    final created = store.itemById(createdId);
     if (created != null) {
       await _showLogAmountDialog(context, created);
     }
@@ -122,16 +122,6 @@ class _MealSearchResult {
 
   final CatalogItem? item;
   final String createName;
-}
-
-CatalogItem? _findItemByName(List<CatalogItem> items, String name) {
-  final normalized = name.trim().toLowerCase();
-  for (final item in items) {
-    if (item.name.toLowerCase() == normalized) {
-      return item;
-    }
-  }
-  return null;
 }
 
 class _MealEntryCard extends StatelessWidget {
@@ -198,6 +188,8 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
   Widget build(BuildContext context) {
     final query = _searchController.text.trim();
     final results = widget.store.searchItems(query);
+    final hasExactMatch = _hasExactNameMatch(results, query);
+    final showCreateAction = query.isNotEmpty && !hasExactMatch;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.5;
     return Padding(
       padding: EdgeInsets.only(
@@ -221,10 +213,10 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
             height: maxHeight,
             child: ListView.separated(
               shrinkWrap: true,
-              itemCount: results.length + (query.isEmpty ? 0 : 1),
+              itemCount: results.length + (showCreateAction ? 1 : 0),
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                if (query.isNotEmpty && index == 0) {
+                if (showCreateAction && index == 0) {
                   return ListTile(
                     leading: const Icon(Icons.add),
                     title: Text('Create "$query"'),
@@ -235,7 +227,7 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
                     },
                   );
                 }
-                final resultIndex = query.isEmpty ? index : index - 1;
+                final resultIndex = showCreateAction ? index - 1 : index;
                 final item = results[resultIndex];
                 return ListTile(
                   title: Text(item.name),
@@ -250,6 +242,19 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
         ],
       ),
     );
+  }
+
+  bool _hasExactNameMatch(List<CatalogItem> items, String query) {
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return false;
+    }
+    for (final item in items) {
+      if (item.name.toLowerCase() == normalized) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 

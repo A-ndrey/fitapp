@@ -29,6 +29,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> fillTomatoNutrition(WidgetTester tester) async {
+    await enterLabeledText(tester, 'Description', 'Fresh tomato');
+    await enterLabeledText(tester, 'Serving size grams', '100');
+    await enterLabeledText(tester, 'Calories', '18');
+    await enterLabeledText(tester, 'Protein', '0.9');
+    await enterLabeledText(tester, 'Fat', '0.2');
+    await enterLabeledText(tester, 'Carbs', '3.9');
+  }
+
   testWidgets('shows Meal and Food tabs with sample content', (tester) async {
     await tester.pumpWidget(const FitApp());
 
@@ -75,12 +84,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await enterLabeledText(tester, 'Name', 'Tomato');
-    await enterLabeledText(tester, 'Description', 'Fresh tomato');
-    await enterLabeledText(tester, 'Serving size grams', '100');
-    await enterLabeledText(tester, 'Calories', '18');
-    await enterLabeledText(tester, 'Protein', '0.9');
-    await enterLabeledText(tester, 'Fat', '0.2');
-    await enterLabeledText(tester, 'Carbs', '3.9');
+    await fillTomatoNutrition(tester);
     await tester.tap(find.text('Save food'));
     await tester.pumpAndSettle();
 
@@ -147,5 +151,50 @@ void main() {
 
     expect(find.text('Tomato'), findsOneWidget);
     expect(find.textContaining('18'), findsWidgets);
+  });
+
+  testWidgets('logs renamed food created from Meal search', (tester) async {
+    await tester.pumpWidget(const FitApp());
+
+    await tester.tap(find.byTooltip('Add meal item'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.bySemanticsLabel('Search foods and dishes'),
+      'tom',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create "tom"'));
+    await tester.pumpAndSettle();
+
+    await enterLabeledText(tester, 'Name', 'Tomato');
+    await fillTomatoNutrition(tester);
+    await tester.tap(find.text('Save food'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tomato'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Grams'), findsOneWidget);
+    await tester.enterText(find.bySemanticsLabel('Grams'), '100');
+    await tester.tap(find.text('Add to meal'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tomato'), findsOneWidget);
+    expect(find.textContaining('18'), findsWidgets);
+  });
+
+  testWidgets('does not offer create action for exact Meal search match', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const FitApp());
+
+    await tester.tap(find.byTooltip('Add meal item'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.bySemanticsLabel('Search foods and dishes'),
+      'Rice',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create "Rice"'), findsNothing);
+    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
   });
 }

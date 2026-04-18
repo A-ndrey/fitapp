@@ -163,10 +163,11 @@ class _FoodFormState extends State<FoodForm> {
       return;
     }
 
+    final id = widget.store.createIdFromName(name);
     try {
       widget.store.createFood(
         FoodItem(
-          id: widget.store.createIdFromName(name),
+          id: id,
           name: name,
           description: description,
           servingSizeGrams: servingSize,
@@ -189,7 +190,7 @@ class _FoodFormState extends State<FoodForm> {
     if (!mounted) {
       return;
     }
-    Navigator.of(context).pop(true);
+    Navigator.of(context).pop(id);
   }
 
   double? _parsePositive(TextEditingController controller) {
