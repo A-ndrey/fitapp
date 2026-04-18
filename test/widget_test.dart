@@ -1,30 +1,42 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fitapp/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('shows Meal and Food tabs with sample content', (tester) async {
+    await tester.pumpWidget(const FitApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('Meal'), findsWidgets);
+    expect(find.text('Food'), findsWidgets);
+    expect(find.text('Daily totals'), findsOneWidget);
+    expect(find.text('Chicken breast'), findsNothing);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.tap(find.text('Food'));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Food set'), findsOneWidget);
+    expect(find.text('Chicken breast'), findsOneWidget);
+    expect(find.text('food'), findsWidgets);
+  });
+
+  testWidgets('daily totals update after logging sample food by grams', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const FitApp());
+
+    await tester.tap(find.byTooltip('Add meal item'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'chicken');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chicken breast').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.bySemanticsLabel('Grams'), '200');
+    await tester.tap(find.text('Add to meal'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chicken breast'), findsOneWidget);
+    expect(find.textContaining('330'), findsWidgets);
+    expect(find.textContaining('62'), findsWidgets);
   });
 }
