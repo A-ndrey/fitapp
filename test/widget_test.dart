@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fitapp/main.dart';
+import 'package:fitapp/models/dish_item.dart';
+import 'package:fitapp/models/food_item.dart';
+import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/screens/food_screen.dart';
+import 'package:fitapp/state/app_store.dart';
+import 'package:fitapp/widgets/dish_form.dart';
 
 void main() {
   Future<void> openFoodTab(WidgetTester tester) async {
@@ -405,5 +410,52 @@ void main() {
     expect(find.widgetWithText(ListTile, 'Half carrot salad'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Simple salad'), findsNothing);
     expect(find.textContaining('20.5 kcal per serving'), findsOneWidget);
+  });
+
+  testWidgets('editing a dish preserves unchanged fractional inputs', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    const carrot = FoodItem(
+      id: 'carrot',
+      name: 'Carrot',
+      description: 'Raw carrot',
+      servingSizeGrams: 100,
+      basis: NutritionBasis.per100g,
+      nutrition: NutritionValues(calories: 100, protein: 0, fat: 0, carbs: 0),
+    );
+    const salad = DishItem(
+      id: 'fractional-salad',
+      name: 'Fractional salad',
+      description: 'Fractional amounts',
+      servingSizeGrams: 100.25,
+      components: [DishComponent(itemId: 'carrot', grams: 33.33)],
+    );
+    store.createFood(carrot);
+    store.createDish(salad);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DishForm(store: store, initialDish: salad),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Edit Carrot component'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, '33.33'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Save component'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Save dish'));
+    await tester.pumpAndSettle();
+
+    final updated = store.itemById('fractional-salad')!.dish!;
+    expect(updated.servingSizeGrams, closeTo(100.25, 0.0001));
+    expect(updated.components.single.grams, closeTo(33.33, 0.0001));
+    expect(
+      updated.nutritionPerServing(store.catalog).calories,
+      closeTo(33.33, 0.0001),
+    );
   });
 }

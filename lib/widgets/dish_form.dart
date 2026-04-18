@@ -31,7 +31,7 @@ class _DishFormState extends State<DishForm> {
       text: dish?.description ?? '',
     );
     _servingSizeController = TextEditingController(
-      text: dish == null ? '' : _format(dish.servingSizeGrams),
+      text: dish == null ? '' : _formatInput(dish.servingSizeGrams),
     );
     if (dish != null) {
       _components.addAll(dish.components);
@@ -199,6 +199,13 @@ class _DishFormState extends State<DishForm> {
     Navigator.of(context).pop(true);
   }
 
+  String _formatInput(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toStringAsFixed(0);
+    }
+    return value.toString();
+  }
+
   String _format(double value) {
     if (value == value.roundToDouble()) {
       return value.toStringAsFixed(0);
@@ -239,7 +246,7 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
           break;
         }
       }
-      _gramsController.text = _format(component.grams);
+      _gramsController.text = _formatInput(component.grams);
     }
   }
 
@@ -324,10 +331,10 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
     ).pop(DishComponent(itemId: _selectedItem!.id, grams: grams));
   }
 
-  String _format(double value) {
+  String _formatInput(double value) {
     if (value == value.roundToDouble()) {
       return value.toStringAsFixed(0);
     }
-    return value.toStringAsFixed(1);
+    return value.toString();
   }
 }
