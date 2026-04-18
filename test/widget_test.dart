@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fitapp/main.dart';
+import 'package:fitapp/screens/food_screen.dart';
 
 void main() {
   Future<void> openFoodTab(WidgetTester tester) async {
-    await tester.tap(find.text('Food'));
+    await tester.tap(find.byIcon(Icons.inventory_2_outlined));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> openMealTab(WidgetTester tester) async {
+    await tester.tap(find.byIcon(Icons.restaurant));
     await tester.pumpAndSettle();
   }
 
@@ -26,6 +32,45 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> tapRowAction(
+    WidgetTester tester,
+    String itemName,
+    String tooltip,
+    IconData icon,
+  ) async {
+    expect(find.byTooltip(tooltip), findsOneWidget);
+    final visibleFoodItemText = find.descendant(
+      of: find.byType(FoodScreen),
+      matching: find.text(itemName),
+    );
+    final row = find.ancestor(
+      of: visibleFoodItemText,
+      matching: find.byType(ListTile),
+    );
+    final action = find.descendant(
+      of: row,
+      matching: find.widgetWithIcon(IconButton, icon),
+    );
+    await tester.ensureVisible(action);
+    tester.widget<IconButton>(action).onPressed!();
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> logRice150g(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('Add meal item'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.bySemanticsLabel('Search foods and dishes'),
+      'Rice',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Rice'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.bySemanticsLabel('Grams'), '150');
+    await tester.tap(find.text('Add to meal'));
     await tester.pumpAndSettle();
   }
 
@@ -196,5 +241,119 @@ void main() {
 
     expect(find.text('Create "Rice"'), findsNothing);
     expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+  });
+
+  testWidgets('deleting a logged item keeps meal snapshot', (tester) async {
+    await tester.pumpWidget(const FitApp());
+
+    await logRice150g(tester);
+    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+    expect(find.text('Calories: 195 kcal'), findsOneWidget);
+
+    await openFoodTab(tester);
+    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+    await tapRowAction(tester, 'Rice', 'Delete Rice', Icons.delete_outline);
+    expect(find.text('Delete Rice?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(ListTile, 'Rice'), findsNothing);
+
+    await openMealTab(tester);
+    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+    expect(find.text('Calories: 195 kcal'), findsOneWidget);
+  });
+
+  testWidgets('blocks deleting an item referenced by a dish', (tester) async {
+    await tester.pumpWidget(const FitApp());
+
+    await openFoodTab(tester);
+    await tester.tap(find.byTooltip('Add food or dish'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dish'));
+    await tester.pumpAndSettle();
+
+    await enterLabeledText(tester, 'Dish name', 'Simple salad');
+    await enterLabeledText(tester, 'Dish description', 'Carrot');
+    await enterLabeledText(tester, 'Dish serving size grams', '100');
+    await tester.tap(find.text('Add component'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Carrot').last);
+    await tester.pumpAndSettle();
+    await enterLabeledText(tester, 'Component grams', '100');
+    await tester.tap(find.text('Save component'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save dish'));
+    await tester.pumpAndSettle();
+
+    await tapRowAction(tester, 'Carrot', 'Delete Carrot', Icons.delete_outline);
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(ListTile, 'Carrot'), findsOneWidget);
+    expect(find.textContaining('used by a dish'), findsOneWidget);
+  });
+
+  testWidgets(
+    'editing a food updates catalog but not existing meal snapshots',
+    (tester) async {
+      await tester.pumpWidget(const FitApp());
+
+      await logRice150g(tester);
+      expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+      expect(find.text('Calories: 195 kcal'), findsOneWidget);
+
+      await openFoodTab(tester);
+      await tapRowAction(tester, 'Rice', 'Edit Rice', Icons.edit_outlined);
+
+      await enterLabeledText(tester, 'Name', 'Brown rice');
+      await enterLabeledText(tester, 'Calories', '200');
+      await tester.tap(find.text('Save food'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(ListTile, 'Brown rice'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Rice'), findsNothing);
+
+      await openMealTab(tester);
+      expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+      expect(find.text('Calories: 195 kcal'), findsOneWidget);
+    },
+  );
+
+  testWidgets('editing a dish updates the dish row', (tester) async {
+    await tester.pumpWidget(const FitApp());
+
+    await openFoodTab(tester);
+    await tester.tap(find.byTooltip('Add food or dish'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dish'));
+    await tester.pumpAndSettle();
+
+    await enterLabeledText(tester, 'Dish name', 'Simple salad');
+    await enterLabeledText(tester, 'Dish description', 'Carrot and onion');
+    await enterLabeledText(tester, 'Dish serving size grams', '150');
+    await tester.tap(find.text('Add component'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Carrot').last);
+    await tester.pumpAndSettle();
+    await enterLabeledText(tester, 'Component grams', '100');
+    await tester.tap(find.text('Save component'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save dish'));
+    await tester.pumpAndSettle();
+
+    await scrollToText(tester, 'Simple salad');
+    await tapRowAction(
+      tester,
+      'Simple salad',
+      'Edit Simple salad',
+      Icons.edit_outlined,
+    );
+    await enterLabeledText(tester, 'Dish name', 'Carrot salad');
+    await tester.tap(find.text('Save dish'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(ListTile, 'Carrot salad'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Simple salad'), findsNothing);
   });
 }

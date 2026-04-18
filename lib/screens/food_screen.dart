@@ -49,6 +49,23 @@ class FoodScreen extends StatelessWidget {
                           ],
                         ),
                         isThreeLine: true,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'Edit ${item.name}',
+                              icon: const Icon(Icons.edit_outlined),
+                              onPressed: () =>
+                                  _openEditItemFlow(context, item.id),
+                            ),
+                            IconButton(
+                              tooltip: 'Delete ${item.name}',
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () =>
+                                  _confirmDeleteItem(context, item.id),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -59,6 +76,58 @@ class FoodScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _openEditItemFlow(BuildContext context, String itemId) async {
+    final item = store.itemById(itemId);
+    if (item == null) {
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        if (item.isFood) {
+          return FoodForm(store: store, initialFood: item.food);
+        }
+        return DishForm(store: store, initialDish: item.dish);
+      },
+    );
+  }
+
+  Future<void> _confirmDeleteItem(BuildContext context, String itemId) async {
+    final item = store.itemById(itemId);
+    if (item == null) {
+      return;
+    }
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('Delete ${item.name}?'),
+          content: const Text('This removes the item from the food set.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+    if (!context.mounted || shouldDelete != true) {
+      return;
+    }
+    try {
+      store.deleteItem(itemId);
+    } on StateError catch (error) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
   }
 
   Future<void> _openAddItemFlow(BuildContext context) async {

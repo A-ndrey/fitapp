@@ -5,20 +5,38 @@ import '../models/dish_item.dart';
 import '../state/app_store.dart';
 
 class DishForm extends StatefulWidget {
-  const DishForm({super.key, required this.store});
+  const DishForm({super.key, required this.store, this.initialDish});
 
   final AppStore store;
+  final DishItem? initialDish;
 
   @override
   State<DishForm> createState() => _DishFormState();
 }
 
 class _DishFormState extends State<DishForm> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _servingSizeController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _servingSizeController;
   final List<DishComponent> _components = <DishComponent>[];
   String? _errorText;
+  bool get _isEditing => widget.initialDish != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final dish = widget.initialDish;
+    _nameController = TextEditingController(text: dish?.name ?? '');
+    _descriptionController = TextEditingController(
+      text: dish?.description ?? '',
+    );
+    _servingSizeController = TextEditingController(
+      text: dish == null ? '' : _format(dish.servingSizeGrams),
+    );
+    if (dish != null) {
+      _components.addAll(dish.components);
+    }
+  }
 
   @override
   void dispose() {
@@ -31,7 +49,7 @@ class _DishFormState extends State<DishForm> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Dish'),
+      title: Text(_isEditing ? 'Edit dish' : 'Dish'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -123,16 +141,19 @@ class _DishFormState extends State<DishForm> {
       return;
     }
 
+    final dish = DishItem(
+      id: widget.initialDish?.id ?? widget.store.createIdFromName(name),
+      name: name,
+      description: description,
+      servingSizeGrams: servingSize,
+      components: List<DishComponent>.of(_components),
+    );
     try {
-      widget.store.createDish(
-        DishItem(
-          id: widget.store.createIdFromName(name),
-          name: name,
-          description: description,
-          servingSizeGrams: servingSize,
-          components: List<DishComponent>.of(_components),
-        ),
-      );
+      if (_isEditing) {
+        widget.store.updateDish(dish);
+      } else {
+        widget.store.createDish(dish);
+      }
     } on ArgumentError catch (error) {
       setState(() {
         _errorText = error.message?.toString() ?? 'Could not save dish.';

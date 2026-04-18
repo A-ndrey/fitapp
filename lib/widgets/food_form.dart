@@ -5,10 +5,16 @@ import '../models/nutrition.dart';
 import '../state/app_store.dart';
 
 class FoodForm extends StatefulWidget {
-  const FoodForm({super.key, required this.store, this.initialName = ''});
+  const FoodForm({
+    super.key,
+    required this.store,
+    this.initialName = '',
+    this.initialFood,
+  });
 
   final AppStore store;
   final String initialName;
+  final FoodItem? initialFood;
 
   @override
   State<FoodForm> createState() => _FoodFormState();
@@ -16,19 +22,42 @@ class FoodForm extends StatefulWidget {
 
 class _FoodFormState extends State<FoodForm> {
   late final TextEditingController _nameController;
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _servingSizeController = TextEditingController();
-  final TextEditingController _caloriesController = TextEditingController();
-  final TextEditingController _proteinController = TextEditingController();
-  final TextEditingController _fatController = TextEditingController();
-  final TextEditingController _carbsController = TextEditingController();
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _servingSizeController;
+  late final TextEditingController _caloriesController;
+  late final TextEditingController _proteinController;
+  late final TextEditingController _fatController;
+  late final TextEditingController _carbsController;
   NutritionBasis _basis = NutritionBasis.per100g;
   String? _errorText;
+  bool get _isEditing => widget.initialFood != null;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.initialName);
+    final food = widget.initialFood;
+    _nameController = TextEditingController(
+      text: food?.name ?? widget.initialName,
+    );
+    _descriptionController = TextEditingController(
+      text: food?.description ?? '',
+    );
+    _servingSizeController = TextEditingController(
+      text: food == null ? '' : _format(food.servingSizeGrams),
+    );
+    _caloriesController = TextEditingController(
+      text: food == null ? '' : _format(food.nutrition.calories),
+    );
+    _proteinController = TextEditingController(
+      text: food == null ? '' : _format(food.nutrition.protein),
+    );
+    _fatController = TextEditingController(
+      text: food == null ? '' : _format(food.nutrition.fat),
+    );
+    _carbsController = TextEditingController(
+      text: food == null ? '' : _format(food.nutrition.carbs),
+    );
+    _basis = food?.basis ?? NutritionBasis.per100g;
   }
 
   @override
@@ -46,7 +75,7 @@ class _FoodFormState extends State<FoodForm> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Food item'),
+      title: Text(_isEditing ? 'Edit food' : 'Food item'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -163,23 +192,26 @@ class _FoodFormState extends State<FoodForm> {
       return;
     }
 
-    final id = widget.store.createIdFromName(name);
+    final id = widget.initialFood?.id ?? widget.store.createIdFromName(name);
+    final food = FoodItem(
+      id: id,
+      name: name,
+      description: description,
+      servingSizeGrams: servingSize,
+      basis: _basis,
+      nutrition: NutritionValues(
+        calories: calories,
+        protein: protein,
+        fat: fat,
+        carbs: carbs,
+      ),
+    );
     try {
-      widget.store.createFood(
-        FoodItem(
-          id: id,
-          name: name,
-          description: description,
-          servingSizeGrams: servingSize,
-          basis: _basis,
-          nutrition: NutritionValues(
-            calories: calories,
-            protein: protein,
-            fat: fat,
-            carbs: carbs,
-          ),
-        ),
-      );
+      if (_isEditing) {
+        widget.store.updateFood(food);
+      } else {
+        widget.store.createFood(food);
+      }
     } on ArgumentError catch (error) {
       setState(() {
         _errorText = error.message?.toString() ?? 'Could not save food.';
@@ -207,5 +239,12 @@ class _FoodFormState extends State<FoodForm> {
       return null;
     }
     return value;
+  }
+
+  String _format(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toStringAsFixed(0);
+    }
+    return value.toString();
   }
 }
