@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/catalog_item.dart';
 import '../models/meal_entry.dart';
 import '../state/app_store.dart';
+import '../widgets/food_form.dart';
 import '../widgets/macro_summary.dart';
 
 class MealScreen extends StatelessWidget {
@@ -57,7 +58,7 @@ class MealScreen extends StatelessWidget {
   }
 
   Future<void> _openAddMealFlow(BuildContext context) async {
-    final selected = await showModalBottomSheet<CatalogItem>(
+    final result = await showModalBottomSheet<_MealSearchResult>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -65,10 +66,31 @@ class MealScreen extends StatelessWidget {
         return _MealSearchSheet(store: store);
       },
     );
-    if (!context.mounted || selected == null) {
+    if (!context.mounted || result == null) {
       return;
     }
-    await _showLogAmountDialog(context, selected);
+    if (result.item != null) {
+      await _showLogAmountDialog(context, result.item!);
+      return;
+    }
+
+    final name = result.createName.trim();
+    if (name.isEmpty) {
+      return;
+    }
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return FoodForm(store: store, initialName: name);
+      },
+    );
+    if (!context.mounted || saved != true) {
+      return;
+    }
+    final created = _findItemByName(store.items, name);
+    if (created != null) {
+      await _showLogAmountDialog(context, created);
+    }
   }
 
   Future<void> _showLogAmountDialog(
@@ -91,6 +113,25 @@ class MealScreen extends StatelessWidget {
       },
     );
   }
+}
+
+class _MealSearchResult {
+  const _MealSearchResult.item(this.item) : createName = '';
+
+  const _MealSearchResult.create(this.createName) : item = null;
+
+  final CatalogItem? item;
+  final String createName;
+}
+
+CatalogItem? _findItemByName(List<CatalogItem> items, String name) {
+  final normalized = name.trim().toLowerCase();
+  for (final item in items) {
+    if (item.name.toLowerCase() == normalized) {
+      return item;
+    }
+  }
+  return null;
 }
 
 class _MealEntryCard extends StatelessWidget {
@@ -155,7 +196,8 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final results = widget.store.searchItems(_searchController.text);
+    final query = _searchController.text.trim();
+    final results = widget.store.searchItems(query);
     final maxHeight = MediaQuery.sizeOf(context).height * 0.5;
     return Padding(
       padding: EdgeInsets.only(
@@ -179,14 +221,28 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
             height: maxHeight,
             child: ListView.separated(
               shrinkWrap: true,
-              itemCount: results.length,
+              itemCount: results.length + (query.isEmpty ? 0 : 1),
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final item = results[index];
+                if (query.isNotEmpty && index == 0) {
+                  return ListTile(
+                    leading: const Icon(Icons.add),
+                    title: Text('Create "$query"'),
+                    onTap: () {
+                      Navigator.of(
+                        context,
+                      ).pop(_MealSearchResult.create(query));
+                    },
+                  );
+                }
+                final resultIndex = query.isEmpty ? index : index - 1;
+                final item = results[resultIndex];
                 return ListTile(
                   title: Text(item.name),
                   subtitle: Text(item.isFood ? 'food' : 'dish'),
-                  onTap: () => Navigator.of(context).pop(item),
+                  onTap: () {
+                    Navigator.of(context).pop(_MealSearchResult.item(item));
+                  },
                 );
               },
             ),
