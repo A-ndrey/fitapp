@@ -138,4 +138,91 @@ void main() {
       throwsA(isA<ArgumentError>()),
     );
   });
+
+  test('stored dishes are isolated from caller-side component list mutation', () {
+    final store = AppStore.empty();
+    store.createFood(tomato());
+    final components = <DishComponent>[
+      const DishComponent(itemId: 'tomato', grams: 100),
+    ];
+
+    store.createDish(
+      DishItem(
+        id: 'salad',
+        name: 'Salad',
+        description: 'Tomato salad',
+        servingSizeGrams: 100,
+        components: components,
+      ),
+    );
+
+    components.clear();
+    components.add(const DishComponent(itemId: 'missing', grams: 50));
+
+    expect(store.itemById('salad')!.nutritionPerServing(store.catalog).calories, 18);
+    expect(() => store.deleteItem('tomato'), throwsStateError);
+  });
+
+  test('rejects non-finite numeric values', () {
+    final store = AppStore.empty();
+
+    expect(
+      () => store.createFood(
+        const FoodItem(
+          id: 'bad-food',
+          name: 'Bad food',
+          description: 'Bad',
+          servingSizeGrams: 100,
+          basis: NutritionBasis.per100g,
+          nutrition: NutritionValues(
+            calories: double.nan,
+            protein: 1,
+            fat: 1,
+            carbs: 1,
+          ),
+        ),
+      ),
+      throwsArgumentError,
+    );
+
+    expect(
+      () => store.createFood(
+        const FoodItem(
+          id: 'bad-serving',
+          name: 'Bad serving',
+          description: 'Bad',
+          servingSizeGrams: double.infinity,
+          basis: NutritionBasis.per100g,
+          nutrition: NutritionValues(calories: 1, protein: 1, fat: 1, carbs: 1),
+        ),
+      ),
+      throwsArgumentError,
+    );
+
+    store.createFood(tomato());
+
+    expect(
+      () => store.createDish(
+        const DishItem(
+          id: 'bad-dish',
+          name: 'Bad dish',
+          description: 'Bad',
+          servingSizeGrams: 100,
+          components: [
+            DishComponent(itemId: 'tomato', grams: double.nan),
+          ],
+        ),
+      ),
+      throwsArgumentError,
+    );
+
+    expect(
+      () => store.addMealByGrams(itemId: 'tomato', grams: double.infinity),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.addMealByServings(itemId: 'tomato', servings: double.nan),
+      throwsArgumentError,
+    );
+  });
 }

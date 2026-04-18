@@ -123,7 +123,7 @@ class AppStore extends ChangeNotifier {
     if (_catalog.containsKey(dish.id)) {
       throw ArgumentError('Duplicate item id: ${dish.id}');
     }
-    _catalog[dish.id] = CatalogItem.dish(dish);
+    _catalog[dish.id] = CatalogItem.dish(_freezeDish(dish));
     notifyListeners();
   }
 
@@ -132,7 +132,7 @@ class AppStore extends ChangeNotifier {
     if (!_catalog.containsKey(dish.id)) {
       throw ArgumentError('Missing item id: ${dish.id}');
     }
-    _catalog[dish.id] = CatalogItem.dish(dish);
+    _catalog[dish.id] = CatalogItem.dish(_freezeDish(dish));
     notifyListeners();
   }
 
@@ -148,7 +148,7 @@ class AppStore extends ChangeNotifier {
   }
 
   MealEntry addMealByGrams({required String itemId, required double grams}) {
-    if (grams <= 0) {
+    if (!grams.isFinite || grams <= 0) {
       throw ArgumentError.value(grams, 'grams', 'Must be greater than zero.');
     }
     final item = _catalog[itemId];
@@ -169,7 +169,7 @@ class AppStore extends ChangeNotifier {
   }
 
   MealEntry addMealByServings({required String itemId, required double servings}) {
-    if (servings <= 0) {
+    if (!servings.isFinite || servings <= 0) {
       throw ArgumentError.value(servings, 'servings', 'Must be greater than zero.');
     }
     final item = _catalog[itemId];
@@ -227,7 +227,7 @@ class AppStore extends ChangeNotifier {
     if (food.name.trim().isEmpty) {
       throw ArgumentError('Food name must not be empty.');
     }
-    if (food.servingSizeGrams <= 0) {
+    if (!food.servingSizeGrams.isFinite || food.servingSizeGrams <= 0) {
       throw ArgumentError('Serving size must be greater than zero.');
     }
     _validateNutrition(food.nutrition);
@@ -240,14 +240,14 @@ class AppStore extends ChangeNotifier {
     if (dish.name.trim().isEmpty) {
       throw ArgumentError('Dish name must not be empty.');
     }
-    if (dish.servingSizeGrams <= 0) {
+    if (!dish.servingSizeGrams.isFinite || dish.servingSizeGrams <= 0) {
       throw ArgumentError('Serving size must be greater than zero.');
     }
     if (dish.components.isEmpty) {
       throw ArgumentError('Dish must have at least one component.');
     }
     for (final component in dish.components) {
-      if (component.grams <= 0) {
+      if (!component.grams.isFinite || component.grams <= 0) {
         throw ArgumentError('Dish component grams must be greater than zero.');
       }
       if (component.itemId != dish.id && !_catalog.containsKey(component.itemId)) {
@@ -261,7 +261,11 @@ class AppStore extends ChangeNotifier {
   }
 
   void _validateNutrition(NutritionValues nutrition) {
-    if (nutrition.calories < 0 ||
+    if (!nutrition.calories.isFinite ||
+        !nutrition.protein.isFinite ||
+        !nutrition.fat.isFinite ||
+        !nutrition.carbs.isFinite ||
+        nutrition.calories < 0 ||
         nutrition.protein < 0 ||
         nutrition.fat < 0 ||
         nutrition.carbs < 0) {
@@ -342,5 +346,17 @@ class AppStore extends ChangeNotifier {
   String _nextMealEntryId() {
     _mealEntryCounter += 1;
     return 'meal-entry-${_mealEntryCounter.toString()}';
+  }
+
+  DishItem _freezeDish(DishItem dish) {
+    return DishItem(
+      id: dish.id,
+      name: dish.name,
+      description: dish.description,
+      servingSizeGrams: dish.servingSizeGrams,
+      components: List<DishComponent>.unmodifiable(
+        List<DishComponent>.of(dish.components),
+      ),
+    );
   }
 }
