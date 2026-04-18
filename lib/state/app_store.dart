@@ -25,7 +25,12 @@ class AppStore extends ChangeNotifier {
         description: 'Raw carrot',
         servingSizeGrams: 100,
         basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(calories: 41, protein: 0.9, fat: 0.2, carbs: 10),
+        nutrition: NutritionValues(
+          calories: 41,
+          protein: 0.9,
+          fat: 0.2,
+          carbs: 10,
+        ),
       ),
     );
     createFood(
@@ -35,7 +40,12 @@ class AppStore extends ChangeNotifier {
         description: 'Raw onion',
         servingSizeGrams: 100,
         basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(calories: 40, protein: 1.1, fat: 0.1, carbs: 9.3),
+        nutrition: NutritionValues(
+          calories: 40,
+          protein: 1.1,
+          fat: 0.1,
+          carbs: 9.3,
+        ),
       ),
     );
     createFood(
@@ -45,7 +55,12 @@ class AppStore extends ChangeNotifier {
         description: 'Cooked skinless chicken breast',
         servingSizeGrams: 100,
         basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(calories: 165, protein: 31, fat: 3.6, carbs: 0),
+        nutrition: NutritionValues(
+          calories: 165,
+          protein: 31,
+          fat: 3.6,
+          carbs: 0,
+        ),
       ),
     );
     createFood(
@@ -55,7 +70,12 @@ class AppStore extends ChangeNotifier {
         description: 'Cooked white rice',
         servingSizeGrams: 150,
         basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(calories: 130, protein: 2.7, fat: 0.3, carbs: 28),
+        nutrition: NutritionValues(
+          calories: 130,
+          protein: 2.7,
+          fat: 0.3,
+          carbs: 28,
+        ),
       ),
     );
     createFood(
@@ -168,9 +188,16 @@ class AppStore extends ChangeNotifier {
     return entry;
   }
 
-  MealEntry addMealByServings({required String itemId, required double servings}) {
+  MealEntry addMealByServings({
+    required String itemId,
+    required double servings,
+  }) {
     if (!servings.isFinite || servings <= 0) {
-      throw ArgumentError.value(servings, 'servings', 'Must be greater than zero.');
+      throw ArgumentError.value(
+        servings,
+        'servings',
+        'Must be greater than zero.',
+      );
     }
     final item = _catalog[itemId];
     if (item == null) {
@@ -207,7 +234,8 @@ class AppStore extends ChangeNotifier {
     var lastWasHyphen = false;
     for (final codeUnit in normalized.codeUnits) {
       final char = String.fromCharCode(codeUnit);
-      final isAlphaNumeric = (codeUnit >= 48 && codeUnit <= 57) ||
+      final isAlphaNumeric =
+          (codeUnit >= 48 && codeUnit <= 57) ||
           (codeUnit >= 97 && codeUnit <= 122);
       if (isAlphaNumeric) {
         buffer.write(char);
@@ -250,7 +278,8 @@ class AppStore extends ChangeNotifier {
       if (!component.grams.isFinite || component.grams <= 0) {
         throw ArgumentError('Dish component grams must be greater than zero.');
       }
-      if (component.itemId != dish.id && !_catalog.containsKey(component.itemId)) {
+      if (component.itemId != dish.id &&
+          !_catalog.containsKey(component.itemId)) {
         throw ArgumentError('Missing item id: ${component.itemId}');
       }
     }
@@ -333,7 +362,12 @@ class AppStore extends ChangeNotifier {
         continue;
       }
       if (next.isDish) {
-        _validateNoDishCycle(component.itemId, catalog, activeVisiting, activeVisited);
+        _validateNoDishCycle(
+          component.itemId,
+          catalog,
+          activeVisiting,
+          activeVisited,
+        );
       }
       if (component.itemId == rootId) {
         throw ArgumentError('Dish cycle detected.');

@@ -22,8 +22,18 @@ void main() {
     });
 
     test('adds values together', () {
-      const left = NutritionValues(calories: 100, protein: 10, fat: 4, carbs: 20);
-      const right = NutritionValues(calories: 50, protein: 5, fat: 2, carbs: 10);
+      const left = NutritionValues(
+        calories: 100,
+        protein: 10,
+        fat: 4,
+        carbs: 20,
+      );
+      const right = NutritionValues(
+        calories: 50,
+        protein: 5,
+        fat: 2,
+        carbs: 10,
+      );
 
       expect((left + right).calories, 150);
       expect((left + right).protein, 15);
@@ -40,7 +50,12 @@ void main() {
         description: 'Cooked rice',
         servingSizeGrams: 150,
         basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(calories: 130, protein: 2.7, fat: 0.3, carbs: 28),
+        nutrition: NutritionValues(
+          calories: 130,
+          protein: 2.7,
+          fat: 0.3,
+          carbs: 28,
+        ),
       );
 
       expect(food.nutritionForGrams(150).calories, 195);
@@ -54,7 +69,12 @@ void main() {
         description: '',
         servingSizeGrams: 0,
         basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9),
+        nutrition: NutritionValues(
+          calories: 18,
+          protein: 0.9,
+          fat: 0.2,
+          carbs: 3.9,
+        ),
       );
 
       expect(food.nutritionForGrams(50).calories, 9);
@@ -84,7 +104,12 @@ void main() {
         description: '',
         servingSizeGrams: 100,
         basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(calories: 41, protein: 0.9, fat: 0.2, carbs: 10),
+        nutrition: NutritionValues(
+          calories: 41,
+          protein: 0.9,
+          fat: 0.2,
+          carbs: 10,
+        ),
       );
       const oil = FoodItem(
         id: 'oil',
@@ -115,55 +140,68 @@ void main() {
       expect(values.fat, 10.2);
     });
 
-    test('terminates on cyclic dish references and includes non-recursive items', () {
-      const carrot = FoodItem(
-        id: 'carrot',
-        name: 'Carrot',
-        description: '',
-        servingSizeGrams: 100,
-        basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(calories: 41, protein: 0.9, fat: 0.2, carbs: 10),
-      );
-      const oil = FoodItem(
-        id: 'oil',
-        name: 'Olive oil',
-        description: '',
-        servingSizeGrams: 10,
-        basis: NutritionBasis.perServing,
-        nutrition: NutritionValues(calories: 90, protein: 0, fat: 10, carbs: 0),
-      );
-      const dishA = DishItem(
-        id: 'dish-a',
-        name: 'Dish A',
-        description: '',
-        servingSizeGrams: 100,
-        components: [
-          DishComponent(itemId: 'dish-b', grams: 100),
-          DishComponent(itemId: 'carrot', grams: 100),
-        ],
-      );
-      const dishB = DishItem(
-        id: 'dish-b',
-        name: 'Dish B',
-        description: '',
-        servingSizeGrams: 100,
-        components: [
-          DishComponent(itemId: 'dish-a', grams: 100),
-          DishComponent(itemId: 'oil', grams: 10),
-        ],
-      );
-      final catalog = <String, CatalogItem>{
-        carrot.id: CatalogItem.food(carrot),
-        oil.id: CatalogItem.food(oil),
-        dishA.id: CatalogItem.dish(dishA),
-        dishB.id: CatalogItem.dish(dishB),
-      };
+    test(
+      'terminates on cyclic dish references and includes non-recursive items',
+      () {
+        const carrot = FoodItem(
+          id: 'carrot',
+          name: 'Carrot',
+          description: '',
+          servingSizeGrams: 100,
+          basis: NutritionBasis.per100g,
+          nutrition: NutritionValues(
+            calories: 41,
+            protein: 0.9,
+            fat: 0.2,
+            carbs: 10,
+          ),
+        );
+        const oil = FoodItem(
+          id: 'oil',
+          name: 'Olive oil',
+          description: '',
+          servingSizeGrams: 10,
+          basis: NutritionBasis.perServing,
+          nutrition: NutritionValues(
+            calories: 90,
+            protein: 0,
+            fat: 10,
+            carbs: 0,
+          ),
+        );
+        const dishA = DishItem(
+          id: 'dish-a',
+          name: 'Dish A',
+          description: '',
+          servingSizeGrams: 100,
+          components: [
+            DishComponent(itemId: 'dish-b', grams: 100),
+            DishComponent(itemId: 'carrot', grams: 100),
+          ],
+        );
+        const dishB = DishItem(
+          id: 'dish-b',
+          name: 'Dish B',
+          description: '',
+          servingSizeGrams: 100,
+          components: [
+            DishComponent(itemId: 'dish-a', grams: 100),
+            DishComponent(itemId: 'oil', grams: 10),
+          ],
+        );
+        final catalog = <String, CatalogItem>{
+          carrot.id: CatalogItem.food(carrot),
+          oil.id: CatalogItem.food(oil),
+          dishA.id: CatalogItem.dish(dishA),
+          dishB.id: CatalogItem.dish(dishB),
+        };
 
-      final values = CatalogItem.dish(dishA).nutritionForGrams(100, catalog);
+        final values = CatalogItem.dish(dishA).nutritionForGrams(100, catalog);
 
-      expect(values.calories, 131);
-      expect(values.fat, 10.2);
-    });
+        expect(values.calories, 131);
+        expect(values.fat, 10.2);
+      },
+    );
   });
 
   group('CatalogItem', () {
@@ -174,7 +212,12 @@ void main() {
         description: '',
         servingSizeGrams: 100,
         basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(calories: 41, protein: 0.9, fat: 0.2, carbs: 10),
+        nutrition: NutritionValues(
+          calories: 41,
+          protein: 0.9,
+          fat: 0.2,
+          carbs: 10,
+        ),
       );
       const oil = FoodItem(
         id: 'oil',
@@ -200,14 +243,8 @@ void main() {
         dish.id: CatalogItem.dish(dish),
       };
 
-      expect(
-        CatalogItem.dish(dish).nutritionPerServing(catalog).calories,
-        131,
-      );
-      expect(
-        CatalogItem.dish(dish).nutritionPerServing(catalog).fat,
-        10.2,
-      );
+      expect(CatalogItem.dish(dish).nutritionPerServing(catalog).calories, 131);
+      expect(CatalogItem.dish(dish).nutritionPerServing(catalog).fat, 10.2);
     });
   });
 
@@ -219,7 +256,12 @@ void main() {
         description: '',
         servingSizeGrams: 100,
         basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(calories: 165, protein: 31, fat: 3.6, carbs: 0),
+        nutrition: NutritionValues(
+          calories: 165,
+          protein: 31,
+          fat: 3.6,
+          carbs: 0,
+        ),
       );
 
       final entry = MealEntry.fromItem(

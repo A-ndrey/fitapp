@@ -5,10 +5,7 @@ class DishComponent {
   final String itemId;
   final double grams;
 
-  const DishComponent({
-    required this.itemId,
-    required this.grams,
-  });
+  const DishComponent({required this.itemId, required this.grams});
 }
 
 class DishItem {
@@ -48,11 +45,13 @@ class DishItem {
       if (item == null) {
         continue;
       }
-      total = total + item.nutritionForGrams(
-        component.grams * factor,
-        catalog,
-        activeVisited,
-      );
+      total =
+          total +
+          item.nutritionForGrams(
+            component.grams * factor,
+            catalog,
+            activeVisited,
+          );
     }
 
     activeVisited.remove(id);

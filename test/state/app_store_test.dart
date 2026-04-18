@@ -5,13 +5,13 @@ import 'package:fitapp/state/app_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 FoodItem tomato() => const FoodItem(
-      id: 'tomato',
-      name: 'Tomato',
-      description: 'Fresh tomato',
-      servingSizeGrams: 100,
-      basis: NutritionBasis.per100g,
-      nutrition: NutritionValues(calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9),
-    );
+  id: 'tomato',
+  name: 'Tomato',
+  description: 'Fresh tomato',
+  servingSizeGrams: 100,
+  basis: NutritionBasis.per100g,
+  nutrition: NutritionValues(calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9),
+);
 
 void main() {
   test('AppStore starts with exactly five sample foods', () {
@@ -35,11 +35,19 @@ void main() {
     store.createFood(tomato());
 
     final gramsEntry = store.addMealByGrams(itemId: 'tomato', grams: 200);
-    final servingsEntry = store.addMealByServings(itemId: 'tomato', servings: 0.5);
+    final servingsEntry = store.addMealByServings(
+      itemId: 'tomato',
+      servings: 0.5,
+    );
 
     store.updateFood(
       tomato().copyWith(
-        nutrition: const NutritionValues(calories: 100, protein: 1, fat: 1, carbs: 1),
+        nutrition: const NutritionValues(
+          calories: 100,
+          protein: 1,
+          fat: 1,
+          carbs: 1,
+        ),
       ),
     );
 
@@ -59,13 +67,14 @@ void main() {
         name: 'Salad',
         description: 'Tomato salad',
         servingSizeGrams: 100,
-        components: [
-          DishComponent(itemId: 'tomato', grams: 100),
-        ],
+        components: [DishComponent(itemId: 'tomato', grams: 100)],
       ),
     );
 
-    expect(store.itemById('salad')!.nutritionPerServing(store.catalog).calories, 18);
+    expect(
+      store.itemById('salad')!.nutritionPerServing(store.catalog).calories,
+      18,
+    );
     expect(() => store.deleteItem('tomato'), throwsStateError);
   });
 
@@ -92,9 +101,7 @@ void main() {
           name: 'Bad',
           description: 'Bad dish',
           servingSizeGrams: 100,
-          components: [
-            DishComponent(itemId: 'bad', grams: 100),
-          ],
+          components: [DishComponent(itemId: 'bad', grams: 100)],
         ),
       ),
       throwsA(isA<ArgumentError>()),
@@ -106,9 +113,7 @@ void main() {
         name: 'Base',
         description: 'Base dish',
         servingSizeGrams: 100,
-        components: [
-          DishComponent(itemId: 'tomato', grams: 100),
-        ],
+        components: [DishComponent(itemId: 'tomato', grams: 100)],
       ),
     );
     store.createDish(
@@ -117,9 +122,7 @@ void main() {
         name: 'Wrapper',
         description: 'Wrapper dish',
         servingSizeGrams: 100,
-        components: [
-          DishComponent(itemId: 'base', grams: 100),
-        ],
+        components: [DishComponent(itemId: 'base', grams: 100)],
       ),
     );
 
@@ -130,38 +133,42 @@ void main() {
           name: 'Base',
           description: 'Base dish',
           servingSizeGrams: 100,
-          components: [
-            DishComponent(itemId: 'wrapper', grams: 100),
-          ],
+          components: [DishComponent(itemId: 'wrapper', grams: 100)],
         ),
       ),
       throwsA(isA<ArgumentError>()),
     );
   });
 
-  test('stored dishes are isolated from caller-side component list mutation', () {
-    final store = AppStore.empty();
-    store.createFood(tomato());
-    final components = <DishComponent>[
-      const DishComponent(itemId: 'tomato', grams: 100),
-    ];
+  test(
+    'stored dishes are isolated from caller-side component list mutation',
+    () {
+      final store = AppStore.empty();
+      store.createFood(tomato());
+      final components = <DishComponent>[
+        const DishComponent(itemId: 'tomato', grams: 100),
+      ];
 
-    store.createDish(
-      DishItem(
-        id: 'salad',
-        name: 'Salad',
-        description: 'Tomato salad',
-        servingSizeGrams: 100,
-        components: components,
-      ),
-    );
+      store.createDish(
+        DishItem(
+          id: 'salad',
+          name: 'Salad',
+          description: 'Tomato salad',
+          servingSizeGrams: 100,
+          components: components,
+        ),
+      );
 
-    components.clear();
-    components.add(const DishComponent(itemId: 'missing', grams: 50));
+      components.clear();
+      components.add(const DishComponent(itemId: 'missing', grams: 50));
 
-    expect(store.itemById('salad')!.nutritionPerServing(store.catalog).calories, 18);
-    expect(() => store.deleteItem('tomato'), throwsStateError);
-  });
+      expect(
+        store.itemById('salad')!.nutritionPerServing(store.catalog).calories,
+        18,
+      );
+      expect(() => store.deleteItem('tomato'), throwsStateError);
+    },
+  );
 
   test('rejects non-finite numeric values', () {
     final store = AppStore.empty();
@@ -208,9 +215,7 @@ void main() {
           name: 'Bad dish',
           description: 'Bad',
           servingSizeGrams: 100,
-          components: [
-            DishComponent(itemId: 'tomato', grams: double.nan),
-          ],
+          components: [DishComponent(itemId: 'tomato', grams: double.nan)],
         ),
       ),
       throwsArgumentError,

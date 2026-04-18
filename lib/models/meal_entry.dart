@@ -1,10 +1,7 @@
 import 'catalog_item.dart';
 import 'nutrition.dart';
 
-enum MealEntryMode {
-  grams,
-  servings,
-}
+enum MealEntryMode { grams, servings }
 
 class MealEntry {
   final String id;

@@ -37,7 +37,4 @@ class NutritionValues {
   }
 }
 
-enum NutritionBasis {
-  per100g,
-  perServing,
-}
+enum NutritionBasis { per100g, perServing }

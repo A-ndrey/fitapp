@@ -2,10 +2,7 @@ import 'dish_item.dart';
 import 'food_item.dart';
 import 'nutrition.dart';
 
-enum CatalogItemType {
-  food,
-  dish,
-}
+enum CatalogItemType { food, dish }
 
 class CatalogItem {
   final CatalogItemType type;
@@ -13,14 +10,14 @@ class CatalogItem {
   final DishItem? _dish;
 
   const CatalogItem.food(FoodItem food)
-      : type = CatalogItemType.food,
-        _food = food,
-        _dish = null;
+    : type = CatalogItemType.food,
+      _food = food,
+      _dish = null;
 
   const CatalogItem.dish(DishItem dish)
-      : type = CatalogItemType.dish,
-        _food = null,
-        _dish = dish;
+    : type = CatalogItemType.dish,
+      _food = null,
+      _dish = dish;
 
   FoodItem? get food => _food;
 
