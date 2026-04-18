@@ -25,11 +25,11 @@ class FoodItem {
   }
 
   NutritionValues nutritionForGrams(double grams) {
-    if (servingSizeGrams <= 0) {
-      return NutritionValues.zero;
-    }
     if (basis == NutritionBasis.per100g) {
       return nutrition.scale(grams / 100.0);
+    }
+    if (servingSizeGrams <= 0) {
+      return NutritionValues.zero;
     }
     return nutrition.scale(grams / servingSizeGrams);
   }

@@ -47,6 +47,20 @@ void main() {
       expect(food.nutritionPerServing.calories, 195);
     });
 
+    test('converts per 100g nutrition even when serving size is zero', () {
+      const food = FoodItem(
+        id: 'tomato',
+        name: 'Tomato',
+        description: '',
+        servingSizeGrams: 0,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9),
+      );
+
+      expect(food.nutritionForGrams(50).calories, 9);
+      expect(food.nutritionForGrams(50).protein, 0.45);
+    });
+
     test('converts per serving nutrition to arbitrary grams', () {
       const food = FoodItem(
         id: 'oil',
@@ -96,6 +110,56 @@ void main() {
       };
 
       final values = dish.nutritionForGrams(110, catalog);
+
+      expect(values.calories, 131);
+      expect(values.fat, 10.2);
+    });
+
+    test('terminates on cyclic dish references and includes non-recursive items', () {
+      const carrot = FoodItem(
+        id: 'carrot',
+        name: 'Carrot',
+        description: '',
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(calories: 41, protein: 0.9, fat: 0.2, carbs: 10),
+      );
+      const oil = FoodItem(
+        id: 'oil',
+        name: 'Olive oil',
+        description: '',
+        servingSizeGrams: 10,
+        basis: NutritionBasis.perServing,
+        nutrition: NutritionValues(calories: 90, protein: 0, fat: 10, carbs: 0),
+      );
+      const dishA = DishItem(
+        id: 'dish-a',
+        name: 'Dish A',
+        description: '',
+        servingSizeGrams: 100,
+        components: [
+          DishComponent(itemId: 'dish-b', grams: 100),
+          DishComponent(itemId: 'carrot', grams: 100),
+        ],
+      );
+      const dishB = DishItem(
+        id: 'dish-b',
+        name: 'Dish B',
+        description: '',
+        servingSizeGrams: 100,
+        components: [
+          DishComponent(itemId: 'dish-a', grams: 100),
+          DishComponent(itemId: 'oil', grams: 10),
+        ],
+      );
+      final catalog = <String, CatalogItem>{
+        carrot.id: CatalogItem.food(carrot),
+        oil.id: CatalogItem.food(oil),
+        dishA.id: CatalogItem.dish(dishA),
+        dishB.id: CatalogItem.dish(dishB),
+      };
+
+      final values = CatalogItem.dish(dishA).nutritionForGrams(100, catalog);
 
       expect(values.calories, 131);
       expect(values.fat, 10.2);
