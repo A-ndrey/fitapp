@@ -50,10 +50,10 @@ class CatalogItem {
     return _dish!.nutritionForGrams(grams, catalog, visited);
   }
 
-  NutritionValues get nutritionPerServing {
+  NutritionValues nutritionPerServing(Map<String, CatalogItem> catalog) {
     if (isFood) {
       return _food!.nutritionPerServing;
     }
-    return NutritionValues.zero;
+    return _dish!.nutritionPerServing(catalog);
   }
 }

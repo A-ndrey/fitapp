@@ -102,6 +102,51 @@ void main() {
     });
   });
 
+  group('CatalogItem', () {
+    test('returns live dish nutrition per serving from catalog', () {
+      const carrot = FoodItem(
+        id: 'carrot',
+        name: 'Carrot',
+        description: '',
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(calories: 41, protein: 0.9, fat: 0.2, carbs: 10),
+      );
+      const oil = FoodItem(
+        id: 'oil',
+        name: 'Olive oil',
+        description: '',
+        servingSizeGrams: 10,
+        basis: NutritionBasis.perServing,
+        nutrition: NutritionValues(calories: 90, protein: 0, fat: 10, carbs: 0),
+      );
+      const dish = DishItem(
+        id: 'salad',
+        name: 'Salad',
+        description: '',
+        servingSizeGrams: 110,
+        components: [
+          DishComponent(itemId: 'carrot', grams: 100),
+          DishComponent(itemId: 'oil', grams: 10),
+        ],
+      );
+      final catalog = <String, CatalogItem>{
+        carrot.id: CatalogItem.food(carrot),
+        oil.id: CatalogItem.food(oil),
+        dish.id: CatalogItem.dish(dish),
+      };
+
+      expect(
+        CatalogItem.dish(dish).nutritionPerServing(catalog).calories,
+        131,
+      );
+      expect(
+        CatalogItem.dish(dish).nutritionPerServing(catalog).fat,
+        10.2,
+      );
+    });
+  });
+
   group('MealEntry', () {
     test('stores a nutrition snapshot independent of the source item', () {
       const source = FoodItem(
