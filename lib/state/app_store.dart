@@ -282,6 +282,26 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateExercise(Exercise exercise) {
+    _validateExercise(exercise);
+    if (!_exercises.containsKey(exercise.id)) {
+      throw ArgumentError('Missing exercise id: ${exercise.id}');
+    }
+    _exercises[exercise.id] = _freezeExercise(exercise);
+    notifyListeners();
+  }
+
+  void deleteExercise(String id) {
+    if (!_exercises.containsKey(id)) {
+      throw ArgumentError('Missing exercise id: $id');
+    }
+    if (_isReferencedByAnyTrainingPlan(id)) {
+      throw StateError('Exercise is used by a training plan.');
+    }
+    _exercises.remove(id);
+    notifyListeners();
+  }
+
   void createTrainingPlan(TrainingPlan plan) {
     _validateTrainingPlan(plan);
     if (trainingPlanById(plan.id) != null) {
@@ -563,6 +583,20 @@ class AppStore extends ChangeNotifier {
     if (exercise.name.trim().isEmpty) {
       throw ArgumentError('Exercise name must not be empty.');
     }
+    if (exercise.description.trim().isEmpty) {
+      throw ArgumentError('Exercise description must not be empty.');
+    }
+    if (exercise.instruction.trim().isEmpty) {
+      throw ArgumentError('Exercise instruction must not be empty.');
+    }
+    if (exercise.muscleGroups.isEmpty) {
+      throw ArgumentError('Exercise must have at least one muscle group.');
+    }
+    for (final muscleGroup in exercise.muscleGroups) {
+      if (muscleGroup.trim().isEmpty) {
+        throw ArgumentError('Exercise muscle groups must not be empty.');
+      }
+    }
   }
 
   void _validateTrainingPlan(TrainingPlan plan) {
@@ -646,6 +680,17 @@ class AppStore extends ChangeNotifier {
       }
       if (_dishReferencesTarget(item.dish!, targetId, <String>{})) {
         return true;
+      }
+    }
+    return false;
+  }
+
+  bool _isReferencedByAnyTrainingPlan(String targetId) {
+    for (final plan in _trainingPlans) {
+      for (final exercise in plan.exercises) {
+        if (exercise.exerciseId == targetId) {
+          return true;
+        }
       }
     }
     return false;

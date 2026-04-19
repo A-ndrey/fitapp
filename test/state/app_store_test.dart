@@ -73,6 +73,251 @@ void main() {
     expect(store.trainingPlanById('home-chest')!.exercises.single.reps, 12);
   });
 
+  test('updates exercises by id', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line from shoulders to heels.',
+        muscleGroups: ['Chest', 'Triceps'],
+      ),
+    );
+
+    store.updateExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Incline pushups',
+        description: 'Updated push exercise',
+        instruction: 'Use a bench and keep a rigid plank.',
+        muscleGroups: ['Chest'],
+      ),
+    );
+
+    expect(store.exerciseById('pushups')!.name, 'Incline pushups');
+    expect(store.exerciseById('pushups')!.description, 'Updated push exercise');
+  });
+
+  test('rejects invalid exercise updates', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line from shoulders to heels.',
+        muscleGroups: ['Chest', 'Triceps'],
+      ),
+    );
+
+    expect(
+      () => store.updateExercise(
+        const Exercise(
+          id: '',
+          name: 'Broken',
+          description: 'Broken',
+          instruction: 'Broken',
+          muscleGroups: ['Chest'],
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.updateExercise(
+        const Exercise(
+          id: 'missing',
+          name: 'Missing',
+          description: 'Missing',
+          instruction: 'Missing',
+          muscleGroups: ['Chest'],
+        ),
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('rejects exercises with incomplete metadata', () {
+    final store = AppStore.empty();
+
+    for (final exercise in [
+      const Exercise(
+        id: 'missing-description',
+        name: 'Missing description',
+        description: '',
+        instruction: 'Do the movement.',
+        muscleGroups: ['Core'],
+      ),
+      const Exercise(
+        id: 'missing-instruction',
+        name: 'Missing instruction',
+        description: 'Core work',
+        instruction: '',
+        muscleGroups: ['Core'],
+      ),
+      const Exercise(
+        id: 'missing-muscles',
+        name: 'Missing muscles',
+        description: 'Core work',
+        instruction: 'Do the movement.',
+        muscleGroups: [],
+      ),
+      const Exercise(
+        id: 'blank-muscle',
+        name: 'Blank muscle',
+        description: 'Core work',
+        instruction: 'Do the movement.',
+        muscleGroups: ['Core', ''],
+      ),
+    ]) {
+      expect(() => store.createExercise(exercise), throwsArgumentError);
+    }
+  });
+
+  test('deletes exercises when no training plan references them', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line from shoulders to heels.',
+        muscleGroups: ['Chest', 'Triceps'],
+      ),
+    );
+
+    expect(() => store.deleteExercise('missing'), throwsArgumentError);
+    store.deleteExercise('pushups');
+
+    expect(store.exerciseById('pushups'), isNull);
+    expect(store.exercises, isEmpty);
+  });
+
+  test('rejects deleting exercises referenced by training plans', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line from shoulders to heels.',
+        muscleGroups: ['Chest', 'Triceps'],
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'home-chest',
+        name: 'Home chest',
+        description: 'Bodyweight chest work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'pushups',
+            sets: 3,
+            reps: 12,
+            unit: 'reps',
+          ),
+        ],
+      ),
+    );
+
+    expect(() => store.deleteExercise('pushups'), throwsStateError);
+  });
+
+  test('updating exercises changes future workout snapshots only', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line from shoulders to heels.',
+        muscleGroups: ['Chest', 'Triceps'],
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'home-chest',
+        name: 'Home chest',
+        description: 'Bodyweight chest work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'pushups',
+            sets: 3,
+            reps: 12,
+            unit: 'reps',
+          ),
+        ],
+      ),
+    );
+
+    final firstSession = store.startWorkout(
+      trainingPlanId: 'home-chest',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
+
+    store.updateExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Incline pushups',
+        description: 'Updated push exercise',
+        instruction: 'Use a bench and keep a rigid plank.',
+        muscleGroups: ['Chest'],
+      ),
+    );
+
+    final secondSession = store.startWorkout(
+      trainingPlanId: 'home-chest',
+      startedAt: DateTime(2026, 4, 19, 11),
+    );
+
+    expect(firstSession.results.first.exerciseName, 'Pushups');
+    expect(secondSession.results.first.exerciseName, 'Incline pushups');
+  });
+
+  test('deleting exercises after workout history is retained is allowed', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line from shoulders to heels.',
+        muscleGroups: ['Chest', 'Triceps'],
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'home-chest',
+        name: 'Home chest',
+        description: 'Bodyweight chest work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'pushups',
+            sets: 3,
+            reps: 12,
+            unit: 'reps',
+          ),
+        ],
+      ),
+    );
+
+    final session = store.startWorkout(
+      trainingPlanId: 'home-chest',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
+    store.deleteTrainingPlan('home-chest');
+    store.deleteExercise('pushups');
+
+    expect(store.exerciseById('pushups'), isNull);
+    expect(session.results.first.exerciseName, 'Pushups');
+    expect(
+      store.completedWorkoutSessions.single.results.first.exerciseName,
+      'Pushups',
+    );
+  });
+
   test('updates and deletes training plans', () {
     final store = AppStore.empty();
     store.createExercise(

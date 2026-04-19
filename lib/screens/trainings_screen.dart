@@ -4,10 +4,21 @@ import '../models/exercise.dart';
 import '../models/training_plan.dart';
 import '../state/app_store.dart';
 
-class TrainingsScreen extends StatelessWidget {
+enum _TrainingsView { plans, exercises }
+
+class TrainingsScreen extends StatefulWidget {
   const TrainingsScreen({super.key, required this.store});
 
   final AppStore store;
+
+  @override
+  State<TrainingsScreen> createState() => _TrainingsScreenState();
+}
+
+class _TrainingsScreenState extends State<TrainingsScreen> {
+  _TrainingsView _selectedView = _TrainingsView.plans;
+
+  AppStore get store => widget.store;
 
   @override
   Widget build(BuildContext context) {
@@ -17,59 +28,147 @@ class TrainingsScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: const Text('Trainings')),
           floatingActionButton: FloatingActionButton(
-            tooltip: 'Add training plan',
-            onPressed: () => _openPlanDialog(context),
+            tooltip: _selectedView == _TrainingsView.plans
+                ? 'Add training plan'
+                : 'Add exercise',
+            onPressed: _selectedView == _TrainingsView.plans
+                ? () => _openPlanDialog(context)
+                : () => _openExerciseDialog(context),
             child: const Icon(Icons.add),
           ),
           body: SafeArea(
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text(
-                  'Training plans',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                if (store.trainingPlans.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Text('No training plans yet'),
-                  )
-                else
-                  ...store.trainingPlans.map(
-                    (plan) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Card(
-                        child: ListTile(
-                          title: Text(plan.name),
-                          subtitle: Text(_planSummary(plan)),
-                          isThreeLine: true,
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                tooltip: 'Edit ${plan.name}',
-                                icon: const Icon(Icons.edit_outlined),
-                                onPressed: () =>
-                                    _openPlanDialog(context, initialPlan: plan),
-                              ),
-                              IconButton(
-                                tooltip: 'Delete ${plan.name}',
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: () =>
-                                    _confirmDeletePlan(context, plan),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                SegmentedButton<_TrainingsView>(
+                  segments: const [
+                    ButtonSegment(
+                      value: _TrainingsView.plans,
+                      label: Text('Plans'),
+                      icon: Icon(Icons.assignment_outlined),
                     ),
-                  ),
+                    ButtonSegment(
+                      value: _TrainingsView.exercises,
+                      label: Text('Exercises'),
+                      icon: Icon(Icons.fitness_center_outlined),
+                    ),
+                  ],
+                  selected: <_TrainingsView>{_selectedView},
+                  onSelectionChanged: (selection) {
+                    setState(() {
+                      _selectedView = selection.first;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                if (_selectedView == _TrainingsView.plans)
+                  _buildPlansView(context)
+                else
+                  _buildExercisesView(context),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPlansView(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Training plans', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 12),
+        if (store.trainingPlans.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Text('No training plans yet'),
+          )
+        else
+          ...store.trainingPlans.map(
+            (plan) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Card(
+                child: ListTile(
+                  title: Text(plan.name),
+                  subtitle: Text(_planSummary(plan)),
+                  isThreeLine: true,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Edit ${plan.name}',
+                        icon: const Icon(Icons.edit_outlined),
+                        onPressed: () =>
+                            _openPlanDialog(context, initialPlan: plan),
+                      ),
+                      IconButton(
+                        tooltip: 'Delete ${plan.name}',
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => _confirmDeletePlan(context, plan),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildExercisesView(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Exercises', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 12),
+        if (store.exercises.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Text('No exercises yet'),
+          )
+        else
+          ...store.exercises.map(
+            (exercise) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Card(
+                child: ListTile(
+                  title: Text(exercise.name),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(exercise.description),
+                      Text(exercise.instruction),
+                      Text(_summarizeMuscleGroups(exercise.muscleGroups)),
+                    ],
+                  ),
+                  isThreeLine: true,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Edit ${exercise.name}',
+                        icon: const Icon(Icons.edit_outlined),
+                        onPressed: () => _openExerciseDialog(
+                          context,
+                          initialExercise: exercise,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Delete ${exercise.name}',
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () =>
+                            _confirmDeleteExercise(context, exercise),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -81,6 +180,18 @@ class TrainingsScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return _TrainingPlanDialog(store: store, initialPlan: initialPlan);
+      },
+    );
+  }
+
+  Future<void> _openExerciseDialog(
+    BuildContext context, {
+    Exercise? initialExercise,
+  }) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return _ExerciseDialog(store: store, initialExercise: initialExercise);
       },
     );
   }
@@ -126,6 +237,41 @@ class TrainingsScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _confirmDeleteExercise(
+    BuildContext context,
+    Exercise exercise,
+  ) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('Delete ${exercise.name}?'),
+          content: const Text('This removes the exercise.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+    if (!context.mounted || shouldDelete != true) {
+      return;
+    }
+    try {
+      store.deleteExercise(exercise.id);
+    } on ArgumentError catch (error) {
+      _showSnackBar(context, error.message?.toString() ?? 'Could not delete.');
+    } on StateError catch (error) {
+      _showSnackBar(context, error.message);
+    }
+  }
+
   String _planSummary(TrainingPlan plan) {
     final exerciseCount = plan.exercises.length;
     final exerciseLabel = exerciseCount == 1
@@ -136,6 +282,180 @@ class TrainingsScreen extends StatelessWidget {
       return exerciseLabel;
     }
     return '$exerciseLabel\n$description';
+  }
+
+  String _summarizeMuscleGroups(List<String> muscleGroups) {
+    if (muscleGroups.isEmpty) {
+      return 'Muscles: -';
+    }
+    return muscleGroups.join(', ');
+  }
+}
+
+class _ExerciseDialog extends StatefulWidget {
+  const _ExerciseDialog({required this.store, this.initialExercise});
+
+  final AppStore store;
+  final Exercise? initialExercise;
+
+  @override
+  State<_ExerciseDialog> createState() => _ExerciseDialogState();
+}
+
+class _ExerciseDialogState extends State<_ExerciseDialog> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _instructionController;
+  late final TextEditingController _muscleGroupsController;
+  String? _errorText;
+
+  bool get _isEditing => widget.initialExercise != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final exercise = widget.initialExercise;
+    _nameController = TextEditingController(text: exercise?.name ?? '');
+    _descriptionController = TextEditingController(
+      text: exercise?.description ?? '',
+    );
+    _instructionController = TextEditingController(
+      text: exercise?.instruction ?? '',
+    );
+    _muscleGroupsController = TextEditingController(
+      text: exercise?.muscleGroups.join(', ') ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _instructionController.dispose();
+    _muscleGroupsController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(_isEditing ? 'Edit exercise' : 'Add exercise'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _nameController,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Exercise name'),
+              ),
+              TextField(
+                controller: _descriptionController,
+                textInputAction: TextInputAction.next,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Exercise description',
+                ),
+              ),
+              TextField(
+                controller: _instructionController,
+                textInputAction: TextInputAction.next,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Exercise instruction',
+                ),
+              ),
+              TextField(
+                controller: _muscleGroupsController,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(labelText: 'Muscle groups'),
+              ),
+              if (_errorText != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _errorText!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _saveExercise,
+          child: const Text('Save exercise'),
+        ),
+      ],
+    );
+  }
+
+  void _saveExercise() {
+    final name = _nameController.text.trim();
+    final description = _descriptionController.text.trim();
+    final instruction = _instructionController.text.trim();
+    final muscleGroups = _parseMuscleGroups(_muscleGroupsController.text);
+    if (name.isEmpty ||
+        description.isEmpty ||
+        instruction.isEmpty ||
+        muscleGroups.isEmpty) {
+      setState(() {
+        _errorText =
+            'Enter a name, description, instruction, and muscle groups.';
+      });
+      return;
+    }
+    final id =
+        widget.initialExercise?.id ?? widget.store.createIdFromName(name);
+    if (id.isEmpty) {
+      setState(() {
+        _errorText = 'Enter a valid exercise name.';
+      });
+      return;
+    }
+
+    final exercise = Exercise(
+      id: id,
+      name: name,
+      description: description,
+      instruction: instruction,
+      muscleGroups: muscleGroups,
+    );
+
+    try {
+      if (_isEditing) {
+        widget.store.updateExercise(exercise);
+      } else {
+        widget.store.createExercise(exercise);
+      }
+    } on ArgumentError catch (error) {
+      setState(() {
+        _errorText = error.message?.toString() ?? 'Could not save exercise.';
+      });
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).pop();
+  }
+
+  List<String> _parseMuscleGroups(String input) {
+    return input
+        .split(',')
+        .map((group) => group.trim())
+        .where((group) => group.isNotEmpty)
+        .toList(growable: false);
   }
 }
 
