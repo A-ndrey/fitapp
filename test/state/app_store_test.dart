@@ -1,6 +1,8 @@
 import 'package:fitapp/models/dish_item.dart';
+import 'package:fitapp/models/exercise.dart';
 import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/nutrition.dart';
+import 'package:fitapp/models/training_plan.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -19,6 +21,282 @@ void main() {
 
     expect(store.items, hasLength(5));
     expect(store.searchItems('chicken').single.name, 'Chicken breast');
+  });
+
+  test('AppStore starts with sample exercises and training plans', () {
+    final store = AppStore();
+
+    expect(store.exercises, hasLength(greaterThanOrEqualTo(5)));
+    expect(store.searchExercises('push').single.name, 'Pushups');
+    expect(store.trainingPlans, hasLength(greaterThanOrEqualTo(2)));
+    expect(store.trainingPlans.any((plan) => plan.name == 'Chest day'), isTrue);
+  });
+
+  test('AppStore.empty starts without exercises or training plans', () {
+    final store = AppStore.empty();
+
+    expect(store.exercises, isEmpty);
+    expect(store.trainingPlans, isEmpty);
+    expect(store.completedWorkoutSessions, isEmpty);
+    expect(store.activeWorkoutSession, isNull);
+  });
+
+  test('creates training plans with existing exercises', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line from shoulders to heels.',
+        muscleGroups: ['Chest', 'Triceps'],
+      ),
+    );
+
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'home-chest',
+        name: 'Home chest',
+        description: 'Bodyweight chest work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'pushups',
+            sets: 3,
+            reps: 12,
+            unit: 'reps',
+          ),
+        ],
+      ),
+    );
+
+    expect(store.trainingPlans.single.name, 'Home chest');
+    expect(store.trainingPlanById('home-chest')!.exercises.single.reps, 12);
+  });
+
+  test('updates and deletes training plans', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line from shoulders to heels.',
+        muscleGroups: ['Chest'],
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'home-chest',
+        name: 'Home chest',
+        description: 'Bodyweight chest work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'pushups',
+            sets: 3,
+            reps: 12,
+            unit: 'reps',
+          ),
+        ],
+      ),
+    );
+
+    store.updateTrainingPlan(
+      const TrainingPlan(
+        id: 'home-chest',
+        name: 'Push day',
+        description: 'Updated',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'pushups',
+            sets: 4,
+            reps: 10,
+            unit: 'reps',
+          ),
+        ],
+      ),
+    );
+
+    expect(store.trainingPlanById('home-chest')!.name, 'Push day');
+    expect(store.trainingPlanById('home-chest')!.exercises.single.sets, 4);
+
+    store.deleteTrainingPlan('home-chest');
+
+    expect(store.trainingPlans, isEmpty);
+  });
+
+  test('rejects invalid training plans', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line from shoulders to heels.',
+        muscleGroups: ['Chest'],
+      ),
+    );
+    const validPlan = TrainingPlan(
+      id: 'home-chest',
+      name: 'Home chest',
+      description: 'Bodyweight chest work',
+      exercises: [
+        TrainingExercise(
+          exerciseId: 'pushups',
+          sets: 3,
+          reps: 12,
+          unit: 'reps',
+        ),
+      ],
+    );
+    store.createTrainingPlan(validPlan);
+
+    expect(() => store.createTrainingPlan(validPlan), throwsArgumentError);
+    expect(
+      () => store.createTrainingPlan(
+        validPlan.copyWith(id: '', name: 'Missing id'),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.createTrainingPlan(
+        validPlan.copyWith(id: 'missing-name', name: ''),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.createTrainingPlan(
+        validPlan.copyWith(id: 'empty', exercises: []),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.createTrainingPlan(
+        validPlan.copyWith(
+          id: 'missing-exercise',
+          exercises: [
+            const TrainingExercise(
+              exerciseId: 'missing',
+              reps: 10,
+              unit: 'reps',
+            ),
+          ],
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.createTrainingPlan(
+        validPlan.copyWith(
+          id: 'bad-number',
+          exercises: [
+            const TrainingExercise(
+              exerciseId: 'pushups',
+              reps: double.nan,
+              unit: 'reps',
+            ),
+          ],
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.createTrainingPlan(
+        validPlan.copyWith(
+          id: 'negative',
+          exercises: [
+            const TrainingExercise(
+              exerciseId: 'pushups',
+              reps: -1,
+              unit: 'reps',
+            ),
+          ],
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.createTrainingPlan(
+        validPlan.copyWith(
+          id: 'blank-unit',
+          exercises: [
+            const TrainingExercise(exerciseId: 'pushups', reps: 10, unit: ''),
+          ],
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.updateTrainingPlan(validPlan.copyWith(id: 'missing')),
+      throwsArgumentError,
+    );
+    expect(() => store.deleteTrainingPlan('missing'), throwsArgumentError);
+  });
+
+  test('starts one active workout and snapshots plan data', () {
+    final store = AppStore();
+
+    final session = store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+    store.updateTrainingPlan(
+      store.trainingPlanById('chest-day')!.copyWith(name: 'Changed chest day'),
+    );
+
+    expect(session.trainingPlanName, 'Chest day');
+    expect(session.results.first.exerciseName, 'Bench press');
+    expect(session.results.first.target.weight, 60);
+    expect(store.activeWorkoutSession!.trainingPlanName, 'Chest day');
+    expect(
+      () => store.startWorkout(
+        trainingPlanId: 'leg-day',
+        startedAt: DateTime(2026, 4, 19, 11),
+      ),
+      throwsStateError,
+    );
+    expect(() => store.deleteTrainingPlan('chest-day'), throwsStateError);
+  });
+
+  test('updates active workout results and finishes with stats', () {
+    final store = AppStore();
+
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+    store.updateActiveWorkoutResult(
+      resultIndex: 0,
+      actualSets: 3,
+      actualReps: 8,
+      actualWeight: 62.5,
+      actualTime: null,
+      actualUnit: 'kg',
+    );
+
+    expect(store.activeWorkoutSession!.results.first.actualWeight, 62.5);
+    expect(
+      () => store.updateActiveWorkoutResult(
+        resultIndex: 0,
+        actualSets: double.infinity,
+        actualReps: 8,
+        actualWeight: 62.5,
+        actualTime: null,
+        actualUnit: 'kg',
+      ),
+      throwsArgumentError,
+    );
+
+    final finished = store.finishActiveWorkout(
+      finishedAt: DateTime(2026, 4, 19, 10, 45),
+    );
+
+    expect(store.activeWorkoutSession, isNull);
+    expect(store.completedWorkoutSessions.single.id, finished.id);
+    expect(finished.finishedAt, DateTime(2026, 4, 19, 10, 45));
+    expect(store.workoutStats.completedCount, 1);
+    expect(store.workoutStats.totalDuration, const Duration(minutes: 45));
+    expect(store.workoutStats.latestSession!.trainingPlanName, 'Chest day');
+    expect(() => store.finishActiveWorkout(), throwsStateError);
   });
 
   test('AppStore.empty creates food and searches by name or description', () {

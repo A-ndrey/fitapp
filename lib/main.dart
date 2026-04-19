@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'screens/food_screen.dart';
 import 'screens/meal_screen.dart';
+import 'screens/trainings_screen.dart';
+import 'screens/workout_screen.dart';
 import 'state/app_store.dart';
 
 void main() {
@@ -56,6 +58,8 @@ class _FitHomeState extends State<FitHome> {
   @override
   Widget build(BuildContext context) {
     final screens = <Widget>[
+      WorkoutScreen(store: widget.store, isCurrentTab: _selectedIndex == 0),
+      TrainingsScreen(store: widget.store),
       MealScreen(store: widget.store),
       FoodScreen(store: widget.store),
     ];
@@ -70,6 +74,14 @@ class _FitHomeState extends State<FitHome> {
           });
         },
         destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.timer_outlined),
+            label: 'Workout',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.fitness_center_outlined),
+            label: 'Trainings',
+          ),
           NavigationDestination(icon: Icon(Icons.restaurant), label: 'Meal'),
           NavigationDestination(
             icon: Icon(Icons.inventory_2_outlined),
