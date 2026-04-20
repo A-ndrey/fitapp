@@ -16,27 +16,25 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> choosePlan(WidgetTester tester, String planName) async {
-    await tester.tap(find.widgetWithText(ListTile, planName));
+  Future<void> openActiveWorkout(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('Open active workout'));
     await tester.pumpAndSettle();
   }
 
-  Future<void> enterResultValue(
-    WidgetTester tester,
-    String exerciseName,
-    String label,
-    String value,
-  ) async {
-    final row = find.ancestor(
-      of: find.text(exerciseName),
-      matching: find.byType(Card),
-    );
-    final field = find.descendant(
-      of: row.first,
-      matching: find.bySemanticsLabel(label),
-    );
-    await tester.ensureVisible(field);
-    await tester.enterText(field, value);
+  Future<void> openExercise(WidgetTester tester, String exerciseName) async {
+    await tester.tap(find.byTooltip('Open $exerciseName'));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> enterWorkoutSet(
+    WidgetTester tester, {
+    required String reps,
+    required String weight,
+    required String time,
+  }) async {
+    await tester.enterText(find.bySemanticsLabel('Reps'), reps);
+    await tester.enterText(find.bySemanticsLabel('Weight'), weight);
+    await tester.enterText(find.bySemanticsLabel('Time'), time);
     await tester.pumpAndSettle();
   }
 
@@ -56,49 +54,125 @@ void main() {
     expect(find.text('Leg day'), findsOneWidget);
   });
 
-  testWidgets('starts, edits, and finishes an active workout', (tester) async {
+  testWidgets('active session card opens the workout session screen', (
+    tester,
+  ) async {
     final store = AppStore();
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
     await pumpWorkoutScreen(tester, store: store);
 
-    await openStartWorkoutPicker(tester);
-    await choosePlan(tester, 'Chest day');
-
     expect(find.text('Active workout'), findsOneWidget);
-    expect(find.text('Chest day'), findsWidgets);
-    expect(find.textContaining('Elapsed'), findsOneWidget);
+    expect(find.text('Workout session'), findsNothing);
+
+    await openActiveWorkout(tester);
+
+    expect(find.text('Workout session'), findsOneWidget);
+    expect(find.text('Chest day'), findsOneWidget);
     expect(find.text('Bench press'), findsOneWidget);
     expect(find.text('Pushups'), findsOneWidget);
-    expect(find.textContaining('3 sets'), findsWidgets);
-    expect(find.textContaining('8 reps'), findsWidgets);
+  });
 
-    await enterResultValue(tester, 'Bench press', 'Actual weight', 'abc');
-    expect(tester.takeException(), isNull);
-    expect(store.activeWorkoutSession!.results.first.actualWeight, isNull);
+  testWidgets('exercise rows open the workout exercise screen', (tester) async {
+    final store = AppStore();
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
 
-    await enterResultValue(tester, 'Bench press', 'Actual sets', '3');
-    await enterResultValue(tester, 'Bench press', 'Actual reps', '8');
-    await enterResultValue(tester, 'Bench press', 'Actual weight', '65');
-    await enterResultValue(tester, 'Bench press', 'Actual time', '0');
-    await enterResultValue(tester, 'Bench press', 'Actual unit', 'kg');
+    await pumpWorkoutScreen(tester, store: store);
+    await openActiveWorkout(tester);
+    await openExercise(tester, 'Bench press');
 
-    final firstResult = store.activeWorkoutSession!.results.first;
-    expect(firstResult.actualSets, 3);
-    expect(firstResult.actualReps, 8);
-    expect(firstResult.actualWeight, 65);
-    expect(firstResult.actualTime, 0);
-    expect(firstResult.actualUnit, 'kg');
+    expect(find.text('Workout exercise'), findsOneWidget);
+    expect(find.text('Bench press'), findsOneWidget);
+    expect(find.text('Reps'), findsOneWidget);
+    expect(find.text('Weight'), findsOneWidget);
+    expect(find.text('Time'), findsOneWidget);
+    expect(find.text('Log set'), findsOneWidget);
+  });
 
-    await enterResultValue(tester, 'Bench press', 'Actual weight', '');
-    expect(store.activeWorkoutSession!.results.first.actualWeight, isNull);
+  testWidgets('logging a set clears fields and shows the logged set', (
+    tester,
+  ) async {
+    final store = AppStore();
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await pumpWorkoutScreen(tester, store: store);
+    await openActiveWorkout(tester);
+    await openExercise(tester, 'Bench press');
+
+    await enterWorkoutSet(tester, reps: '8', weight: '65', time: '');
+    await tester.tap(find.text('Log set'));
+    await tester.pumpAndSettle();
+
+    expect(store.activeWorkoutSession!.results.first.setLogs, hasLength(1));
+    expect(find.text('Set 1'), findsOneWidget);
+    expect(find.textContaining('8'), findsWidgets);
+    expect(find.textContaining('65'), findsWidgets);
+
+    final fields = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .toList();
+    final repsField = fields[0];
+    final weightField = fields[1];
+    final timeField = fields[2];
+
+    expect(repsField.controller?.text, isEmpty);
+    expect(weightField.controller?.text, isEmpty);
+    expect(timeField.controller?.text, isEmpty);
+  });
+
+  testWidgets('multiple set logs accumulate', (tester) async {
+    final store = AppStore();
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await pumpWorkoutScreen(tester, store: store);
+    await openActiveWorkout(tester);
+    await openExercise(tester, 'Bench press');
+
+    await enterWorkoutSet(tester, reps: '8', weight: '65', time: '');
+    await tester.tap(find.text('Log set'));
+    await tester.pumpAndSettle();
+
+    await enterWorkoutSet(tester, reps: '6', weight: '67.5', time: '');
+    await tester.tap(find.text('Log set'));
+    await tester.pumpAndSettle();
+
+    expect(store.activeWorkoutSession!.results.first.setLogs, hasLength(2));
+    expect(find.text('Set 1'), findsOneWidget);
+    expect(find.text('Set 2'), findsOneWidget);
+  });
+
+  testWidgets('finishing from session screen returns to workout overview', (
+    tester,
+  ) async {
+    final store = AppStore();
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await pumpWorkoutScreen(tester, store: store);
+    await openActiveWorkout(tester);
 
     await tester.tap(find.text('Finish workout'));
     await tester.pumpAndSettle();
 
     expect(store.activeWorkoutSession, isNull);
-    expect(store.completedWorkoutSessions, hasLength(1));
+    expect(find.text('Workout session'), findsNothing);
     expect(find.text('Active workout'), findsNothing);
-    expect(find.text('Latest workout: Chest day'), findsOneWidget);
+    expect(find.text('Workout stats'), findsOneWidget);
     expect(find.text('Completed sessions: 1'), findsOneWidget);
-    expect(find.text('Chest day'), findsWidgets);
+    expect(find.text('Latest workout: Chest day'), findsOneWidget);
   });
 }

@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/training_plan.dart';
-import '../models/workout_session.dart';
 import '../state/app_store.dart';
+import 'workout_session_screen.dart';
 
 class WorkoutScreen extends StatefulWidget {
   const WorkoutScreen({
@@ -93,29 +93,32 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    activeSession.trainingPlanName,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Elapsed time: ${_formatDuration(activeSession.duration)}',
-                  ),
-                  const SizedBox(height: 16),
-                  ...activeSession.results.indexed.map((entry) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _WorkoutResultCard(
-                        resultIndex: entry.$1,
-                        result: entry.$2,
-                        store: widget.store,
+                  Tooltip(
+                    message: 'Open active workout',
+                    child: Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => _openActiveWorkout(context),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                activeSession.trainingPlanName,
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Elapsed time: ${_formatDuration(activeSession.duration)}',
+                              ),
+                              const SizedBox(height: 4),
+                              Text('${activeSession.results.length} exercises'),
+                            ],
+                          ),
+                        ),
                       ),
-                    );
-                  }),
-                  const SizedBox(height: 4),
-                  FilledButton(
-                    onPressed: () => _finishWorkout(context),
-                    child: const Text('Finish workout'),
+                    ),
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -212,14 +215,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }
   }
 
-  Future<void> _finishWorkout(BuildContext context) async {
-    try {
-      widget.store.finishActiveWorkout();
-    } on Object catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
-    }
+  Future<void> _openActiveWorkout(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => WorkoutSessionScreen(store: widget.store),
+      ),
+    );
   }
 
   String _formatDuration(Duration duration) {
@@ -232,225 +233,5 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       return '${duration.inMinutes} min';
     }
     return '0 min';
-  }
-}
-
-class _WorkoutResultCard extends StatelessWidget {
-  const _WorkoutResultCard({
-    required this.resultIndex,
-    required this.result,
-    required this.store,
-  });
-
-  final int resultIndex;
-  final WorkoutExerciseResult result;
-  final AppStore store;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              result.exerciseName,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 4),
-            Text(_formatTarget(result.target)),
-            const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final fieldWidth = constraints.maxWidth >= 640
-                    ? 180.0
-                    : constraints.maxWidth;
-                return Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _WorkoutResultField(
-                      width: fieldWidth,
-                      label: 'Actual sets',
-                      value: result.actualSets,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      onChanged: (text) {
-                        _updateResult(
-                          updateSets: true,
-                          sets: _parseNumber(text),
-                        );
-                      },
-                    ),
-                    _WorkoutResultField(
-                      width: fieldWidth,
-                      label: 'Actual reps',
-                      value: result.actualReps,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      onChanged: (text) {
-                        _updateResult(
-                          updateReps: true,
-                          reps: _parseNumber(text),
-                        );
-                      },
-                    ),
-                    _WorkoutResultField(
-                      width: fieldWidth,
-                      label: 'Actual weight',
-                      value: result.actualWeight,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      onChanged: (text) {
-                        _updateResult(
-                          updateWeight: true,
-                          weight: _parseNumber(text),
-                        );
-                      },
-                    ),
-                    _WorkoutResultField(
-                      width: fieldWidth,
-                      label: 'Actual time',
-                      value: result.actualTime,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      onChanged: (text) {
-                        _updateResult(
-                          updateTime: true,
-                          time: _parseNumber(text),
-                        );
-                      },
-                    ),
-                    _WorkoutResultField(
-                      width: fieldWidth,
-                      label: 'Actual unit',
-                      value: result.actualUnit,
-                      keyboardType: TextInputType.text,
-                      onChanged: (text) {
-                        _updateResult(
-                          unit: text.trim().isEmpty ? result.actualUnit : text,
-                        );
-                      },
-                    ),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _updateResult({
-    bool updateSets = false,
-    double? sets,
-    bool updateReps = false,
-    double? reps,
-    bool updateWeight = false,
-    double? weight,
-    bool updateTime = false,
-    double? time,
-    String? unit,
-  }) {
-    final session = store.activeWorkoutSession;
-    if (session == null ||
-        resultIndex < 0 ||
-        resultIndex >= session.results.length) {
-      return;
-    }
-    final current = session.results[resultIndex];
-    try {
-      store.updateActiveWorkoutResult(
-        resultIndex: resultIndex,
-        actualSets: updateSets ? sets : current.actualSets,
-        actualReps: updateReps ? reps : current.actualReps,
-        actualWeight: updateWeight ? weight : current.actualWeight,
-        actualTime: updateTime ? time : current.actualTime,
-        actualUnit: unit ?? current.actualUnit,
-      );
-    } on Object {
-      // Ignore transient invalid input while the user edits a field.
-    }
-  }
-
-  double? _parseNumber(String text) {
-    final normalized = text.trim();
-    if (normalized.isEmpty) {
-      return null;
-    }
-    return double.tryParse(normalized) ?? double.nan;
-  }
-
-  String _formatTarget(TrainingExercise target) {
-    final parts = <String>[];
-    if (target.sets != null) {
-      parts.add('${_formatNumber(target.sets!)} sets');
-    }
-    if (target.reps != null) {
-      parts.add('${_formatNumber(target.reps!)} reps');
-    }
-    if (target.weight != null) {
-      parts.add('${_formatNumber(target.weight!)} ${target.unit}');
-    } else if (target.time != null) {
-      parts.add('${_formatNumber(target.time!)} ${target.unit}');
-    } else if (parts.isEmpty) {
-      parts.add(target.unit);
-    }
-    return 'Target: ${parts.join(' • ')}';
-  }
-
-  String _formatNumber(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    return value.toStringAsFixed(1);
-  }
-}
-
-class _WorkoutResultField extends StatelessWidget {
-  const _WorkoutResultField({
-    required this.width,
-    required this.label,
-    required this.value,
-    required this.keyboardType,
-    required this.onChanged,
-  });
-
-  final double width;
-  final String label;
-  final Object? value;
-  final TextInputType keyboardType;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: TextFormField(
-        initialValue: _formatValue(value),
-        keyboardType: keyboardType,
-        decoration: InputDecoration(labelText: label),
-        onChanged: onChanged,
-      ),
-    );
-  }
-
-  String _formatValue(Object? value) {
-    if (value == null) {
-      return '';
-    }
-    if (value is double) {
-      if (value == value.roundToDouble()) {
-        return value.toStringAsFixed(0);
-      }
-      return value.toStringAsFixed(1);
-    }
-    return value.toString();
   }
 }

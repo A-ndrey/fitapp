@@ -359,7 +359,7 @@ class AppStore extends ChangeNotifier {
           exerciseId: exercise.id,
           exerciseName: exercise.name,
           target: plannedExercise,
-          actualUnit: plannedExercise.unit,
+          setLogs: const [],
         ),
       );
     }
@@ -375,13 +375,9 @@ class AppStore extends ChangeNotifier {
     return session;
   }
 
-  void updateActiveWorkoutResult({
+  void addActiveWorkoutSet({
     required int resultIndex,
-    required double? actualSets,
-    required double? actualReps,
-    required double? actualWeight,
-    required double? actualTime,
-    required String actualUnit,
+    required WorkoutSetLog setLog,
   }) {
     final session = _activeWorkoutSession;
     if (session == null) {
@@ -390,24 +386,22 @@ class AppStore extends ChangeNotifier {
     if (resultIndex < 0 || resultIndex >= session.results.length) {
       throw RangeError.index(resultIndex, session.results, 'resultIndex');
     }
-    _validateOptionalNonNegative(actualSets, 'sets');
-    _validateOptionalNonNegative(actualReps, 'reps');
-    _validateOptionalNonNegative(actualWeight, 'weight');
-    _validateOptionalNonNegative(actualTime, 'time');
-    if (actualUnit.trim().isEmpty) {
-      throw ArgumentError('Workout result unit must not be empty.');
+    if (setLog.reps == null && setLog.weight == null && setLog.time == null) {
+      throw ArgumentError('Workout set log must include at least one value.');
     }
+    _validateOptionalNonNegative(setLog.reps, 'reps');
+    _validateOptionalNonNegative(setLog.weight, 'weight');
+    _validateOptionalNonNegative(setLog.time, 'time');
     final updatedResults = List<WorkoutExerciseResult>.of(session.results);
     final current = updatedResults[resultIndex];
     updatedResults[resultIndex] = WorkoutExerciseResult(
       exerciseId: current.exerciseId,
       exerciseName: current.exerciseName,
       target: current.target,
-      actualSets: actualSets,
-      actualReps: actualReps,
-      actualWeight: actualWeight,
-      actualTime: actualTime,
-      actualUnit: actualUnit,
+      setLogs: List<WorkoutSetLog>.unmodifiable(<WorkoutSetLog>[
+        ...current.setLogs,
+        setLog,
+      ]),
     );
     _activeWorkoutSession = session.copyWith(
       results: List<WorkoutExerciseResult>.unmodifiable(updatedResults),

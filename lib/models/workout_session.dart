@@ -1,45 +1,45 @@
 import 'training_plan.dart';
 
+class WorkoutSetLog {
+  const WorkoutSetLog({this.reps, this.weight, this.time});
+
+  final double? reps;
+  final double? weight;
+  final double? time;
+
+  WorkoutSetLog copyWith({double? reps, double? weight, double? time}) {
+    return WorkoutSetLog(
+      reps: reps ?? this.reps,
+      weight: weight ?? this.weight,
+      time: time ?? this.time,
+    );
+  }
+}
+
 class WorkoutExerciseResult {
   const WorkoutExerciseResult({
     required this.exerciseId,
     required this.exerciseName,
     required this.target,
-    this.actualSets,
-    this.actualReps,
-    this.actualWeight,
-    this.actualTime,
-    required this.actualUnit,
+    required this.setLogs,
   });
 
   final String exerciseId;
   final String exerciseName;
   final TrainingExercise target;
-  final double? actualSets;
-  final double? actualReps;
-  final double? actualWeight;
-  final double? actualTime;
-  final String actualUnit;
+  final List<WorkoutSetLog> setLogs;
 
   WorkoutExerciseResult copyWith({
     String? exerciseId,
     String? exerciseName,
     TrainingExercise? target,
-    double? actualSets,
-    double? actualReps,
-    double? actualWeight,
-    double? actualTime,
-    String? actualUnit,
+    List<WorkoutSetLog>? setLogs,
   }) {
     return WorkoutExerciseResult(
       exerciseId: exerciseId ?? this.exerciseId,
       exerciseName: exerciseName ?? this.exerciseName,
       target: target ?? this.target,
-      actualSets: actualSets ?? this.actualSets,
-      actualReps: actualReps ?? this.actualReps,
-      actualWeight: actualWeight ?? this.actualWeight,
-      actualTime: actualTime ?? this.actualTime,
-      actualUnit: actualUnit ?? this.actualUnit,
+      setLogs: setLogs ?? this.setLogs,
     );
   }
 }

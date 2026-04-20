@@ -3,6 +3,7 @@ import 'package:fitapp/models/exercise.dart';
 import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/models/training_plan.dart';
+import 'package:fitapp/models/workout_session.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -491,6 +492,7 @@ void main() {
     expect(session.trainingPlanName, 'Chest day');
     expect(session.results.first.exerciseName, 'Bench press');
     expect(session.results.first.target.weight, 60);
+    expect(session.results.first.setLogs, isEmpty);
     expect(store.activeWorkoutSession!.trainingPlanName, 'Chest day');
     expect(
       () => store.startWorkout(
@@ -502,33 +504,84 @@ void main() {
     expect(() => store.deleteTrainingPlan('chest-day'), throwsStateError);
   });
 
-  test('updates active workout results and finishes with stats', () {
+  test('appends multiple set logs to one workout result', () {
     final store = AppStore();
 
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),
     );
-    store.updateActiveWorkoutResult(
+    store.addActiveWorkoutSet(
       resultIndex: 0,
-      actualSets: 3,
-      actualReps: 8,
-      actualWeight: 62.5,
-      actualTime: null,
-      actualUnit: 'kg',
+      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+    );
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: const WorkoutSetLog(reps: 6, weight: 65),
     );
 
-    expect(store.activeWorkoutSession!.results.first.actualWeight, 62.5);
+    expect(store.activeWorkoutSession!.results.first.setLogs, hasLength(2));
+    expect(store.activeWorkoutSession!.results.first.setLogs.first.reps, 8);
     expect(
-      () => store.updateActiveWorkoutResult(
+      store.activeWorkoutSession!.results.first.setLogs.first.weight,
+      62.5,
+    );
+    expect(store.activeWorkoutSession!.results.first.setLogs.last.reps, 6);
+    expect(store.activeWorkoutSession!.results.first.setLogs.last.weight, 65);
+  });
+
+  test('rejects invalid workout set logs', () {
+    final store = AppStore();
+
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    expect(
+      () => store.addActiveWorkoutSet(
         resultIndex: 0,
-        actualSets: double.infinity,
-        actualReps: 8,
-        actualWeight: 62.5,
-        actualTime: null,
-        actualUnit: 'kg',
+        setLog: const WorkoutSetLog(),
       ),
       throwsArgumentError,
+    );
+    expect(
+      () => store.addActiveWorkoutSet(
+        resultIndex: 0,
+        setLog: const WorkoutSetLog(reps: double.infinity),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.addActiveWorkoutSet(
+        resultIndex: 0,
+        setLog: const WorkoutSetLog(weight: -1),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.addActiveWorkoutSet(
+        resultIndex: 0,
+        setLog: const WorkoutSetLog(time: double.nan),
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('finished history preserves workout set logs', () {
+    final store = AppStore();
+
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+    );
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: const WorkoutSetLog(reps: 6, weight: 65),
     );
 
     final finished = store.finishActiveWorkout(
@@ -537,12 +590,54 @@ void main() {
 
     expect(store.activeWorkoutSession, isNull);
     expect(store.completedWorkoutSessions.single.id, finished.id);
+    expect(
+      store.completedWorkoutSessions.single.results.first.setLogs,
+      hasLength(2),
+    );
+    expect(
+      store.completedWorkoutSessions.single.results.first.setLogs.first.reps,
+      8,
+    );
+    expect(
+      store.completedWorkoutSessions.single.results.first.setLogs.last.weight,
+      65,
+    );
     expect(finished.finishedAt, DateTime(2026, 4, 19, 10, 45));
     expect(store.workoutStats.completedCount, 1);
     expect(store.workoutStats.totalDuration, const Duration(minutes: 45));
     expect(store.workoutStats.latestSession!.trainingPlanName, 'Chest day');
     expect(() => store.finishActiveWorkout(), throwsStateError);
   });
+
+  test(
+    'exercise rename after start does not change active or completed names',
+    () {
+      final store = AppStore();
+
+      final session = store.startWorkout(
+        trainingPlanId: 'chest-day',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
+      store.updateExercise(
+        store
+            .exerciseById('bench-press')!
+            .copyWith(name: 'Changed bench press'),
+      );
+
+      expect(session.results.first.exerciseName, 'Bench press');
+      expect(
+        store.activeWorkoutSession!.results.first.exerciseName,
+        'Bench press',
+      );
+
+      store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
+
+      expect(
+        store.completedWorkoutSessions.single.results.first.exerciseName,
+        'Bench press',
+      );
+    },
+  );
 
   test('AppStore.empty creates food and searches by name or description', () {
     final store = AppStore.empty();
