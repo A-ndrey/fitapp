@@ -1,3 +1,4 @@
+import 'package:fitapp/main.dart';
 import 'package:fitapp/screens/workout_screen.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:flutter/material.dart';
@@ -174,5 +175,39 @@ void main() {
     expect(find.text('Workout stats'), findsOneWidget);
     expect(find.text('Completed sessions: 1'), findsOneWidget);
     expect(find.text('Latest workout: Chest day'), findsOneWidget);
+  });
+
+  testWidgets('finishes active session after switching tabs', (tester) async {
+    final store = AppStore();
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await tester.pumpWidget(MaterialApp(home: FitHome(store: store)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Active workout'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.fitness_center_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Training plans'), findsOneWidget);
+    expect(find.text('Active workout'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.timer_outlined));
+    await tester.pumpAndSettle();
+    await openActiveWorkout(tester);
+
+    expect(find.text('Workout session'), findsOneWidget);
+
+    await tester.tap(find.text('Finish workout'));
+    await tester.pumpAndSettle();
+
+    expect(store.activeWorkoutSession, isNull);
+    expect(store.completedWorkoutSessions, hasLength(1));
+    expect(find.text('Workout session'), findsNothing);
+    expect(find.text('Workout stats'), findsOneWidget);
+    expect(find.text('Completed sessions: 1'), findsOneWidget);
   });
 }

@@ -19,6 +19,7 @@ class MealScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: const Text('Meal')),
           floatingActionButton: FloatingActionButton(
+            heroTag: 'add-meal-fab',
             tooltip: 'Add meal item',
             onPressed: () => _openAddMealFlow(context),
             child: const Icon(Icons.add),

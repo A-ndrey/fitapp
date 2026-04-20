@@ -28,6 +28,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
         return Scaffold(
           appBar: AppBar(title: const Text('Trainings')),
           floatingActionButton: FloatingActionButton(
+            heroTag: 'trainings-action-fab',
             tooltip: _selectedView == _TrainingsView.plans
                 ? 'Add training plan'
                 : 'Add exercise',

@@ -77,6 +77,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           appBar: AppBar(title: const Text('Workout')),
           floatingActionButton: activeSession == null
               ? FloatingActionButton.extended(
+                  heroTag: 'start-workout-fab',
                   tooltip: 'Start workout',
                   onPressed: () => _openStartWorkoutPicker(context),
                   icon: const Icon(Icons.play_arrow),
