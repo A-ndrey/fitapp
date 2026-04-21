@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/training_plan.dart';
@@ -11,10 +12,12 @@ class WorkoutScreen extends StatefulWidget {
     super.key,
     required this.store,
     this.isCurrentTab = true,
+    this.isCurrentTabListenable,
   });
 
   final AppStore store;
   final bool isCurrentTab;
+  final ValueListenable<bool>? isCurrentTabListenable;
 
   @override
   State<WorkoutScreen> createState() => _WorkoutScreenState();
@@ -22,24 +25,31 @@ class WorkoutScreen extends StatefulWidget {
 
 class _WorkoutScreenState extends State<WorkoutScreen> {
   Timer? _timer;
+  bool get _isCurrentTab =>
+      widget.isCurrentTabListenable?.value ?? widget.isCurrentTab;
 
   @override
   void initState() {
     super.initState();
     widget.store.addListener(_syncTimer);
+    widget.isCurrentTabListenable?.addListener(_syncTimer);
     _syncTimer();
   }
 
   @override
   void didUpdateWidget(covariant WorkoutScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.store == widget.store) {
-      if (oldWidget.isCurrentTab != widget.isCurrentTab) {
-        _syncTimer();
-      }
-    } else {
+    if (oldWidget.store != widget.store) {
       oldWidget.store.removeListener(_syncTimer);
       widget.store.addListener(_syncTimer);
+    }
+    if (oldWidget.isCurrentTabListenable != widget.isCurrentTabListenable) {
+      oldWidget.isCurrentTabListenable?.removeListener(_syncTimer);
+      widget.isCurrentTabListenable?.addListener(_syncTimer);
+    }
+    if (oldWidget.isCurrentTab != widget.isCurrentTab ||
+        oldWidget.store != widget.store ||
+        oldWidget.isCurrentTabListenable != widget.isCurrentTabListenable) {
       _syncTimer();
     }
   }
@@ -47,13 +57,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   @override
   void dispose() {
     widget.store.removeListener(_syncTimer);
+    widget.isCurrentTabListenable?.removeListener(_syncTimer);
     _timer?.cancel();
     super.dispose();
   }
 
   void _syncTimer() {
     final hasActiveSession =
-        widget.isCurrentTab && widget.store.activeWorkoutSession != null;
+        _isCurrentTab && widget.store.activeWorkoutSession != null;
     if (!hasActiveSession) {
       _timer?.cancel();
       _timer = null;

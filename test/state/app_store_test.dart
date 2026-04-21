@@ -29,6 +29,12 @@ void main() {
 
     expect(store.exercises, hasLength(greaterThanOrEqualTo(5)));
     expect(store.searchExercises('push').single.name, 'Pushups');
+    expect(store.searchExercises('cardio'), isNotEmpty);
+    expect(store.searchExercises('legs'), isNotEmpty);
+    expect(
+      store.exerciseById('pushups')!.muscleGroups,
+      contains(MuscleGroup.chest),
+    );
     expect(store.trainingPlans, hasLength(greaterThanOrEqualTo(2)));
     expect(store.trainingPlans.any((plan) => plan.name == 'Chest day'), isTrue);
   });
@@ -50,7 +56,7 @@ void main() {
         name: 'Pushups',
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: ['Chest', 'Triceps'],
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
       ),
     );
 
@@ -82,7 +88,7 @@ void main() {
         name: 'Pushups',
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: ['Chest', 'Triceps'],
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
       ),
     );
 
@@ -92,7 +98,7 @@ void main() {
         name: 'Incline pushups',
         description: 'Updated push exercise',
         instruction: 'Use a bench and keep a rigid plank.',
-        muscleGroups: ['Chest'],
+        muscleGroups: [MuscleGroup.chest],
       ),
     );
 
@@ -108,7 +114,7 @@ void main() {
         name: 'Pushups',
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: ['Chest', 'Triceps'],
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
       ),
     );
 
@@ -119,7 +125,7 @@ void main() {
           name: 'Broken',
           description: 'Broken',
           instruction: 'Broken',
-          muscleGroups: ['Chest'],
+          muscleGroups: [MuscleGroup.chest],
         ),
       ),
       throwsArgumentError,
@@ -131,7 +137,7 @@ void main() {
           name: 'Missing',
           description: 'Missing',
           instruction: 'Missing',
-          muscleGroups: ['Chest'],
+          muscleGroups: [MuscleGroup.chest],
         ),
       ),
       throwsArgumentError,
@@ -147,14 +153,14 @@ void main() {
         name: 'Missing description',
         description: '',
         instruction: 'Do the movement.',
-        muscleGroups: ['Core'],
+        muscleGroups: [MuscleGroup.core],
       ),
       const Exercise(
         id: 'missing-instruction',
         name: 'Missing instruction',
         description: 'Core work',
         instruction: '',
-        muscleGroups: ['Core'],
+        muscleGroups: [MuscleGroup.core],
       ),
       const Exercise(
         id: 'missing-muscles',
@@ -162,13 +168,6 @@ void main() {
         description: 'Core work',
         instruction: 'Do the movement.',
         muscleGroups: [],
-      ),
-      const Exercise(
-        id: 'blank-muscle',
-        name: 'Blank muscle',
-        description: 'Core work',
-        instruction: 'Do the movement.',
-        muscleGroups: ['Core', ''],
       ),
     ]) {
       expect(() => store.createExercise(exercise), throwsArgumentError);
@@ -183,7 +182,7 @@ void main() {
         name: 'Pushups',
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: ['Chest', 'Triceps'],
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
       ),
     );
 
@@ -202,7 +201,7 @@ void main() {
         name: 'Pushups',
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: ['Chest', 'Triceps'],
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
       ),
     );
     store.createTrainingPlan(
@@ -232,7 +231,7 @@ void main() {
         name: 'Pushups',
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: ['Chest', 'Triceps'],
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
       ),
     );
     store.createTrainingPlan(
@@ -263,7 +262,7 @@ void main() {
         name: 'Incline pushups',
         description: 'Updated push exercise',
         instruction: 'Use a bench and keep a rigid plank.',
-        muscleGroups: ['Chest'],
+        muscleGroups: [MuscleGroup.chest],
       ),
     );
 
@@ -284,7 +283,7 @@ void main() {
         name: 'Pushups',
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: ['Chest', 'Triceps'],
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
       ),
     );
     store.createTrainingPlan(
@@ -327,7 +326,7 @@ void main() {
         name: 'Pushups',
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: ['Chest'],
+        muscleGroups: [MuscleGroup.chest],
       ),
     );
     store.createTrainingPlan(
@@ -378,7 +377,7 @@ void main() {
         name: 'Pushups',
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: ['Chest'],
+        muscleGroups: [MuscleGroup.chest],
       ),
     );
     const validPlan = TrainingPlan(

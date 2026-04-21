@@ -285,11 +285,11 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     return '$exerciseLabel\n$description';
   }
 
-  String _summarizeMuscleGroups(List<String> muscleGroups) {
+  String _summarizeMuscleGroups(List<MuscleGroup> muscleGroups) {
     if (muscleGroups.isEmpty) {
       return 'Muscles: -';
     }
-    return muscleGroups.join(', ');
+    return muscleGroups.map((group) => group.label).join(', ');
   }
 }
 
@@ -307,7 +307,7 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _instructionController;
-  late final TextEditingController _muscleGroupsController;
+  final Set<MuscleGroup> _selectedMuscleGroups = <MuscleGroup>{};
   String? _errorText;
 
   bool get _isEditing => widget.initialExercise != null;
@@ -323,9 +323,7 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
     _instructionController = TextEditingController(
       text: exercise?.instruction ?? '',
     );
-    _muscleGroupsController = TextEditingController(
-      text: exercise?.muscleGroups.join(', ') ?? '',
-    );
+    _selectedMuscleGroups.addAll(exercise?.muscleGroups ?? const []);
   }
 
   @override
@@ -333,7 +331,6 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
     _nameController.dispose();
     _descriptionController.dispose();
     _instructionController.dispose();
-    _muscleGroupsController.dispose();
     super.dispose();
   }
 
@@ -371,10 +368,33 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
                   labelText: 'Exercise instruction',
                 ),
               ),
-              TextField(
-                controller: _muscleGroupsController,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(labelText: 'Muscle groups'),
+              const SizedBox(height: 12),
+              Text(
+                'Select muscle groups',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: MuscleGroup.values
+                    .map((muscleGroup) {
+                      return FilterChip(
+                        label: Text(muscleGroup.label),
+                        selected: _selectedMuscleGroups.contains(muscleGroup),
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedMuscleGroups.add(muscleGroup);
+                            } else {
+                              _selectedMuscleGroups.remove(muscleGroup);
+                            }
+                            _errorText = null;
+                          });
+                        },
+                      );
+                    })
+                    .toList(growable: false),
               ),
               if (_errorText != null) ...[
                 const SizedBox(height: 12),
@@ -404,7 +424,7 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
     final name = _nameController.text.trim();
     final description = _descriptionController.text.trim();
     final instruction = _instructionController.text.trim();
-    final muscleGroups = _parseMuscleGroups(_muscleGroupsController.text);
+    final muscleGroups = _selectedMuscleGroups.toList(growable: false);
     if (name.isEmpty ||
         description.isEmpty ||
         instruction.isEmpty ||
@@ -449,14 +469,6 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
       return;
     }
     Navigator.of(context).pop();
-  }
-
-  List<String> _parseMuscleGroups(String input) {
-    return input
-        .split(',')
-        .map((group) => group.trim())
-        .where((group) => group.isNotEmpty)
-        .toList(growable: false);
   }
 }
 

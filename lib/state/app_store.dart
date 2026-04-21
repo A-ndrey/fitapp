@@ -107,7 +107,11 @@ class AppStore extends ChangeNotifier {
         name: 'Pushups',
         description: 'Bodyweight horizontal push',
         instruction: 'Lower under control and press back to a straight plank.',
-        muscleGroups: ['Chest', 'Triceps', 'Shoulders'],
+        muscleGroups: [
+          MuscleGroup.chest,
+          MuscleGroup.triceps,
+          MuscleGroup.shoulders,
+        ],
       ),
     );
     createExercise(
@@ -116,7 +120,11 @@ class AppStore extends ChangeNotifier {
         name: 'Bench press',
         description: 'Barbell chest press',
         instruction: 'Keep shoulder blades set and press the bar vertically.',
-        muscleGroups: ['Chest', 'Triceps', 'Shoulders'],
+        muscleGroups: [
+          MuscleGroup.chest,
+          MuscleGroup.triceps,
+          MuscleGroup.shoulders,
+        ],
       ),
     );
     createExercise(
@@ -125,7 +133,7 @@ class AppStore extends ChangeNotifier {
         name: 'Squat',
         description: 'Barbell lower-body compound lift',
         instruction: 'Brace, descend with control, and stand through mid-foot.',
-        muscleGroups: ['Quads', 'Glutes', 'Core'],
+        muscleGroups: [MuscleGroup.quads, MuscleGroup.glutes, MuscleGroup.core],
       ),
     );
     createExercise(
@@ -134,7 +142,7 @@ class AppStore extends ChangeNotifier {
         name: 'Plank',
         description: 'Static core hold',
         instruction: 'Hold a straight line without letting hips sag.',
-        muscleGroups: ['Core'],
+        muscleGroups: [MuscleGroup.core],
       ),
     );
     createExercise(
@@ -143,7 +151,7 @@ class AppStore extends ChangeNotifier {
         name: 'Running',
         description: 'Steady cardio work',
         instruction: 'Keep a sustainable pace and relaxed posture.',
-        muscleGroups: ['Cardio', 'Legs'],
+        muscleGroups: [MuscleGroup.cardio, MuscleGroup.legs],
       ),
     );
   }
@@ -267,7 +275,7 @@ class AppStore extends ChangeNotifier {
               exercise.name.toLowerCase().contains(normalizedQuery) ||
               exercise.description.toLowerCase().contains(normalizedQuery) ||
               exercise.muscleGroups.any(
-                (group) => group.toLowerCase().contains(normalizedQuery),
+                (group) => group.label.toLowerCase().contains(normalizedQuery),
               ),
         )
         .toList(growable: false);
@@ -586,11 +594,6 @@ class AppStore extends ChangeNotifier {
     if (exercise.muscleGroups.isEmpty) {
       throw ArgumentError('Exercise must have at least one muscle group.');
     }
-    for (final muscleGroup in exercise.muscleGroups) {
-      if (muscleGroup.trim().isEmpty) {
-        throw ArgumentError('Exercise muscle groups must not be empty.');
-      }
-    }
   }
 
   void _validateTrainingPlan(TrainingPlan plan) {
@@ -781,8 +784,8 @@ class AppStore extends ChangeNotifier {
       name: exercise.name,
       description: exercise.description,
       instruction: exercise.instruction,
-      muscleGroups: List<String>.unmodifiable(
-        List<String>.of(exercise.muscleGroups),
+      muscleGroups: List<MuscleGroup>.unmodifiable(
+        List<MuscleGroup>.of(exercise.muscleGroups),
       ),
     );
   }

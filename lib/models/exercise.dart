@@ -1,3 +1,24 @@
+enum MuscleGroup {
+  chest('Chest'),
+  back('Back'),
+  shoulders('Shoulders'),
+  biceps('Biceps'),
+  triceps('Triceps'),
+  forearms('Forearms'),
+  core('Core'),
+  glutes('Glutes'),
+  legs('Legs'),
+  quads('Quads'),
+  hamstrings('Hamstrings'),
+  calves('Calves'),
+  cardio('Cardio'),
+  fullBody('Full body');
+
+  const MuscleGroup(this.label);
+
+  final String label;
+}
+
 class Exercise {
   const Exercise({
     required this.id,
@@ -11,14 +32,14 @@ class Exercise {
   final String name;
   final String description;
   final String instruction;
-  final List<String> muscleGroups;
+  final List<MuscleGroup> muscleGroups;
 
   Exercise copyWith({
     String? id,
     String? name,
     String? description,
     String? instruction,
-    List<String>? muscleGroups,
+    List<MuscleGroup>? muscleGroups,
   }) {
     return Exercise(
       id: id ?? this.id,

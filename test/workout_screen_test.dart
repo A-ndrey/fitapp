@@ -210,4 +210,42 @@ void main() {
     expect(find.text('Workout stats'), findsOneWidget);
     expect(find.text('Completed sessions: 1'), findsOneWidget);
   });
+
+  testWidgets('keeps workout tab visible on session and exercise screens', (
+    tester,
+  ) async {
+    final store = AppStore();
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await tester.pumpWidget(MaterialApp(home: FitHome(store: store)));
+    await tester.pumpAndSettle();
+
+    await openActiveWorkout(tester);
+
+    expect(find.text('Workout session'), findsOneWidget);
+    expect(find.text('Workout'), findsWidgets);
+    expect(find.text('Trainings'), findsWidgets);
+    expect(find.text('Meal'), findsWidgets);
+    expect(find.text('Food'), findsWidgets);
+
+    await openExercise(tester, 'Bench press');
+
+    expect(find.text('Workout exercise'), findsOneWidget);
+    expect(find.text('Workout'), findsWidgets);
+    expect(find.text('Trainings'), findsWidgets);
+
+    await tester.tap(find.byIcon(Icons.fitness_center_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Training plans'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.timer_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Workout exercise'), findsOneWidget);
+    expect(find.text('Bench press'), findsOneWidget);
+  });
 }

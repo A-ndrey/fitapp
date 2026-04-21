@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'screens/food_screen.dart';
@@ -54,11 +55,21 @@ class FitHome extends StatefulWidget {
 
 class _FitHomeState extends State<FitHome> {
   int _selectedIndex = 0;
+  final ValueNotifier<bool> _isWorkoutTabCurrent = ValueNotifier<bool>(true);
+
+  @override
+  void dispose() {
+    _isWorkoutTabCurrent.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final screens = <Widget>[
-      WorkoutScreen(store: widget.store, isCurrentTab: _selectedIndex == 0),
+      _WorkoutTabNavigator(
+        store: widget.store,
+        isCurrentTabListenable: _isWorkoutTabCurrent,
+      ),
       TrainingsScreen(store: widget.store),
       MealScreen(store: widget.store),
       FoodScreen(store: widget.store),
@@ -69,6 +80,7 @@ class _FitHomeState extends State<FitHome> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
+          _isWorkoutTabCurrent.value = index == 0;
           setState(() {
             _selectedIndex = index;
           });
@@ -89,6 +101,32 @@ class _FitHomeState extends State<FitHome> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _WorkoutTabNavigator extends StatelessWidget {
+  const _WorkoutTabNavigator({
+    required this.store,
+    required this.isCurrentTabListenable,
+  });
+
+  final AppStore store;
+  final ValueListenable<bool> isCurrentTabListenable;
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      onGenerateRoute: (settings) {
+        return MaterialPageRoute<void>(
+          builder: (context) {
+            return WorkoutScreen(
+              store: store,
+              isCurrentTabListenable: isCurrentTabListenable,
+            );
+          },
+        );
+      },
     );
   }
 }

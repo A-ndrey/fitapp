@@ -62,7 +62,18 @@ void main() {
     await enterLabeledText(tester, 'Exercise name', name);
     await enterLabeledText(tester, 'Exercise description', description);
     await enterLabeledText(tester, 'Exercise instruction', instruction);
-    await enterLabeledText(tester, 'Muscle groups', muscleGroups);
+    for (final group in muscleGroups.split(',')) {
+      final label = group.trim();
+      if (label.isEmpty) {
+        continue;
+      }
+      final chip = find.widgetWithText(FilterChip, label);
+      await tester.ensureVisible(chip);
+      if (!tester.widget<FilterChip>(chip).selected) {
+        await tester.tap(chip);
+        await tester.pumpAndSettle();
+      }
+    }
   }
 
   Future<void> tapTooltip(WidgetTester tester, String tooltip) async {
@@ -189,6 +200,21 @@ void main() {
     expect(find.byTooltip('Add exercise'), findsOneWidget);
     expect(find.byTooltip('Edit Pushups'), findsOneWidget);
     expect(find.byTooltip('Delete Pushups'), findsOneWidget);
+  });
+
+  testWidgets('exercise form uses predefined muscle group choices', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await openExercisesView(tester);
+    await openExerciseForm(tester);
+
+    expect(find.bySemanticsLabel('Muscle groups'), findsNothing);
+    expect(find.widgetWithText(FilterChip, 'Full body'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'Cardio'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'Legs'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'Core'), findsOneWidget);
   });
 
   testWidgets('creates a custom exercise and shows it in the plan picker', (
