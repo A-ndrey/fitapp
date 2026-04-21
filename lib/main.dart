@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'screens/food_screen.dart';
 import 'screens/meal_screen.dart';
+import 'screens/trainings_screen.dart';
+import 'screens/workout_screen.dart';
 import 'state/app_store.dart';
 
 void main() {
@@ -52,10 +55,22 @@ class FitHome extends StatefulWidget {
 
 class _FitHomeState extends State<FitHome> {
   int _selectedIndex = 0;
+  final ValueNotifier<bool> _isWorkoutTabCurrent = ValueNotifier<bool>(true);
+
+  @override
+  void dispose() {
+    _isWorkoutTabCurrent.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final screens = <Widget>[
+      _WorkoutTabNavigator(
+        store: widget.store,
+        isCurrentTabListenable: _isWorkoutTabCurrent,
+      ),
+      TrainingsScreen(store: widget.store),
       MealScreen(store: widget.store),
       FoodScreen(store: widget.store),
     ];
@@ -65,11 +80,20 @@ class _FitHomeState extends State<FitHome> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
+          _isWorkoutTabCurrent.value = index == 0;
           setState(() {
             _selectedIndex = index;
           });
         },
         destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.timer_outlined),
+            label: 'Workout',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.fitness_center_outlined),
+            label: 'Trainings',
+          ),
           NavigationDestination(icon: Icon(Icons.restaurant), label: 'Meal'),
           NavigationDestination(
             icon: Icon(Icons.inventory_2_outlined),
@@ -77,6 +101,32 @@ class _FitHomeState extends State<FitHome> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _WorkoutTabNavigator extends StatelessWidget {
+  const _WorkoutTabNavigator({
+    required this.store,
+    required this.isCurrentTabListenable,
+  });
+
+  final AppStore store;
+  final ValueListenable<bool> isCurrentTabListenable;
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      onGenerateRoute: (settings) {
+        return MaterialPageRoute<void>(
+          builder: (context) {
+            return WorkoutScreen(
+              store: store,
+              isCurrentTabListenable: isCurrentTabListenable,
+            );
+          },
+        );
+      },
     );
   }
 }

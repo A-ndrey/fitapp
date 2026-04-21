@@ -20,6 +20,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> openTrainingsTab(WidgetTester tester) async {
+    await tester.tap(find.byIcon(Icons.fitness_center_outlined));
+    await tester.pumpAndSettle();
+  }
+
   Future<void> enterLabeledText(
     WidgetTester tester,
     String label,
@@ -65,6 +70,7 @@ void main() {
   }
 
   Future<void> logRice150g(WidgetTester tester) async {
+    await openMealTab(tester);
     await tester.tap(find.byTooltip('Add meal item'));
     await tester.pumpAndSettle();
     await tester.enterText(
@@ -109,16 +115,27 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('shows Meal and Food tabs with sample content', (tester) async {
+  testWidgets('shows Workout, Trainings, Meal and Food tabs', (tester) async {
     await tester.pumpWidget(const FitApp());
 
+    expect(find.text('Workout'), findsWidgets);
+    expect(find.text('Trainings'), findsWidgets);
     expect(find.text('Meal'), findsWidgets);
     expect(find.text('Food'), findsWidgets);
-    expect(find.text('Daily totals'), findsOneWidget);
+    expect(find.text('Workout stats'), findsOneWidget);
+    expect(find.text('Start workout'), findsOneWidget);
     expect(find.text('Chicken breast'), findsNothing);
 
-    await tester.tap(find.text('Food'));
-    await tester.pumpAndSettle();
+    await openTrainingsTab(tester);
+
+    expect(find.text('Training plans'), findsOneWidget);
+    expect(find.text('Chest day'), findsOneWidget);
+
+    await openMealTab(tester);
+
+    expect(find.text('Daily totals'), findsOneWidget);
+
+    await openFoodTab(tester);
 
     expect(find.text('Food set'), findsOneWidget);
     expect(find.text('Chicken breast'), findsOneWidget);
@@ -129,6 +146,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const FitApp());
+    await openMealTab(tester);
 
     await tester.tap(find.byTooltip('Add meal item'));
     await tester.pumpAndSettle();
@@ -195,6 +213,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const FitApp());
+    await openMealTab(tester);
 
     await tester.tap(find.byTooltip('Add meal item'));
     await tester.pumpAndSettle();
@@ -226,6 +245,7 @@ void main() {
 
   testWidgets('logs renamed food created from Meal search', (tester) async {
     await tester.pumpWidget(const FitApp());
+    await openMealTab(tester);
 
     await tester.tap(find.byTooltip('Add meal item'));
     await tester.pumpAndSettle();
@@ -256,6 +276,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const FitApp());
+    await openMealTab(tester);
 
     await tester.tap(find.byTooltip('Add meal item'));
     await tester.pumpAndSettle();
@@ -273,6 +294,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const FitApp());
+    await openMealTab(tester);
 
     await tester.tap(find.byTooltip('Add meal item'));
     await tester.pumpAndSettle();

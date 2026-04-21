@@ -17,6 +17,7 @@ class FoodScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: const Text('Food')),
           floatingActionButton: FloatingActionButton(
+            heroTag: 'add-food-fab',
             tooltip: 'Add food or dish',
             onPressed: () => _openAddItemFlow(context),
             child: const Icon(Icons.add),
