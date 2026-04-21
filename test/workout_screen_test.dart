@@ -112,6 +112,22 @@ void main() {
     expect(find.text('Leg day'), findsOneWidget);
   });
 
+  testWidgets('opens workout session immediately after starting a workout', (
+    tester,
+  ) async {
+    final store = AppStore();
+    await pumpWorkoutScreen(tester, store: store);
+
+    await openStartWorkoutPicker(tester);
+    await tester.tap(find.text('Chest day'));
+    await tester.pumpAndSettle();
+
+    expect(store.activeWorkoutSession?.trainingPlanName, 'Chest day');
+    expect(find.text('Workout session'), findsOneWidget);
+    expect(find.text('Bench press'), findsOneWidget);
+    expect(find.text('Pushups'), findsOneWidget);
+  });
+
   testWidgets('active session card opens the workout session screen', (
     tester,
   ) async {

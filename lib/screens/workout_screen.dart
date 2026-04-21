@@ -234,6 +234,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error.toString())));
+      return;
+    }
+    if (context.mounted) {
+      await _openActiveWorkout(context);
     }
   }
 
