@@ -22,13 +22,9 @@ class CompletedWorkoutScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 4),
-            Text('Duration: ${_formatDuration(session.duration)}'),
+            Text('Date: ${_formatDate(session.startedAt)}'),
             const SizedBox(height: 4),
-            Text('Started: ${_formatDateTime(session.startedAt)}'),
-            if (session.finishedAt != null) ...[
-              const SizedBox(height: 4),
-              Text('Finished: ${_formatDateTime(session.finishedAt!)}'),
-            ],
+            Text('Duration: ${_formatDuration(session.duration)}'),
             const SizedBox(height: 24),
             Text('Exercises', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
@@ -156,12 +152,10 @@ class CompletedWorkoutScreen extends StatelessWidget {
     return '0 min';
   }
 
-  String _formatDateTime(DateTime value) {
+  String _formatDate(DateTime value) {
     final month = value.month.toString().padLeft(2, '0');
     final day = value.day.toString().padLeft(2, '0');
-    final hour = value.hour.toString().padLeft(2, '0');
-    final minute = value.minute.toString().padLeft(2, '0');
-    return '${value.year}-$month-$day $hour:$minute';
+    return '${value.year}-$month-$day';
   }
 
   String _formatNumber(double value) {

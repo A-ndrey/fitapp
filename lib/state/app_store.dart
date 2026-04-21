@@ -454,6 +454,17 @@ class AppStore extends ChangeNotifier {
     return finished;
   }
 
+  void deleteCompletedWorkoutSession(String sessionId) {
+    final index = _completedWorkoutSessions.indexWhere(
+      (session) => session.id == sessionId,
+    );
+    if (index == -1) {
+      throw ArgumentError('Missing completed workout session id: $sessionId');
+    }
+    _completedWorkoutSessions.removeAt(index);
+    notifyListeners();
+  }
+
   void createFood(FoodItem food) {
     _validateFood(food);
     if (_catalog.containsKey(food.id)) {

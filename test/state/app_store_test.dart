@@ -722,6 +722,44 @@ void main() {
     },
   );
 
+  test('deletes completed workout sessions by id', () {
+    final store = AppStore();
+
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 18, 9),
+    );
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+    );
+    final first = store.finishActiveWorkout(
+      finishedAt: DateTime(2026, 4, 18, 9, 45),
+    );
+
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+    final second = store.finishActiveWorkout(
+      finishedAt: DateTime(2026, 4, 19, 10, 30),
+    );
+
+    store.deleteCompletedWorkoutSession(first.id);
+
+    expect(store.completedWorkoutSessions, hasLength(1));
+    expect(store.completedWorkoutSessions.single.id, second.id);
+    expect(store.workoutStats.completedCount, 1);
+    expect(
+      store.completedWorkoutHistoryForExercise('bench-press'),
+      hasLength(1),
+    );
+    expect(
+      () => store.deleteCompletedWorkoutSession(first.id),
+      throwsArgumentError,
+    );
+  });
+
   test(
     'exercise rename after start does not change active or completed names',
     () {

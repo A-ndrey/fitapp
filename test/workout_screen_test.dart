@@ -309,7 +309,10 @@ void main() {
 
       expect(find.text('Completed workout'), findsOneWidget);
       expect(find.text('Chest day'), findsOneWidget);
+      expect(find.text('Date: 2026-04-18'), findsOneWidget);
       expect(find.text('Duration: 45 min'), findsOneWidget);
+      expect(find.textContaining('Started:'), findsNothing);
+      expect(find.textContaining('Finished:'), findsNothing);
       expect(find.text('Bench press'), findsOneWidget);
       expect(find.text('Set 1'), findsOneWidget);
       expect(find.text('8 reps • 62.5 kg'), findsOneWidget);
@@ -317,6 +320,34 @@ void main() {
       expect(find.text('Trainings'), findsWidgets);
     },
   );
+
+  testWidgets('workout history shows started date and can delete records', (
+    tester,
+  ) async {
+    final store = AppStore();
+    finishChestWorkoutWithBenchSet(
+      store,
+      startedAt: DateTime(2026, 4, 18, 9),
+      finishedAt: DateTime(2026, 4, 18, 9, 45),
+    );
+
+    await pumpWorkoutScreen(tester, store: store);
+
+    expect(find.text('Date: 2026-04-18'), findsOneWidget);
+    expect(find.text('Completed • 45 min'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Delete completed Chest day'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete workout?'), findsOneWidget);
+
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(store.completedWorkoutSessions, isEmpty);
+    expect(find.text('No completed workouts yet'), findsOneWidget);
+    expect(find.text('Date: 2026-04-18'), findsNothing);
+  });
 
   testWidgets('completed workout details group repeated exercises', (
     tester,
@@ -357,7 +388,7 @@ void main() {
     await openExercise(tester, 'Bench press');
 
     expect(find.text('Previous results'), findsOneWidget);
-    expect(find.text('Chest day • 45 min'), findsOneWidget);
+    expect(find.text('Chest day • 2026-04-18 • 45 min'), findsOneWidget);
     expect(find.text('8 reps • 62.5 kg'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Use previous Set 1 from Chest day'));

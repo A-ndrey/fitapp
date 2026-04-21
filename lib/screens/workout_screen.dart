@@ -171,13 +171,26 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                         message: 'Open completed ${session.trainingPlanName}',
                         child: Card(
                           clipBehavior: Clip.antiAlias,
-                          child: InkWell(
+                          child: ListTile(
                             onTap: () =>
                                 _openCompletedWorkout(context, session),
-                            child: ListTile(
-                              title: Text(session.trainingPlanName),
-                              subtitle: Text(
-                                'Completed • ${_formatDuration(session.duration)}',
+                            title: Text(session.trainingPlanName),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Date: ${_formatDate(session.startedAt)}'),
+                                Text(
+                                  'Completed • ${_formatDuration(session.duration)}',
+                                ),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              tooltip:
+                                  'Delete completed ${session.trainingPlanName}',
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => _confirmDeleteCompletedWorkout(
+                                context,
+                                session,
                               ),
                             ),
                           ),
@@ -260,6 +273,43 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
+  Future<void> _confirmDeleteCompletedWorkout(
+    BuildContext context,
+    WorkoutSession session,
+  ) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete workout?'),
+          content: Text(
+            'Delete ${session.trainingPlanName} from ${_formatDate(session.startedAt)}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+    if (!context.mounted || shouldDelete != true) {
+      return;
+    }
+    try {
+      widget.store.deleteCompletedWorkoutSession(session.id);
+    } on Object catch (error) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
   String _formatDuration(Duration duration) {
     if (duration.inHours > 0) {
       final hours = duration.inHours;
@@ -270,5 +320,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       return '${duration.inMinutes} min';
     }
     return '0 min';
+  }
+
+  String _formatDate(DateTime value) {
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '${value.year}-$month-$day';
   }
 }

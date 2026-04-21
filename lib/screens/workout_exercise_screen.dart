@@ -177,7 +177,7 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${group.session.trainingPlanName} • ${_formatDuration(group.session.duration)}',
+                                '${group.session.trainingPlanName} • ${_formatDate(group.session.startedAt)} • ${_formatDuration(group.session.duration)}',
                                 style: Theme.of(context).textTheme.titleSmall,
                               ),
                               const SizedBox(height: 8),
@@ -308,6 +308,12 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
       return '${duration.inMinutes} min';
     }
     return '0 min';
+  }
+
+  String _formatDate(DateTime value) {
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '${value.year}-$month-$day';
   }
 
   String _formatInputNumber(double? value) {
