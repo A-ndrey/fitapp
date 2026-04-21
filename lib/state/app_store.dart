@@ -213,6 +213,31 @@ class AppStore extends ChangeNotifier {
 
   WorkoutSession? get activeWorkoutSession => _activeWorkoutSession;
 
+  List<WorkoutExerciseHistoryGroup> completedWorkoutHistoryForExercise(
+    String exerciseId,
+  ) {
+    final groups = <WorkoutExerciseHistoryGroup>[];
+    for (var i = _completedWorkoutSessions.length - 1; i >= 0; i--) {
+      final session = _completedWorkoutSessions[i];
+      final matchingResults = <WorkoutExerciseResult>[];
+      for (final result in session.results) {
+        if (result.exerciseId == exerciseId) {
+          matchingResults.add(result);
+        }
+      }
+      if (matchingResults.isEmpty) {
+        continue;
+      }
+      groups.add(
+        WorkoutExerciseHistoryGroup(
+          session: session,
+          results: List.unmodifiable(matchingResults),
+        ),
+      );
+    }
+    return List.unmodifiable(groups);
+  }
+
   WorkoutStats get workoutStats {
     var totalDuration = Duration.zero;
     WorkoutSession? latest;
@@ -800,4 +825,16 @@ class AppStore extends ChangeNotifier {
       ),
     );
   }
+}
+
+class WorkoutExerciseHistoryGroup {
+  const WorkoutExerciseHistoryGroup({
+    required this.session,
+    required this.results,
+  });
+
+  final WorkoutSession session;
+  final List<WorkoutExerciseResult> results;
+
+  WorkoutExerciseResult get result => results.first;
 }

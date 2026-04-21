@@ -608,6 +608,120 @@ void main() {
     expect(() => store.finishActiveWorkout(), throwsStateError);
   });
 
+  test('completed workout history returns matching sessions newest first', () {
+    final store = AppStore();
+
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+    final firstCompleted = store.finishActiveWorkout(
+      finishedAt: DateTime(2026, 4, 19, 10, 30),
+    );
+
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 20, 10),
+    );
+    final secondCompleted = store.finishActiveWorkout(
+      finishedAt: DateTime(2026, 4, 20, 10, 45),
+    );
+
+    final history = store.completedWorkoutHistoryForExercise('bench-press');
+
+    expect(history, hasLength(2));
+    expect(history.first.session.id, secondCompleted.id);
+    expect(history.last.session.id, firstCompleted.id);
+    expect(history.first.result.exerciseName, 'Bench press');
+    expect(history.last.result.exerciseName, 'Bench press');
+  });
+
+  test('completed workout history excludes the active workout', () {
+    final store = AppStore();
+
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    expect(store.completedWorkoutHistoryForExercise('bench-press'), isEmpty);
+  });
+
+  test('completed workout history preserves set logs', () {
+    final store = AppStore();
+
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+    );
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: const WorkoutSetLog(reps: 6, weight: 65),
+    );
+    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 45));
+
+    final history = store.completedWorkoutHistoryForExercise('bench-press');
+
+    expect(history, hasLength(1));
+    expect(history.single.session.results.first.setLogs, hasLength(2));
+    expect(history.single.result.setLogs.first.reps, 8);
+    expect(history.single.result.setLogs.first.weight, 62.5);
+    expect(history.single.result.setLogs.last.reps, 6);
+    expect(history.single.result.setLogs.last.weight, 65);
+  });
+
+  test(
+    'completed workout history keeps duplicate exercise results grouped',
+    () {
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a straight line from shoulders to heels.',
+          muscleGroups: [MuscleGroup.chest],
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'repeat-pushups',
+          name: 'Repeat pushups',
+          description: 'Same exercise twice',
+          exercises: [
+            TrainingExercise(exerciseId: 'pushups', reps: 10, unit: 'reps'),
+            TrainingExercise(exerciseId: 'pushups', reps: 8, unit: 'reps'),
+          ],
+        ),
+      );
+
+      store.startWorkout(
+        trainingPlanId: 'repeat-pushups',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
+      store.addActiveWorkoutSet(
+        resultIndex: 0,
+        setLog: const WorkoutSetLog(reps: 10),
+      );
+      store.addActiveWorkoutSet(
+        resultIndex: 1,
+        setLog: const WorkoutSetLog(reps: 8),
+      );
+      store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
+
+      final history = store.completedWorkoutHistoryForExercise('pushups');
+
+      expect(history, hasLength(1));
+      expect(history.single.results, hasLength(2));
+      expect(history.single.results.first.setLogs.single.reps, 10);
+      expect(history.single.results.last.setLogs.single.reps, 8);
+    },
+  );
+
   test(
     'exercise rename after start does not change active or completed names',
     () {

@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/training_plan.dart';
+import '../models/workout_session.dart';
 import '../state/app_store.dart';
+import 'completed_workout_screen.dart';
 import 'workout_session_screen.dart';
 
 class WorkoutScreen extends StatefulWidget {
@@ -165,11 +167,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   ...widget.store.completedWorkoutSessions.reversed.map(
                     (session) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: Card(
-                        child: ListTile(
-                          title: Text(session.trainingPlanName),
-                          subtitle: Text(
-                            'Completed • ${_formatDuration(session.duration)}',
+                      child: Tooltip(
+                        message: 'Open completed ${session.trainingPlanName}',
+                        child: Card(
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () =>
+                                _openCompletedWorkout(context, session),
+                            child: ListTile(
+                              title: Text(session.trainingPlanName),
+                              subtitle: Text(
+                                'Completed • ${_formatDuration(session.duration)}',
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -231,6 +241,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (context) => WorkoutSessionScreen(store: widget.store),
+      ),
+    );
+  }
+
+  Future<void> _openCompletedWorkout(
+    BuildContext context,
+    WorkoutSession session,
+  ) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => CompletedWorkoutScreen(session: session),
       ),
     );
   }

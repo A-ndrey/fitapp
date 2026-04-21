@@ -46,6 +46,9 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
           );
         }
         final result = session.results[widget.resultIndex];
+        final history = widget.store.completedWorkoutHistoryForExercise(
+          result.exerciseId,
+        );
         return Scaffold(
           appBar: AppBar(title: const Text('Workout exercise')),
           body: SafeArea(
@@ -137,10 +140,87 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
                     final setLog = entry.$2;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
+                      child: Tooltip(
+                        message: 'Use Set $setNumber',
+                        child: Card(
+                          clipBehavior: Clip.antiAlias,
+                          child: ListTile(
+                            onTap: () => _fillSetLog(setLog),
+                            title: Text('Set $setNumber'),
+                            subtitle: Text(
+                              _formatSetLog(result.target, setLog),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                const SizedBox(height: 24),
+                Text(
+                  'Previous results',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                if (history.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Text('No previous results for this exercise'),
+                  )
+                else
+                  ...history.map((group) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: Card(
-                        child: ListTile(
-                          title: Text('Set $setNumber'),
-                          subtitle: Text(_formatSetLog(result.target, setLog)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${group.session.trainingPlanName} • ${_formatDuration(group.session.duration)}',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: 8),
+                              if (group.results.every(
+                                (historyResult) =>
+                                    historyResult.setLogs.isEmpty,
+                              ))
+                                const Text('No sets logged')
+                              else
+                                ...group.results.expand((historyResult) {
+                                  final resultNumber =
+                                      group.results.indexOf(historyResult) + 1;
+                                  final hasMultipleResults =
+                                      group.results.length > 1;
+                                  return historyResult.setLogs.indexed.map((
+                                    entry,
+                                  ) {
+                                    final setNumber = entry.$1 + 1;
+                                    final setLog = entry.$2;
+                                    final setLabel = hasMultipleResults
+                                        ? 'Entry $resultNumber • Set $setNumber'
+                                        : 'Set $setNumber';
+                                    final tooltipLabel = hasMultipleResults
+                                        ? 'Use previous Entry $resultNumber Set $setNumber from ${group.session.trainingPlanName}'
+                                        : 'Use previous Set $setNumber from ${group.session.trainingPlanName}';
+                                    return Tooltip(
+                                      message: tooltipLabel,
+                                      child: ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        onTap: () => _fillSetLog(setLog),
+                                        title: Text(setLabel),
+                                        subtitle: Text(
+                                          _formatSetLog(
+                                            historyResult.target,
+                                            setLog,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  });
+                                }),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -170,6 +250,12 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
+  }
+
+  void _fillSetLog(WorkoutSetLog setLog) {
+    _repsController.text = _formatInputNumber(setLog.reps);
+    _weightController.text = _formatInputNumber(setLog.weight);
+    _timeController.text = _formatInputNumber(setLog.time);
   }
 
   double? _parseNumber(String text) {
@@ -210,6 +296,25 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
       parts.add('${_formatNumber(setLog.time!)} ${target.unit}');
     }
     return parts.join(' • ');
+  }
+
+  String _formatDuration(Duration duration) {
+    if (duration.inHours > 0) {
+      final hours = duration.inHours;
+      final minutes = duration.inMinutes.remainder(60);
+      return minutes == 0 ? '$hours h' : '$hours h $minutes min';
+    }
+    if (duration.inMinutes > 0) {
+      return '${duration.inMinutes} min';
+    }
+    return '0 min';
+  }
+
+  String _formatInputNumber(double? value) {
+    if (value == null) {
+      return '';
+    }
+    return _formatNumber(value);
   }
 
   String _formatNumber(double value) {

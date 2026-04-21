@@ -1,4 +1,7 @@
 import 'package:fitapp/main.dart';
+import 'package:fitapp/models/exercise.dart';
+import 'package:fitapp/models/training_plan.dart';
+import 'package:fitapp/models/workout_session.dart';
 import 'package:fitapp/screens/workout_screen.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +40,60 @@ void main() {
     await tester.enterText(find.bySemanticsLabel('Weight'), weight);
     await tester.enterText(find.bySemanticsLabel('Time'), time);
     await tester.pumpAndSettle();
+  }
+
+  void finishChestWorkoutWithBenchSet(
+    AppStore store, {
+    required DateTime startedAt,
+    required DateTime finishedAt,
+    double reps = 8,
+    double weight = 62.5,
+  }) {
+    store.startWorkout(trainingPlanId: 'chest-day', startedAt: startedAt);
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: WorkoutSetLog(reps: reps, weight: weight),
+    );
+    store.finishActiveWorkout(finishedAt: finishedAt);
+  }
+
+  void createRepeatPushupsPlan(AppStore store) {
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line from shoulders to heels.',
+        muscleGroups: [MuscleGroup.chest],
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'repeat-pushups',
+        name: 'Repeat pushups',
+        description: 'Same exercise twice',
+        exercises: [
+          TrainingExercise(exerciseId: 'pushups', reps: 10, unit: 'reps'),
+          TrainingExercise(exerciseId: 'pushups', reps: 8, unit: 'reps'),
+        ],
+      ),
+    );
+  }
+
+  void finishRepeatPushupsWorkout(AppStore store) {
+    store.startWorkout(
+      trainingPlanId: 'repeat-pushups',
+      startedAt: DateTime(2026, 4, 18, 9),
+    );
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: const WorkoutSetLog(reps: 10),
+    );
+    store.addActiveWorkoutSet(
+      resultIndex: 1,
+      setLog: const WorkoutSetLog(reps: 8),
+    );
+    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 18, 9, 30));
   }
 
   testWidgets('shows workout stats and opens the plan picker', (tester) async {
@@ -128,6 +185,13 @@ void main() {
     expect(repsField.controller?.text, isEmpty);
     expect(weightField.controller?.text, isEmpty);
     expect(timeField.controller?.text, isEmpty);
+
+    await tester.tap(find.byTooltip('Use Set 1'));
+    await tester.pumpAndSettle();
+
+    expect(repsField.controller?.text, '8');
+    expect(weightField.controller?.text, '65');
+    expect(timeField.controller?.text, isEmpty);
   });
 
   testWidgets('multiple set logs accumulate', (tester) async {
@@ -209,6 +273,135 @@ void main() {
     expect(find.text('Workout session'), findsNothing);
     expect(find.text('Workout stats'), findsOneWidget);
     expect(find.text('Completed sessions: 1'), findsOneWidget);
+  });
+
+  testWidgets(
+    'history card opens completed workout details under workout tab',
+    (tester) async {
+      final store = AppStore();
+      finishChestWorkoutWithBenchSet(
+        store,
+        startedAt: DateTime(2026, 4, 18, 9),
+        finishedAt: DateTime(2026, 4, 18, 9, 45),
+      );
+
+      await tester.pumpWidget(MaterialApp(home: FitHome(store: store)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Open completed Chest day'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Completed workout'), findsOneWidget);
+      expect(find.text('Chest day'), findsOneWidget);
+      expect(find.text('Duration: 45 min'), findsOneWidget);
+      expect(find.text('Bench press'), findsOneWidget);
+      expect(find.text('Set 1'), findsOneWidget);
+      expect(find.text('8 reps • 62.5 kg'), findsOneWidget);
+      expect(find.text('Workout'), findsWidgets);
+      expect(find.text('Trainings'), findsWidgets);
+    },
+  );
+
+  testWidgets('completed workout details group repeated exercises', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    createRepeatPushupsPlan(store);
+    finishRepeatPushupsWorkout(store);
+
+    await pumpWorkoutScreen(tester, store: store);
+
+    await tester.tap(find.byTooltip('Open completed Repeat pushups'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Completed workout'), findsOneWidget);
+    expect(find.text('Pushups'), findsOneWidget);
+    expect(find.text('Entry 1'), findsOneWidget);
+    expect(find.text('Entry 2'), findsOneWidget);
+    expect(find.text('10 reps'), findsWidgets);
+    expect(find.text('8 reps'), findsWidgets);
+  });
+
+  testWidgets('previous exercise results refill active set form', (
+    tester,
+  ) async {
+    final store = AppStore();
+    finishChestWorkoutWithBenchSet(
+      store,
+      startedAt: DateTime(2026, 4, 18, 9),
+      finishedAt: DateTime(2026, 4, 18, 9, 45),
+    );
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await pumpWorkoutScreen(tester, store: store);
+    await openActiveWorkout(tester);
+    await openExercise(tester, 'Bench press');
+
+    expect(find.text('Previous results'), findsOneWidget);
+    expect(find.text('Chest day • 45 min'), findsOneWidget);
+    expect(find.text('8 reps • 62.5 kg'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Use previous Set 1 from Chest day'));
+    await tester.pumpAndSettle();
+
+    final fields = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .toList();
+    expect(fields[0].controller?.text, '8');
+    expect(fields[1].controller?.text, '62.5');
+    expect(fields[2].controller?.text, isEmpty);
+
+    await tester.tap(find.text('Log set'));
+    await tester.pumpAndSettle();
+
+    expect(store.activeWorkoutSession!.results.first.setLogs, hasLength(1));
+    expect(
+      store.completedWorkoutSessions.single.results.first.setLogs,
+      hasLength(1),
+    );
+  });
+
+  testWidgets('previous repeated exercise results use distinct refill rows', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    createRepeatPushupsPlan(store);
+    finishRepeatPushupsWorkout(store);
+    store.startWorkout(
+      trainingPlanId: 'repeat-pushups',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await pumpWorkoutScreen(tester, store: store);
+    await openActiveWorkout(tester);
+    expect(find.text('Pushups (1)'), findsOneWidget);
+    expect(find.text('Pushups (2)'), findsOneWidget);
+    expect(find.byTooltip('Open Pushups entry 1'), findsOneWidget);
+    expect(find.byTooltip('Open Pushups entry 2'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Open Pushups entry 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Entry 1 • Set 1'), findsOneWidget);
+    expect(find.text('Entry 2 • Set 1'), findsOneWidget);
+
+    final secondPreviousSet = find.byTooltip(
+      'Use previous Entry 2 Set 1 from Repeat pushups',
+    );
+    await tester.ensureVisible(secondPreviousSet);
+    await tester.pumpAndSettle();
+    await tester.tap(secondPreviousSet);
+    await tester.pumpAndSettle();
+
+    final fields = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .toList();
+    expect(fields[0].controller?.text, '8');
+    expect(fields[1].controller?.text, isEmpty);
+    expect(fields[2].controller?.text, isEmpty);
   });
 
   testWidgets('keeps workout tab visible on session and exercise screens', (

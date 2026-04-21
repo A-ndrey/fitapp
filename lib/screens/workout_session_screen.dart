@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/training_plan.dart';
+import '../models/workout_session.dart';
 import '../state/app_store.dart';
 import 'workout_exercise_screen.dart';
 
@@ -57,6 +58,8 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             body: const SafeArea(child: SizedBox.shrink()),
           );
         }
+        final exerciseCounts = _exerciseCounts(session.results);
+        final seenExercises = <String, int>{};
         return Scaffold(
           appBar: AppBar(title: const Text('Workout session')),
           body: SafeArea(
@@ -78,10 +81,21 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 ...session.results.indexed.map((entry) {
                   final resultIndex = entry.$1;
                   final result = entry.$2;
+                  final occurrence =
+                      (seenExercises[result.exerciseId] ?? 0) + 1;
+                  seenExercises[result.exerciseId] = occurrence;
+                  final hasRepeatedExercise =
+                      (exerciseCounts[result.exerciseId] ?? 0) > 1;
+                  final exerciseLabel = hasRepeatedExercise
+                      ? '${result.exerciseName} ($occurrence)'
+                      : result.exerciseName;
+                  final tooltipLabel = hasRepeatedExercise
+                      ? 'Open ${result.exerciseName} entry $occurrence'
+                      : 'Open ${result.exerciseName}';
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Tooltip(
-                      message: 'Open ${result.exerciseName}',
+                      message: tooltipLabel,
                       child: Card(
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
@@ -92,7 +106,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  result.exerciseName,
+                                  exerciseLabel,
                                   style: Theme.of(
                                     context,
                                   ).textTheme.titleMedium,
@@ -181,6 +195,14 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       return '${duration.inMinutes} min';
     }
     return '0 min';
+  }
+
+  Map<String, int> _exerciseCounts(List<WorkoutExerciseResult> results) {
+    final counts = <String, int>{};
+    for (final result in results) {
+      counts[result.exerciseId] = (counts[result.exerciseId] ?? 0) + 1;
+    }
+    return counts;
   }
 
   String _formatNumber(double value) {
