@@ -725,6 +725,9 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
     if (value == null) {
       return '$label: -';
     }
+    if (label == 'weight') {
+      return '${widget.store.formatWorkoutWeight(value)} $label';
+    }
     return '${_formatNumber(value)} $label';
   }
 

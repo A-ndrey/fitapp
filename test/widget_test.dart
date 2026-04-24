@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fitapp/main.dart';
+import 'package:fitapp/models/app_preferences.dart';
 import 'package:fitapp/models/dish_item.dart';
 import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/nutrition.dart';
@@ -22,6 +23,11 @@ void main() {
 
   Future<void> openTrainingsTab(WidgetTester tester) async {
     await tester.tap(find.byIcon(Icons.fitness_center_outlined));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> openMoreTab(WidgetTester tester) async {
+    await tester.tap(find.byIcon(Icons.more_horiz));
     await tester.pumpAndSettle();
   }
 
@@ -115,13 +121,16 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('shows Workout, Trainings, Meal and Food tabs', (tester) async {
+  testWidgets('shows Workout, Trainings, Meal, Food and More tabs', (
+    tester,
+  ) async {
     await tester.pumpWidget(const FitApp());
 
     expect(find.text('Workout'), findsWidgets);
     expect(find.text('Trainings'), findsWidgets);
     expect(find.text('Meal'), findsWidgets);
     expect(find.text('Food'), findsWidgets);
+    expect(find.text('More'), findsWidgets);
     expect(find.text('Workout stats'), findsOneWidget);
     expect(find.text('Start workout'), findsOneWidget);
     expect(find.text('Chicken breast'), findsNothing);
@@ -140,6 +149,97 @@ void main() {
     expect(find.text('Food set'), findsOneWidget);
     expect(find.text('Chicken breast'), findsOneWidget);
     expect(find.text('food'), findsWidgets);
+  });
+
+  testWidgets('shows More tab and opens settings screen', (tester) async {
+    await tester.pumpWidget(const FitApp());
+
+    expect(find.text('More'), findsWidgets);
+
+    await openMoreTab(tester);
+
+    expect(find.text('Sync'), findsOneWidget);
+    expect(find.text('Units'), findsOneWidget);
+    expect(find.text('Login'), findsOneWidget);
+    expect(find.text('Logout'), findsNothing);
+    await scrollToText(tester, 'Language');
+    expect(find.text('Language'), findsOneWidget);
+    expect(find.text('Appearance'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('System'), findsOneWidget);
+    expect(find.text('Light'), findsOneWidget);
+    expect(find.text('Dark'), findsOneWidget);
+  });
+
+  testWidgets('sync buttons depend on login state', (tester) async {
+    final store = AppStore.empty();
+
+    await tester.pumpWidget(FitApp(store: store));
+    await openMoreTab(tester);
+
+    expect(find.text('Login'), findsOneWidget);
+    expect(find.text('Logout'), findsNothing);
+
+    await tester.tap(find.text('Login'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Login'), findsNothing);
+    expect(find.text('Logout'), findsOneWidget);
+
+    await tester.tap(find.text('Logout'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Login'), findsOneWidget);
+    expect(find.text('Logout'), findsNothing);
+  });
+
+  testWidgets('more screen controls update store and theme immediately', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+
+    await tester.pumpWidget(FitApp(store: store));
+    await openMoreTab(tester);
+
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.system,
+    );
+
+    await tester.tap(find.text('Pounds'));
+    await tester.pumpAndSettle();
+    expect(store.workoutWeightUnit, WorkoutWeightUnit.pounds);
+
+    await tester.tap(find.text('Ounces'));
+    await tester.pumpAndSettle();
+    expect(store.dishWeightUnit, DishWeightUnit.ounces);
+
+    await scrollToText(tester, 'Inches');
+    await tester.tap(find.text('Inches'));
+    await tester.pumpAndSettle();
+    expect(store.heightUnit, HeightUnit.inches);
+
+    await scrollToText(tester, 'Miles');
+    await tester.tap(find.text('Miles'));
+    await tester.pumpAndSettle();
+    expect(store.distanceUnit, DistanceUnit.miles);
+
+    await scrollToText(tester, 'Dark');
+    await tester.tap(find.text('Dark'));
+    await tester.pumpAndSettle();
+    expect(store.appearancePreference, AppearancePreference.dark);
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.dark,
+    );
+
+    await tester.tap(find.text('Light'));
+    await tester.pumpAndSettle();
+    expect(store.appearancePreference, AppearancePreference.light);
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.light,
+    );
   });
 
   testWidgets('daily totals update after logging sample food by grams', (
@@ -207,6 +307,39 @@ void main() {
     expect(find.text('Simple salad'), findsOneWidget);
     expect(find.text('dish'), findsWidgets);
     expect(find.textContaining('150 g serving'), findsWidgets);
+  });
+
+  testWidgets('food and meal displays render ounces when dish unit is ounces', (
+    tester,
+  ) async {
+    final store = AppStore();
+    store.setDishWeightUnit(DishWeightUnit.ounces);
+
+    await tester.pumpWidget(FitApp(store: store));
+
+    await openFoodTab(tester);
+    expect(find.textContaining('5.3 oz serving'), findsWidgets);
+
+    await logRice150g(tester);
+
+    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+    expect(find.textContaining('5.3 oz logged'), findsOneWidget);
+  });
+
+  testWidgets('training plan target labels render pounds in plan editor', (
+    tester,
+  ) async {
+    final store = AppStore();
+    store.setWorkoutWeightUnit(WorkoutWeightUnit.pounds);
+
+    await tester.pumpWidget(FitApp(store: store));
+    await openTrainingsTab(tester);
+
+    await tester.tap(find.byTooltip('Edit Chest day'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('132.3 lbs weight'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Weight'), findsNothing);
   });
 
   testWidgets('creates a missing item from Meal search and logs it', (

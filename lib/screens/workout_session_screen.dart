@@ -169,7 +169,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       parts.add('${_formatNumber(target.reps!)} reps');
     }
     if (target.weight != null) {
-      parts.add('${_formatNumber(target.weight!)} ${target.unit}');
+      parts.add(_formatWeight(target.weight!, target.unit));
     } else if (target.time != null) {
       parts.add('${_formatNumber(target.time!)} ${target.unit}');
     } else if (parts.isEmpty) {
@@ -210,5 +210,12 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       return value.toStringAsFixed(0);
     }
     return value.toStringAsFixed(1);
+  }
+
+  String _formatWeight(double value, String unit) {
+    if (unit == 'kg') {
+      return widget.store.formatWorkoutWeight(value);
+    }
+    return '${_formatNumber(value)} $unit';
   }
 }

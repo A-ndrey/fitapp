@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'models/app_preferences.dart';
 import 'screens/food_screen.dart';
 import 'screens/meal_screen.dart';
+import 'screens/more_screen.dart';
 import 'screens/trainings_screen.dart';
 import 'screens/workout_screen.dart';
 import 'state/app_store.dart';
@@ -12,36 +14,69 @@ void main() {
 }
 
 class FitApp extends StatefulWidget {
-  const FitApp({super.key});
+  const FitApp({super.key, this.store});
+
+  final AppStore? store;
 
   @override
   State<FitApp> createState() => _FitAppState();
 }
 
 class _FitAppState extends State<FitApp> {
-  final AppStore _store = AppStore();
+  late final AppStore _store;
+  late final bool _ownsStore;
+
+  @override
+  void initState() {
+    super.initState();
+    _ownsStore = widget.store == null;
+    _store = widget.store ?? AppStore();
+  }
 
   @override
   void dispose() {
-    _store.dispose();
+    if (_ownsStore) {
+      _store.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'FitApp',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      home: FitHome(store: _store),
+    return AnimatedBuilder(
+      animation: _store,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'FitApp',
+          debugShowCheckedModeBanner: false,
+          themeMode: _themeModeFor(_store.appearancePreference),
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.teal,
+              brightness: Brightness.light,
+            ),
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.teal,
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+          ),
+          home: FitHome(store: _store),
+        );
+      },
     );
   }
+}
+
+ThemeMode _themeModeFor(AppearancePreference preference) {
+  return switch (preference) {
+    AppearancePreference.system => ThemeMode.system,
+    AppearancePreference.light => ThemeMode.light,
+    AppearancePreference.dark => ThemeMode.dark,
+  };
 }
 
 class FitHome extends StatefulWidget {
@@ -73,6 +108,7 @@ class _FitHomeState extends State<FitHome> {
       TrainingsScreen(store: widget.store),
       MealScreen(store: widget.store),
       FoodScreen(store: widget.store),
+      MoreScreen(store: widget.store),
     ];
 
     return Scaffold(
@@ -99,6 +135,7 @@ class _FitHomeState extends State<FitHome> {
             icon: Icon(Icons.inventory_2_outlined),
             label: 'Food',
           ),
+          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'More'),
         ],
       ),
     );
