@@ -1,6 +1,7 @@
 import 'package:fitapp/models/dish_item.dart';
 import 'package:fitapp/models/exercise.dart';
 import 'package:fitapp/models/food_item.dart';
+import 'package:fitapp/models/app_preferences.dart';
 import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/models/training_plan.dart';
 import 'package:fitapp/models/workout_session.dart';
@@ -1058,5 +1059,91 @@ void main() {
       () => store.addMealByServings(itemId: 'tomato', servings: double.nan),
       throwsArgumentError,
     );
+  });
+
+  test('AppStore exposes metric English defaults for preferences', () {
+    final store = AppStore.empty();
+
+    expect(
+      store.preferences,
+      const AppPreferences(
+        appearance: AppearancePreference.system,
+        language: LanguagePreference.english,
+        workoutWeightUnit: WorkoutWeightUnit.kilograms,
+        dishWeightUnit: DishWeightUnit.grams,
+        heightUnit: HeightUnit.centimeters,
+        distanceUnit: DistanceUnit.kilometers,
+      ),
+    );
+    expect(store.appearancePreference, AppearancePreference.system);
+    expect(store.languagePreference, LanguagePreference.english);
+    expect(store.workoutWeightUnit, WorkoutWeightUnit.kilograms);
+    expect(store.dishWeightUnit, DishWeightUnit.grams);
+    expect(store.heightUnit, HeightUnit.centimeters);
+    expect(store.distanceUnit, DistanceUnit.kilometers);
+  });
+
+  test('preference setters update state and notify listeners', () {
+    final store = AppStore.empty();
+    var notifications = 0;
+    store.addListener(() {
+      notifications++;
+    });
+
+    store.setAppearancePreference(AppearancePreference.dark);
+    store.setLanguagePreference(LanguagePreference.english);
+    store.setWorkoutWeightUnit(WorkoutWeightUnit.pounds);
+    store.setDishWeightUnit(DishWeightUnit.ounces);
+    store.setHeightUnit(HeightUnit.inches);
+    store.setDistanceUnit(DistanceUnit.miles);
+
+    expect(
+      store.preferences,
+      const AppPreferences(
+        appearance: AppearancePreference.dark,
+        language: LanguagePreference.english,
+        workoutWeightUnit: WorkoutWeightUnit.pounds,
+        dishWeightUnit: DishWeightUnit.ounces,
+        heightUnit: HeightUnit.inches,
+        distanceUnit: DistanceUnit.miles,
+      ),
+    );
+    expect(notifications, 6);
+  });
+
+  test('formatting helpers convert canonical values into display units', () {
+    final store = AppStore.empty();
+
+    expect(store.formatWorkoutWeight(60), '60 kg');
+    expect(store.formatDishWeight(100), '100 g');
+    expect(store.formatHeight(180), '180 cm');
+    expect(store.formatDistance(5), '5 km');
+
+    store.setWorkoutWeightUnit(WorkoutWeightUnit.pounds);
+    store.setDishWeightUnit(DishWeightUnit.ounces);
+    store.setHeightUnit(HeightUnit.inches);
+    store.setDistanceUnit(DistanceUnit.miles);
+
+    expect(store.formatWorkoutWeight(100), '220.5 lbs');
+    expect(store.formatDishWeight(100), '3.5 oz');
+    expect(store.formatHeight(180), '70.9 in');
+    expect(store.formatDistance(5), '3.1 miles');
+  });
+
+  test('login state toggles in memory and notifies listeners', () {
+    final store = AppStore.empty();
+    var notifications = 0;
+    store.addListener(() {
+      notifications++;
+    });
+
+    expect(store.isLoggedIn, isFalse);
+
+    store.logIn();
+    expect(store.isLoggedIn, isTrue);
+
+    store.logOut();
+    expect(store.isLoggedIn, isFalse);
+    expect(notifications, 2);
   });
 }

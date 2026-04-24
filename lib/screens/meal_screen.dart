@@ -45,6 +45,7 @@ class MealScreen extends StatelessWidget {
                     (entry) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _MealEntryCard(
+                        store: store,
                         entry: entry,
                         onRemove: () => store.removeMealEntry(entry.id),
                       ),
@@ -126,8 +127,13 @@ class _MealSearchResult {
 }
 
 class _MealEntryCard extends StatelessWidget {
-  const _MealEntryCard({required this.entry, required this.onRemove});
+  const _MealEntryCard({
+    required this.store,
+    required this.entry,
+    required this.onRemove,
+  });
 
+  final AppStore store;
   final MealEntry entry;
   final VoidCallback onRemove;
 
@@ -155,8 +161,10 @@ class _MealEntryCard extends StatelessWidget {
 
   String _formatQuantity(MealEntry entry) {
     final value = entry.enteredQuantity;
-    final unit = entry.mode == MealEntryMode.grams ? 'g' : 'servings';
-    return '${_format(value)} $unit';
+    if (entry.mode == MealEntryMode.grams) {
+      return store.formatDishWeight(value);
+    }
+    return '${_format(value)} servings';
   }
 
   String _format(double value) {

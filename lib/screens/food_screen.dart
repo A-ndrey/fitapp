@@ -44,7 +44,7 @@ class FoodScreen extends StatelessWidget {
                           children: [
                             Text(item.isFood ? 'food' : 'dish'),
                             Text(
-                              '${_format(item.servingSizeGrams)} g serving • '
+                              '${store.formatDishWeight(item.servingSizeGrams)} serving • '
                               '${_format(nutrition.calories)} kcal per serving',
                             ),
                           ],

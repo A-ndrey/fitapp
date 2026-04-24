@@ -1,4 +1,5 @@
 import 'package:fitapp/main.dart';
+import 'package:fitapp/models/app_preferences.dart';
 import 'package:fitapp/models/exercise.dart';
 import 'package:fitapp/models/training_plan.dart';
 import 'package:fitapp/models/workout_session.dart';
@@ -157,7 +158,8 @@ void main() {
       startedAt: DateTime(2026, 4, 19, 10),
     );
 
-    await pumpWorkoutScreen(tester, store: store);
+    await tester.pumpWidget(MaterialApp(home: FitHome(store: store)));
+    await tester.pumpAndSettle();
     await openActiveWorkout(tester);
     await openExercise(tester, 'Bench press');
 
@@ -232,6 +234,47 @@ void main() {
     expect(store.activeWorkoutSession!.results.first.setLogs, hasLength(2));
     expect(find.text('Set 1'), findsOneWidget);
     expect(find.text('Set 2'), findsOneWidget);
+  });
+
+  testWidgets('workout displays render pounds when weight unit is pounds', (
+    tester,
+  ) async {
+    final store = AppStore();
+    store.setWorkoutWeightUnit(WorkoutWeightUnit.pounds);
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await pumpWorkoutScreen(tester, store: store);
+    await openActiveWorkout(tester);
+
+    expect(find.text('Target: 3 sets • 8 reps • 132.3 lbs'), findsOneWidget);
+
+    await openExercise(tester, 'Bench press');
+    expect(find.text('Target: 3 sets • 8 reps • 132.3 lbs'), findsOneWidget);
+
+    await enterWorkoutSet(tester, reps: '8', weight: '62.5', time: '');
+    await tester.tap(find.text('Log set'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('8 reps • 137.8 lbs'), findsOneWidget);
+
+    final fields = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .toList();
+    expect(fields[1].controller?.text, isEmpty);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Finish workout'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open completed Chest day'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Target: 3 sets • 8 reps • 132.3 lbs'), findsOneWidget);
+    expect(find.text('8 reps • 137.8 lbs'), findsOneWidget);
   });
 
   testWidgets('finishing from session screen returns to workout overview', (

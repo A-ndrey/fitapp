@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../models/training_plan.dart';
 import '../models/workout_session.dart';
+import '../state/app_store.dart';
 
 class CompletedWorkoutScreen extends StatelessWidget {
-  const CompletedWorkoutScreen({super.key, required this.session});
+  const CompletedWorkoutScreen({
+    super.key,
+    required this.store,
+    required this.session,
+  });
 
+  final AppStore store;
   final WorkoutSession session;
 
   @override
@@ -117,7 +123,7 @@ class CompletedWorkoutScreen extends StatelessWidget {
       parts.add('${_formatNumber(target.reps!)} reps');
     }
     if (target.weight != null) {
-      parts.add('${_formatNumber(target.weight!)} ${target.unit}');
+      parts.add(_formatWeight(target.weight!, target.unit));
     } else if (target.time != null) {
       parts.add('${_formatNumber(target.time!)} ${target.unit}');
     } else if (parts.isEmpty) {
@@ -132,7 +138,7 @@ class CompletedWorkoutScreen extends StatelessWidget {
       parts.add('${_formatNumber(setLog.reps!)} reps');
     }
     if (setLog.weight != null) {
-      parts.add('${_formatNumber(setLog.weight!)} ${target.unit}');
+      parts.add(_formatWeight(setLog.weight!, target.unit));
     }
     if (setLog.time != null) {
       parts.add('${_formatNumber(setLog.time!)} ${target.unit}');
@@ -163,6 +169,13 @@ class CompletedWorkoutScreen extends StatelessWidget {
       return value.toStringAsFixed(0);
     }
     return value.toStringAsFixed(1);
+  }
+
+  String _formatWeight(double value, String unit) {
+    if (unit == 'kg') {
+      return store.formatWorkoutWeight(value);
+    }
+    return '${_formatNumber(value)} $unit';
   }
 }
 

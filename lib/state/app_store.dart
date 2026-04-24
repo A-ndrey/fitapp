@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../models/app_preferences.dart';
 import '../models/catalog_item.dart';
 import '../models/dish_item.dart';
 import '../models/exercise.dart';
@@ -23,6 +24,8 @@ class AppStore extends ChangeNotifier {
   final Map<String, Exercise> _exercises = <String, Exercise>{};
   final List<TrainingPlan> _trainingPlans = <TrainingPlan>[];
   final List<WorkoutSession> _completedWorkoutSessions = <WorkoutSession>[];
+  AppPreferences _preferences = const AppPreferences.defaults();
+  bool _isLoggedIn = false;
   WorkoutSession? _activeWorkoutSession;
   int _mealEntryCounter = 0;
   int _workoutSessionCounter = 0;
@@ -211,7 +214,101 @@ class AppStore extends ChangeNotifier {
   List<WorkoutSession> get completedWorkoutSessions =>
       List.unmodifiable(_completedWorkoutSessions);
 
+  AppPreferences get preferences => _preferences;
+
+  AppearancePreference get appearancePreference => _preferences.appearance;
+
+  LanguagePreference get languagePreference => _preferences.language;
+
+  WorkoutWeightUnit get workoutWeightUnit => _preferences.workoutWeightUnit;
+
+  DishWeightUnit get dishWeightUnit => _preferences.dishWeightUnit;
+
+  HeightUnit get heightUnit => _preferences.heightUnit;
+
+  DistanceUnit get distanceUnit => _preferences.distanceUnit;
+
+  bool get isLoggedIn => _isLoggedIn;
+
   WorkoutSession? get activeWorkoutSession => _activeWorkoutSession;
+
+  void setAppearancePreference(AppearancePreference preference) {
+    _preferences = _preferences.copyWith(appearance: preference);
+    notifyListeners();
+  }
+
+  void setLanguagePreference(LanguagePreference preference) {
+    _preferences = _preferences.copyWith(language: preference);
+    notifyListeners();
+  }
+
+  void setWorkoutWeightUnit(WorkoutWeightUnit unit) {
+    _preferences = _preferences.copyWith(workoutWeightUnit: unit);
+    notifyListeners();
+  }
+
+  void setDishWeightUnit(DishWeightUnit unit) {
+    _preferences = _preferences.copyWith(dishWeightUnit: unit);
+    notifyListeners();
+  }
+
+  void setHeightUnit(HeightUnit unit) {
+    _preferences = _preferences.copyWith(heightUnit: unit);
+    notifyListeners();
+  }
+
+  void setDistanceUnit(DistanceUnit unit) {
+    _preferences = _preferences.copyWith(distanceUnit: unit);
+    notifyListeners();
+  }
+
+  void logIn() {
+    if (_isLoggedIn) {
+      return;
+    }
+    _isLoggedIn = true;
+    notifyListeners();
+  }
+
+  void logOut() {
+    if (!_isLoggedIn) {
+      return;
+    }
+    _isLoggedIn = false;
+    notifyListeners();
+  }
+
+  String formatWorkoutWeight(double kilograms) {
+    final value = workoutWeightUnit == WorkoutWeightUnit.pounds
+        ? kilograms * 2.2046226218
+        : kilograms;
+    final suffix = workoutWeightUnit == WorkoutWeightUnit.pounds ? 'lbs' : 'kg';
+    return '${_formatCompactNumber(value)} $suffix';
+  }
+
+  String formatDishWeight(double grams) {
+    final value = dishWeightUnit == DishWeightUnit.ounces
+        ? grams / 28.349523125
+        : grams;
+    final suffix = dishWeightUnit == DishWeightUnit.ounces ? 'oz' : 'g';
+    return '${_formatCompactNumber(value)} $suffix';
+  }
+
+  String formatHeight(double centimeters) {
+    final value = heightUnit == HeightUnit.inches
+        ? centimeters / 2.54
+        : centimeters;
+    final suffix = heightUnit == HeightUnit.inches ? 'in' : 'cm';
+    return '${_formatCompactNumber(value)} $suffix';
+  }
+
+  String formatDistance(double kilometers) {
+    final value = distanceUnit == DistanceUnit.miles
+        ? kilometers / 1.609344
+        : kilometers;
+    final suffix = distanceUnit == DistanceUnit.miles ? 'miles' : 'km';
+    return '${_formatCompactNumber(value)} $suffix';
+  }
 
   List<WorkoutExerciseHistoryGroup> completedWorkoutHistoryForExercise(
     String exerciseId,
@@ -835,6 +932,14 @@ class AppStore extends ChangeNotifier {
         List<TrainingExercise>.of(plan.exercises),
       ),
     );
+  }
+
+  String _formatCompactNumber(double value) {
+    final rounded = value.roundToDouble();
+    if ((value - rounded).abs() < 0.05) {
+      return rounded.toInt().toString();
+    }
+    return value.toStringAsFixed(1);
   }
 }
 

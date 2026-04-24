@@ -268,7 +268,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   ) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (context) => CompletedWorkoutScreen(session: session),
+        builder: (context) =>
+            CompletedWorkoutScreen(store: widget.store, session: session),
       ),
     );
   }
