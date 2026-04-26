@@ -6,6 +6,12 @@ import 'package:flutter/material.dart';
 import '../models/training_plan.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
+import '../ui/core/layout/adaptive_page.dart';
+import '../ui/core/widgets/action_card.dart';
+import '../ui/core/widgets/empty_state.dart';
+import '../ui/core/widgets/section_header.dart';
+import '../ui/workout/workout_formatters.dart';
+import '../ui/workout/workout_overview_cards.dart';
 import 'completed_workout_screen.dart';
 import 'workout_session_screen.dart';
 
@@ -86,120 +92,63 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       builder: (context, _) {
         final stats = widget.store.workoutStats;
         final activeSession = widget.store.activeWorkoutSession;
+        final completedSessions = widget.store.completedWorkoutSessions;
         return Scaffold(
           appBar: AppBar(title: const Text('Workout')),
-          floatingActionButton: activeSession == null
-              ? FloatingActionButton.extended(
-                  heroTag: 'start-workout-fab',
-                  tooltip: 'Start workout',
-                  onPressed: () => _openStartWorkoutPicker(context),
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text('Start workout'),
+          floatingActionButton: null,
+          body: AdaptivePage(
+            children: [
+              const SectionHeader(
+                title: 'Training cockpit',
+                subtitle: 'Start, resume, and review workout sessions.',
+              ),
+              if (activeSession != null)
+                ActiveWorkoutCard(
+                  session: activeSession,
+                  onOpen: () => _openActiveWorkout(context),
                 )
-              : null,
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (activeSession != null) ...[
-                  Text(
-                    'Active workout',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  Tooltip(
-                    message: 'Open active workout',
-                    child: Card(
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () => _openActiveWorkout(context),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                activeSession.trainingPlanName,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Elapsed time: ${_formatDuration(activeSession.duration)}',
-                              ),
-                              const SizedBox(height: 4),
-                              Text('${activeSession.results.length} exercises'),
-                            ],
-                          ),
-                        ),
-                      ),
+              else
+                ActionCard(
+                  title: 'Start workout',
+                  subtitle: 'Choose a training plan and begin tracking sets.',
+                  icon: Icons.play_arrow,
+                  tooltip: 'Start workout',
+                  onTap: () => _openStartWorkoutPicker(context),
+                ),
+              const SizedBox(height: 24),
+              SectionHeader(
+                title: 'Workout stats',
+                subtitle: stats.latestSession == null
+                    ? 'No completed sessions yet.'
+                    : 'Latest: ${stats.latestSession!.trainingPlanName}',
+              ),
+              WorkoutStatsGrid(
+                completedCount: stats.completedCount,
+                totalDuration: stats.totalDuration,
+                latestSessionName: stats.latestSession?.trainingPlanName,
+              ),
+              const SizedBox(height: 24),
+              const SectionHeader(title: 'Workout history'),
+              if (completedSessions.isEmpty)
+                AppEmptyState(
+                  icon: Icons.history_toggle_off,
+                  title: 'No completed workouts yet',
+                  message:
+                      'Start a training plan to build your workout history.',
+                )
+              else
+                ...completedSessions.reversed.map(
+                  (session) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: WorkoutHistoryCard(
+                      session: session,
+                      onOpen: () => _openCompletedWorkout(context, session),
+                      onDelete: () =>
+                          _confirmDeleteCompletedWorkout(context, session),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                ],
-                Text(
-                  'Workout stats',
-                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const SizedBox(height: 12),
-                Text('Completed sessions: ${stats.completedCount}'),
-                const SizedBox(height: 4),
-                Text(
-                  'Total workout time: ${_formatDuration(stats.totalDuration)}',
-                ),
-                if (stats.latestSession != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'Latest workout: ${stats.latestSession!.trainingPlanName}',
-                  ),
-                ],
-                const SizedBox(height: 24),
-                Text(
-                  'Workout history',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                if (widget.store.completedWorkoutSessions.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Text('No completed workouts yet'),
-                  )
-                else
-                  ...widget.store.completedWorkoutSessions.reversed.map(
-                    (session) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Tooltip(
-                        message: 'Open completed ${session.trainingPlanName}',
-                        child: Card(
-                          clipBehavior: Clip.antiAlias,
-                          child: ListTile(
-                            onTap: () =>
-                                _openCompletedWorkout(context, session),
-                            title: Text(session.trainingPlanName),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Date: ${_formatDate(session.startedAt)}'),
-                                Text(
-                                  'Completed • ${_formatDuration(session.duration)}',
-                                ),
-                              ],
-                            ),
-                            trailing: IconButton(
-                              tooltip:
-                                  'Delete completed ${session.trainingPlanName}',
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () => _confirmDeleteCompletedWorkout(
-                                context,
-                                session,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
         );
       },
@@ -257,7 +206,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Future<void> _openActiveWorkout(BuildContext context) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (context) => WorkoutSessionScreen(store: widget.store),
+        builder: (context) => WorkoutSessionScreen(
+          store: widget.store,
+          isCurrentTab: widget.isCurrentTab,
+          isCurrentTabListenable: widget.isCurrentTabListenable,
+        ),
       ),
     );
   }
@@ -284,7 +237,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         return AlertDialog(
           title: const Text('Delete workout?'),
           content: Text(
-            'Delete ${session.trainingPlanName} from ${_formatDate(session.startedAt)}?',
+            'Delete ${session.trainingPlanName} from ${formatWorkoutDate(session.startedAt)}?',
           ),
           actions: [
             TextButton(
@@ -309,23 +262,5 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
-  }
-
-  String _formatDuration(Duration duration) {
-    if (duration.inHours > 0) {
-      final hours = duration.inHours;
-      final minutes = duration.inMinutes.remainder(60);
-      return minutes == 0 ? '$hours h' : '$hours h $minutes min';
-    }
-    if (duration.inMinutes > 0) {
-      return '${duration.inMinutes} min';
-    }
-    return '0 min';
-  }
-
-  String _formatDate(DateTime value) {
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    return '${value.year}-$month-$day';
   }
 }

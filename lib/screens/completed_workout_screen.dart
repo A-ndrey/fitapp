@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../models/training_plan.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
+import '../ui/core/layout/adaptive_page.dart';
+import '../ui/core/widgets/section_header.dart';
+import '../ui/workout/workout_detail_cards.dart';
 
 class CompletedWorkoutScreen extends StatelessWidget {
   const CompletedWorkoutScreen({
@@ -19,74 +21,22 @@ class CompletedWorkoutScreen extends StatelessWidget {
     final resultGroups = _groupResults(session.results);
     return Scaffold(
       appBar: AppBar(title: const Text('Completed workout')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text(
-              session.trainingPlanName,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 4),
-            Text('Date: ${_formatDate(session.startedAt)}'),
-            const SizedBox(height: 4),
-            Text('Duration: ${_formatDuration(session.duration)}'),
-            const SizedBox(height: 24),
-            Text('Exercises', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
-            ...resultGroups.map(
-              (group) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          group.exerciseName,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        ...group.results.indexed.expand((resultEntry) {
-                          final resultNumber = resultEntry.$1 + 1;
-                          final result = resultEntry.$2;
-                          return <Widget>[
-                            if (group.results.length > 1) ...[
-                              Text(
-                                'Entry $resultNumber',
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                              const SizedBox(height: 4),
-                            ],
-                            Text(_formatTarget(result.target)),
-                            const SizedBox(height: 8),
-                            if (result.setLogs.isEmpty)
-                              const Text('No sets logged')
-                            else
-                              ...result.setLogs.indexed.map((entry) {
-                                final setNumber = entry.$1 + 1;
-                                final setLog = entry.$2;
-                                return ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text('Set $setNumber'),
-                                  subtitle: Text(
-                                    _formatSetLog(result.target, setLog),
-                                  ),
-                                );
-                              }),
-                            if (resultNumber < group.results.length)
-                              const SizedBox(height: 12),
-                          ];
-                        }),
-                      ],
-                    ),
-                  ),
-                ),
+      body: AdaptivePage(
+        children: [
+          WorkoutCompletedSummaryCard(session: session),
+          const SizedBox(height: 24),
+          const SectionHeader(title: 'Exercises'),
+          ...resultGroups.map(
+            (group) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: WorkoutCompletedExerciseResultGroupCard(
+                exerciseName: group.exerciseName,
+                results: group.results,
+                store: store,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -112,70 +62,6 @@ class CompletedWorkoutScreen extends StatelessWidget {
       }
     }
     return groups;
-  }
-
-  String _formatTarget(TrainingExercise target) {
-    final parts = <String>[];
-    if (target.sets != null) {
-      parts.add('${_formatNumber(target.sets!)} sets');
-    }
-    if (target.reps != null) {
-      parts.add('${_formatNumber(target.reps!)} reps');
-    }
-    if (target.weight != null) {
-      parts.add(_formatWeight(target.weight!, target.unit));
-    } else if (target.time != null) {
-      parts.add('${_formatNumber(target.time!)} ${target.unit}');
-    } else if (parts.isEmpty) {
-      parts.add(target.unit);
-    }
-    return 'Target: ${parts.join(' • ')}';
-  }
-
-  String _formatSetLog(TrainingExercise target, WorkoutSetLog setLog) {
-    final parts = <String>[];
-    if (setLog.reps != null) {
-      parts.add('${_formatNumber(setLog.reps!)} reps');
-    }
-    if (setLog.weight != null) {
-      parts.add(_formatWeight(setLog.weight!, target.unit));
-    }
-    if (setLog.time != null) {
-      parts.add('${_formatNumber(setLog.time!)} ${target.unit}');
-    }
-    return parts.join(' • ');
-  }
-
-  String _formatDuration(Duration duration) {
-    if (duration.inHours > 0) {
-      final hours = duration.inHours;
-      final minutes = duration.inMinutes.remainder(60);
-      return minutes == 0 ? '$hours h' : '$hours h $minutes min';
-    }
-    if (duration.inMinutes > 0) {
-      return '${duration.inMinutes} min';
-    }
-    return '0 min';
-  }
-
-  String _formatDate(DateTime value) {
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    return '${value.year}-$month-$day';
-  }
-
-  String _formatNumber(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    return value.toStringAsFixed(1);
-  }
-
-  String _formatWeight(double value, String unit) {
-    if (unit == 'kg') {
-      return store.formatWorkoutWeight(value);
-    }
-    return '${_formatNumber(value)} $unit';
   }
 }
 

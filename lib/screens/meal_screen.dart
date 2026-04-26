@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../models/catalog_item.dart';
-import '../models/meal_entry.dart';
 import '../state/app_store.dart';
+import '../ui/core/layout/adaptive_page.dart';
+import '../ui/core/widgets/empty_state.dart';
+import '../ui/core/widgets/section_header.dart';
+import '../ui/nutrition/nutrition_cards.dart';
 import '../widgets/food_form.dart';
-import '../widgets/macro_summary.dart';
 
 class MealScreen extends StatelessWidget {
   const MealScreen({super.key, required this.store});
@@ -24,35 +26,52 @@ class MealScreen extends StatelessWidget {
             onPressed: () => _openAddMealFlow(context),
             child: const Icon(Icons.add),
           ),
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                MacroSummary(title: 'Daily totals', values: store.dailyTotals),
-                const SizedBox(height: 24),
-                Text(
-                  'Meal entries',
-                  style: Theme.of(context).textTheme.titleMedium,
+          body: AdaptivePage(
+            children: [
+              SectionHeader(
+                title: 'Nutrition cockpit',
+                subtitle: 'Log food, review macros, and keep today visible.',
+                trailing: Tooltip(
+                  message: 'Add meal item',
+                  child: FilledButton.icon(
+                    onPressed: () => _openAddMealFlow(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add meal item'),
+                  ),
                 ),
-                const SizedBox(height: 12),
-                if (store.mealEntries.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Text('No meal entries yet'),
-                  )
-                else
-                  ...store.mealEntries.map(
-                    (entry) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _MealEntryCard(
-                        store: store,
-                        entry: entry,
-                        onRemove: () => store.removeMealEntry(entry.id),
-                      ),
+              ),
+              Text(
+                'Daily totals',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 12),
+              NutritionSummaryGrid(values: store.dailyTotals),
+              const SizedBox(height: 24),
+              Text(
+                'Meal entries',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              if (store.mealEntries.isEmpty)
+                const AppEmptyState(
+                  icon: Icons.restaurant_menu_outlined,
+                  title: 'No meal entries yet',
+                  message: "Use Add meal item to start today's log.",
+                )
+              else
+                ...store.mealEntries.map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: MealEntryCard(
+                      store: store,
+                      entry: entry,
+                      onRemove: () => store.removeMealEntry(entry.id),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         );
       },
@@ -126,55 +145,6 @@ class _MealSearchResult {
   final String createName;
 }
 
-class _MealEntryCard extends StatelessWidget {
-  const _MealEntryCard({
-    required this.store,
-    required this.entry,
-    required this.onRemove,
-  });
-
-  final AppStore store;
-  final MealEntry entry;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(entry.itemName),
-        subtitle: Text(
-          '${_formatQuantity(entry)} logged\n'
-          '${_format(entry.nutrition.calories)} kcal • '
-          '${_format(entry.nutrition.protein)} g protein • '
-          '${_format(entry.nutrition.fat)} g fat • '
-          '${_format(entry.nutrition.carbs)} g carbs',
-        ),
-        isThreeLine: true,
-        trailing: IconButton(
-          tooltip: 'Remove meal entry',
-          icon: const Icon(Icons.close),
-          onPressed: onRemove,
-        ),
-      ),
-    );
-  }
-
-  String _formatQuantity(MealEntry entry) {
-    final value = entry.enteredQuantity;
-    if (entry.mode == MealEntryMode.grams) {
-      return store.formatDishWeight(value);
-    }
-    return '${_format(value)} servings';
-  }
-
-  String _format(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    return value.toStringAsFixed(1);
-  }
-}
-
 class _MealSearchSheet extends StatefulWidget {
   const _MealSearchSheet({required this.store});
 
@@ -209,7 +179,20 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            'Add meal item',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Search your saved foods and dishes, or create a new food from your query.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
           TextField(
             controller: _searchController,
             decoration: const InputDecoration(
@@ -238,9 +221,8 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
                 }
                 final resultIndex = showCreateAction ? index - 1 : index;
                 final item = results[resultIndex];
-                return ListTile(
-                  title: Text(item.name),
-                  subtitle: Text(item.isFood ? 'food' : 'dish'),
+                return MealSearchResultTile(
+                  item: item,
                   onTap: () {
                     Navigator.of(context).pop(_MealSearchResult.item(item));
                   },
@@ -298,6 +280,11 @@ class _LogAmountDialogState extends State<_LogAmountDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            "Choose how much you ate, then add it to today's meal log.",
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
           SegmentedButton<_LogAmountMode>(
             segments: const [
               ButtonSegment(

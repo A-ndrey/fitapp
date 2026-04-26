@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'models/app_preferences.dart';
-import 'screens/food_screen.dart';
+import 'screens/library_screen.dart';
 import 'screens/meal_screen.dart';
 import 'screens/more_screen.dart';
-import 'screens/trainings_screen.dart';
+import 'screens/today_screen.dart';
 import 'screens/workout_screen.dart';
 import 'state/app_store.dart';
+import 'ui/core/layout/app_breakpoints.dart';
+import 'ui/core/theme/app_theme.dart';
 
 void main() {
   runApp(const FitApp());
@@ -50,20 +52,8 @@ class _FitAppState extends State<FitApp> {
           title: 'FitApp',
           debugShowCheckedModeBanner: false,
           themeMode: _themeModeFor(_store.appearancePreference),
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.teal,
-              brightness: Brightness.light,
-            ),
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.teal,
-              brightness: Brightness.dark,
-            ),
-            useMaterial3: true,
-          ),
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
           home: FitHome(store: _store),
         );
       },
@@ -90,7 +80,7 @@ class FitHome extends StatefulWidget {
 
 class _FitHomeState extends State<FitHome> {
   int _selectedIndex = 0;
-  final ValueNotifier<bool> _isWorkoutTabCurrent = ValueNotifier<bool>(true);
+  final ValueNotifier<bool> _isWorkoutTabCurrent = ValueNotifier<bool>(false);
 
   @override
   void dispose() {
@@ -100,46 +90,121 @@ class _FitHomeState extends State<FitHome> {
 
   @override
   Widget build(BuildContext context) {
-    final screens = <Widget>[
-      _WorkoutTabNavigator(
-        store: widget.store,
-        isCurrentTabListenable: _isWorkoutTabCurrent,
+    final destinations = <_AppDestination>[
+      _AppDestination(
+        label: 'Today',
+        icon: Icons.space_dashboard_outlined,
+        selectedIcon: Icons.space_dashboard,
+        screen: TodayScreen(
+          store: widget.store,
+          onOpenTrain: () => _selectDestination(1),
+          onOpenNutrition: () => _selectDestination(2),
+          onOpenLibrary: () => _selectDestination(3),
+        ),
       ),
-      TrainingsScreen(store: widget.store),
-      MealScreen(store: widget.store),
-      FoodScreen(store: widget.store),
-      MoreScreen(store: widget.store),
+      _AppDestination(
+        label: 'Train',
+        icon: Icons.timer_outlined,
+        selectedIcon: Icons.timer,
+        screen: _WorkoutTabNavigator(
+          store: widget.store,
+          isCurrentTabListenable: _isWorkoutTabCurrent,
+        ),
+      ),
+      _AppDestination(
+        label: 'Nutrition',
+        icon: Icons.restaurant_outlined,
+        selectedIcon: Icons.restaurant,
+        screen: MealScreen(store: widget.store),
+      ),
+      _AppDestination(
+        label: 'Library',
+        icon: Icons.inventory_2_outlined,
+        selectedIcon: Icons.inventory_2,
+        screen: LibraryScreen(store: widget.store),
+      ),
+      _AppDestination(
+        label: 'More',
+        icon: Icons.more_horiz,
+        selectedIcon: Icons.more_horiz,
+        screen: MoreScreen(store: widget.store),
+      ),
     ];
 
-    return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          _isWorkoutTabCurrent.value = index == 0;
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.timer_outlined),
-            label: 'Workout',
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final body = IndexedStack(
+          index: _selectedIndex,
+          children: [
+            for (final destination in destinations) destination.screen,
+          ],
+        );
+
+        if (constraints.maxWidth < AppBreakpoints.mediumMin) {
+          return Scaffold(
+            body: body,
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: _selectDestination,
+              destinations: [
+                for (final destination in destinations)
+                  NavigationDestination(
+                    icon: Icon(destination.icon),
+                    selectedIcon: Icon(destination.selectedIcon),
+                    label: destination.label,
+                  ),
+              ],
+            ),
+          );
+        }
+
+        return Scaffold(
+          body: Row(
+            children: [
+              SafeArea(
+                child: NavigationRail(
+                  selectedIndex: _selectedIndex,
+                  onDestinationSelected: _selectDestination,
+                  extended: constraints.maxWidth >= AppBreakpoints.largeMin,
+                  destinations: [
+                    for (final destination in destinations)
+                      NavigationRailDestination(
+                        icon: Icon(destination.icon),
+                        selectedIcon: Icon(destination.selectedIcon),
+                        label: Text(destination.label),
+                      ),
+                  ],
+                ),
+              ),
+              const VerticalDivider(width: 1),
+              Expanded(child: body),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.fitness_center_outlined),
-            label: 'Trainings',
-          ),
-          NavigationDestination(icon: Icon(Icons.restaurant), label: 'Meal'),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            label: 'Food',
-          ),
-          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'More'),
-        ],
-      ),
+        );
+      },
     );
   }
+
+  void _selectDestination(int index) {
+    _isWorkoutTabCurrent.value = index == 1;
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+}
+
+class _AppDestination {
+  const _AppDestination({
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+    required this.screen,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final Widget screen;
 }
 
 class _WorkoutTabNavigator extends StatelessWidget {

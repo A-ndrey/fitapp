@@ -1,5 +1,8 @@
 import 'package:fitapp/screens/trainings_screen.dart';
 import 'package:fitapp/state/app_store.dart';
+import 'package:fitapp/ui/core/layout/adaptive_page.dart';
+import 'package:fitapp/ui/core/widgets/empty_state.dart';
+import 'package:fitapp/ui/library/library_cards.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -88,6 +91,8 @@ void main() {
   ) async {
     await pumpScreen(tester);
 
+    expect(find.byType(AdaptivePage), findsOneWidget);
+    expect(find.byType(TrainingPlanCatalogCard), findsNWidgets(2));
     expect(find.text('Training plans'), findsOneWidget);
     expect(find.text('Chest day'), findsOneWidget);
     expect(find.text('Leg day'), findsOneWidget);
@@ -195,11 +200,26 @@ void main() {
       find.byWidgetPredicate((widget) => widget is SegmentedButton),
       findsOneWidget,
     );
+    expect(find.byType(ExerciseCatalogCard), findsWidgets);
     expect(find.text('Pushups'), findsOneWidget);
     expect(find.text('Bench press'), findsOneWidget);
     expect(find.byTooltip('Add exercise'), findsOneWidget);
     expect(find.byTooltip('Edit Pushups'), findsOneWidget);
     expect(find.byTooltip('Delete Pushups'), findsOneWidget);
+  });
+
+  testWidgets('shows shared empty states for empty training catalog', (
+    tester,
+  ) async {
+    await pumpScreen(tester, store: AppStore.empty());
+
+    expect(find.byType(AppEmptyState), findsOneWidget);
+    expect(find.text('No training plans yet'), findsOneWidget);
+
+    await openExercisesView(tester);
+
+    expect(find.byType(AppEmptyState), findsOneWidget);
+    expect(find.text('No exercises yet'), findsOneWidget);
   });
 
   testWidgets('exercise form uses predefined muscle group choices', (

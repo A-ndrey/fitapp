@@ -35,7 +35,9 @@ class MoreScreen extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
-                        onPressed: store.isLoggedIn ? store.logOut : store.logIn,
+                        onPressed: store.isLoggedIn
+                            ? store.logOut
+                            : store.logIn,
                         child: Text(store.isLoggedIn ? 'Logout' : 'Login'),
                       ),
                     ),

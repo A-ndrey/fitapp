@@ -1,16 +1,27 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../models/training_plan.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
+import '../ui/core/layout/adaptive_page.dart';
+import '../ui/core/widgets/section_header.dart';
+import '../ui/workout/workout_formatters.dart';
+import '../ui/workout/workout_session_cards.dart';
 import 'workout_exercise_screen.dart';
 
 class WorkoutSessionScreen extends StatefulWidget {
-  const WorkoutSessionScreen({super.key, required this.store});
+  const WorkoutSessionScreen({
+    super.key,
+    required this.store,
+    this.isCurrentTab = true,
+    this.isCurrentTabListenable,
+  });
 
   final AppStore store;
+  final bool isCurrentTab;
+  final ValueListenable<bool>? isCurrentTabListenable;
 
   @override
   State<WorkoutSessionScreen> createState() => _WorkoutSessionScreenState();
@@ -18,23 +29,47 @@ class WorkoutSessionScreen extends StatefulWidget {
 
 class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   Timer? _timer;
+  bool get _isCurrentTab =>
+      widget.isCurrentTabListenable?.value ?? widget.isCurrentTab;
 
   @override
   void initState() {
     super.initState();
     widget.store.addListener(_syncTimer);
+    widget.isCurrentTabListenable?.addListener(_syncTimer);
     _syncTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant WorkoutSessionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.store != widget.store) {
+      oldWidget.store.removeListener(_syncTimer);
+      widget.store.addListener(_syncTimer);
+    }
+    if (oldWidget.isCurrentTabListenable != widget.isCurrentTabListenable) {
+      oldWidget.isCurrentTabListenable?.removeListener(_syncTimer);
+      widget.isCurrentTabListenable?.addListener(_syncTimer);
+    }
+    if (oldWidget.isCurrentTab != widget.isCurrentTab ||
+        oldWidget.store != widget.store ||
+        oldWidget.isCurrentTabListenable != widget.isCurrentTabListenable) {
+      _syncTimer();
+    }
   }
 
   @override
   void dispose() {
     widget.store.removeListener(_syncTimer);
+    widget.isCurrentTabListenable?.removeListener(_syncTimer);
     _timer?.cancel();
     super.dispose();
   }
 
   void _syncTimer() {
-    if (widget.store.activeWorkoutSession == null) {
+    final hasActiveSession =
+        _isCurrentTab && widget.store.activeWorkoutSession != null;
+    if (!hasActiveSession) {
       _timer?.cancel();
       _timer = null;
       return;
@@ -55,81 +90,55 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         if (session == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Workout session')),
-            body: const SafeArea(child: SizedBox.shrink()),
+            body: const AdaptivePage(children: []),
           );
         }
         final exerciseCounts = _exerciseCounts(session.results);
         final seenExercises = <String, int>{};
         return Scaffold(
           appBar: AppBar(title: const Text('Workout session')),
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(
-                  session.trainingPlanName,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 4),
-                Text('Elapsed time: ${_formatDuration(session.duration)}'),
-                const SizedBox(height: 24),
-                Text(
-                  'Exercises',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                ...session.results.indexed.map((entry) {
-                  final resultIndex = entry.$1;
-                  final result = entry.$2;
-                  final occurrence =
-                      (seenExercises[result.exerciseId] ?? 0) + 1;
-                  seenExercises[result.exerciseId] = occurrence;
-                  final hasRepeatedExercise =
-                      (exerciseCounts[result.exerciseId] ?? 0) > 1;
-                  final exerciseLabel = hasRepeatedExercise
-                      ? '${result.exerciseName} ($occurrence)'
-                      : result.exerciseName;
-                  final tooltipLabel = hasRepeatedExercise
-                      ? 'Open ${result.exerciseName} entry $occurrence'
-                      : 'Open ${result.exerciseName}';
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Tooltip(
-                      message: tooltipLabel,
-                      child: Card(
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: () => _openExercise(context, resultIndex),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  exerciseLabel,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(_formatTarget(result.target)),
-                                const SizedBox(height: 4),
-                                Text(_formatSetCount(result.setLogs.length)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+          body: AdaptivePage(
+            children: [
+              WorkoutSessionHeaderCard(session: session),
+              const SizedBox(height: 24),
+              const SectionHeader(
+                title: 'Exercise queue',
+                subtitle: 'Open an exercise to log sets and compare history.',
+              ),
+              ...session.results.indexed.map((entry) {
+                final resultIndex = entry.$1;
+                final result = entry.$2;
+                final occurrence = (seenExercises[result.exerciseId] ?? 0) + 1;
+                seenExercises[result.exerciseId] = occurrence;
+                final hasRepeatedExercise =
+                    (exerciseCounts[result.exerciseId] ?? 0) > 1;
+                final exerciseLabel = hasRepeatedExercise
+                    ? '${result.exerciseName} ($occurrence)'
+                    : result.exerciseName;
+                final tooltipLabel = hasRepeatedExercise
+                    ? 'Open ${result.exerciseName} entry $occurrence'
+                    : 'Open ${result.exerciseName}';
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: WorkoutExerciseProgressCard(
+                    exerciseLabel: exerciseLabel,
+                    targetLabel: formatWorkoutTarget(
+                      result.target,
+                      widget.store,
                     ),
-                  );
-                }),
-                const SizedBox(height: 8),
-                FilledButton(
-                  onPressed: () => _finishWorkout(context),
-                  child: const Text('Finish workout'),
-                ),
-              ],
-            ),
+                    setCountLabel: formatWorkoutSetCount(result.setLogs.length),
+                    tooltip: tooltipLabel,
+                    onOpen: () => _openExercise(context, resultIndex),
+                  ),
+                );
+              }),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                onPressed: () => _finishWorkout(context),
+                icon: const Icon(Icons.flag_outlined),
+                label: const Text('Finish workout'),
+              ),
+            ],
           ),
         );
       },
@@ -160,62 +169,11 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     }
   }
 
-  String _formatTarget(TrainingExercise target) {
-    final parts = <String>[];
-    if (target.sets != null) {
-      parts.add('${_formatNumber(target.sets!)} sets');
-    }
-    if (target.reps != null) {
-      parts.add('${_formatNumber(target.reps!)} reps');
-    }
-    if (target.weight != null) {
-      parts.add(_formatWeight(target.weight!, target.unit));
-    } else if (target.time != null) {
-      parts.add('${_formatNumber(target.time!)} ${target.unit}');
-    } else if (parts.isEmpty) {
-      parts.add(target.unit);
-    }
-    return 'Target: ${parts.join(' • ')}';
-  }
-
-  String _formatSetCount(int count) {
-    if (count == 1) {
-      return '1 set logged';
-    }
-    return '$count sets logged';
-  }
-
-  String _formatDuration(Duration duration) {
-    if (duration.inHours > 0) {
-      final hours = duration.inHours;
-      final minutes = duration.inMinutes.remainder(60);
-      return minutes == 0 ? '$hours h' : '$hours h $minutes min';
-    }
-    if (duration.inMinutes > 0) {
-      return '${duration.inMinutes} min';
-    }
-    return '0 min';
-  }
-
   Map<String, int> _exerciseCounts(List<WorkoutExerciseResult> results) {
     final counts = <String, int>{};
     for (final result in results) {
       counts[result.exerciseId] = (counts[result.exerciseId] ?? 0) + 1;
     }
     return counts;
-  }
-
-  String _formatNumber(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    return value.toStringAsFixed(1);
-  }
-
-  String _formatWeight(double value, String unit) {
-    if (unit == 'kg') {
-      return widget.store.formatWorkoutWeight(value);
-    }
-    return '${_formatNumber(value)} $unit';
   }
 }

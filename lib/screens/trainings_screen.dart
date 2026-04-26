@@ -3,13 +3,21 @@ import 'package:flutter/material.dart';
 import '../models/exercise.dart';
 import '../models/training_plan.dart';
 import '../state/app_store.dart';
+import '../ui/core/layout/adaptive_page.dart';
+import '../ui/core/widgets/empty_state.dart';
+import '../ui/library/library_cards.dart';
 
 enum _TrainingsView { plans, exercises }
 
 class TrainingsScreen extends StatefulWidget {
-  const TrainingsScreen({super.key, required this.store});
+  const TrainingsScreen({
+    super.key,
+    required this.store,
+    this.embedded = false,
+  });
 
   final AppStore store;
+  final bool embedded;
 
   @override
   State<TrainingsScreen> createState() => _TrainingsScreenState();
@@ -25,6 +33,10 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     return AnimatedBuilder(
       animation: store,
       builder: (context, _) {
+        final body = _buildBody(context);
+        if (widget.embedded) {
+          return body;
+        }
         return Scaffold(
           appBar: AppBar(title: const Text('Trainings')),
           floatingActionButton: FloatingActionButton(
@@ -37,138 +49,133 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
                 : () => _openExerciseDialog(context),
             child: const Icon(Icons.add),
           ),
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                SegmentedButton<_TrainingsView>(
-                  segments: const [
-                    ButtonSegment(
-                      value: _TrainingsView.plans,
-                      label: Text('Plans'),
-                      icon: Icon(Icons.assignment_outlined),
-                    ),
-                    ButtonSegment(
-                      value: _TrainingsView.exercises,
-                      label: Text('Exercises'),
-                      icon: Icon(Icons.fitness_center_outlined),
-                    ),
-                  ],
-                  selected: <_TrainingsView>{_selectedView},
-                  onSelectionChanged: (selection) {
-                    setState(() {
-                      _selectedView = selection.first;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                if (_selectedView == _TrainingsView.plans)
-                  _buildPlansView(context)
-                else
-                  _buildExercisesView(context),
-              ],
-            ),
-          ),
+          body: body,
         );
       },
     );
   }
 
-  Widget _buildPlansView(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildBody(BuildContext context) {
+    return AdaptivePage(
       children: [
-        Text('Training plans', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
-        if (store.trainingPlans.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Text('No training plans yet'),
-          )
-        else
-          ...store.trainingPlans.map(
-            (plan) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Card(
-                child: ListTile(
-                  title: Text(plan.name),
-                  subtitle: Text(_planSummary(plan)),
-                  isThreeLine: true,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        tooltip: 'Edit ${plan.name}',
-                        icon: const Icon(Icons.edit_outlined),
-                        onPressed: () =>
-                            _openPlanDialog(context, initialPlan: plan),
-                      ),
-                      IconButton(
-                        tooltip: 'Delete ${plan.name}',
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => _confirmDeletePlan(context, plan),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+        SegmentedButton<_TrainingsView>(
+          segments: const [
+            ButtonSegment(
+              value: _TrainingsView.plans,
+              label: Text('Plans'),
+              icon: Icon(Icons.assignment_outlined),
             ),
-          ),
+            ButtonSegment(
+              value: _TrainingsView.exercises,
+              label: Text('Exercises'),
+              icon: Icon(Icons.fitness_center_outlined),
+            ),
+          ],
+          selected: <_TrainingsView>{_selectedView},
+          onSelectionChanged: (selection) {
+            setState(() {
+              _selectedView = selection.first;
+            });
+          },
+        ),
+        const SizedBox(height: 16),
+        if (_selectedView == _TrainingsView.plans)
+          ..._buildPlansView(context)
+        else
+          ..._buildExercisesView(context),
       ],
     );
   }
 
-  Widget _buildExercisesView(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Exercises', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
-        if (store.exercises.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Text('No exercises yet'),
-          )
-        else
-          ...store.exercises.map(
-            (exercise) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Card(
-                child: ListTile(
-                  title: Text(exercise.name),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(exercise.description),
-                      Text(exercise.instruction),
-                      Text(_summarizeMuscleGroups(exercise.muscleGroups)),
-                    ],
-                  ),
-                  isThreeLine: true,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        tooltip: 'Edit ${exercise.name}',
-                        icon: const Icon(Icons.edit_outlined),
-                        onPressed: () => _openExerciseDialog(
-                          context,
-                          initialExercise: exercise,
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Delete ${exercise.name}',
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () =>
-                            _confirmDeleteExercise(context, exercise),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+  List<Widget> _buildPlansView(BuildContext context) {
+    return [
+      _buildSectionHeader(
+        context,
+        title: 'Training plans',
+        actionLabel: 'Add training plan',
+        onPressed: () => _openPlanDialog(context),
+      ),
+      const SizedBox(height: 12),
+      if (store.trainingPlans.isEmpty)
+        const AppEmptyState(
+          icon: Icons.assignment_outlined,
+          title: 'No training plans yet',
+          message: 'Create a training plan to organize exercises.',
+        )
+      else
+        ...store.trainingPlans.map(
+          (plan) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: TrainingPlanCatalogCard(
+              plan: plan,
+              onEdit: () => _openPlanDialog(context, initialPlan: plan),
+              onDelete: () => _confirmDeletePlan(context, plan),
             ),
           ),
+        ),
+    ];
+  }
+
+  List<Widget> _buildExercisesView(BuildContext context) {
+    return [
+      _buildSectionHeader(
+        context,
+        title: 'Exercises',
+        actionLabel: 'Add exercise',
+        onPressed: () => _openExerciseDialog(context),
+      ),
+      const SizedBox(height: 12),
+      if (store.exercises.isEmpty)
+        const AppEmptyState(
+          icon: Icons.fitness_center_outlined,
+          title: 'No exercises yet',
+          message: 'Create an exercise to use it in training plans.',
+        )
+      else
+        ...store.exercises.map(
+          (exercise) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ExerciseCatalogCard(
+              exercise: exercise,
+              onEdit: () =>
+                  _openExerciseDialog(context, initialExercise: exercise),
+              onDelete: () => _confirmDeleteExercise(context, exercise),
+            ),
+          ),
+        ),
+    ];
+  }
+
+  Widget _buildSectionHeader(
+    BuildContext context, {
+    required String title,
+    required String actionLabel,
+    required VoidCallback onPressed,
+  }) {
+    final titleWidget = Text(
+      title,
+      style: Theme.of(context).textTheme.titleMedium,
+    );
+    if (!widget.embedded) {
+      return titleWidget;
+    }
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      alignment: WrapAlignment.spaceBetween,
+      children: [
+        titleWidget,
+        Tooltip(
+          message: actionLabel,
+          child: IntrinsicWidth(
+            child: FilledButton.icon(
+              onPressed: onPressed,
+              icon: const Icon(Icons.add),
+              label: Text(actionLabel),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -271,25 +278,6 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     } on StateError catch (error) {
       _showSnackBar(context, error.message);
     }
-  }
-
-  String _planSummary(TrainingPlan plan) {
-    final exerciseCount = plan.exercises.length;
-    final exerciseLabel = exerciseCount == 1
-        ? '1 exercise'
-        : '$exerciseCount exercises';
-    final description = plan.description.trim();
-    if (description.isEmpty) {
-      return exerciseLabel;
-    }
-    return '$exerciseLabel\n$description';
-  }
-
-  String _summarizeMuscleGroups(List<MuscleGroup> muscleGroups) {
-    if (muscleGroups.isEmpty) {
-      return 'Muscles: -';
-    }
-    return muscleGroups.map((group) => group.label).join(', ');
   }
 }
 

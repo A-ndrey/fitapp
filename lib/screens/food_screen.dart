@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
 
 import '../state/app_store.dart';
+import '../ui/core/layout/adaptive_page.dart';
+import '../ui/core/widgets/empty_state.dart';
+import '../ui/library/library_cards.dart';
 import '../widgets/dish_form.dart';
 import '../widgets/food_form.dart';
 
 class FoodScreen extends StatelessWidget {
-  const FoodScreen({super.key, required this.store});
+  const FoodScreen({super.key, required this.store, this.embedded = false});
 
   final AppStore store;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: store,
       builder: (context, _) {
+        final body = _buildBody(context);
+        if (embedded) {
+          return body;
+        }
         return Scaffold(
           appBar: AppBar(title: const Text('Food')),
           floatingActionButton: FloatingActionButton(
@@ -22,60 +30,62 @@ class FoodScreen extends StatelessWidget {
             onPressed: () => _openAddItemFlow(context),
             child: const Icon(Icons.add),
           ),
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(
-                  'Food set',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                ...store.items.map((item) {
-                  final nutrition = item.nutritionPerServing(store.catalog);
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Card(
-                      child: ListTile(
-                        title: Text(item.name),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(item.isFood ? 'food' : 'dish'),
-                            Text(
-                              '${store.formatDishWeight(item.servingSizeGrams)} serving • '
-                              '${_format(nutrition.calories)} kcal per serving',
-                            ),
-                          ],
-                        ),
-                        isThreeLine: true,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              tooltip: 'Edit ${item.name}',
-                              icon: const Icon(Icons.edit_outlined),
-                              onPressed: () =>
-                                  _openEditItemFlow(context, item.id),
-                            ),
-                            IconButton(
-                              tooltip: 'Delete ${item.name}',
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () =>
-                                  _confirmDeleteItem(context, item.id),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
+          body: body,
         );
       },
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    return AdaptivePage(
+      children: [
+        _buildHeader(context),
+        const SizedBox(height: 12),
+        if (store.items.isEmpty)
+          const AppEmptyState(
+            icon: Icons.inventory_2_outlined,
+            title: 'No foods or dishes yet',
+            message: 'Use Add food or dish to build your reusable catalog.',
+          )
+        else
+          ...store.items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: FoodCatalogCard(
+                item: item,
+                store: store,
+                onEdit: () => _openEditItemFlow(context, item.id),
+                onDelete: () => _confirmDeleteItem(context, item.id),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final title = Text(
+      'Food set',
+      style: Theme.of(context).textTheme.titleMedium,
+    );
+    if (!embedded) {
+      return title;
+    }
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      alignment: WrapAlignment.spaceBetween,
+      children: [
+        title,
+        IntrinsicWidth(
+          child: FilledButton.icon(
+            onPressed: () => _openAddItemFlow(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Add food or dish'),
+          ),
+        ),
+      ],
     );
   }
 
@@ -170,13 +180,6 @@ class FoodScreen extends StatelessWidget {
             : DishForm(store: store);
       },
     );
-  }
-
-  String _format(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    return value.toStringAsFixed(1);
   }
 }
 
