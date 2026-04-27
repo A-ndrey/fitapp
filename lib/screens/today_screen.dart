@@ -197,7 +197,11 @@ class _MetricGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 720 ? 3 : 1;
+        final columns = switch (constraints.maxWidth) {
+          >= 720 => 3,
+          >= 560 => 2,
+          _ => 1,
+        };
         final spacing = columns == 1 ? 12.0 : 16.0;
         final width =
             (constraints.maxWidth - (spacing * (columns - 1))) / columns;

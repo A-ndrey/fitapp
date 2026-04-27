@@ -68,6 +68,63 @@ void main() {
     expect(tapped, isTrue);
   });
 
+  testWidgets('adaptive page applies compact and medium page padding', (
+    tester,
+  ) async {
+    for (final entry in <({double width, EdgeInsets padding})>[
+      (
+        width: 390,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      ),
+      (
+        width: 700,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      ),
+    ]) {
+      await tester.binding.setSurfaceSize(Size(entry.width, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AdaptivePage(children: [Text('Responsive content')]),
+          ),
+        ),
+      );
+
+      final listView = tester.widget<ListView>(find.byType(ListView));
+      expect(listView.padding, entry.padding);
+      expect(find.text('Responsive content'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('adaptive page centers content within max width on desktop', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1440, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: AdaptivePage(children: [Text('Desktop content')])),
+      ),
+    );
+
+    final constrainedBox = tester.widget<ConstrainedBox>(
+      find
+          .descendant(
+            of: find.byType(Center),
+            matching: find.byType(ConstrainedBox),
+          )
+          .first,
+    );
+
+    expect(constrainedBox.constraints.maxWidth, 1120);
+    expect(find.text('Desktop content'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('metric card does not overflow with long value and suffix', (
     tester,
   ) async {

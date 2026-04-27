@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/catalog_item.dart';
 import '../state/app_store.dart';
+import '../ui/core/layout/app_breakpoints.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/section_header.dart';
@@ -18,61 +19,74 @@ class MealScreen extends StatelessWidget {
     return AnimatedBuilder(
       animation: store,
       builder: (context, _) {
-        return Scaffold(
-          appBar: AppBar(title: const Text('Meal')),
-          floatingActionButton: FloatingActionButton(
-            heroTag: 'add-meal-fab',
-            tooltip: 'Add meal item',
-            onPressed: () => _openAddMealFlow(context),
-            child: const Icon(Icons.add),
-          ),
-          body: AdaptivePage(
-            children: [
-              SectionHeader(
-                title: 'Nutrition cockpit',
-                subtitle: 'Log food, review macros, and keep today visible.',
-                trailing: Tooltip(
-                  message: 'Add meal item',
-                  child: FilledButton.icon(
-                    onPressed: () => _openAddMealFlow(context),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add meal item'),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final showInlineAdd = AppBreakpoints.isMediumOrLarger(
+              constraints.maxWidth,
+            );
+
+            return Scaffold(
+              appBar: AppBar(title: const Text('Meal')),
+              floatingActionButton: showInlineAdd
+                  ? null
+                  : FloatingActionButton(
+                      heroTag: 'add-meal-fab',
+                      tooltip: 'Add meal item',
+                      onPressed: () => _openAddMealFlow(context),
+                      child: const Icon(Icons.add),
+                    ),
+              body: AdaptivePage(
+                children: [
+                  SectionHeader(
+                    title: 'Nutrition cockpit',
+                    subtitle:
+                        'Log food, review macros, and keep today visible.',
+                    trailing: showInlineAdd
+                        ? Tooltip(
+                            message: 'Add meal item',
+                            child: FilledButton.icon(
+                              onPressed: () => _openAddMealFlow(context),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add meal item'),
+                            ),
+                          )
+                        : null,
                   ),
-                ),
-              ),
-              Text(
-                'Daily totals',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 12),
-              NutritionSummaryGrid(values: store.dailyTotals),
-              const SizedBox(height: 24),
-              Text(
-                'Meal entries',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              if (store.mealEntries.isEmpty)
-                const AppEmptyState(
-                  icon: Icons.restaurant_menu_outlined,
-                  title: 'No meal entries yet',
-                  message: "Use Add meal item to start today's log.",
-                )
-              else
-                ...store.mealEntries.map(
-                  (entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: MealEntryCard(
-                      store: store,
-                      entry: entry,
-                      onRemove: () => store.removeMealEntry(entry.id),
+                  Text(
+                    'Daily totals',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-            ],
-          ),
+                  const SizedBox(height: 12),
+                  NutritionSummaryGrid(values: store.dailyTotals),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Meal entries',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  if (store.mealEntries.isEmpty)
+                    const AppEmptyState(
+                      icon: Icons.restaurant_menu_outlined,
+                      title: 'No meal entries yet',
+                      message: "Use Add meal item to start today's log.",
+                    )
+                  else
+                    ...store.mealEntries.map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: MealEntryCard(
+                          store: store,
+                          entry: entry,
+                          onRemove: () => store.removeMealEntry(entry.id),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
         );
       },
     );

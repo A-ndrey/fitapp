@@ -6,7 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Future<void> pumpScreen(WidgetTester tester, AppStore store) async {
+  Future<void> pumpScreen(
+    WidgetTester tester,
+    AppStore store, {
+    Size? size,
+  }) async {
+    if (size != null) {
+      await tester.binding.setSurfaceSize(size);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+    }
     await tester.pumpWidget(MaterialApp(home: MoreScreen(store: store)));
     await tester.pumpAndSettle();
   }
@@ -46,5 +54,31 @@ void main() {
     expect(find.text('System'), findsOneWidget);
     expect(find.text('Light'), findsOneWidget);
     expect(find.text('Dark'), findsOneWidget);
+  });
+
+  testWidgets('more screen stacks preference cards below medium layout', (
+    tester,
+  ) async {
+    await pumpScreen(tester, AppStore(), size: const Size(390, 844));
+
+    final workoutTopLeft = tester.getTopLeft(find.text('Workout weight'));
+    final dishTopLeft = tester.getTopLeft(find.text('Dish weight'));
+
+    expect(dishTopLeft.dy, greaterThan(workoutTopLeft.dy));
+    expect((dishTopLeft.dx - workoutTopLeft.dx).abs(), lessThan(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('more screen places preference cards in two columns when wide', (
+    tester,
+  ) async {
+    await pumpScreen(tester, AppStore(), size: const Size(900, 900));
+
+    final workoutTopLeft = tester.getTopLeft(find.text('Workout weight'));
+    final dishTopLeft = tester.getTopLeft(find.text('Dish weight'));
+
+    expect((dishTopLeft.dy - workoutTopLeft.dy).abs(), lessThan(1));
+    expect(dishTopLeft.dx, greaterThan(workoutTopLeft.dx));
+    expect(tester.takeException(), isNull);
   });
 }

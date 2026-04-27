@@ -10,6 +10,7 @@ import 'package:fitapp/models/meal_entry.dart';
 import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/screens/food_screen.dart';
 import 'package:fitapp/screens/library_screen.dart';
+import 'package:fitapp/screens/meal_screen.dart';
 import 'package:fitapp/screens/today_screen.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/ui/core/layout/adaptive_page.dart';
@@ -69,6 +70,19 @@ void main() {
       nutrition: tomatoNutrition,
     ),
   );
+
+  Future<void> pumpAtSurfaceSize(
+    WidgetTester tester,
+    Size size,
+    Widget widget,
+  ) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(widget);
+    await tester.pumpAndSettle();
+  }
 
   test('nutrition formatters render compact labels and meal quantities', () {
     final store = AppStore.empty();
@@ -328,6 +342,41 @@ void main() {
     expect(trainTapCount, 1);
   });
 
+  testWidgets(
+    'Today metric grid uses one column on compact and two on medium',
+    (tester) async {
+      for (final entry in <({Size size, bool sameRow})>[
+        (size: Size(390, 844), sameRow: false),
+        (size: Size(700, 900), sameRow: true),
+      ]) {
+        await pumpAtSurfaceSize(
+          tester,
+          entry.size,
+          MaterialApp(
+            home: TodayScreen(
+              store: AppStore(),
+              onOpenTrain: () {},
+              onOpenNutrition: () {},
+              onOpenLibrary: () {},
+            ),
+          ),
+        );
+
+        final caloriesTopLeft = tester.getTopLeft(find.text('Calories'));
+        final proteinTopLeft = tester.getTopLeft(find.text('Protein'));
+
+        if (entry.sameRow) {
+          expect((proteinTopLeft.dy - caloriesTopLeft.dy).abs(), lessThan(1));
+          expect(proteinTopLeft.dx, greaterThan(caloriesTopLeft.dx));
+        } else {
+          expect(proteinTopLeft.dy, greaterThan(caloriesTopLeft.dy));
+          expect((proteinTopLeft.dx - caloriesTopLeft.dx).abs(), lessThan(1));
+        }
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
+
   testWidgets('LibraryScreen switches between training and food libraries', (
     tester,
   ) async {
@@ -367,6 +416,65 @@ void main() {
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(find.text('Food set'), findsOneWidget);
     expect(find.text('Chicken breast'), findsOneWidget);
+  });
+
+  testWidgets('redesigned primary screens stay stable at target widths', (
+    tester,
+  ) async {
+    const targetSizes = <Size>[
+      Size(390, 844),
+      Size(700, 900),
+      Size(1024, 768),
+      Size(1440, 900),
+    ];
+
+    for (final size in targetSizes) {
+      await pumpAtSurfaceSize(
+        tester,
+        size,
+        MaterialApp(
+          home: TodayScreen(
+            store: AppStore(),
+            onOpenTrain: () {},
+            onOpenNutrition: () {},
+            onOpenLibrary: () {},
+          ),
+        ),
+      );
+
+      expect(find.text('Ready state'), findsOneWidget);
+      expect(find.text('Daily fuel'), findsOneWidget);
+      expect(find.text('Quick actions'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await pumpAtSurfaceSize(
+        tester,
+        size,
+        MaterialApp(home: MealScreen(store: AppStore())),
+      );
+
+      expect(find.text('Nutrition cockpit'), findsOneWidget);
+      expect(find.text('Daily totals'), findsOneWidget);
+      expect(find.text('Meal entries'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await pumpAtSurfaceSize(
+        tester,
+        size,
+        MaterialApp(home: LibraryScreen(store: AppStore())),
+      );
+
+      expect(find.text('Library'), findsNWidgets(2));
+      expect(find.text('Training plans'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('Foods'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Food set'), findsOneWidget);
+      expect(find.text('Chicken breast'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
   });
 
   const rootDestinationLabels = [
@@ -431,10 +539,12 @@ void main() {
   }
 
   Future<void> tapAddMealFab(WidgetTester tester) async {
-    final action = find.descendant(
-      of: find.byType(FloatingActionButton),
-      matching: find.byTooltip('Add meal item'),
-    );
+    final action = tester.any(find.byType(FloatingActionButton))
+        ? find.descendant(
+            of: find.byType(FloatingActionButton),
+            matching: find.byTooltip('Add meal item'),
+          )
+        : find.widgetWithText(FilledButton, 'Add meal item');
     await tester.tap(action);
     await tester.pumpAndSettle();
   }
@@ -584,7 +694,33 @@ void main() {
     expect(find.text('Carbs'), findsOneWidget);
     expect(find.text('No meal entries yet'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Add meal item'), findsOneWidget);
-    expect(find.byTooltip('Add meal item'), findsNWidgets(2));
+    expect(find.byTooltip('Add meal item'), findsOneWidget);
+  });
+
+  testWidgets('Nutrition uses one primary add action per responsive mode', (
+    tester,
+  ) async {
+    await pumpAtSurfaceSize(
+      tester,
+      const Size(390, 844),
+      MaterialApp(home: MealScreen(store: AppStore())),
+    );
+
+    expect(find.widgetWithText(FilledButton, 'Add meal item'), findsNothing);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+    expect(find.byTooltip('Add meal item'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await pumpAtSurfaceSize(
+      tester,
+      const Size(1024, 768),
+      MaterialApp(home: MealScreen(store: AppStore())),
+    );
+
+    expect(find.widgetWithText(FilledButton, 'Add meal item'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.byTooltip('Add meal item'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('shows More tab and opens settings screen', (tester) async {
