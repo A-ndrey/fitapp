@@ -7,6 +7,7 @@ import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/ui/core/layout/adaptive_page.dart';
 import 'package:fitapp/ui/core/widgets/action_card.dart';
 import 'package:fitapp/ui/core/widgets/empty_state.dart';
+import 'package:fitapp/ui/core/widgets/form_shell.dart';
 import 'package:fitapp/ui/core/widgets/metric_card.dart';
 import 'package:fitapp/ui/core/widgets/section_header.dart';
 import 'package:fitapp/ui/library/library_cards.dart';
@@ -329,5 +330,106 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('form shell primitives render content and actions', (
+    tester,
+  ) async {
+    var saved = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FormShellDialog(
+            title: 'Food item',
+            subtitle: 'Build reusable nutrition data.',
+            primaryActionLabel: 'Save food',
+            onPrimaryAction: () => saved = true,
+            children: const [
+              FormSectionCard(
+                title: 'Food basics',
+                subtitle: 'Name and serving information.',
+                child: Text('Basics body'),
+              ),
+              InlineErrorBanner(message: 'Enter valid values.'),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Food item'), findsOneWidget);
+    expect(find.text('Build reusable nutrition data.'), findsOneWidget);
+    expect(find.text('Food basics'), findsOneWidget);
+    expect(find.text('Name and serving information.'), findsOneWidget);
+    expect(find.text('Basics body'), findsOneWidget);
+    expect(find.text('Enter valid values.'), findsOneWidget);
+    expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(find.text('Save food'), findsOneWidget);
+
+    await tester.tap(find.text('Save food'));
+    await tester.pumpAndSettle();
+
+    expect(saved, isTrue);
+  });
+
+  testWidgets('form shell exposes dialog title as route semantics', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FormShellDialog(
+            title: 'Training plan',
+            primaryActionLabel: 'Save training',
+            onPrimaryAction: () {},
+            children: const [Text('Plan body')],
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSemantics(find.byType(FormShellDialog)),
+      matchesSemantics(
+        label: 'Training plan',
+        scopesRoute: true,
+        namesRoute: true,
+      ),
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('responsive form grid stays bounded across widths', (
+    tester,
+  ) async {
+    for (final width in <double>[390, 900]) {
+      await tester.binding.setSurfaceSize(Size(width, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: ResponsiveFormGrid(
+                children: [
+                  TextField(decoration: InputDecoration(labelText: 'Calories')),
+                  TextField(decoration: InputDecoration(labelText: 'Protein')),
+                  TextField(decoration: InputDecoration(labelText: 'Fat')),
+                  TextField(decoration: InputDecoration(labelText: 'Carbs')),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.bySemanticsLabel('Calories'), findsOneWidget);
+      expect(find.bySemanticsLabel('Carbs'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
   });
 }

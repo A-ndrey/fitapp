@@ -5,6 +5,7 @@ import '../models/training_plan.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/empty_state.dart';
+import '../ui/core/widgets/form_shell.dart';
 import '../ui/library/library_cards.dart';
 
 enum _TrainingsView { plans, exercises }
@@ -324,11 +325,15 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(_isEditing ? 'Edit exercise' : 'Add exercise'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
+    return FormShellDialog(
+      title: _isEditing ? 'Edit exercise' : 'Add exercise',
+      subtitle: 'Define instructions and muscle focus for workout plans.',
+      primaryActionLabel: 'Save exercise',
+      onPrimaryAction: _saveExercise,
+      maxWidth: 640,
+      children: [
+        FormSectionCard(
+          title: 'Exercise profile',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -356,7 +361,15 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
                   labelText: 'Exercise instruction',
                 ),
               ),
-              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+        FormSectionCard(
+          title: 'Muscle focus',
+          subtitle: 'Choose every area this exercise primarily trains.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
                 'Select muscle groups',
                 style: Theme.of(context).textTheme.titleSmall,
@@ -384,26 +397,10 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
                     })
                     .toList(growable: false),
               ),
-              if (_errorText != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _errorText!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ],
             ],
           ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _saveExercise,
-          child: const Text('Save exercise'),
-        ),
+        if (_errorText != null) InlineErrorBanner(message: _errorText!),
       ],
     );
   }
@@ -500,11 +497,15 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(_isEditing ? 'Edit training' : 'Training plan'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
+    return FormShellDialog(
+      title: _isEditing ? 'Edit training' : 'Training plan',
+      subtitle: 'Assemble a reusable sequence for workout sessions.',
+      primaryActionLabel: 'Save training',
+      onPrimaryAction: _savePlan,
+      maxWidth: 720,
+      children: [
+        FormSectionCard(
+          title: 'Training basics',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -523,7 +524,16 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                   labelText: 'Training description',
                 ),
               ),
-              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+        FormSectionCard(
+          title: 'Exercise sequence',
+          subtitle: 'Add targets in the order you want to train.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
               OutlinedButton.icon(
                 onPressed: _openExercisePicker,
                 icon: const Icon(Icons.add),
@@ -585,23 +595,10 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                     ),
                   );
                 }),
-              if (_errorText != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _errorText!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ],
             ],
           ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(onPressed: _savePlan, child: const Text('Save training')),
+        if (_errorText != null) InlineErrorBanner(message: _errorText!),
       ],
     );
   }
@@ -783,76 +780,60 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        widget.initialExercise == null ? 'Add exercise' : 'Edit exercise',
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              widget.exercise.name,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _setsController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+    return FormShellDialog(
+      title: widget.initialExercise == null ? 'Add exercise' : 'Edit exercise',
+      subtitle: widget.exercise.name,
+      primaryActionLabel: 'Save exercise',
+      onPrimaryAction: _saveExercise,
+      children: [
+        FormSectionCard(
+          title: 'Target prescription',
+          subtitle: 'Set expected volume, load, duration, and unit.',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _setsController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Expected sets'),
               ),
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Expected sets'),
-            ),
-            TextField(
-              controller: _repsController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+              TextField(
+                controller: _repsController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Expected reps'),
               ),
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Expected reps'),
-            ),
-            TextField(
-              controller: _weightController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+              TextField(
+                controller: _weightController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Expected weight'),
               ),
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Expected weight'),
-            ),
-            TextField(
-              controller: _timeController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+              TextField(
+                controller: _timeController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Expected time'),
               ),
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Expected time'),
-            ),
-            TextField(
-              controller: _unitController,
-              textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(labelText: 'Unit'),
-            ),
-            if (_errorText != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _errorText!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              TextField(
+                controller: _unitController,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(labelText: 'Unit'),
               ),
             ],
-          ],
+          ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _saveExercise,
-          child: const Text('Save exercise'),
-        ),
+        if (_errorText != null) InlineErrorBanner(message: _errorText!),
       ],
     );
   }

@@ -152,7 +152,7 @@ void main() {
     await tester.tap(find.text('Save training'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(Dialog), findsOneWidget);
     expect(find.text('Training name'), findsOneWidget);
 
     await enterLabeledText(tester, 'Training name', 'Push day');
@@ -237,6 +237,35 @@ void main() {
     expect(find.widgetWithText(FilterChip, 'Core'), findsOneWidget);
   });
 
+  testWidgets('exercise and training dialogs use polished sections', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await openExercisesView(tester);
+    await openExerciseForm(tester);
+
+    expect(find.text('Exercise profile'), findsOneWidget);
+    expect(find.text('Muscle focus'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    await openPlanView(tester);
+    await tester.tap(find.byTooltip('Add training plan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Training basics'), findsOneWidget);
+    expect(find.text('Exercise sequence'), findsOneWidget);
+
+    await tester.tap(find.text('Add exercise'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pushups').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Target prescription'), findsOneWidget);
+  });
+
   testWidgets('creates a custom exercise and shows it in the plan picker', (
     tester,
   ) async {
@@ -290,7 +319,7 @@ void main() {
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(Dialog), findsOneWidget);
     expect(find.text('Enter a valid exercise name.'), findsOneWidget);
   });
 

@@ -20,6 +20,7 @@ import 'package:fitapp/ui/core/widgets/section_header.dart';
 import 'package:fitapp/ui/nutrition/nutrition_cards.dart';
 import 'package:fitapp/ui/nutrition/nutrition_formatters.dart';
 import 'package:fitapp/widgets/dish_form.dart';
+import 'package:fitapp/widgets/food_form.dart';
 
 void main() {
   const tomatoNutrition = NutritionValues(
@@ -190,6 +191,49 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Simple salad'), findsOneWidget);
     expect(find.text('Tomato'), findsOneWidget);
+  });
+
+  testWidgets('food form groups basics and nutrition validation', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: FoodForm(store: store)),
+      ),
+    );
+
+    expect(find.text('Food basics'), findsOneWidget);
+    expect(find.text('Nutrition facts'), findsOneWidget);
+
+    await tester.tap(find.text('Save food'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Enter a name and valid nutrition values.'),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.error_outline), findsOneWidget);
+  });
+
+  testWidgets('dish form groups basics and empty components', (tester) async {
+    final store = AppStore.empty();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: DishForm(store: store)),
+      ),
+    );
+
+    expect(find.text('Dish basics'), findsOneWidget);
+    expect(find.text('Components'), findsOneWidget);
+    expect(find.text('No components yet'), findsOneWidget);
+    expect(
+      find.text('Add foods or dishes to calculate this recipe.'),
+      findsOneWidget,
+    );
+    expect(find.text('Add component'), findsOneWidget);
   });
 
   testWidgets('uses FitApp performance cockpit theme', (tester) async {
@@ -602,6 +646,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(store.workoutWeightUnit, WorkoutWeightUnit.pounds);
 
+    await scrollToText(tester, 'Ounces');
     await tester.tap(find.text('Ounces'));
     await tester.pumpAndSettle();
     expect(store.dishWeightUnit, DishWeightUnit.ounces);

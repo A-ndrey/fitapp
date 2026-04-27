@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/food_item.dart';
 import '../models/nutrition.dart';
 import '../state/app_store.dart';
+import '../ui/core/widgets/form_shell.dart';
 
 class FoodForm extends StatefulWidget {
   const FoodForm({
@@ -74,99 +75,105 @@ class _FoodFormState extends State<FoodForm> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(_isEditing ? 'Edit food' : 'Food item'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _nameController,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            TextField(
-              controller: _descriptionController,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Description'),
-            ),
-            TextField(
-              controller: _servingSizeController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+    return FormShellDialog(
+      title: _isEditing ? 'Edit food' : 'Food item',
+      subtitle: 'Define reusable food data for faster meal logging.',
+      primaryActionLabel: 'Save food',
+      onPrimaryAction: _saveFood,
+      children: [
+        FormSectionCard(
+          title: 'Food basics',
+          subtitle: 'Name this item and define the serving anchor.',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _nameController,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Name'),
               ),
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Serving size grams',
+              TextField(
+                controller: _descriptionController,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Description'),
               ),
-            ),
-            const SizedBox(height: 16),
-            SegmentedButton<NutritionBasis>(
-              segments: const [
-                ButtonSegment(
-                  value: NutritionBasis.per100g,
-                  label: Text('Per 100g'),
+              TextField(
+                controller: _servingSizeController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
-                ButtonSegment(
-                  value: NutritionBasis.perServing,
-                  label: Text('Per serving'),
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Serving size grams',
                 ),
-              ],
-              selected: {_basis},
-              onSelectionChanged: (selection) {
-                setState(() {
-                  _basis = selection.first;
-                });
-              },
-            ),
-            TextField(
-              controller: _caloriesController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Calories'),
-            ),
-            TextField(
-              controller: _proteinController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Protein'),
-            ),
-            TextField(
-              controller: _fatController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Fat'),
-            ),
-            TextField(
-              controller: _carbsController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(labelText: 'Carbs'),
-            ),
-            if (_errorText != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _errorText!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
-          ],
+          ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+        FormSectionCard(
+          title: 'Nutrition facts',
+          subtitle: 'Enter values using the selected nutrition basis.',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SegmentedButton<NutritionBasis>(
+                segments: const [
+                  ButtonSegment(
+                    value: NutritionBasis.per100g,
+                    label: Text('Per 100g'),
+                  ),
+                  ButtonSegment(
+                    value: NutritionBasis.perServing,
+                    label: Text('Per serving'),
+                  ),
+                ],
+                selected: {_basis},
+                onSelectionChanged: (selection) {
+                  setState(() {
+                    _basis = selection.first;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              ResponsiveFormGrid(
+                children: [
+                  TextField(
+                    controller: _caloriesController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(labelText: 'Calories'),
+                  ),
+                  TextField(
+                    controller: _proteinController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(labelText: 'Protein'),
+                  ),
+                  TextField(
+                    controller: _fatController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(labelText: 'Fat'),
+                  ),
+                  TextField(
+                    controller: _carbsController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(labelText: 'Carbs'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        FilledButton(onPressed: _saveFood, child: const Text('Save food')),
+        if (_errorText != null) InlineErrorBanner(message: _errorText!),
       ],
     );
   }
