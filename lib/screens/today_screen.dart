@@ -140,6 +140,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 subtitle: activeSession == null
                     ? 'Choose a plan and begin training'
                     : 'Return to the active session',
+                semanticHint: 'Opens Train tab',
                 icon: activeSession == null
                     ? Icons.play_arrow
                     : Icons.open_in_new,
@@ -149,6 +150,7 @@ class _TodayScreenState extends State<TodayScreen> {
               ActionCard(
                 title: 'Log meal',
                 subtitle: 'Add calories and macros for today',
+                semanticHint: 'Opens Nutrition tab',
                 icon: Icons.restaurant,
                 onTap: widget.onOpenNutrition,
               ),
@@ -156,6 +158,7 @@ class _TodayScreenState extends State<TodayScreen> {
               ActionCard(
                 title: 'Manage library',
                 subtitle: 'Update foods, dishes, exercises, and plans',
+                semanticHint: 'Opens Library tab',
                 icon: Icons.inventory_2_outlined,
                 onTap: widget.onOpenLibrary,
               ),

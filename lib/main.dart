@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'l10n/app_localizations.dart';
 import 'models/app_preferences.dart';
 import 'screens/library_screen.dart';
 import 'screens/meal_screen.dart';
@@ -49,8 +50,10 @@ class _FitAppState extends State<FitApp> {
       animation: _store,
       builder: (context, _) {
         return MaterialApp(
-          title: 'FitApp',
+          onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
           debugShowCheckedModeBanner: false,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           themeMode: _themeModeFor(_store.appearancePreference),
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
@@ -90,9 +93,10 @@ class _FitHomeState extends State<FitHome> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final destinations = <_AppDestination>[
       _AppDestination(
-        label: 'Today',
+        label: l10n?.destinationToday ?? 'Today',
         icon: Icons.space_dashboard_outlined,
         selectedIcon: Icons.space_dashboard,
         screen: TodayScreen(
@@ -103,7 +107,7 @@ class _FitHomeState extends State<FitHome> {
         ),
       ),
       _AppDestination(
-        label: 'Train',
+        label: l10n?.destinationTrain ?? 'Train',
         icon: Icons.timer_outlined,
         selectedIcon: Icons.timer,
         screen: _WorkoutTabNavigator(
@@ -112,19 +116,19 @@ class _FitHomeState extends State<FitHome> {
         ),
       ),
       _AppDestination(
-        label: 'Nutrition',
+        label: l10n?.destinationNutrition ?? 'Nutrition',
         icon: Icons.restaurant_outlined,
         selectedIcon: Icons.restaurant,
         screen: MealScreen(store: widget.store),
       ),
       _AppDestination(
-        label: 'Library',
+        label: l10n?.destinationLibrary ?? 'Library',
         icon: Icons.inventory_2_outlined,
         selectedIcon: Icons.inventory_2,
         screen: LibraryScreen(store: widget.store),
       ),
       _AppDestination(
-        label: 'More',
+        label: l10n?.destinationMore ?? 'More',
         icon: Icons.more_horiz,
         selectedIcon: Icons.more_horiz,
         screen: MoreScreen(store: widget.store),
@@ -152,6 +156,7 @@ class _FitHomeState extends State<FitHome> {
                     icon: Icon(destination.icon),
                     selectedIcon: Icon(destination.selectedIcon),
                     label: destination.label,
+                    tooltip: destination.label,
                   ),
               ],
             ),
@@ -169,8 +174,14 @@ class _FitHomeState extends State<FitHome> {
                   destinations: [
                     for (final destination in destinations)
                       NavigationRailDestination(
-                        icon: Icon(destination.icon),
-                        selectedIcon: Icon(destination.selectedIcon),
+                        icon: Tooltip(
+                          message: destination.label,
+                          child: Icon(destination.icon),
+                        ),
+                        selectedIcon: Tooltip(
+                          message: destination.label,
+                          child: Icon(destination.selectedIcon),
+                        ),
                         label: Text(destination.label),
                       ),
                   ],

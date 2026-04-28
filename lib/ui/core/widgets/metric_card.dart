@@ -22,73 +22,113 @@ class MetricCard extends StatelessWidget {
     final accentColor = color ?? colorScheme.primary;
     final textTheme = Theme.of(context).textTheme;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    final expandedValue = _expandSemanticValue(value);
+    final semanticValue = suffix == null
+        ? '$label, $expandedValue'
+        : '$label, $expandedValue ${_expandSemanticUnit(suffix!)}';
+
+    return Semantics(
+      label: semanticValue,
+      child: ExcludeSemantics(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (icon != null) ...[
-                  Icon(icon, color: accentColor),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: Text(
-                    label,
-                    style: textTheme.labelLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                return Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.end,
-                  spacing: 6,
-                  runSpacing: 2,
+                Row(
                   children: [
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: constraints.maxWidth,
-                      ),
+                    if (icon != null) ...[
+                      Icon(icon, color: accentColor),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
                       child: Text(
-                        value,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        label,
+                        style: textTheme.labelLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
-                    if (suffix != null)
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: constraints.maxWidth,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 3),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.end,
+                      spacing: 6,
+                      runSpacing: 2,
+                      children: [
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: constraints.maxWidth,
+                          ),
                           child: Text(
-                            suffix!,
+                            value,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: textTheme.titleMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                            style: textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                );
-              },
+                        if (suffix != null)
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: constraints.maxWidth,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 3),
+                              child: Text(
+                                suffix!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  String _expandSemanticUnit(String unit) {
+    return switch (unit) {
+      'g' => 'grams',
+      'kcal' => 'kilocalories',
+      _ => unit,
+    };
+  }
+
+  String _expandSemanticValue(String value) {
+    return value
+        .replaceAllMapped(
+          RegExp(r'\b(\d+)h\b'),
+          (match) => _pluralUnit(match[1]!, 'hour'),
+        )
+        .replaceAllMapped(
+          RegExp(r'\b(\d+)m\b'),
+          (match) => _pluralUnit(match[1]!, 'minute'),
+        )
+        .replaceAllMapped(
+          RegExp(r'\b(\d+)s\b'),
+          (match) => _pluralUnit(match[1]!, 'second'),
+        );
+  }
+
+  String _pluralUnit(String rawCount, String unit) {
+    final count = int.parse(rawCount);
+    final label = count == 1 ? unit : '${unit}s';
+    return '$count $label';
   }
 }

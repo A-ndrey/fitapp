@@ -8,6 +8,7 @@ class ActionCard extends StatelessWidget {
     required this.onTap,
     super.key,
     this.tooltip,
+    this.semanticHint,
   });
 
   final String title;
@@ -15,12 +16,13 @@ class ActionCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final String? tooltip;
+  final String? semanticHint;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final card = Card(
+    final visualCard = Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -61,10 +63,27 @@ class ActionCard extends StatelessWidget {
         ),
       ),
     );
+    final card = Semantics(
+      button: true,
+      hint: semanticHint,
+      label: '${_sentence(title)} ${_sentence(subtitle)}',
+      onTap: onTap,
+      child: ExcludeSemantics(child: visualCard),
+    );
 
     if (tooltip == null) {
       return card;
     }
     return Tooltip(message: tooltip!, child: card);
+  }
+
+  String _sentence(String text) {
+    final trimmed = text.trim();
+    if (trimmed.endsWith('.') ||
+        trimmed.endsWith('!') ||
+        trimmed.endsWith('?')) {
+      return trimmed;
+    }
+    return '$trimmed.';
   }
 }

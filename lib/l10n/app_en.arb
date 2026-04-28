@@ -1,0 +1,27 @@
+{
+  "@@locale": "en",
+  "appTitle": "FitApp",
+  "@appTitle": {
+    "description": "Application title used by the host platform."
+  },
+  "destinationToday": "Today",
+  "@destinationToday": {
+    "description": "Root navigation destination for the dashboard."
+  },
+  "destinationTrain": "Train",
+  "@destinationTrain": {
+    "description": "Root navigation destination for workouts."
+  },
+  "destinationNutrition": "Nutrition",
+  "@destinationNutrition": {
+    "description": "Root navigation destination for meal logging and nutrition."
+  },
+  "destinationLibrary": "Library",
+  "@destinationLibrary": {
+    "description": "Root navigation destination for reusable app content."
+  },
+  "destinationMore": "More",
+  "@destinationMore": {
+    "description": "Root navigation destination for settings and preferences."
+  }
+}
