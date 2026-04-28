@@ -23,5 +23,377 @@
   "destinationMore": "More",
   "@destinationMore": {
     "description": "Root navigation destination for settings and preferences."
+  },
+  "todayReadyState": "Ready state",
+  "@todayReadyState": {
+    "description": "Today screen header when no workout is active."
+  },
+  "todayInSession": "In session",
+  "@todayInSession": {
+    "description": "Today screen header when a workout is active."
+  },
+  "todayCompletedWorkouts": "Completed workouts",
+  "@todayCompletedWorkouts": {
+    "description": "Metric label for completed workout count."
+  },
+  "todaySessionsSuffix": "sessions",
+  "@todaySessionsSuffix": {
+    "description": "Metric suffix for completed workout count."
+  },
+  "todayElapsedSuffix": "elapsed",
+  "@todayElapsedSuffix": {
+    "description": "Metric suffix for active workout duration."
+  },
+  "durationHoursMinutesSemantic": "{hours, plural, =1{1 hour} other{{hours} hours}} {minutes, plural, =1{1 minute} other{{minutes} minutes}}",
+  "@durationHoursMinutesSemantic": {
+    "description": "Semantic duration label for durations of at least one hour.",
+    "placeholders": {
+      "hours": {
+        "type": "int",
+        "example": "1"
+      },
+      "minutes": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "durationMinutesSecondsSemantic": "{minutes, plural, =1{1 minute} other{{minutes} minutes}} {seconds, plural, =1{1 second} other{{seconds} seconds}}",
+  "@durationMinutesSecondsSemantic": {
+    "description": "Semantic duration label for durations below one hour.",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "12"
+      },
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "durationSecondsSemantic": "{seconds, plural, =1{1 second} other{{seconds} seconds}}",
+  "@durationSecondsSemantic": {
+    "description": "Semantic duration label for durations below one minute.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "todayDailyFuelTitle": "Daily fuel",
+  "@todayDailyFuelTitle": {
+    "description": "Today screen nutrition summary section title."
+  },
+  "todayDailyFuelSubtitle": "Macros logged today",
+  "@todayDailyFuelSubtitle": {
+    "description": "Today screen nutrition summary section subtitle."
+  },
+  "todayQuickActionsTitle": "Quick actions",
+  "@todayQuickActionsTitle": {
+    "description": "Today screen quick action section title."
+  },
+  "todayStartWorkoutAction": "Start workout",
+  "@todayStartWorkoutAction": {
+    "description": "Today screen action to start a workout."
+  },
+  "todayOpenWorkoutAction": "Open workout",
+  "@todayOpenWorkoutAction": {
+    "description": "Today screen action to return to an active workout."
+  },
+  "todayStartWorkoutSubtitle": "Choose a plan and begin training",
+  "@todayStartWorkoutSubtitle": {
+    "description": "Subtitle for the Today start workout action."
+  },
+  "todayOpenWorkoutSubtitle": "Return to the active session",
+  "@todayOpenWorkoutSubtitle": {
+    "description": "Subtitle for the Today open workout action."
+  },
+  "todayOpenTrainHint": "Opens Train tab",
+  "@todayOpenTrainHint": {
+    "description": "Accessibility hint for Today actions that open the Train tab."
+  },
+  "todayLogMealAction": "Log meal",
+  "@todayLogMealAction": {
+    "description": "Today screen action to open nutrition logging."
+  },
+  "todayLogMealSubtitle": "Add calories and macros for today",
+  "@todayLogMealSubtitle": {
+    "description": "Subtitle for the Today log meal action."
+  },
+  "todayOpenNutritionHint": "Opens Nutrition tab",
+  "@todayOpenNutritionHint": {
+    "description": "Accessibility hint for Today action that opens Nutrition."
+  },
+  "todayManageLibraryAction": "Manage library",
+  "@todayManageLibraryAction": {
+    "description": "Today screen action to open the library."
+  },
+  "todayManageLibrarySubtitle": "Update foods, dishes, exercises, and plans",
+  "@todayManageLibrarySubtitle": {
+    "description": "Subtitle for the Today manage library action."
+  },
+  "todayOpenLibraryHint": "Opens Library tab",
+  "@todayOpenLibraryHint": {
+    "description": "Accessibility hint for Today action that opens Library."
+  },
+  "nutritionCalories": "Calories",
+  "@nutritionCalories": {
+    "description": "Nutrition metric label for calories."
+  },
+  "nutritionProtein": "Protein",
+  "@nutritionProtein": {
+    "description": "Nutrition metric label for protein."
+  },
+  "nutritionFat": "Fat",
+  "@nutritionFat": {
+    "description": "Nutrition metric label for fat."
+  },
+  "nutritionCarbs": "Carbs",
+  "@nutritionCarbs": {
+    "description": "Nutrition metric label for carbohydrates."
+  },
+  "nutritionKilocaloriesSemantic": "kilocalories",
+  "@nutritionKilocaloriesSemantic": {
+    "description": "Semantic unit label for kcal."
+  },
+  "nutritionGramsSemantic": "grams",
+  "@nutritionGramsSemantic": {
+    "description": "Semantic unit label for gram-based nutrition metrics."
+  },
+  "nutritionKilocalorieUnit": "kcal",
+  "@nutritionKilocalorieUnit": {
+    "description": "Visible abbreviated unit for kilocalories in compact nutrition lines."
+  },
+  "nutritionGramUnit": "g",
+  "@nutritionGramUnit": {
+    "description": "Visible abbreviated unit for grams in compact nutrition lines."
+  },
+  "nutritionProteinInlineLabel": "protein",
+  "@nutritionProteinInlineLabel": {
+    "description": "Inline lowercase protein label used in compact nutrition lines."
+  },
+  "nutritionFatInlineLabel": "fat",
+  "@nutritionFatInlineLabel": {
+    "description": "Inline lowercase fat label used in compact nutrition lines."
+  },
+  "nutritionCarbsInlineLabel": "carbs",
+  "@nutritionCarbsInlineLabel": {
+    "description": "Inline lowercase carbs label used in compact nutrition lines."
+  },
+  "catalogSubtypeFood": "food",
+  "@catalogSubtypeFood": {
+    "description": "Catalog subtype label for food items."
+  },
+  "catalogSubtypeDish": "dish",
+  "@catalogSubtypeDish": {
+    "description": "Catalog subtype label for dish items."
+  },
+  "mealLoggedSuffix": "logged",
+  "@mealLoggedSuffix": {
+    "description": "Suffix shown after a logged meal quantity."
+  },
+  "mealServingsQuantitySuffix": "servings",
+  "@mealServingsQuantitySuffix": {
+    "description": "Suffix shown after a meal quantity entered as servings."
+  },
+  "mealRemoveEntryTooltip": "Remove meal entry",
+  "@mealRemoveEntryTooltip": {
+    "description": "Tooltip for removing a meal entry."
+  },
+  "mealTitle": "Meal",
+  "@mealTitle": {
+    "description": "Nutrition screen app bar title."
+  },
+  "mealAddItemAction": "Add meal item",
+  "@mealAddItemAction": {
+    "description": "Action label for adding a food or dish to the meal log."
+  },
+  "mealCockpitTitle": "Nutrition cockpit",
+  "@mealCockpitTitle": {
+    "description": "Nutrition screen hero title."
+  },
+  "mealCockpitSubtitle": "Log food, review macros, and keep today visible.",
+  "@mealCockpitSubtitle": {
+    "description": "Nutrition screen hero subtitle."
+  },
+  "mealDailyTotalsTitle": "Daily totals",
+  "@mealDailyTotalsTitle": {
+    "description": "Nutrition screen daily totals section title."
+  },
+  "mealEntriesTitle": "Meal entries",
+  "@mealEntriesTitle": {
+    "description": "Nutrition screen meal entries section title."
+  },
+  "mealEmptyTitle": "No meal entries yet",
+  "@mealEmptyTitle": {
+    "description": "Empty state title for meal entries."
+  },
+  "mealEmptyMessage": "Use Add meal item to start today's log.",
+  "@mealEmptyMessage": {
+    "description": "Empty state message for meal entries."
+  },
+  "mealSearchSheetTitle": "Add meal item",
+  "@mealSearchSheetTitle": {
+    "description": "Bottom sheet title for searching meal items."
+  },
+  "mealSearchSheetSubtitle": "Search your saved foods and dishes, or create a new food from your query.",
+  "@mealSearchSheetSubtitle": {
+    "description": "Bottom sheet helper text for meal item search."
+  },
+  "mealSearchFieldLabel": "Search foods and dishes",
+  "@mealSearchFieldLabel": {
+    "description": "Search field label for foods and dishes."
+  },
+  "mealCreateItem": "Create \"{query}\"",
+  "@mealCreateItem": {
+    "description": "Create action for a missing meal search item.",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "Tomato"
+      }
+    }
+  },
+  "mealAmountPrompt": "Choose how much you ate, then add it to today's meal log.",
+  "@mealAmountPrompt": {
+    "description": "Prompt in the log meal amount dialog."
+  },
+  "mealGramsLabel": "Grams",
+  "@mealGramsLabel": {
+    "description": "Label for grams amount mode."
+  },
+  "mealServingsLabel": "Servings",
+  "@mealServingsLabel": {
+    "description": "Label for servings amount mode."
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Common cancel action label."
+  },
+  "mealAddToMealAction": "Add to meal",
+  "@mealAddToMealAction": {
+    "description": "Dialog action to add a selected item amount to the meal log."
+  },
+  "moreSubtitle": "Tune units, appearance, and sync preferences.",
+  "@moreSubtitle": {
+    "description": "More screen header subtitle."
+  },
+  "moreSyncTitle": "Sync",
+  "@moreSyncTitle": {
+    "description": "More screen sync section title."
+  },
+  "moreSyncStatusTitle": "Sync status",
+  "@moreSyncStatusTitle": {
+    "description": "Title for sync status card."
+  },
+  "moreSyncSignedInMessage": "Sync status: signed in. Firebase sync is still a placeholder.",
+  "@moreSyncSignedInMessage": {
+    "description": "Sync status message when signed in."
+  },
+  "moreSyncSignedOutMessage": "Sync status: signed out. Firebase sync is still a placeholder.",
+  "@moreSyncSignedOutMessage": {
+    "description": "Sync status message when signed out."
+  },
+  "moreLoginAction": "Login",
+  "@moreLoginAction": {
+    "description": "Login action label."
+  },
+  "moreLogoutAction": "Logout",
+  "@moreLogoutAction": {
+    "description": "Logout action label."
+  },
+  "settingsUnitsTitle": "Units",
+  "@settingsUnitsTitle": {
+    "description": "Settings units section title."
+  },
+  "settingsWorkoutWeightTitle": "Workout weight",
+  "@settingsWorkoutWeightTitle": {
+    "description": "Preference title for workout weight unit."
+  },
+  "settingsWorkoutWeightSubtitle": "Weights shown during training sessions.",
+  "@settingsWorkoutWeightSubtitle": {
+    "description": "Preference subtitle for workout weight unit."
+  },
+  "settingsDishWeightTitle": "Dish weight",
+  "@settingsDishWeightTitle": {
+    "description": "Preference title for dish weight unit."
+  },
+  "settingsDishWeightSubtitle": "Food and recipe serving measurements.",
+  "@settingsDishWeightSubtitle": {
+    "description": "Preference subtitle for dish weight unit."
+  },
+  "settingsHeightTitle": "Height",
+  "@settingsHeightTitle": {
+    "description": "Preference title for height unit."
+  },
+  "settingsDistanceTitle": "Distance",
+  "@settingsDistanceTitle": {
+    "description": "Preference title for distance unit."
+  },
+  "settingsLanguageTitle": "Language",
+  "@settingsLanguageTitle": {
+    "description": "Preference title for language."
+  },
+  "settingsLanguageSubtitle": "App language",
+  "@settingsLanguageSubtitle": {
+    "description": "Preference subtitle for language."
+  },
+  "settingsAppearanceTitle": "Appearance",
+  "@settingsAppearanceTitle": {
+    "description": "Preference title for app appearance."
+  },
+  "settingsAppearanceSubtitle": "Theme",
+  "@settingsAppearanceSubtitle": {
+    "description": "Preference subtitle for app appearance."
+  },
+  "unitKilograms": "Kilograms",
+  "@unitKilograms": {
+    "description": "Kilograms unit label."
+  },
+  "unitPounds": "Pounds",
+  "@unitPounds": {
+    "description": "Pounds unit label."
+  },
+  "unitGrams": "Grams",
+  "@unitGrams": {
+    "description": "Grams unit label."
+  },
+  "unitOunces": "Ounces",
+  "@unitOunces": {
+    "description": "Ounces unit label."
+  },
+  "unitCentimeters": "Centimeters",
+  "@unitCentimeters": {
+    "description": "Centimeters unit label."
+  },
+  "unitInches": "Inches",
+  "@unitInches": {
+    "description": "Inches unit label."
+  },
+  "unitKilometers": "Kilometers",
+  "@unitKilometers": {
+    "description": "Kilometers unit label."
+  },
+  "unitMiles": "Miles",
+  "@unitMiles": {
+    "description": "Miles unit label."
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "English language option label."
+  },
+  "appearanceSystem": "System",
+  "@appearanceSystem": {
+    "description": "System appearance option label."
+  },
+  "appearanceLight": "Light",
+  "@appearanceLight": {
+    "description": "Light appearance option label."
+  },
+  "appearanceDark": "Dark",
+  "@appearanceDark": {
+    "description": "Dark appearance option label."
   }
 }

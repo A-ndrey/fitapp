@@ -129,6 +129,516 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More'**
   String get destinationMore;
+
+  /// Today screen header when no workout is active.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready state'**
+  String get todayReadyState;
+
+  /// Today screen header when a workout is active.
+  ///
+  /// In en, this message translates to:
+  /// **'In session'**
+  String get todayInSession;
+
+  /// Metric label for completed workout count.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed workouts'**
+  String get todayCompletedWorkouts;
+
+  /// Metric suffix for completed workout count.
+  ///
+  /// In en, this message translates to:
+  /// **'sessions'**
+  String get todaySessionsSuffix;
+
+  /// Metric suffix for active workout duration.
+  ///
+  /// In en, this message translates to:
+  /// **'elapsed'**
+  String get todayElapsedSuffix;
+
+  /// Semantic duration label for durations of at least one hour.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours, plural, =1{1 hour} other{{hours} hours}} {minutes, plural, =1{1 minute} other{{minutes} minutes}}'**
+  String durationHoursMinutesSemantic(int hours, int minutes);
+
+  /// Semantic duration label for durations below one hour.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =1{1 minute} other{{minutes} minutes}} {seconds, plural, =1{1 second} other{{seconds} seconds}}'**
+  String durationMinutesSecondsSemantic(int minutes, int seconds);
+
+  /// Semantic duration label for durations below one minute.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds, plural, =1{1 second} other{{seconds} seconds}}'**
+  String durationSecondsSemantic(int seconds);
+
+  /// Today screen nutrition summary section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily fuel'**
+  String get todayDailyFuelTitle;
+
+  /// Today screen nutrition summary section subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Macros logged today'**
+  String get todayDailyFuelSubtitle;
+
+  /// Today screen quick action section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick actions'**
+  String get todayQuickActionsTitle;
+
+  /// Today screen action to start a workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Start workout'**
+  String get todayStartWorkoutAction;
+
+  /// Today screen action to return to an active workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Open workout'**
+  String get todayOpenWorkoutAction;
+
+  /// Subtitle for the Today start workout action.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a plan and begin training'**
+  String get todayStartWorkoutSubtitle;
+
+  /// Subtitle for the Today open workout action.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to the active session'**
+  String get todayOpenWorkoutSubtitle;
+
+  /// Accessibility hint for Today actions that open the Train tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens Train tab'**
+  String get todayOpenTrainHint;
+
+  /// Today screen action to open nutrition logging.
+  ///
+  /// In en, this message translates to:
+  /// **'Log meal'**
+  String get todayLogMealAction;
+
+  /// Subtitle for the Today log meal action.
+  ///
+  /// In en, this message translates to:
+  /// **'Add calories and macros for today'**
+  String get todayLogMealSubtitle;
+
+  /// Accessibility hint for Today action that opens Nutrition.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens Nutrition tab'**
+  String get todayOpenNutritionHint;
+
+  /// Today screen action to open the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage library'**
+  String get todayManageLibraryAction;
+
+  /// Subtitle for the Today manage library action.
+  ///
+  /// In en, this message translates to:
+  /// **'Update foods, dishes, exercises, and plans'**
+  String get todayManageLibrarySubtitle;
+
+  /// Accessibility hint for Today action that opens Library.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens Library tab'**
+  String get todayOpenLibraryHint;
+
+  /// Nutrition metric label for calories.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories'**
+  String get nutritionCalories;
+
+  /// Nutrition metric label for protein.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein'**
+  String get nutritionProtein;
+
+  /// Nutrition metric label for fat.
+  ///
+  /// In en, this message translates to:
+  /// **'Fat'**
+  String get nutritionFat;
+
+  /// Nutrition metric label for carbohydrates.
+  ///
+  /// In en, this message translates to:
+  /// **'Carbs'**
+  String get nutritionCarbs;
+
+  /// Semantic unit label for kcal.
+  ///
+  /// In en, this message translates to:
+  /// **'kilocalories'**
+  String get nutritionKilocaloriesSemantic;
+
+  /// Semantic unit label for gram-based nutrition metrics.
+  ///
+  /// In en, this message translates to:
+  /// **'grams'**
+  String get nutritionGramsSemantic;
+
+  /// Visible abbreviated unit for kilocalories in compact nutrition lines.
+  ///
+  /// In en, this message translates to:
+  /// **'kcal'**
+  String get nutritionKilocalorieUnit;
+
+  /// Visible abbreviated unit for grams in compact nutrition lines.
+  ///
+  /// In en, this message translates to:
+  /// **'g'**
+  String get nutritionGramUnit;
+
+  /// Inline lowercase protein label used in compact nutrition lines.
+  ///
+  /// In en, this message translates to:
+  /// **'protein'**
+  String get nutritionProteinInlineLabel;
+
+  /// Inline lowercase fat label used in compact nutrition lines.
+  ///
+  /// In en, this message translates to:
+  /// **'fat'**
+  String get nutritionFatInlineLabel;
+
+  /// Inline lowercase carbs label used in compact nutrition lines.
+  ///
+  /// In en, this message translates to:
+  /// **'carbs'**
+  String get nutritionCarbsInlineLabel;
+
+  /// Catalog subtype label for food items.
+  ///
+  /// In en, this message translates to:
+  /// **'food'**
+  String get catalogSubtypeFood;
+
+  /// Catalog subtype label for dish items.
+  ///
+  /// In en, this message translates to:
+  /// **'dish'**
+  String get catalogSubtypeDish;
+
+  /// Suffix shown after a logged meal quantity.
+  ///
+  /// In en, this message translates to:
+  /// **'logged'**
+  String get mealLoggedSuffix;
+
+  /// Suffix shown after a meal quantity entered as servings.
+  ///
+  /// In en, this message translates to:
+  /// **'servings'**
+  String get mealServingsQuantitySuffix;
+
+  /// Tooltip for removing a meal entry.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove meal entry'**
+  String get mealRemoveEntryTooltip;
+
+  /// Nutrition screen app bar title.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal'**
+  String get mealTitle;
+
+  /// Action label for adding a food or dish to the meal log.
+  ///
+  /// In en, this message translates to:
+  /// **'Add meal item'**
+  String get mealAddItemAction;
+
+  /// Nutrition screen hero title.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrition cockpit'**
+  String get mealCockpitTitle;
+
+  /// Nutrition screen hero subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log food, review macros, and keep today visible.'**
+  String get mealCockpitSubtitle;
+
+  /// Nutrition screen daily totals section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily totals'**
+  String get mealDailyTotalsTitle;
+
+  /// Nutrition screen meal entries section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal entries'**
+  String get mealEntriesTitle;
+
+  /// Empty state title for meal entries.
+  ///
+  /// In en, this message translates to:
+  /// **'No meal entries yet'**
+  String get mealEmptyTitle;
+
+  /// Empty state message for meal entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Add meal item to start today\'s log.'**
+  String get mealEmptyMessage;
+
+  /// Bottom sheet title for searching meal items.
+  ///
+  /// In en, this message translates to:
+  /// **'Add meal item'**
+  String get mealSearchSheetTitle;
+
+  /// Bottom sheet helper text for meal item search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search your saved foods and dishes, or create a new food from your query.'**
+  String get mealSearchSheetSubtitle;
+
+  /// Search field label for foods and dishes.
+  ///
+  /// In en, this message translates to:
+  /// **'Search foods and dishes'**
+  String get mealSearchFieldLabel;
+
+  /// Create action for a missing meal search item.
+  ///
+  /// In en, this message translates to:
+  /// **'Create \"{query}\"'**
+  String mealCreateItem(String query);
+
+  /// Prompt in the log meal amount dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how much you ate, then add it to today\'s meal log.'**
+  String get mealAmountPrompt;
+
+  /// Label for grams amount mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Grams'**
+  String get mealGramsLabel;
+
+  /// Label for servings amount mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Servings'**
+  String get mealServingsLabel;
+
+  /// Common cancel action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
+
+  /// Dialog action to add a selected item amount to the meal log.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to meal'**
+  String get mealAddToMealAction;
+
+  /// More screen header subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tune units, appearance, and sync preferences.'**
+  String get moreSubtitle;
+
+  /// More screen sync section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync'**
+  String get moreSyncTitle;
+
+  /// Title for sync status card.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync status'**
+  String get moreSyncStatusTitle;
+
+  /// Sync status message when signed in.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync status: signed in. Firebase sync is still a placeholder.'**
+  String get moreSyncSignedInMessage;
+
+  /// Sync status message when signed out.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync status: signed out. Firebase sync is still a placeholder.'**
+  String get moreSyncSignedOutMessage;
+
+  /// Login action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get moreLoginAction;
+
+  /// Logout action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get moreLogoutAction;
+
+  /// Settings units section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Units'**
+  String get settingsUnitsTitle;
+
+  /// Preference title for workout weight unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout weight'**
+  String get settingsWorkoutWeightTitle;
+
+  /// Preference subtitle for workout weight unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Weights shown during training sessions.'**
+  String get settingsWorkoutWeightSubtitle;
+
+  /// Preference title for dish weight unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Dish weight'**
+  String get settingsDishWeightTitle;
+
+  /// Preference subtitle for dish weight unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Food and recipe serving measurements.'**
+  String get settingsDishWeightSubtitle;
+
+  /// Preference title for height unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get settingsHeightTitle;
+
+  /// Preference title for distance unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get settingsDistanceTitle;
+
+  /// Preference title for language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguageTitle;
+
+  /// Preference subtitle for language.
+  ///
+  /// In en, this message translates to:
+  /// **'App language'**
+  String get settingsLanguageSubtitle;
+
+  /// Preference title for app appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearanceTitle;
+
+  /// Preference subtitle for app appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get settingsAppearanceSubtitle;
+
+  /// Kilograms unit label.
+  ///
+  /// In en, this message translates to:
+  /// **'Kilograms'**
+  String get unitKilograms;
+
+  /// Pounds unit label.
+  ///
+  /// In en, this message translates to:
+  /// **'Pounds'**
+  String get unitPounds;
+
+  /// Grams unit label.
+  ///
+  /// In en, this message translates to:
+  /// **'Grams'**
+  String get unitGrams;
+
+  /// Ounces unit label.
+  ///
+  /// In en, this message translates to:
+  /// **'Ounces'**
+  String get unitOunces;
+
+  /// Centimeters unit label.
+  ///
+  /// In en, this message translates to:
+  /// **'Centimeters'**
+  String get unitCentimeters;
+
+  /// Inches unit label.
+  ///
+  /// In en, this message translates to:
+  /// **'Inches'**
+  String get unitInches;
+
+  /// Kilometers unit label.
+  ///
+  /// In en, this message translates to:
+  /// **'Kilometers'**
+  String get unitKilometers;
+
+  /// Miles unit label.
+  ///
+  /// In en, this message translates to:
+  /// **'Miles'**
+  String get unitMiles;
+
+  /// English language option label.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// System appearance option label.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get appearanceSystem;
+
+  /// Light appearance option label.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get appearanceLight;
+
+  /// Dark appearance option label.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get appearanceDark;
 }
 
 class _AppLocalizationsDelegate

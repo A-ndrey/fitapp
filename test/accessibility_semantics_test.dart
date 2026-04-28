@@ -88,6 +88,33 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('MetricCard accepts localized semantic value and suffix', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: MetricCard(
+            label: 'Protein',
+            value: '7',
+            suffix: 'g',
+            semanticValue: 'seven',
+            semanticSuffix: 'localized grams',
+            icon: Icons.fitness_center_outlined,
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSemantics(find.byType(MetricCard)),
+      matchesSemantics(label: 'Protein, seven localized grams'),
+    );
+    semantics.dispose();
+  });
+
   testWidgets('ActionCard semantic label does not duplicate punctuation', (
     tester,
   ) async {

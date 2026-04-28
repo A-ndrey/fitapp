@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/app_preferences.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
@@ -17,31 +18,38 @@ class MoreScreen extends StatelessWidget {
       animation: store,
       builder: (context, _) {
         final preferences = store.preferences;
+        final l10n = AppLocalizations.of(context);
 
         return AdaptivePage(
           children: [
-            const SectionHeader(
-              title: 'More',
-              subtitle: 'Tune units, appearance, and sync preferences.',
+            SectionHeader(
+              title: l10n?.destinationMore ?? 'More',
+              subtitle:
+                  l10n?.moreSubtitle ??
+                  'Tune units, appearance, and sync preferences.',
             ),
             Text(
-              'Sync',
+              l10n?.moreSyncTitle ?? 'Sync',
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             SettingsStatusCard(
-              title: 'Sync status',
+              title: l10n?.moreSyncStatusTitle ?? 'Sync status',
               message: store.isLoggedIn
-                  ? 'Sync status: signed in. Firebase sync is still a placeholder.'
-                  : 'Sync status: signed out. Firebase sync is still a placeholder.',
-              actionLabel: store.isLoggedIn ? 'Logout' : 'Login',
+                  ? l10n?.moreSyncSignedInMessage ??
+                        'Sync status: signed in. Firebase sync is still a placeholder.'
+                  : l10n?.moreSyncSignedOutMessage ??
+                        'Sync status: signed out. Firebase sync is still a placeholder.',
+              actionLabel: store.isLoggedIn
+                  ? l10n?.moreLogoutAction ?? 'Logout'
+                  : l10n?.moreLoginAction ?? 'Login',
               onPressed: store.isLoggedIn ? store.logOut : store.logIn,
             ),
             const SizedBox(height: 20),
             Text(
-              'Units',
+              l10n?.settingsUnitsTitle ?? 'Units',
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -51,95 +59,99 @@ class MoreScreen extends StatelessWidget {
               builder: (context, constraints) {
                 final cards = [
                   PreferenceChipCard<WorkoutWeightUnit>(
-                    title: 'Workout weight',
-                    subtitle: 'Weights shown during training sessions.',
+                    title: l10n?.settingsWorkoutWeightTitle ?? 'Workout weight',
+                    subtitle:
+                        l10n?.settingsWorkoutWeightSubtitle ??
+                        'Weights shown during training sessions.',
                     value: preferences.workoutWeightUnit,
-                    options: const [
+                    options: [
                       PreferenceChipOption(
                         value: WorkoutWeightUnit.kilograms,
-                        label: 'Kilograms',
+                        label: l10n?.unitKilograms ?? 'Kilograms',
                       ),
                       PreferenceChipOption(
                         value: WorkoutWeightUnit.pounds,
-                        label: 'Pounds',
+                        label: l10n?.unitPounds ?? 'Pounds',
                       ),
                     ],
                     onChanged: store.setWorkoutWeightUnit,
                   ),
                   PreferenceChipCard<DishWeightUnit>(
-                    title: 'Dish weight',
-                    subtitle: 'Food and recipe serving measurements.',
+                    title: l10n?.settingsDishWeightTitle ?? 'Dish weight',
+                    subtitle:
+                        l10n?.settingsDishWeightSubtitle ??
+                        'Food and recipe serving measurements.',
                     value: preferences.dishWeightUnit,
-                    options: const [
+                    options: [
                       PreferenceChipOption(
                         value: DishWeightUnit.grams,
-                        label: 'Grams',
+                        label: l10n?.unitGrams ?? 'Grams',
                       ),
                       PreferenceChipOption(
                         value: DishWeightUnit.ounces,
-                        label: 'Ounces',
+                        label: l10n?.unitOunces ?? 'Ounces',
                       ),
                     ],
                     onChanged: store.setDishWeightUnit,
                   ),
                   PreferenceChipCard<HeightUnit>(
-                    title: 'Height',
+                    title: l10n?.settingsHeightTitle ?? 'Height',
                     value: preferences.heightUnit,
-                    options: const [
+                    options: [
                       PreferenceChipOption(
                         value: HeightUnit.centimeters,
-                        label: 'Centimeters',
+                        label: l10n?.unitCentimeters ?? 'Centimeters',
                       ),
                       PreferenceChipOption(
                         value: HeightUnit.inches,
-                        label: 'Inches',
+                        label: l10n?.unitInches ?? 'Inches',
                       ),
                     ],
                     onChanged: store.setHeightUnit,
                   ),
                   PreferenceChipCard<DistanceUnit>(
-                    title: 'Distance',
+                    title: l10n?.settingsDistanceTitle ?? 'Distance',
                     value: preferences.distanceUnit,
-                    options: const [
+                    options: [
                       PreferenceChipOption(
                         value: DistanceUnit.kilometers,
-                        label: 'Kilometers',
+                        label: l10n?.unitKilometers ?? 'Kilometers',
                       ),
                       PreferenceChipOption(
                         value: DistanceUnit.miles,
-                        label: 'Miles',
+                        label: l10n?.unitMiles ?? 'Miles',
                       ),
                     ],
                     onChanged: store.setDistanceUnit,
                   ),
                   PreferenceChipCard<LanguagePreference>(
-                    title: 'Language',
-                    subtitle: 'App language',
+                    title: l10n?.settingsLanguageTitle ?? 'Language',
+                    subtitle: l10n?.settingsLanguageSubtitle ?? 'App language',
                     value: preferences.language,
-                    options: const [
+                    options: [
                       PreferenceChipOption(
                         value: LanguagePreference.english,
-                        label: 'English',
+                        label: l10n?.languageEnglish ?? 'English',
                       ),
                     ],
                     onChanged: store.setLanguagePreference,
                   ),
                   PreferenceChipCard<AppearancePreference>(
-                    title: 'Appearance',
-                    subtitle: 'Theme',
+                    title: l10n?.settingsAppearanceTitle ?? 'Appearance',
+                    subtitle: l10n?.settingsAppearanceSubtitle ?? 'Theme',
                     value: preferences.appearance,
-                    options: const [
+                    options: [
                       PreferenceChipOption(
                         value: AppearancePreference.system,
-                        label: 'System',
+                        label: l10n?.appearanceSystem ?? 'System',
                       ),
                       PreferenceChipOption(
                         value: AppearancePreference.light,
-                        label: 'Light',
+                        label: l10n?.appearanceLight ?? 'Light',
                       ),
                       PreferenceChipOption(
                         value: AppearancePreference.dark,
-                        label: 'Dark',
+                        label: l10n?.appearanceDark ?? 'Dark',
                       ),
                     ],
                     onChanged: store.setAppearancePreference,

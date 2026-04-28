@@ -94,8 +94,23 @@ void main() {
       formatNutritionLine(tomatoNutrition),
       '18 kcal • 0.9 g protein • 0.2 g fat • 3.9 g carbs',
     );
+    expect(
+      formatNutritionLine(
+        tomatoNutrition,
+        kilocalorieLabel: 'kilocalorie-unit',
+        gramLabel: 'gram-unit',
+        proteinLabel: 'protein-label',
+        fatLabel: 'fat-label',
+        carbsLabel: 'carbs-label',
+      ),
+      '18 kilocalorie-unit • 0.9 gram-unit protein-label • 0.2 gram-unit fat-label • 3.9 gram-unit carbs-label',
+    );
     expect(formatMealQuantity(tomatoEntry, store), '150 g');
     expect(formatMealQuantity(saladEntry, store), '1.5 servings');
+    expect(
+      formatMealQuantity(saladEntry, store, servingsLabel: 'servings-label'),
+      '1.5 servings-label',
+    );
 
     store.setDishWeightUnit(DishWeightUnit.ounces);
     expect(formatMealQuantity(tomatoEntry, store), '5.3 oz');

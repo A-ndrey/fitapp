@@ -9,16 +9,27 @@ String formatNutritionNumber(double value) {
   return value.toStringAsFixed(1);
 }
 
-String formatNutritionLine(NutritionValues values) {
-  return '${formatNutritionNumber(values.calories)} kcal • '
-      '${formatNutritionNumber(values.protein)} g protein • '
-      '${formatNutritionNumber(values.fat)} g fat • '
-      '${formatNutritionNumber(values.carbs)} g carbs';
+String formatNutritionLine(
+  NutritionValues values, {
+  String kilocalorieLabel = 'kcal',
+  String gramLabel = 'g',
+  String proteinLabel = 'protein',
+  String fatLabel = 'fat',
+  String carbsLabel = 'carbs',
+}) {
+  return '${formatNutritionNumber(values.calories)} $kilocalorieLabel • '
+      '${formatNutritionNumber(values.protein)} $gramLabel $proteinLabel • '
+      '${formatNutritionNumber(values.fat)} $gramLabel $fatLabel • '
+      '${formatNutritionNumber(values.carbs)} $gramLabel $carbsLabel';
 }
 
-String formatMealQuantity(MealEntry entry, AppStore store) {
+String formatMealQuantity(
+  MealEntry entry,
+  AppStore store, {
+  String servingsLabel = 'servings',
+}) {
   if (entry.mode == MealEntryMode.grams) {
     return store.formatDishWeight(entry.enteredQuantity);
   }
-  return '${formatNutritionNumber(entry.enteredQuantity)} servings';
+  return '${formatNutritionNumber(entry.enteredQuantity)} $servingsLabel';
 }

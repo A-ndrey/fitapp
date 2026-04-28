@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/catalog_item.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/app_breakpoints.dart';
@@ -24,36 +25,39 @@ class MealScreen extends StatelessWidget {
             final showInlineAdd = AppBreakpoints.isMediumOrLarger(
               constraints.maxWidth,
             );
+            final l10n = AppLocalizations.of(context);
+            final addMealLabel = l10n?.mealAddItemAction ?? 'Add meal item';
 
             return Scaffold(
-              appBar: AppBar(title: const Text('Meal')),
+              appBar: AppBar(title: Text(l10n?.mealTitle ?? 'Meal')),
               floatingActionButton: showInlineAdd
                   ? null
                   : FloatingActionButton(
                       heroTag: 'add-meal-fab',
-                      tooltip: 'Add meal item',
+                      tooltip: addMealLabel,
                       onPressed: () => _openAddMealFlow(context),
                       child: const Icon(Icons.add),
                     ),
               body: AdaptivePage(
                 children: [
                   SectionHeader(
-                    title: 'Nutrition cockpit',
+                    title: l10n?.mealCockpitTitle ?? 'Nutrition cockpit',
                     subtitle:
+                        l10n?.mealCockpitSubtitle ??
                         'Log food, review macros, and keep today visible.',
                     trailing: showInlineAdd
                         ? Tooltip(
-                            message: 'Add meal item',
+                            message: addMealLabel,
                             child: FilledButton.icon(
                               onPressed: () => _openAddMealFlow(context),
                               icon: const Icon(Icons.add),
-                              label: const Text('Add meal item'),
+                              label: Text(addMealLabel),
                             ),
                           )
                         : null,
                   ),
                   Text(
-                    'Daily totals',
+                    l10n?.mealDailyTotalsTitle ?? 'Daily totals',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -62,15 +66,17 @@ class MealScreen extends StatelessWidget {
                   NutritionSummaryGrid(values: store.dailyTotals),
                   const SizedBox(height: 24),
                   Text(
-                    'Meal entries',
+                    l10n?.mealEntriesTitle ?? 'Meal entries',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
                   if (store.mealEntries.isEmpty)
-                    const AppEmptyState(
+                    AppEmptyState(
                       icon: Icons.restaurant_menu_outlined,
-                      title: 'No meal entries yet',
-                      message: "Use Add meal item to start today's log.",
+                      title: l10n?.mealEmptyTitle ?? 'No meal entries yet',
+                      message:
+                          l10n?.mealEmptyMessage ??
+                          "Use Add meal item to start today's log.",
                     )
                   else
                     ...store.mealEntries.map(
@@ -184,6 +190,7 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
     final hasExactMatch = _hasExactNameMatch(results, query);
     final showCreateAction = query.isNotEmpty && !hasExactMatch;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.5;
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -196,21 +203,23 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Add meal item',
+            l10n?.mealSearchSheetTitle ?? 'Add meal item',
             style: Theme.of(
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 4),
           Text(
-            'Search your saved foods and dishes, or create a new food from your query.',
+            l10n?.mealSearchSheetSubtitle ??
+                'Search your saved foods and dishes, or create a new food from your query.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _searchController,
-            decoration: const InputDecoration(
-              labelText: 'Search foods and dishes',
+            decoration: InputDecoration(
+              labelText:
+                  l10n?.mealSearchFieldLabel ?? 'Search foods and dishes',
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -225,7 +234,9 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
                 if (showCreateAction && index == 0) {
                   return ListTile(
                     leading: const Icon(Icons.add),
-                    title: Text('Create "$query"'),
+                    title: Text(
+                      l10n?.mealCreateItem(query) ?? 'Create "$query"',
+                    ),
                     onTap: () {
                       Navigator.of(
                         context,
@@ -287,7 +298,10 @@ class _LogAmountDialogState extends State<_LogAmountDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final label = _mode == _LogAmountMode.grams ? 'Grams' : 'Servings';
+    final l10n = AppLocalizations.of(context);
+    final gramsLabel = l10n?.mealGramsLabel ?? 'Grams';
+    final servingsLabel = l10n?.mealServingsLabel ?? 'Servings';
+    final label = _mode == _LogAmountMode.grams ? gramsLabel : servingsLabel;
     return AlertDialog(
       title: Text(widget.item.name),
       content: Column(
@@ -295,21 +309,22 @@ class _LogAmountDialogState extends State<_LogAmountDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            "Choose how much you ate, then add it to today's meal log.",
+            l10n?.mealAmountPrompt ??
+                "Choose how much you ate, then add it to today's meal log.",
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
           SegmentedButton<_LogAmountMode>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: _LogAmountMode.grams,
-                label: Text('Grams'),
-                icon: Icon(Icons.scale),
+                label: Text(gramsLabel),
+                icon: const Icon(Icons.scale),
               ),
               ButtonSegment(
                 value: _LogAmountMode.servings,
-                label: Text('Servings'),
-                icon: Icon(Icons.ramen_dining),
+                label: Text(servingsLabel),
+                icon: const Icon(Icons.ramen_dining),
               ),
             ],
             selected: {_mode},
@@ -330,7 +345,7 @@ class _LogAmountDialogState extends State<_LogAmountDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n?.commonCancel ?? 'Cancel'),
         ),
         FilledButton(
           onPressed: () {
@@ -341,7 +356,7 @@ class _LogAmountDialogState extends State<_LogAmountDialog> {
             widget.onAdd(_mode, amount);
             Navigator.of(context).pop();
           },
-          child: const Text('Add to meal'),
+          child: Text(l10n?.mealAddToMealAction ?? 'Add to meal'),
         ),
       ],
     );

@@ -6,6 +6,8 @@ class MetricCard extends StatelessWidget {
     required this.value,
     super.key,
     this.suffix,
+    this.semanticValue,
+    this.semanticSuffix,
     this.icon,
     this.color,
   });
@@ -13,6 +15,8 @@ class MetricCard extends StatelessWidget {
   final String label;
   final String value;
   final String? suffix;
+  final String? semanticValue;
+  final String? semanticSuffix;
   final IconData? icon;
   final Color? color;
 
@@ -22,13 +26,13 @@ class MetricCard extends StatelessWidget {
     final accentColor = color ?? colorScheme.primary;
     final textTheme = Theme.of(context).textTheme;
 
-    final expandedValue = _expandSemanticValue(value);
-    final semanticValue = suffix == null
+    final expandedValue = semanticValue ?? _expandSemanticValue(value);
+    final semanticLabel = suffix == null
         ? '$label, $expandedValue'
-        : '$label, $expandedValue ${_expandSemanticUnit(suffix!)}';
+        : '$label, $expandedValue ${semanticSuffix ?? _expandSemanticUnit(suffix!)}';
 
     return Semantics(
-      label: semanticValue,
+      label: semanticLabel,
       child: ExcludeSemantics(
         child: Card(
           child: Padding(
