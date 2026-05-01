@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 class FormShellDialog extends StatelessWidget {
   const FormShellDialog({
     required this.title,
@@ -22,6 +24,7 @@ class FormShellDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Semantics(
       scopesRoute: true,
@@ -65,7 +68,7 @@ class FormShellDialog extends StatelessWidget {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(l10n?.formCancelAction ?? 'Cancel'),
                     ),
                     FilledButton(
                       onPressed: onPrimaryAction,

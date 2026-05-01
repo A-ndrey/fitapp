@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/exercise.dart';
 import '../models/training_plan.dart';
 import '../state/app_store.dart';
@@ -35,16 +36,18 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
       animation: store,
       builder: (context, _) {
         final body = _buildBody(context);
+        final l10n = AppLocalizations.of(context);
+        final addLabel = _selectedView == _TrainingsView.plans
+            ? l10n?.trainingAddPlanAction ?? 'Add training plan'
+            : l10n?.trainingAddExerciseAction ?? 'Add exercise';
         if (widget.embedded) {
           return body;
         }
         return Scaffold(
-          appBar: AppBar(title: const Text('Trainings')),
+          appBar: AppBar(title: Text(l10n?.trainingsTitle ?? 'Trainings')),
           floatingActionButton: FloatingActionButton(
             heroTag: 'trainings-action-fab',
-            tooltip: _selectedView == _TrainingsView.plans
-                ? 'Add training plan'
-                : 'Add exercise',
+            tooltip: addLabel,
             onPressed: _selectedView == _TrainingsView.plans
                 ? () => _openPlanDialog(context)
                 : () => _openExerciseDialog(context),
@@ -57,19 +60,20 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
   }
 
   Widget _buildBody(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AdaptivePage(
       children: [
         SegmentedButton<_TrainingsView>(
-          segments: const [
+          segments: [
             ButtonSegment(
               value: _TrainingsView.plans,
-              label: Text('Plans'),
-              icon: Icon(Icons.assignment_outlined),
+              label: Text(l10n?.trainingPlansSegment ?? 'Plans'),
+              icon: const Icon(Icons.assignment_outlined),
             ),
             ButtonSegment(
               value: _TrainingsView.exercises,
-              label: Text('Exercises'),
-              icon: Icon(Icons.fitness_center_outlined),
+              label: Text(l10n?.trainingExercisesSegment ?? 'Exercises'),
+              icon: const Icon(Icons.fitness_center_outlined),
             ),
           ],
           selected: <_TrainingsView>{_selectedView},
@@ -89,19 +93,22 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
   }
 
   List<Widget> _buildPlansView(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return [
       _buildSectionHeader(
         context,
-        title: 'Training plans',
-        actionLabel: 'Add training plan',
+        title: l10n?.trainingPlansTitle ?? 'Training plans',
+        actionLabel: l10n?.trainingAddPlanAction ?? 'Add training plan',
         onPressed: () => _openPlanDialog(context),
       ),
       const SizedBox(height: 12),
       if (store.trainingPlans.isEmpty)
-        const AppEmptyState(
+        AppEmptyState(
           icon: Icons.assignment_outlined,
-          title: 'No training plans yet',
-          message: 'Create a training plan to organize exercises.',
+          title: l10n?.trainingNoPlansTitle ?? 'No training plans yet',
+          message:
+              l10n?.trainingNoPlansMessage ??
+              'Create a training plan to organize exercises.',
         )
       else
         ...store.trainingPlans.map(
@@ -118,19 +125,22 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
   }
 
   List<Widget> _buildExercisesView(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return [
       _buildSectionHeader(
         context,
-        title: 'Exercises',
-        actionLabel: 'Add exercise',
+        title: l10n?.trainingExercisesSegment ?? 'Exercises',
+        actionLabel: l10n?.trainingAddExerciseAction ?? 'Add exercise',
         onPressed: () => _openExerciseDialog(context),
       ),
       const SizedBox(height: 12),
       if (store.exercises.isEmpty)
-        const AppEmptyState(
+        AppEmptyState(
           icon: Icons.fitness_center_outlined,
-          title: 'No exercises yet',
-          message: 'Create an exercise to use it in training plans.',
+          title: l10n?.trainingNoExercisesTitle ?? 'No exercises yet',
+          message:
+              l10n?.trainingNoExercisesMessage ??
+              'Create an exercise to use it in training plans.',
         )
       else
         ...store.exercises.map(
@@ -209,20 +219,26 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     BuildContext context,
     TrainingPlan plan,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text('Delete ${plan.name}?'),
-          content: const Text('This removes the training plan.'),
+          title: Text(
+            l10n?.trainingDeletePlanTitle(plan.name) ?? 'Delete ${plan.name}?',
+          ),
+          content: Text(
+            l10n?.trainingDeletePlanMessage ??
+                'This removes the training plan.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n?.commonCancel ?? 'Cancel'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Delete'),
+              child: Text(l10n?.commonDelete ?? 'Delete'),
             ),
           ],
         );
@@ -234,7 +250,12 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     try {
       store.deleteTrainingPlan(plan.id);
     } on ArgumentError catch (error) {
-      _showSnackBar(context, error.message?.toString() ?? 'Could not delete.');
+      _showSnackBar(
+        context,
+        error.message?.toString() ??
+            l10n?.trainingCouldNotDelete ??
+            'Could not delete.',
+      );
     } on StateError catch (error) {
       _showSnackBar(context, error.message);
     }
@@ -250,20 +271,26 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     BuildContext context,
     Exercise exercise,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text('Delete ${exercise.name}?'),
-          content: const Text('This removes the exercise.'),
+          title: Text(
+            l10n?.trainingDeleteExerciseTitle(exercise.name) ??
+                'Delete ${exercise.name}?',
+          ),
+          content: Text(
+            l10n?.trainingDeleteExerciseMessage ?? 'This removes the exercise.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n?.commonCancel ?? 'Cancel'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Delete'),
+              child: Text(l10n?.commonDelete ?? 'Delete'),
             ),
           ],
         );
@@ -275,7 +302,12 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     try {
       store.deleteExercise(exercise.id);
     } on ArgumentError catch (error) {
-      _showSnackBar(context, error.message?.toString() ?? 'Could not delete.');
+      _showSnackBar(
+        context,
+        error.message?.toString() ??
+            l10n?.trainingCouldNotDelete ??
+            'Could not delete.',
+      );
     } on StateError catch (error) {
       _showSnackBar(context, error.message);
     }
@@ -325,15 +357,20 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return FormShellDialog(
-      title: _isEditing ? 'Edit exercise' : 'Add exercise',
-      subtitle: 'Define instructions and muscle focus for workout plans.',
-      primaryActionLabel: 'Save exercise',
+      title: _isEditing
+          ? l10n?.exerciseDialogEditTitle ?? 'Edit exercise'
+          : l10n?.exerciseDialogAddTitle ?? 'Add exercise',
+      subtitle:
+          l10n?.exerciseDialogSubtitle ??
+          'Define instructions and muscle focus for workout plans.',
+      primaryActionLabel: l10n?.exerciseSaveAction ?? 'Save exercise',
       onPrimaryAction: _saveExercise,
       maxWidth: 640,
       children: [
         FormSectionCard(
-          title: 'Exercise profile',
+          title: l10n?.exerciseProfileSectionTitle ?? 'Exercise profile',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -341,15 +378,19 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
               TextField(
                 controller: _nameController,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Exercise name'),
+                decoration: InputDecoration(
+                  labelText: l10n?.exerciseNameFieldLabel ?? 'Exercise name',
+                ),
               ),
               TextField(
                 controller: _descriptionController,
                 textInputAction: TextInputAction.next,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Exercise description',
+                decoration: InputDecoration(
+                  labelText:
+                      l10n?.exerciseDescriptionFieldLabel ??
+                      'Exercise description',
                 ),
               ),
               TextField(
@@ -357,21 +398,25 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
                 textInputAction: TextInputAction.next,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Exercise instruction',
+                decoration: InputDecoration(
+                  labelText:
+                      l10n?.exerciseInstructionFieldLabel ??
+                      'Exercise instruction',
                 ),
               ),
             ],
           ),
         ),
         FormSectionCard(
-          title: 'Muscle focus',
-          subtitle: 'Choose every area this exercise primarily trains.',
+          title: l10n?.exerciseMuscleFocusTitle ?? 'Muscle focus',
+          subtitle:
+              l10n?.exerciseMuscleFocusSubtitle ??
+              'Choose every area this exercise primarily trains.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Select muscle groups',
+                l10n?.exerciseSelectMuscleGroups ?? 'Select muscle groups',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 8),
@@ -416,6 +461,7 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
         muscleGroups.isEmpty) {
       setState(() {
         _errorText =
+            AppLocalizations.of(context)?.exerciseDetailsValidation ??
             'Enter a name, description, instruction, and muscle groups.';
       });
       return;
@@ -424,7 +470,9 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
         widget.initialExercise?.id ?? widget.store.createIdFromName(name);
     if (id.isEmpty) {
       setState(() {
-        _errorText = 'Enter a valid exercise name.';
+        _errorText =
+            AppLocalizations.of(context)?.exerciseNameValidation ??
+            'Enter a valid exercise name.';
       });
       return;
     }
@@ -445,7 +493,10 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText = error.message?.toString() ?? 'Could not save exercise.';
+        _errorText =
+            error.message?.toString() ??
+            AppLocalizations.of(context)?.exerciseCouldNotSave ??
+            'Could not save exercise.';
       });
       return;
     }
@@ -497,15 +548,20 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return FormShellDialog(
-      title: _isEditing ? 'Edit training' : 'Training plan',
-      subtitle: 'Assemble a reusable sequence for workout sessions.',
-      primaryActionLabel: 'Save training',
+      title: _isEditing
+          ? l10n?.trainingPlanEditDialogTitle ?? 'Edit training'
+          : l10n?.trainingPlanDialogTitle ?? 'Training plan',
+      subtitle:
+          l10n?.trainingPlanDialogSubtitle ??
+          'Assemble a reusable sequence for workout sessions.',
+      primaryActionLabel: l10n?.trainingSaveAction ?? 'Save training',
       onPrimaryAction: _savePlan,
       maxWidth: 720,
       children: [
         FormSectionCard(
-          title: 'Training basics',
+          title: l10n?.trainingBasicsSectionTitle ?? 'Training basics',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -513,23 +569,29 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
               TextField(
                 controller: _nameController,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Training name'),
+                decoration: InputDecoration(
+                  labelText: l10n?.trainingNameFieldLabel ?? 'Training name',
+                ),
               ),
               TextField(
                 controller: _descriptionController,
                 textInputAction: TextInputAction.newline,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Training description',
+                decoration: InputDecoration(
+                  labelText:
+                      l10n?.trainingDescriptionFieldLabel ??
+                      'Training description',
                 ),
               ),
             ],
           ),
         ),
         FormSectionCard(
-          title: 'Exercise sequence',
-          subtitle: 'Add targets in the order you want to train.',
+          title: l10n?.trainingExerciseSequenceTitle ?? 'Exercise sequence',
+          subtitle:
+              l10n?.trainingExerciseSequenceSubtitle ??
+              'Add targets in the order you want to train.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -537,13 +599,15 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
               OutlinedButton.icon(
                 onPressed: _openExercisePicker,
                 icon: const Icon(Icons.add),
-                label: const Text('Add exercise'),
+                label: Text(l10n?.trainingAddExerciseAction ?? 'Add exercise'),
               ),
               const SizedBox(height: 12),
               if (_exercises.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text('No exercises added yet'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    l10n?.trainingNoExercisesAdded ?? 'No exercises added yet',
+                  ),
                 )
               else
                 ..._exercises.indexed.map((entry) {
@@ -563,11 +627,34 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(_formatTarget(exercise.sets, 'sets')),
-                            Text(_formatTarget(exercise.reps, 'reps')),
-                            Text(_formatTarget(exercise.weight, 'weight')),
-                            Text(_formatTarget(exercise.time, 'time')),
-                            Text('Unit: ${exercise.unit}'),
+                            Text(
+                              _formatTarget(
+                                exercise.sets,
+                                l10n?.trainingSetsSummaryLabel ?? 'sets',
+                              ),
+                            ),
+                            Text(
+                              _formatTarget(
+                                exercise.reps,
+                                l10n?.trainingRepsSummaryLabel ?? 'reps',
+                              ),
+                            ),
+                            Text(
+                              _formatTarget(
+                                exercise.weight,
+                                l10n?.trainingWeightSummaryLabel ?? 'weight',
+                              ),
+                            ),
+                            Text(
+                              _formatTarget(
+                                exercise.time,
+                                l10n?.trainingTimeSummaryLabel ?? 'time',
+                              ),
+                            ),
+                            Text(
+                              l10n?.trainingTargetUnitLabel(exercise.unit) ??
+                                  'Unit: ${exercise.unit}',
+                            ),
                           ],
                         ),
                         isThreeLine: true,
@@ -575,12 +662,18 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              tooltip: 'Edit $exerciseName',
+                              tooltip:
+                                  l10n?.libraryEditItem(exerciseName) ??
+                                  'Edit $exerciseName',
                               icon: const Icon(Icons.edit_outlined),
                               onPressed: () => _editExercise(index),
                             ),
                             IconButton(
-                              tooltip: 'Remove $exerciseName',
+                              tooltip:
+                                  l10n?.trainingRemoveExerciseTooltip(
+                                    exerciseName,
+                                  ) ??
+                                  'Remove $exerciseName',
                               icon: const Icon(Icons.remove_circle_outline),
                               onPressed: () {
                                 setState(() {
@@ -675,7 +768,9 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
     final description = _descriptionController.text.trim();
     if (name.isEmpty || _exercises.isEmpty) {
       setState(() {
-        _errorText = 'Enter a training name and add at least one exercise.';
+        _errorText =
+            AppLocalizations.of(context)?.trainingPlanValidation ??
+            'Enter a training name and add at least one exercise.';
       });
       return;
     }
@@ -695,7 +790,10 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText = error.message?.toString() ?? 'Could not save training.';
+        _errorText =
+            error.message?.toString() ??
+            AppLocalizations.of(context)?.trainingCouldNotSave ??
+            'Could not save training.';
       });
       return;
     }
@@ -780,15 +878,20 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return FormShellDialog(
-      title: widget.initialExercise == null ? 'Add exercise' : 'Edit exercise',
+      title: widget.initialExercise == null
+          ? l10n?.trainingTargetDialogTitle ?? 'Add exercise'
+          : l10n?.trainingTargetDialogEditTitle ?? 'Edit exercise',
       subtitle: widget.exercise.name,
-      primaryActionLabel: 'Save exercise',
+      primaryActionLabel: l10n?.exerciseSaveAction ?? 'Save exercise',
       onPrimaryAction: _saveExercise,
       children: [
         FormSectionCard(
-          title: 'Target prescription',
-          subtitle: 'Set expected volume, load, duration, and unit.',
+          title: l10n?.trainingTargetSectionTitle ?? 'Target prescription',
+          subtitle:
+              l10n?.trainingTargetSectionSubtitle ??
+              'Set expected volume, load, duration, and unit.',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -799,7 +902,10 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
                   decimal: true,
                 ),
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Expected sets'),
+                decoration: InputDecoration(
+                  labelText:
+                      l10n?.trainingExpectedSetsFieldLabel ?? 'Expected sets',
+                ),
               ),
               TextField(
                 controller: _repsController,
@@ -807,7 +913,10 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
                   decimal: true,
                 ),
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Expected reps'),
+                decoration: InputDecoration(
+                  labelText:
+                      l10n?.trainingExpectedRepsFieldLabel ?? 'Expected reps',
+                ),
               ),
               TextField(
                 controller: _weightController,
@@ -815,7 +924,11 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
                   decimal: true,
                 ),
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Expected weight'),
+                decoration: InputDecoration(
+                  labelText:
+                      l10n?.trainingExpectedWeightFieldLabel ??
+                      'Expected weight',
+                ),
               ),
               TextField(
                 controller: _timeController,
@@ -823,12 +936,17 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
                   decimal: true,
                 ),
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Expected time'),
+                decoration: InputDecoration(
+                  labelText:
+                      l10n?.trainingExpectedTimeFieldLabel ?? 'Expected time',
+                ),
               ),
               TextField(
                 controller: _unitController,
                 textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(labelText: 'Unit'),
+                decoration: InputDecoration(
+                  labelText: l10n?.trainingUnitFieldLabel ?? 'Unit',
+                ),
               ),
             ],
           ),
@@ -850,7 +968,9 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
         (time == null && _timeController.text.trim().isNotEmpty) ||
         unit.isEmpty) {
       setState(() {
-        _errorText = 'Enter valid exercise targets and a unit.';
+        _errorText =
+            AppLocalizations.of(context)?.trainingTargetValidation ??
+            'Enter valid exercise targets and a unit.';
       });
       return;
     }

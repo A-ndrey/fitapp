@@ -73,6 +73,7 @@ class WorkoutSetInputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -92,7 +93,9 @@ class WorkoutSetInputCard extends StatelessWidget {
                       width: fieldWidth,
                       child: TextField(
                         controller: repsController,
-                        decoration: const InputDecoration(labelText: 'Reps'),
+                        decoration: InputDecoration(
+                          labelText: l10n?.workoutRepsFieldLabel ?? 'Reps',
+                        ),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
@@ -103,7 +106,7 @@ class WorkoutSetInputCard extends StatelessWidget {
                       child: TextField(
                         controller: weightController,
                         decoration: InputDecoration(
-                          labelText: 'Weight',
+                          labelText: l10n?.workoutWeightFieldLabel ?? 'Weight',
                           helperText: target.weight != null
                               ? target.unit
                               : null,
@@ -118,7 +121,7 @@ class WorkoutSetInputCard extends StatelessWidget {
                       child: TextField(
                         controller: timeController,
                         decoration: InputDecoration(
-                          labelText: 'Time',
+                          labelText: l10n?.workoutTimeFieldLabel ?? 'Time',
                           helperText: target.time != null ? target.unit : null,
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
@@ -136,7 +139,7 @@ class WorkoutSetInputCard extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: onLogSet,
                 icon: const Icon(Icons.add),
-                label: const Text('Log set'),
+                label: Text(l10n?.workoutLogSetAction ?? 'Log set'),
               ),
             ),
           ],
@@ -162,29 +165,39 @@ class WorkoutLoggedSetsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Logged sets', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              l10n?.workoutLoggedSetsTitle ?? 'Logged sets',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             if (setLogs.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('No logged sets yet'),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  l10n?.workoutNoLoggedSetsYet ?? 'No logged sets yet',
+                ),
               )
             else
               ...setLogs.indexed.map((entry) {
                 final setNumber = entry.$1 + 1;
                 final setLog = entry.$2;
                 return Tooltip(
-                  message: 'Use Set $setNumber',
+                  message:
+                      l10n?.workoutUseSetTooltip(setNumber) ??
+                      'Use Set $setNumber',
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
                     onTap: () => onFillSet(setLog),
-                    title: Text('Set $setNumber'),
+                    title: Text(
+                      l10n?.workoutSetLabel(setNumber) ?? 'Set $setNumber',
+                    ),
                     subtitle: Text(formatWorkoutSetLog(target, setLog, store)),
                   ),
                 );
@@ -210,22 +223,26 @@ class WorkoutPreviousResultsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
-            'Previous results',
+            l10n?.workoutPreviousResultsTitle ?? 'Previous results',
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
         const SizedBox(height: 12),
         if (history.isEmpty)
-          const Card(
+          Card(
             child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('No previous results for this exercise'),
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                l10n?.workoutNoPreviousResults ??
+                    'No previous results for this exercise',
+              ),
             ),
           )
         else
@@ -236,6 +253,7 @@ class WorkoutPreviousResultsCard extends StatelessWidget {
                 group: group,
                 store: store,
                 onFillSet: onFillSet,
+                l10n: l10n,
               ),
             ),
           ),
@@ -375,11 +393,13 @@ class _PreviousResultGroupCard extends StatelessWidget {
     required this.group,
     required this.store,
     required this.onFillSet,
+    this.l10n,
   });
 
   final WorkoutExerciseHistoryGroup group;
   final AppStore store;
   final WorkoutSetLogCallback onFillSet;
+  final AppLocalizations? l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -397,7 +417,7 @@ class _PreviousResultGroupCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             if (group.results.every((result) => result.setLogs.isEmpty))
-              const Text('No sets logged')
+              Text(l10n?.workoutNoSetsLogged ?? 'No sets logged')
             else
               ...group.results.indexed.expand((resultEntry) {
                 final resultNumber = resultEntry.$1 + 1;
@@ -407,11 +427,24 @@ class _PreviousResultGroupCard extends StatelessWidget {
                   final setNumber = setEntry.$1 + 1;
                   final setLog = setEntry.$2;
                   final setLabel = hasMultipleResults
-                      ? 'Entry $resultNumber • Set $setNumber'
-                      : 'Set $setNumber';
+                      ? l10n?.workoutPreviousSetLabel(
+                              resultNumber,
+                              setNumber,
+                            ) ??
+                            'Entry $resultNumber • Set $setNumber'
+                      : l10n?.workoutSetLabel(setNumber) ?? 'Set $setNumber';
                   final tooltipLabel = hasMultipleResults
-                      ? 'Use previous Entry $resultNumber Set $setNumber from ${group.session.trainingPlanName}'
-                      : 'Use previous Set $setNumber from ${group.session.trainingPlanName}';
+                      ? l10n?.workoutUsePreviousEntrySetTooltip(
+                              resultNumber,
+                              setNumber,
+                              group.session.trainingPlanName,
+                            ) ??
+                            'Use previous Entry $resultNumber Set $setNumber from ${group.session.trainingPlanName}'
+                      : l10n?.workoutUsePreviousSetTooltip(
+                              setNumber,
+                              group.session.trainingPlanName,
+                            ) ??
+                            'Use previous Set $setNumber from ${group.session.trainingPlanName}';
                   return Tooltip(
                     message: tooltipLabel,
                     child: ListTile(

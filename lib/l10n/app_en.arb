@@ -701,5 +701,563 @@
   "libraryMusclesEmpty": "Muscles: -",
   "@libraryMusclesEmpty": {
     "description": "Exercise muscle summary when no muscle groups are selected."
+  },
+  "formCancelAction": "Cancel",
+  "@formCancelAction": {
+    "description": "Shared cancel action label for custom form dialogs."
+  },
+  "workoutRepsFieldLabel": "Reps",
+  "@workoutRepsFieldLabel": {
+    "description": "Workout set input field label for repetitions."
+  },
+  "workoutWeightFieldLabel": "Weight",
+  "@workoutWeightFieldLabel": {
+    "description": "Workout set input field label for weight."
+  },
+  "workoutTimeFieldLabel": "Time",
+  "@workoutTimeFieldLabel": {
+    "description": "Workout set input field label for time."
+  },
+  "workoutLogSetAction": "Log set",
+  "@workoutLogSetAction": {
+    "description": "Action label for logging a workout set."
+  },
+  "workoutLoggedSetsTitle": "Logged sets",
+  "@workoutLoggedSetsTitle": {
+    "description": "Workout logged sets section title."
+  },
+  "workoutNoLoggedSetsYet": "No logged sets yet",
+  "@workoutNoLoggedSetsYet": {
+    "description": "Empty state for active workout logged sets."
+  },
+  "workoutUseSetTooltip": "Use Set {setNumber}",
+  "@workoutUseSetTooltip": {
+    "description": "Tooltip for filling the workout set input from a logged set.",
+    "placeholders": {
+      "setNumber": {
+        "type": "int",
+        "example": "1"
+      }
+    }
+  },
+  "workoutPreviousResultsTitle": "Previous results",
+  "@workoutPreviousResultsTitle": {
+    "description": "Previous workout results section title."
+  },
+  "workoutNoPreviousResults": "No previous results for this exercise",
+  "@workoutNoPreviousResults": {
+    "description": "Empty state for previous workout exercise results."
+  },
+  "workoutPreviousSetLabel": "Entry {entryNumber} • Set {setNumber}",
+  "@workoutPreviousSetLabel": {
+    "description": "Previous result set label when an exercise has repeated entries.",
+    "placeholders": {
+      "entryNumber": {
+        "type": "int",
+        "example": "2"
+      },
+      "setNumber": {
+        "type": "int",
+        "example": "1"
+      }
+    }
+  },
+  "workoutUsePreviousSetTooltip": "Use previous Set {setNumber} from {sessionName}",
+  "@workoutUsePreviousSetTooltip": {
+    "description": "Tooltip for filling workout set input from previous workout history.",
+    "placeholders": {
+      "setNumber": {
+        "type": "int",
+        "example": "1"
+      },
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "workoutUsePreviousEntrySetTooltip": "Use previous Entry {entryNumber} Set {setNumber} from {sessionName}",
+  "@workoutUsePreviousEntrySetTooltip": {
+    "description": "Tooltip for filling workout set input from previous workout history with repeated exercise entries.",
+    "placeholders": {
+      "entryNumber": {
+        "type": "int",
+        "example": "2"
+      },
+      "setNumber": {
+        "type": "int",
+        "example": "1"
+      },
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "trainingsTitle": "Trainings",
+  "@trainingsTitle": {
+    "description": "Standalone trainings screen title."
+  },
+  "trainingPlansSegment": "Plans",
+  "@trainingPlansSegment": {
+    "description": "Training screen segment label for plans."
+  },
+  "trainingExercisesSegment": "Exercises",
+  "@trainingExercisesSegment": {
+    "description": "Training screen segment label for exercises."
+  },
+  "trainingPlansTitle": "Training plans",
+  "@trainingPlansTitle": {
+    "description": "Training plans section title."
+  },
+  "trainingAddPlanAction": "Add training plan",
+  "@trainingAddPlanAction": {
+    "description": "Action label for adding a training plan."
+  },
+  "trainingAddExerciseAction": "Add exercise",
+  "@trainingAddExerciseAction": {
+    "description": "Action label for adding an exercise."
+  },
+  "trainingNoPlansTitle": "No training plans yet",
+  "@trainingNoPlansTitle": {
+    "description": "Empty state title for training plans."
+  },
+  "trainingNoPlansMessage": "Create a training plan to organize exercises.",
+  "@trainingNoPlansMessage": {
+    "description": "Empty state message for training plans."
+  },
+  "trainingNoExercisesTitle": "No exercises yet",
+  "@trainingNoExercisesTitle": {
+    "description": "Empty state title for exercises."
+  },
+  "trainingNoExercisesMessage": "Create an exercise to use it in training plans.",
+  "@trainingNoExercisesMessage": {
+    "description": "Empty state message for exercises."
+  },
+  "trainingDeletePlanTitle": "Delete {planName}?",
+  "@trainingDeletePlanTitle": {
+    "description": "Delete training plan confirmation title.",
+    "placeholders": {
+      "planName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "trainingDeletePlanMessage": "This removes the training plan.",
+  "@trainingDeletePlanMessage": {
+    "description": "Delete training plan confirmation message."
+  },
+  "trainingDeleteExerciseTitle": "Delete {exerciseName}?",
+  "@trainingDeleteExerciseTitle": {
+    "description": "Delete exercise confirmation title.",
+    "placeholders": {
+      "exerciseName": {
+        "type": "String",
+        "example": "Pushups"
+      }
+    }
+  },
+  "trainingDeleteExerciseMessage": "This removes the exercise.",
+  "@trainingDeleteExerciseMessage": {
+    "description": "Delete exercise confirmation message."
+  },
+  "trainingCouldNotDelete": "Could not delete.",
+  "@trainingCouldNotDelete": {
+    "description": "Fallback delete error message for training content."
+  },
+  "exerciseDialogAddTitle": "Add exercise",
+  "@exerciseDialogAddTitle": {
+    "description": "Add exercise dialog title."
+  },
+  "exerciseDialogEditTitle": "Edit exercise",
+  "@exerciseDialogEditTitle": {
+    "description": "Edit exercise dialog title."
+  },
+  "exerciseDialogSubtitle": "Define instructions and muscle focus for workout plans.",
+  "@exerciseDialogSubtitle": {
+    "description": "Exercise dialog subtitle."
+  },
+  "exerciseSaveAction": "Save exercise",
+  "@exerciseSaveAction": {
+    "description": "Save exercise action label."
+  },
+  "exerciseProfileSectionTitle": "Exercise profile",
+  "@exerciseProfileSectionTitle": {
+    "description": "Exercise profile section title."
+  },
+  "exerciseNameFieldLabel": "Exercise name",
+  "@exerciseNameFieldLabel": {
+    "description": "Exercise name field label."
+  },
+  "exerciseDescriptionFieldLabel": "Exercise description",
+  "@exerciseDescriptionFieldLabel": {
+    "description": "Exercise description field label."
+  },
+  "exerciseInstructionFieldLabel": "Exercise instruction",
+  "@exerciseInstructionFieldLabel": {
+    "description": "Exercise instruction field label."
+  },
+  "exerciseMuscleFocusTitle": "Muscle focus",
+  "@exerciseMuscleFocusTitle": {
+    "description": "Muscle focus section title."
+  },
+  "exerciseMuscleFocusSubtitle": "Choose every area this exercise primarily trains.",
+  "@exerciseMuscleFocusSubtitle": {
+    "description": "Muscle focus section subtitle."
+  },
+  "exerciseSelectMuscleGroups": "Select muscle groups",
+  "@exerciseSelectMuscleGroups": {
+    "description": "Muscle group selector label."
+  },
+  "exerciseDetailsValidation": "Enter a name, description, instruction, and muscle groups.",
+  "@exerciseDetailsValidation": {
+    "description": "Exercise validation error for missing required details."
+  },
+  "exerciseNameValidation": "Enter a valid exercise name.",
+  "@exerciseNameValidation": {
+    "description": "Exercise validation error for invalid name."
+  },
+  "exerciseCouldNotSave": "Could not save exercise.",
+  "@exerciseCouldNotSave": {
+    "description": "Fallback save error message for exercises."
+  },
+  "trainingPlanDialogTitle": "Training plan",
+  "@trainingPlanDialogTitle": {
+    "description": "Add training plan dialog title."
+  },
+  "trainingPlanEditDialogTitle": "Edit training",
+  "@trainingPlanEditDialogTitle": {
+    "description": "Edit training plan dialog title."
+  },
+  "trainingPlanDialogSubtitle": "Assemble a reusable sequence for workout sessions.",
+  "@trainingPlanDialogSubtitle": {
+    "description": "Training plan dialog subtitle."
+  },
+  "trainingSaveAction": "Save training",
+  "@trainingSaveAction": {
+    "description": "Save training plan action label."
+  },
+  "trainingBasicsSectionTitle": "Training basics",
+  "@trainingBasicsSectionTitle": {
+    "description": "Training plan basics section title."
+  },
+  "trainingNameFieldLabel": "Training name",
+  "@trainingNameFieldLabel": {
+    "description": "Training name field label."
+  },
+  "trainingDescriptionFieldLabel": "Training description",
+  "@trainingDescriptionFieldLabel": {
+    "description": "Training description field label."
+  },
+  "trainingExerciseSequenceTitle": "Exercise sequence",
+  "@trainingExerciseSequenceTitle": {
+    "description": "Training plan exercise sequence section title."
+  },
+  "trainingExerciseSequenceSubtitle": "Add targets in the order you want to train.",
+  "@trainingExerciseSequenceSubtitle": {
+    "description": "Training plan exercise sequence section subtitle."
+  },
+  "trainingNoExercisesAdded": "No exercises added yet",
+  "@trainingNoExercisesAdded": {
+    "description": "Empty state text for a training plan with no selected exercises."
+  },
+  "trainingRemoveExerciseTooltip": "Remove {exerciseName}",
+  "@trainingRemoveExerciseTooltip": {
+    "description": "Tooltip for removing an exercise from a training plan.",
+    "placeholders": {
+      "exerciseName": {
+        "type": "String",
+        "example": "Pushups"
+      }
+    }
+  },
+  "trainingTargetUnitLabel": "Unit: {unit}",
+  "@trainingTargetUnitLabel": {
+    "description": "Training target unit summary label.",
+    "placeholders": {
+      "unit": {
+        "type": "String",
+        "example": "kg"
+      }
+    }
+  },
+  "trainingSetsSummaryLabel": "sets",
+  "@trainingSetsSummaryLabel": {
+    "description": "Training target summary label for sets."
+  },
+  "trainingRepsSummaryLabel": "reps",
+  "@trainingRepsSummaryLabel": {
+    "description": "Training target summary label for repetitions."
+  },
+  "trainingWeightSummaryLabel": "weight",
+  "@trainingWeightSummaryLabel": {
+    "description": "Training target summary label for weight."
+  },
+  "trainingTimeSummaryLabel": "time",
+  "@trainingTimeSummaryLabel": {
+    "description": "Training target summary label for time."
+  },
+  "trainingPlanValidation": "Enter a training name and add at least one exercise.",
+  "@trainingPlanValidation": {
+    "description": "Training plan validation error for missing required details."
+  },
+  "trainingCouldNotSave": "Could not save training.",
+  "@trainingCouldNotSave": {
+    "description": "Fallback save error message for training plans."
+  },
+  "trainingTargetDialogTitle": "Add exercise",
+  "@trainingTargetDialogTitle": {
+    "description": "Training exercise target dialog add title."
+  },
+  "trainingTargetDialogEditTitle": "Edit exercise",
+  "@trainingTargetDialogEditTitle": {
+    "description": "Training exercise target dialog edit title."
+  },
+  "trainingTargetSectionTitle": "Target prescription",
+  "@trainingTargetSectionTitle": {
+    "description": "Training exercise target prescription section title."
+  },
+  "trainingTargetSectionSubtitle": "Set expected volume, load, duration, and unit.",
+  "@trainingTargetSectionSubtitle": {
+    "description": "Training exercise target prescription section subtitle."
+  },
+  "trainingExpectedSetsFieldLabel": "Expected sets",
+  "@trainingExpectedSetsFieldLabel": {
+    "description": "Expected sets field label."
+  },
+  "trainingExpectedRepsFieldLabel": "Expected reps",
+  "@trainingExpectedRepsFieldLabel": {
+    "description": "Expected reps field label."
+  },
+  "trainingExpectedWeightFieldLabel": "Expected weight",
+  "@trainingExpectedWeightFieldLabel": {
+    "description": "Expected weight field label."
+  },
+  "trainingExpectedTimeFieldLabel": "Expected time",
+  "@trainingExpectedTimeFieldLabel": {
+    "description": "Expected time field label."
+  },
+  "trainingUnitFieldLabel": "Unit",
+  "@trainingUnitFieldLabel": {
+    "description": "Training target unit field label."
+  },
+  "trainingTargetValidation": "Enter valid exercise targets and a unit.",
+  "@trainingTargetValidation": {
+    "description": "Training target validation error."
+  },
+  "foodScreenTitle": "Food",
+  "@foodScreenTitle": {
+    "description": "Standalone food screen title."
+  },
+  "foodSetTitle": "Food set",
+  "@foodSetTitle": {
+    "description": "Food catalog section title."
+  },
+  "foodAddItemAction": "Add food or dish",
+  "@foodAddItemAction": {
+    "description": "Action label for adding food or dish."
+  },
+  "foodEmptyTitle": "No foods or dishes yet",
+  "@foodEmptyTitle": {
+    "description": "Empty state title for food catalog."
+  },
+  "foodEmptyMessage": "Use Add food or dish to build your reusable catalog.",
+  "@foodEmptyMessage": {
+    "description": "Empty state message for food catalog."
+  },
+  "foodDeleteItemTitle": "Delete {itemName}?",
+  "@foodDeleteItemTitle": {
+    "description": "Delete food or dish confirmation title.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Rice"
+      }
+    }
+  },
+  "foodDeleteItemMessage": "This removes the item from the food set.",
+  "@foodDeleteItemMessage": {
+    "description": "Delete food or dish confirmation message."
+  },
+  "foodItemChoiceLabel": "Food item",
+  "@foodItemChoiceLabel": {
+    "description": "Bottom sheet choice label for creating a food item."
+  },
+  "dishChoiceLabel": "Dish",
+  "@dishChoiceLabel": {
+    "description": "Bottom sheet choice label for creating a dish."
+  },
+  "foodFormTitle": "Food item",
+  "@foodFormTitle": {
+    "description": "Food form title."
+  },
+  "foodFormEditTitle": "Edit food",
+  "@foodFormEditTitle": {
+    "description": "Edit food form title."
+  },
+  "foodFormSubtitle": "Define reusable food data for faster meal logging.",
+  "@foodFormSubtitle": {
+    "description": "Food form subtitle."
+  },
+  "foodSaveAction": "Save food",
+  "@foodSaveAction": {
+    "description": "Save food action label."
+  },
+  "foodBasicsSectionTitle": "Food basics",
+  "@foodBasicsSectionTitle": {
+    "description": "Food basics section title."
+  },
+  "foodBasicsSectionSubtitle": "Name this item and define the serving anchor.",
+  "@foodBasicsSectionSubtitle": {
+    "description": "Food basics section subtitle."
+  },
+  "foodNameFieldLabel": "Name",
+  "@foodNameFieldLabel": {
+    "description": "Food name field label."
+  },
+  "foodDescriptionFieldLabel": "Description",
+  "@foodDescriptionFieldLabel": {
+    "description": "Food description field label."
+  },
+  "foodServingSizeGramsFieldLabel": "Serving size grams",
+  "@foodServingSizeGramsFieldLabel": {
+    "description": "Food serving size grams field label."
+  },
+  "foodNutritionFactsTitle": "Nutrition facts",
+  "@foodNutritionFactsTitle": {
+    "description": "Food nutrition facts section title."
+  },
+  "foodNutritionFactsSubtitle": "Enter values using the selected nutrition basis.",
+  "@foodNutritionFactsSubtitle": {
+    "description": "Food nutrition facts section subtitle."
+  },
+  "foodNutritionPer100g": "Per 100g",
+  "@foodNutritionPer100g": {
+    "description": "Nutrition basis label for per 100 grams."
+  },
+  "foodNutritionPerServing": "Per serving",
+  "@foodNutritionPerServing": {
+    "description": "Nutrition basis label for per serving."
+  },
+  "foodValidation": "Enter a name and valid nutrition values.",
+  "@foodValidation": {
+    "description": "Food form validation message."
+  },
+  "foodCouldNotSave": "Could not save food.",
+  "@foodCouldNotSave": {
+    "description": "Fallback save error for food form."
+  },
+  "dishFormTitle": "Dish",
+  "@dishFormTitle": {
+    "description": "Dish form title."
+  },
+  "dishFormEditTitle": "Edit dish",
+  "@dishFormEditTitle": {
+    "description": "Edit dish form title."
+  },
+  "dishFormSubtitle": "Combine foods and dishes into a reusable recipe.",
+  "@dishFormSubtitle": {
+    "description": "Dish form subtitle."
+  },
+  "dishSaveAction": "Save dish",
+  "@dishSaveAction": {
+    "description": "Save dish action label."
+  },
+  "dishBasicsSectionTitle": "Dish basics",
+  "@dishBasicsSectionTitle": {
+    "description": "Dish basics section title."
+  },
+  "dishBasicsSectionSubtitle": "Name this recipe and define one serving.",
+  "@dishBasicsSectionSubtitle": {
+    "description": "Dish basics section subtitle."
+  },
+  "dishNameFieldLabel": "Dish name",
+  "@dishNameFieldLabel": {
+    "description": "Dish name field label."
+  },
+  "dishDescriptionFieldLabel": "Dish description",
+  "@dishDescriptionFieldLabel": {
+    "description": "Dish description field label."
+  },
+  "dishServingSizeGramsFieldLabel": "Dish serving size grams",
+  "@dishServingSizeGramsFieldLabel": {
+    "description": "Dish serving size grams field label."
+  },
+  "dishComponentsSectionTitle": "Components",
+  "@dishComponentsSectionTitle": {
+    "description": "Dish components section title."
+  },
+  "dishComponentsSectionSubtitle": "Add ingredients to calculate serving nutrition.",
+  "@dishComponentsSectionSubtitle": {
+    "description": "Dish components section subtitle."
+  },
+  "dishAddComponentAction": "Add component",
+  "@dishAddComponentAction": {
+    "description": "Add dish component action label."
+  },
+  "dishNoComponentsTitle": "No components yet",
+  "@dishNoComponentsTitle": {
+    "description": "Dish components empty state title."
+  },
+  "dishNoComponentsMessage": "Add foods or dishes to calculate this recipe.",
+  "@dishNoComponentsMessage": {
+    "description": "Dish components empty state message."
+  },
+  "dishEditComponentTooltip": "Edit {itemName} component",
+  "@dishEditComponentTooltip": {
+    "description": "Tooltip for editing a dish component.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Carrot"
+      }
+    }
+  },
+  "dishRemoveComponentTooltip": "Remove {itemName} component",
+  "@dishRemoveComponentTooltip": {
+    "description": "Tooltip for removing a dish component.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Carrot"
+      }
+    }
+  },
+  "dishComponentAddTitle": "Add component",
+  "@dishComponentAddTitle": {
+    "description": "Add dish component dialog title."
+  },
+  "dishComponentEditTitle": "Edit component",
+  "@dishComponentEditTitle": {
+    "description": "Edit dish component dialog title."
+  },
+  "dishComponentAmountTitle": "Component amount",
+  "@dishComponentAmountTitle": {
+    "description": "Dish component amount section title."
+  },
+  "dishComponentGramsFieldLabel": "Component grams",
+  "@dishComponentGramsFieldLabel": {
+    "description": "Dish component grams field label and semantic label."
+  },
+  "dishCatalogItemSectionTitle": "Catalog item",
+  "@dishCatalogItemSectionTitle": {
+    "description": "Dish component catalog item selector title."
+  },
+  "dishSaveComponentAction": "Save component",
+  "@dishSaveComponentAction": {
+    "description": "Save dish component action label."
+  },
+  "dishValidation": "Enter dish details and at least one component.",
+  "@dishValidation": {
+    "description": "Dish form validation message."
+  },
+  "dishCouldNotSave": "Could not save dish.",
+  "@dishCouldNotSave": {
+    "description": "Fallback save error for dish form."
+  },
+  "dishComponentValidation": "Choose an item and enter valid grams.",
+  "@dishComponentValidation": {
+    "description": "Dish component validation message."
   }
 }

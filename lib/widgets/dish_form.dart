@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/catalog_item.dart';
 import '../models/dish_item.dart';
 import '../state/app_store.dart';
@@ -50,10 +51,15 @@ class _DishFormState extends State<DishForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return FormShellDialog(
-      title: _isEditing ? 'Edit dish' : 'Dish',
-      subtitle: 'Combine foods and dishes into a reusable recipe.',
-      primaryActionLabel: 'Save dish',
+      title: _isEditing
+          ? l10n?.dishFormEditTitle ?? 'Edit dish'
+          : l10n?.dishFormTitle ?? 'Dish',
+      subtitle:
+          l10n?.dishFormSubtitle ??
+          'Combine foods and dishes into a reusable recipe.',
+      primaryActionLabel: l10n?.dishSaveAction ?? 'Save dish',
       onPrimaryAction: _saveDish,
       maxWidth: 640,
       children: [
@@ -66,27 +72,36 @@ class _DishFormState extends State<DishForm> {
   }
 
   Widget _buildBasicsSection() {
+    final l10n = AppLocalizations.of(context);
     return FormSectionCard(
-      title: 'Dish basics',
-      subtitle: 'Name this recipe and define one serving.',
+      title: l10n?.dishBasicsSectionTitle ?? 'Dish basics',
+      subtitle:
+          l10n?.dishBasicsSectionSubtitle ??
+          'Name this recipe and define one serving.',
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _nameController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(labelText: 'Dish name'),
+            decoration: InputDecoration(
+              labelText: l10n?.dishNameFieldLabel ?? 'Dish name',
+            ),
           ),
           TextField(
             controller: _descriptionController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(labelText: 'Dish description'),
+            decoration: InputDecoration(
+              labelText: l10n?.dishDescriptionFieldLabel ?? 'Dish description',
+            ),
           ),
           TextField(
             controller: _servingSizeController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Dish serving size grams',
+            decoration: InputDecoration(
+              labelText:
+                  l10n?.dishServingSizeGramsFieldLabel ??
+                  'Dish serving size grams',
             ),
           ),
         ],
@@ -95,9 +110,12 @@ class _DishFormState extends State<DishForm> {
   }
 
   Widget _buildComponentsSection() {
+    final l10n = AppLocalizations.of(context);
     return FormSectionCard(
-      title: 'Components',
-      subtitle: 'Add ingredients to calculate serving nutrition.',
+      title: l10n?.dishComponentsSectionTitle ?? 'Components',
+      subtitle:
+          l10n?.dishComponentsSectionSubtitle ??
+          'Add ingredients to calculate serving nutrition.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -107,15 +125,17 @@ class _DishFormState extends State<DishForm> {
             child: OutlinedButton.icon(
               onPressed: _openComponentDialog,
               icon: const Icon(Icons.add),
-              label: const Text('Add component'),
+              label: Text(l10n?.dishAddComponentAction ?? 'Add component'),
             ),
           ),
           const SizedBox(height: 12),
           if (_components.isEmpty)
-            const AppEmptyState(
+            AppEmptyState(
               icon: Icons.restaurant_menu_outlined,
-              title: 'No components yet',
-              message: 'Add foods or dishes to calculate this recipe.',
+              title: l10n?.dishNoComponentsTitle ?? 'No components yet',
+              message:
+                  l10n?.dishNoComponentsMessage ??
+                  'Add foods or dishes to calculate this recipe.',
             )
           else
             ..._components.indexed.map((entry) {
@@ -132,12 +152,16 @@ class _DishFormState extends State<DishForm> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        tooltip: 'Edit $itemName component',
+                        tooltip:
+                            l10n?.dishEditComponentTooltip(itemName) ??
+                            'Edit $itemName component',
                         icon: const Icon(Icons.edit_outlined),
                         onPressed: () => _openComponentDialog(index: index),
                       ),
                       IconButton(
-                        tooltip: 'Remove $itemName component',
+                        tooltip:
+                            l10n?.dishRemoveComponentTooltip(itemName) ??
+                            'Remove $itemName component',
                         icon: const Icon(Icons.remove_circle_outline),
                         onPressed: () {
                           setState(() {
@@ -190,7 +214,9 @@ class _DishFormState extends State<DishForm> {
         servingSize <= 0 ||
         _components.isEmpty) {
       setState(() {
-        _errorText = 'Enter dish details and at least one component.';
+        _errorText =
+            AppLocalizations.of(context)?.dishValidation ??
+            'Enter dish details and at least one component.';
       });
       return;
     }
@@ -210,7 +236,10 @@ class _DishFormState extends State<DishForm> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText = error.message?.toString() ?? 'Could not save dish.';
+        _errorText =
+            error.message?.toString() ??
+            AppLocalizations.of(context)?.dishCouldNotSave ??
+            'Could not save dish.';
       });
       return;
     }
@@ -274,9 +303,12 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(
-        widget.initialComponent == null ? 'Add component' : 'Edit component',
+        widget.initialComponent == null
+            ? l10n?.dishComponentAddTitle ?? 'Add component'
+            : l10n?.dishComponentEditTitle ?? 'Edit component',
       ),
       content: SizedBox(
         width: double.maxFinite,
@@ -286,23 +318,26 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               FormSectionCard(
-                title: 'Component amount',
+                title: l10n?.dishComponentAmountTitle ?? 'Component amount',
                 child: Semantics(
-                  label: 'Component grams',
+                  label:
+                      l10n?.dishComponentGramsFieldLabel ?? 'Component grams',
                   textField: true,
                   child: TextField(
                     controller: _gramsController,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'Component grams',
+                    decoration: InputDecoration(
+                      labelText:
+                          l10n?.dishComponentGramsFieldLabel ??
+                          'Component grams',
                     ),
                   ),
                 ),
               ),
               FormSectionCard(
-                title: 'Catalog item',
+                title: l10n?.dishCatalogItemSectionTitle ?? 'Catalog item',
                 child: SizedBox(
                   height: 160,
                   child: ListView.builder(
@@ -313,7 +348,11 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
                       final selected = _selectedItem?.id == item.id;
                       return ListTile(
                         title: Text(item.name),
-                        subtitle: Text(item.isFood ? 'food' : 'dish'),
+                        subtitle: Text(
+                          item.isFood
+                              ? l10n?.catalogSubtypeFood ?? 'food'
+                              : l10n?.catalogSubtypeDish ?? 'dish',
+                        ),
                         trailing: selected ? const Icon(Icons.check) : null,
                         selected: selected,
                         onTap: () {
@@ -335,11 +374,11 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n?.commonCancel ?? 'Cancel'),
         ),
         FilledButton(
           onPressed: _saveComponent,
-          child: const Text('Save component'),
+          child: Text(l10n?.dishSaveComponentAction ?? 'Save component'),
         ),
       ],
     );
@@ -352,7 +391,9 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
         !grams.isFinite ||
         grams <= 0) {
       setState(() {
-        _errorText = 'Choose an item and enter valid grams.';
+        _errorText =
+            AppLocalizations.of(context)?.dishComponentValidation ??
+            'Choose an item and enter valid grams.';
       });
       return;
     }

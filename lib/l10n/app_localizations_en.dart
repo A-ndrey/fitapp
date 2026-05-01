@@ -531,4 +531,407 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryMusclesEmpty => 'Muscles: -';
+
+  @override
+  String get formCancelAction => 'Cancel';
+
+  @override
+  String get workoutRepsFieldLabel => 'Reps';
+
+  @override
+  String get workoutWeightFieldLabel => 'Weight';
+
+  @override
+  String get workoutTimeFieldLabel => 'Time';
+
+  @override
+  String get workoutLogSetAction => 'Log set';
+
+  @override
+  String get workoutLoggedSetsTitle => 'Logged sets';
+
+  @override
+  String get workoutNoLoggedSetsYet => 'No logged sets yet';
+
+  @override
+  String workoutUseSetTooltip(int setNumber) {
+    return 'Use Set $setNumber';
+  }
+
+  @override
+  String get workoutPreviousResultsTitle => 'Previous results';
+
+  @override
+  String get workoutNoPreviousResults =>
+      'No previous results for this exercise';
+
+  @override
+  String workoutPreviousSetLabel(int entryNumber, int setNumber) {
+    return 'Entry $entryNumber • Set $setNumber';
+  }
+
+  @override
+  String workoutUsePreviousSetTooltip(int setNumber, String sessionName) {
+    return 'Use previous Set $setNumber from $sessionName';
+  }
+
+  @override
+  String workoutUsePreviousEntrySetTooltip(
+    int entryNumber,
+    int setNumber,
+    String sessionName,
+  ) {
+    return 'Use previous Entry $entryNumber Set $setNumber from $sessionName';
+  }
+
+  @override
+  String get trainingsTitle => 'Trainings';
+
+  @override
+  String get trainingPlansSegment => 'Plans';
+
+  @override
+  String get trainingExercisesSegment => 'Exercises';
+
+  @override
+  String get trainingPlansTitle => 'Training plans';
+
+  @override
+  String get trainingAddPlanAction => 'Add training plan';
+
+  @override
+  String get trainingAddExerciseAction => 'Add exercise';
+
+  @override
+  String get trainingNoPlansTitle => 'No training plans yet';
+
+  @override
+  String get trainingNoPlansMessage =>
+      'Create a training plan to organize exercises.';
+
+  @override
+  String get trainingNoExercisesTitle => 'No exercises yet';
+
+  @override
+  String get trainingNoExercisesMessage =>
+      'Create an exercise to use it in training plans.';
+
+  @override
+  String trainingDeletePlanTitle(String planName) {
+    return 'Delete $planName?';
+  }
+
+  @override
+  String get trainingDeletePlanMessage => 'This removes the training plan.';
+
+  @override
+  String trainingDeleteExerciseTitle(String exerciseName) {
+    return 'Delete $exerciseName?';
+  }
+
+  @override
+  String get trainingDeleteExerciseMessage => 'This removes the exercise.';
+
+  @override
+  String get trainingCouldNotDelete => 'Could not delete.';
+
+  @override
+  String get exerciseDialogAddTitle => 'Add exercise';
+
+  @override
+  String get exerciseDialogEditTitle => 'Edit exercise';
+
+  @override
+  String get exerciseDialogSubtitle =>
+      'Define instructions and muscle focus for workout plans.';
+
+  @override
+  String get exerciseSaveAction => 'Save exercise';
+
+  @override
+  String get exerciseProfileSectionTitle => 'Exercise profile';
+
+  @override
+  String get exerciseNameFieldLabel => 'Exercise name';
+
+  @override
+  String get exerciseDescriptionFieldLabel => 'Exercise description';
+
+  @override
+  String get exerciseInstructionFieldLabel => 'Exercise instruction';
+
+  @override
+  String get exerciseMuscleFocusTitle => 'Muscle focus';
+
+  @override
+  String get exerciseMuscleFocusSubtitle =>
+      'Choose every area this exercise primarily trains.';
+
+  @override
+  String get exerciseSelectMuscleGroups => 'Select muscle groups';
+
+  @override
+  String get exerciseDetailsValidation =>
+      'Enter a name, description, instruction, and muscle groups.';
+
+  @override
+  String get exerciseNameValidation => 'Enter a valid exercise name.';
+
+  @override
+  String get exerciseCouldNotSave => 'Could not save exercise.';
+
+  @override
+  String get trainingPlanDialogTitle => 'Training plan';
+
+  @override
+  String get trainingPlanEditDialogTitle => 'Edit training';
+
+  @override
+  String get trainingPlanDialogSubtitle =>
+      'Assemble a reusable sequence for workout sessions.';
+
+  @override
+  String get trainingSaveAction => 'Save training';
+
+  @override
+  String get trainingBasicsSectionTitle => 'Training basics';
+
+  @override
+  String get trainingNameFieldLabel => 'Training name';
+
+  @override
+  String get trainingDescriptionFieldLabel => 'Training description';
+
+  @override
+  String get trainingExerciseSequenceTitle => 'Exercise sequence';
+
+  @override
+  String get trainingExerciseSequenceSubtitle =>
+      'Add targets in the order you want to train.';
+
+  @override
+  String get trainingNoExercisesAdded => 'No exercises added yet';
+
+  @override
+  String trainingRemoveExerciseTooltip(String exerciseName) {
+    return 'Remove $exerciseName';
+  }
+
+  @override
+  String trainingTargetUnitLabel(String unit) {
+    return 'Unit: $unit';
+  }
+
+  @override
+  String get trainingSetsSummaryLabel => 'sets';
+
+  @override
+  String get trainingRepsSummaryLabel => 'reps';
+
+  @override
+  String get trainingWeightSummaryLabel => 'weight';
+
+  @override
+  String get trainingTimeSummaryLabel => 'time';
+
+  @override
+  String get trainingPlanValidation =>
+      'Enter a training name and add at least one exercise.';
+
+  @override
+  String get trainingCouldNotSave => 'Could not save training.';
+
+  @override
+  String get trainingTargetDialogTitle => 'Add exercise';
+
+  @override
+  String get trainingTargetDialogEditTitle => 'Edit exercise';
+
+  @override
+  String get trainingTargetSectionTitle => 'Target prescription';
+
+  @override
+  String get trainingTargetSectionSubtitle =>
+      'Set expected volume, load, duration, and unit.';
+
+  @override
+  String get trainingExpectedSetsFieldLabel => 'Expected sets';
+
+  @override
+  String get trainingExpectedRepsFieldLabel => 'Expected reps';
+
+  @override
+  String get trainingExpectedWeightFieldLabel => 'Expected weight';
+
+  @override
+  String get trainingExpectedTimeFieldLabel => 'Expected time';
+
+  @override
+  String get trainingUnitFieldLabel => 'Unit';
+
+  @override
+  String get trainingTargetValidation =>
+      'Enter valid exercise targets and a unit.';
+
+  @override
+  String get foodScreenTitle => 'Food';
+
+  @override
+  String get foodSetTitle => 'Food set';
+
+  @override
+  String get foodAddItemAction => 'Add food or dish';
+
+  @override
+  String get foodEmptyTitle => 'No foods or dishes yet';
+
+  @override
+  String get foodEmptyMessage =>
+      'Use Add food or dish to build your reusable catalog.';
+
+  @override
+  String foodDeleteItemTitle(String itemName) {
+    return 'Delete $itemName?';
+  }
+
+  @override
+  String get foodDeleteItemMessage =>
+      'This removes the item from the food set.';
+
+  @override
+  String get foodItemChoiceLabel => 'Food item';
+
+  @override
+  String get dishChoiceLabel => 'Dish';
+
+  @override
+  String get foodFormTitle => 'Food item';
+
+  @override
+  String get foodFormEditTitle => 'Edit food';
+
+  @override
+  String get foodFormSubtitle =>
+      'Define reusable food data for faster meal logging.';
+
+  @override
+  String get foodSaveAction => 'Save food';
+
+  @override
+  String get foodBasicsSectionTitle => 'Food basics';
+
+  @override
+  String get foodBasicsSectionSubtitle =>
+      'Name this item and define the serving anchor.';
+
+  @override
+  String get foodNameFieldLabel => 'Name';
+
+  @override
+  String get foodDescriptionFieldLabel => 'Description';
+
+  @override
+  String get foodServingSizeGramsFieldLabel => 'Serving size grams';
+
+  @override
+  String get foodNutritionFactsTitle => 'Nutrition facts';
+
+  @override
+  String get foodNutritionFactsSubtitle =>
+      'Enter values using the selected nutrition basis.';
+
+  @override
+  String get foodNutritionPer100g => 'Per 100g';
+
+  @override
+  String get foodNutritionPerServing => 'Per serving';
+
+  @override
+  String get foodValidation => 'Enter a name and valid nutrition values.';
+
+  @override
+  String get foodCouldNotSave => 'Could not save food.';
+
+  @override
+  String get dishFormTitle => 'Dish';
+
+  @override
+  String get dishFormEditTitle => 'Edit dish';
+
+  @override
+  String get dishFormSubtitle =>
+      'Combine foods and dishes into a reusable recipe.';
+
+  @override
+  String get dishSaveAction => 'Save dish';
+
+  @override
+  String get dishBasicsSectionTitle => 'Dish basics';
+
+  @override
+  String get dishBasicsSectionSubtitle =>
+      'Name this recipe and define one serving.';
+
+  @override
+  String get dishNameFieldLabel => 'Dish name';
+
+  @override
+  String get dishDescriptionFieldLabel => 'Dish description';
+
+  @override
+  String get dishServingSizeGramsFieldLabel => 'Dish serving size grams';
+
+  @override
+  String get dishComponentsSectionTitle => 'Components';
+
+  @override
+  String get dishComponentsSectionSubtitle =>
+      'Add ingredients to calculate serving nutrition.';
+
+  @override
+  String get dishAddComponentAction => 'Add component';
+
+  @override
+  String get dishNoComponentsTitle => 'No components yet';
+
+  @override
+  String get dishNoComponentsMessage =>
+      'Add foods or dishes to calculate this recipe.';
+
+  @override
+  String dishEditComponentTooltip(String itemName) {
+    return 'Edit $itemName component';
+  }
+
+  @override
+  String dishRemoveComponentTooltip(String itemName) {
+    return 'Remove $itemName component';
+  }
+
+  @override
+  String get dishComponentAddTitle => 'Add component';
+
+  @override
+  String get dishComponentEditTitle => 'Edit component';
+
+  @override
+  String get dishComponentAmountTitle => 'Component amount';
+
+  @override
+  String get dishComponentGramsFieldLabel => 'Component grams';
+
+  @override
+  String get dishCatalogItemSectionTitle => 'Catalog item';
+
+  @override
+  String get dishSaveComponentAction => 'Save component';
+
+  @override
+  String get dishValidation => 'Enter dish details and at least one component.';
+
+  @override
+  String get dishCouldNotSave => 'Could not save dish.';
+
+  @override
+  String get dishComponentValidation => 'Choose an item and enter valid grams.';
 }

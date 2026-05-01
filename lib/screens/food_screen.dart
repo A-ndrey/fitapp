@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/empty_state.dart';
@@ -19,14 +20,16 @@ class FoodScreen extends StatelessWidget {
       animation: store,
       builder: (context, _) {
         final body = _buildBody(context);
+        final l10n = AppLocalizations.of(context);
+        final addLabel = l10n?.foodAddItemAction ?? 'Add food or dish';
         if (embedded) {
           return body;
         }
         return Scaffold(
-          appBar: AppBar(title: const Text('Food')),
+          appBar: AppBar(title: Text(l10n?.foodScreenTitle ?? 'Food')),
           floatingActionButton: FloatingActionButton(
             heroTag: 'add-food-fab',
-            tooltip: 'Add food or dish',
+            tooltip: addLabel,
             onPressed: () => _openAddItemFlow(context),
             child: const Icon(Icons.add),
           ),
@@ -37,15 +40,18 @@ class FoodScreen extends StatelessWidget {
   }
 
   Widget _buildBody(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AdaptivePage(
       children: [
         _buildHeader(context),
         const SizedBox(height: 12),
         if (store.items.isEmpty)
-          const AppEmptyState(
+          AppEmptyState(
             icon: Icons.inventory_2_outlined,
-            title: 'No foods or dishes yet',
-            message: 'Use Add food or dish to build your reusable catalog.',
+            title: l10n?.foodEmptyTitle ?? 'No foods or dishes yet',
+            message:
+                l10n?.foodEmptyMessage ??
+                'Use Add food or dish to build your reusable catalog.',
           )
         else
           ...store.items.map(
@@ -64,8 +70,10 @@ class FoodScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final addLabel = l10n?.foodAddItemAction ?? 'Add food or dish';
     final title = Text(
-      'Food set',
+      l10n?.foodSetTitle ?? 'Food set',
       style: Theme.of(context).textTheme.titleMedium,
     );
     if (!embedded) {
@@ -82,7 +90,7 @@ class FoodScreen extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: () => _openAddItemFlow(context),
             icon: const Icon(Icons.add),
-            label: const Text('Add food or dish'),
+            label: Text(addLabel),
           ),
         ),
       ],
@@ -110,20 +118,26 @@ class FoodScreen extends StatelessWidget {
     if (item == null) {
       return;
     }
+    final l10n = AppLocalizations.of(context);
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text('Delete ${item.name}?'),
-          content: const Text('This removes the item from the food set.'),
+          title: Text(
+            l10n?.foodDeleteItemTitle(item.name) ?? 'Delete ${item.name}?',
+          ),
+          content: Text(
+            l10n?.foodDeleteItemMessage ??
+                'This removes the item from the food set.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n?.commonCancel ?? 'Cancel'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Delete'),
+              child: Text(l10n?.commonDelete ?? 'Delete'),
             ),
           ],
         );
@@ -142,6 +156,7 @@ class FoodScreen extends StatelessWidget {
   }
 
   Future<void> _openAddItemFlow(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     final choice = await showModalBottomSheet<_AddFoodChoice>(
       context: context,
       showDragHandle: true,
@@ -152,14 +167,14 @@ class FoodScreen extends StatelessWidget {
             children: [
               ListTile(
                 leading: const Icon(Icons.eco_outlined),
-                title: const Text('Food item'),
+                title: Text(l10n?.foodItemChoiceLabel ?? 'Food item'),
                 onTap: () {
                   Navigator.of(context).pop(_AddFoodChoice.food);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.ramen_dining_outlined),
-                title: const Text('Dish'),
+                title: Text(l10n?.dishChoiceLabel ?? 'Dish'),
                 onTap: () {
                   Navigator.of(context).pop(_AddFoodChoice.dish);
                 },

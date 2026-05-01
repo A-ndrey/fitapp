@@ -71,4 +71,23 @@ void main() {
     expect(l10n.libraryFoodsSection, 'Foods');
     expect(l10n.libraryEditItem('Rice'), 'Edit Rice');
   });
+
+  testWidgets('form and editor surfaces expose localized strings', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const FitApp());
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations.of(tester.element(find.byType(FitHome)))!;
+
+    expect(l10n.formCancelAction, 'Cancel');
+    expect(l10n.workoutRepsFieldLabel, 'Reps');
+    expect(l10n.workoutLogSetAction, 'Log set');
+    expect(l10n.trainingPlanDialogTitle, 'Training plan');
+    expect(l10n.trainingSetsSummaryLabel, 'sets');
+    expect(l10n.exerciseProfileSectionTitle, 'Exercise profile');
+    expect(l10n.foodFormTitle, 'Food item');
+    expect(l10n.dishFormTitle, 'Dish');
+    expect(l10n.dishComponentGramsFieldLabel, 'Component grams');
+  });
 }

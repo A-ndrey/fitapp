@@ -933,6 +933,724 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Muscles: -'**
   String get libraryMusclesEmpty;
+
+  /// Shared cancel action label for custom form dialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get formCancelAction;
+
+  /// Workout set input field label for repetitions.
+  ///
+  /// In en, this message translates to:
+  /// **'Reps'**
+  String get workoutRepsFieldLabel;
+
+  /// Workout set input field label for weight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get workoutWeightFieldLabel;
+
+  /// Workout set input field label for time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get workoutTimeFieldLabel;
+
+  /// Action label for logging a workout set.
+  ///
+  /// In en, this message translates to:
+  /// **'Log set'**
+  String get workoutLogSetAction;
+
+  /// Workout logged sets section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged sets'**
+  String get workoutLoggedSetsTitle;
+
+  /// Empty state for active workout logged sets.
+  ///
+  /// In en, this message translates to:
+  /// **'No logged sets yet'**
+  String get workoutNoLoggedSetsYet;
+
+  /// Tooltip for filling the workout set input from a logged set.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Set {setNumber}'**
+  String workoutUseSetTooltip(int setNumber);
+
+  /// Previous workout results section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous results'**
+  String get workoutPreviousResultsTitle;
+
+  /// Empty state for previous workout exercise results.
+  ///
+  /// In en, this message translates to:
+  /// **'No previous results for this exercise'**
+  String get workoutNoPreviousResults;
+
+  /// Previous result set label when an exercise has repeated entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry {entryNumber} • Set {setNumber}'**
+  String workoutPreviousSetLabel(int entryNumber, int setNumber);
+
+  /// Tooltip for filling workout set input from previous workout history.
+  ///
+  /// In en, this message translates to:
+  /// **'Use previous Set {setNumber} from {sessionName}'**
+  String workoutUsePreviousSetTooltip(int setNumber, String sessionName);
+
+  /// Tooltip for filling workout set input from previous workout history with repeated exercise entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Use previous Entry {entryNumber} Set {setNumber} from {sessionName}'**
+  String workoutUsePreviousEntrySetTooltip(
+    int entryNumber,
+    int setNumber,
+    String sessionName,
+  );
+
+  /// Standalone trainings screen title.
+  ///
+  /// In en, this message translates to:
+  /// **'Trainings'**
+  String get trainingsTitle;
+
+  /// Training screen segment label for plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans'**
+  String get trainingPlansSegment;
+
+  /// Training screen segment label for exercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercises'**
+  String get trainingExercisesSegment;
+
+  /// Training plans section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Training plans'**
+  String get trainingPlansTitle;
+
+  /// Action label for adding a training plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Add training plan'**
+  String get trainingAddPlanAction;
+
+  /// Action label for adding an exercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Add exercise'**
+  String get trainingAddExerciseAction;
+
+  /// Empty state title for training plans.
+  ///
+  /// In en, this message translates to:
+  /// **'No training plans yet'**
+  String get trainingNoPlansTitle;
+
+  /// Empty state message for training plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a training plan to organize exercises.'**
+  String get trainingNoPlansMessage;
+
+  /// Empty state title for exercises.
+  ///
+  /// In en, this message translates to:
+  /// **'No exercises yet'**
+  String get trainingNoExercisesTitle;
+
+  /// Empty state message for exercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an exercise to use it in training plans.'**
+  String get trainingNoExercisesMessage;
+
+  /// Delete training plan confirmation title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {planName}?'**
+  String trainingDeletePlanTitle(String planName);
+
+  /// Delete training plan confirmation message.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the training plan.'**
+  String get trainingDeletePlanMessage;
+
+  /// Delete exercise confirmation title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {exerciseName}?'**
+  String trainingDeleteExerciseTitle(String exerciseName);
+
+  /// Delete exercise confirmation message.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the exercise.'**
+  String get trainingDeleteExerciseMessage;
+
+  /// Fallback delete error message for training content.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete.'**
+  String get trainingCouldNotDelete;
+
+  /// Add exercise dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add exercise'**
+  String get exerciseDialogAddTitle;
+
+  /// Edit exercise dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit exercise'**
+  String get exerciseDialogEditTitle;
+
+  /// Exercise dialog subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Define instructions and muscle focus for workout plans.'**
+  String get exerciseDialogSubtitle;
+
+  /// Save exercise action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Save exercise'**
+  String get exerciseSaveAction;
+
+  /// Exercise profile section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise profile'**
+  String get exerciseProfileSectionTitle;
+
+  /// Exercise name field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise name'**
+  String get exerciseNameFieldLabel;
+
+  /// Exercise description field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise description'**
+  String get exerciseDescriptionFieldLabel;
+
+  /// Exercise instruction field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise instruction'**
+  String get exerciseInstructionFieldLabel;
+
+  /// Muscle focus section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Muscle focus'**
+  String get exerciseMuscleFocusTitle;
+
+  /// Muscle focus section subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose every area this exercise primarily trains.'**
+  String get exerciseMuscleFocusSubtitle;
+
+  /// Muscle group selector label.
+  ///
+  /// In en, this message translates to:
+  /// **'Select muscle groups'**
+  String get exerciseSelectMuscleGroups;
+
+  /// Exercise validation error for missing required details.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name, description, instruction, and muscle groups.'**
+  String get exerciseDetailsValidation;
+
+  /// Exercise validation error for invalid name.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid exercise name.'**
+  String get exerciseNameValidation;
+
+  /// Fallback save error message for exercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save exercise.'**
+  String get exerciseCouldNotSave;
+
+  /// Add training plan dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Training plan'**
+  String get trainingPlanDialogTitle;
+
+  /// Edit training plan dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit training'**
+  String get trainingPlanEditDialogTitle;
+
+  /// Training plan dialog subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assemble a reusable sequence for workout sessions.'**
+  String get trainingPlanDialogSubtitle;
+
+  /// Save training plan action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Save training'**
+  String get trainingSaveAction;
+
+  /// Training plan basics section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Training basics'**
+  String get trainingBasicsSectionTitle;
+
+  /// Training name field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Training name'**
+  String get trainingNameFieldLabel;
+
+  /// Training description field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Training description'**
+  String get trainingDescriptionFieldLabel;
+
+  /// Training plan exercise sequence section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise sequence'**
+  String get trainingExerciseSequenceTitle;
+
+  /// Training plan exercise sequence section subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add targets in the order you want to train.'**
+  String get trainingExerciseSequenceSubtitle;
+
+  /// Empty state text for a training plan with no selected exercises.
+  ///
+  /// In en, this message translates to:
+  /// **'No exercises added yet'**
+  String get trainingNoExercisesAdded;
+
+  /// Tooltip for removing an exercise from a training plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {exerciseName}'**
+  String trainingRemoveExerciseTooltip(String exerciseName);
+
+  /// Training target unit summary label.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit: {unit}'**
+  String trainingTargetUnitLabel(String unit);
+
+  /// Training target summary label for sets.
+  ///
+  /// In en, this message translates to:
+  /// **'sets'**
+  String get trainingSetsSummaryLabel;
+
+  /// Training target summary label for repetitions.
+  ///
+  /// In en, this message translates to:
+  /// **'reps'**
+  String get trainingRepsSummaryLabel;
+
+  /// Training target summary label for weight.
+  ///
+  /// In en, this message translates to:
+  /// **'weight'**
+  String get trainingWeightSummaryLabel;
+
+  /// Training target summary label for time.
+  ///
+  /// In en, this message translates to:
+  /// **'time'**
+  String get trainingTimeSummaryLabel;
+
+  /// Training plan validation error for missing required details.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a training name and add at least one exercise.'**
+  String get trainingPlanValidation;
+
+  /// Fallback save error message for training plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save training.'**
+  String get trainingCouldNotSave;
+
+  /// Training exercise target dialog add title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add exercise'**
+  String get trainingTargetDialogTitle;
+
+  /// Training exercise target dialog edit title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit exercise'**
+  String get trainingTargetDialogEditTitle;
+
+  /// Training exercise target prescription section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Target prescription'**
+  String get trainingTargetSectionTitle;
+
+  /// Training exercise target prescription section subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set expected volume, load, duration, and unit.'**
+  String get trainingTargetSectionSubtitle;
+
+  /// Expected sets field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected sets'**
+  String get trainingExpectedSetsFieldLabel;
+
+  /// Expected reps field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected reps'**
+  String get trainingExpectedRepsFieldLabel;
+
+  /// Expected weight field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected weight'**
+  String get trainingExpectedWeightFieldLabel;
+
+  /// Expected time field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected time'**
+  String get trainingExpectedTimeFieldLabel;
+
+  /// Training target unit field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get trainingUnitFieldLabel;
+
+  /// Training target validation error.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter valid exercise targets and a unit.'**
+  String get trainingTargetValidation;
+
+  /// Standalone food screen title.
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get foodScreenTitle;
+
+  /// Food catalog section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Food set'**
+  String get foodSetTitle;
+
+  /// Action label for adding food or dish.
+  ///
+  /// In en, this message translates to:
+  /// **'Add food or dish'**
+  String get foodAddItemAction;
+
+  /// Empty state title for food catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'No foods or dishes yet'**
+  String get foodEmptyTitle;
+
+  /// Empty state message for food catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Add food or dish to build your reusable catalog.'**
+  String get foodEmptyMessage;
+
+  /// Delete food or dish confirmation title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {itemName}?'**
+  String foodDeleteItemTitle(String itemName);
+
+  /// Delete food or dish confirmation message.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the item from the food set.'**
+  String get foodDeleteItemMessage;
+
+  /// Bottom sheet choice label for creating a food item.
+  ///
+  /// In en, this message translates to:
+  /// **'Food item'**
+  String get foodItemChoiceLabel;
+
+  /// Bottom sheet choice label for creating a dish.
+  ///
+  /// In en, this message translates to:
+  /// **'Dish'**
+  String get dishChoiceLabel;
+
+  /// Food form title.
+  ///
+  /// In en, this message translates to:
+  /// **'Food item'**
+  String get foodFormTitle;
+
+  /// Edit food form title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit food'**
+  String get foodFormEditTitle;
+
+  /// Food form subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Define reusable food data for faster meal logging.'**
+  String get foodFormSubtitle;
+
+  /// Save food action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Save food'**
+  String get foodSaveAction;
+
+  /// Food basics section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Food basics'**
+  String get foodBasicsSectionTitle;
+
+  /// Food basics section subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name this item and define the serving anchor.'**
+  String get foodBasicsSectionSubtitle;
+
+  /// Food name field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get foodNameFieldLabel;
+
+  /// Food description field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get foodDescriptionFieldLabel;
+
+  /// Food serving size grams field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Serving size grams'**
+  String get foodServingSizeGramsFieldLabel;
+
+  /// Food nutrition facts section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrition facts'**
+  String get foodNutritionFactsTitle;
+
+  /// Food nutrition facts section subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter values using the selected nutrition basis.'**
+  String get foodNutritionFactsSubtitle;
+
+  /// Nutrition basis label for per 100 grams.
+  ///
+  /// In en, this message translates to:
+  /// **'Per 100g'**
+  String get foodNutritionPer100g;
+
+  /// Nutrition basis label for per serving.
+  ///
+  /// In en, this message translates to:
+  /// **'Per serving'**
+  String get foodNutritionPerServing;
+
+  /// Food form validation message.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name and valid nutrition values.'**
+  String get foodValidation;
+
+  /// Fallback save error for food form.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save food.'**
+  String get foodCouldNotSave;
+
+  /// Dish form title.
+  ///
+  /// In en, this message translates to:
+  /// **'Dish'**
+  String get dishFormTitle;
+
+  /// Edit dish form title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit dish'**
+  String get dishFormEditTitle;
+
+  /// Dish form subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Combine foods and dishes into a reusable recipe.'**
+  String get dishFormSubtitle;
+
+  /// Save dish action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Save dish'**
+  String get dishSaveAction;
+
+  /// Dish basics section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Dish basics'**
+  String get dishBasicsSectionTitle;
+
+  /// Dish basics section subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name this recipe and define one serving.'**
+  String get dishBasicsSectionSubtitle;
+
+  /// Dish name field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Dish name'**
+  String get dishNameFieldLabel;
+
+  /// Dish description field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Dish description'**
+  String get dishDescriptionFieldLabel;
+
+  /// Dish serving size grams field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Dish serving size grams'**
+  String get dishServingSizeGramsFieldLabel;
+
+  /// Dish components section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Components'**
+  String get dishComponentsSectionTitle;
+
+  /// Dish components section subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add ingredients to calculate serving nutrition.'**
+  String get dishComponentsSectionSubtitle;
+
+  /// Add dish component action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Add component'**
+  String get dishAddComponentAction;
+
+  /// Dish components empty state title.
+  ///
+  /// In en, this message translates to:
+  /// **'No components yet'**
+  String get dishNoComponentsTitle;
+
+  /// Dish components empty state message.
+  ///
+  /// In en, this message translates to:
+  /// **'Add foods or dishes to calculate this recipe.'**
+  String get dishNoComponentsMessage;
+
+  /// Tooltip for editing a dish component.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {itemName} component'**
+  String dishEditComponentTooltip(String itemName);
+
+  /// Tooltip for removing a dish component.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {itemName} component'**
+  String dishRemoveComponentTooltip(String itemName);
+
+  /// Add dish component dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add component'**
+  String get dishComponentAddTitle;
+
+  /// Edit dish component dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit component'**
+  String get dishComponentEditTitle;
+
+  /// Dish component amount section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Component amount'**
+  String get dishComponentAmountTitle;
+
+  /// Dish component grams field label and semantic label.
+  ///
+  /// In en, this message translates to:
+  /// **'Component grams'**
+  String get dishComponentGramsFieldLabel;
+
+  /// Dish component catalog item selector title.
+  ///
+  /// In en, this message translates to:
+  /// **'Catalog item'**
+  String get dishCatalogItemSectionTitle;
+
+  /// Save dish component action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Save component'**
+  String get dishSaveComponentAction;
+
+  /// Dish form validation message.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter dish details and at least one component.'**
+  String get dishValidation;
+
+  /// Fallback save error for dish form.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save dish.'**
+  String get dishCouldNotSave;
+
+  /// Dish component validation message.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an item and enter valid grams.'**
+  String get dishComponentValidation;
 }
 
 class _AppLocalizationsDelegate

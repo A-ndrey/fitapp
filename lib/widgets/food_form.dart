@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/food_item.dart';
 import '../models/nutrition.dart';
 import '../state/app_store.dart';
@@ -75,27 +76,38 @@ class _FoodFormState extends State<FoodForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return FormShellDialog(
-      title: _isEditing ? 'Edit food' : 'Food item',
-      subtitle: 'Define reusable food data for faster meal logging.',
-      primaryActionLabel: 'Save food',
+      title: _isEditing
+          ? l10n?.foodFormEditTitle ?? 'Edit food'
+          : l10n?.foodFormTitle ?? 'Food item',
+      subtitle:
+          l10n?.foodFormSubtitle ??
+          'Define reusable food data for faster meal logging.',
+      primaryActionLabel: l10n?.foodSaveAction ?? 'Save food',
       onPrimaryAction: _saveFood,
       children: [
         FormSectionCard(
-          title: 'Food basics',
-          subtitle: 'Name this item and define the serving anchor.',
+          title: l10n?.foodBasicsSectionTitle ?? 'Food basics',
+          subtitle:
+              l10n?.foodBasicsSectionSubtitle ??
+              'Name this item and define the serving anchor.',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: _nameController,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(
+                  labelText: l10n?.foodNameFieldLabel ?? 'Name',
+                ),
               ),
               TextField(
                 controller: _descriptionController,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: InputDecoration(
+                  labelText: l10n?.foodDescriptionFieldLabel ?? 'Description',
+                ),
               ),
               TextField(
                 controller: _servingSizeController,
@@ -103,28 +115,32 @@ class _FoodFormState extends State<FoodForm> {
                   decimal: true,
                 ),
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Serving size grams',
+                decoration: InputDecoration(
+                  labelText:
+                      l10n?.foodServingSizeGramsFieldLabel ??
+                      'Serving size grams',
                 ),
               ),
             ],
           ),
         ),
         FormSectionCard(
-          title: 'Nutrition facts',
-          subtitle: 'Enter values using the selected nutrition basis.',
+          title: l10n?.foodNutritionFactsTitle ?? 'Nutrition facts',
+          subtitle:
+              l10n?.foodNutritionFactsSubtitle ??
+              'Enter values using the selected nutrition basis.',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SegmentedButton<NutritionBasis>(
-                segments: const [
+                segments: [
                   ButtonSegment(
                     value: NutritionBasis.per100g,
-                    label: Text('Per 100g'),
+                    label: Text(l10n?.foodNutritionPer100g ?? 'Per 100g'),
                   ),
                   ButtonSegment(
                     value: NutritionBasis.perServing,
-                    label: Text('Per serving'),
+                    label: Text(l10n?.foodNutritionPerServing ?? 'Per serving'),
                   ),
                 ],
                 selected: {_basis},
@@ -143,7 +159,9 @@ class _FoodFormState extends State<FoodForm> {
                       decimal: true,
                     ),
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(labelText: 'Calories'),
+                    decoration: InputDecoration(
+                      labelText: l10n?.nutritionCalories ?? 'Calories',
+                    ),
                   ),
                   TextField(
                     controller: _proteinController,
@@ -151,7 +169,9 @@ class _FoodFormState extends State<FoodForm> {
                       decimal: true,
                     ),
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(labelText: 'Protein'),
+                    decoration: InputDecoration(
+                      labelText: l10n?.nutritionProtein ?? 'Protein',
+                    ),
                   ),
                   TextField(
                     controller: _fatController,
@@ -159,14 +179,18 @@ class _FoodFormState extends State<FoodForm> {
                       decimal: true,
                     ),
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(labelText: 'Fat'),
+                    decoration: InputDecoration(
+                      labelText: l10n?.nutritionFat ?? 'Fat',
+                    ),
                   ),
                   TextField(
                     controller: _carbsController,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(labelText: 'Carbs'),
+                    decoration: InputDecoration(
+                      labelText: l10n?.nutritionCarbs ?? 'Carbs',
+                    ),
                   ),
                 ],
               ),
@@ -194,7 +218,9 @@ class _FoodFormState extends State<FoodForm> {
         fat == null ||
         carbs == null) {
       setState(() {
-        _errorText = 'Enter a name and valid nutrition values.';
+        _errorText =
+            AppLocalizations.of(context)?.foodValidation ??
+            'Enter a name and valid nutrition values.';
       });
       return;
     }
@@ -221,7 +247,10 @@ class _FoodFormState extends State<FoodForm> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText = error.message?.toString() ?? 'Could not save food.';
+        _errorText =
+            error.message?.toString() ??
+            AppLocalizations.of(context)?.foodCouldNotSave ??
+            'Could not save food.';
       });
       return;
     }
