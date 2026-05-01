@@ -494,6 +494,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutTargetPrefix => 'Target:';
 
   @override
+  String get workoutHourUnit => 'h';
+
+  @override
+  String get workoutMinuteUnit => 'min';
+
+  @override
   String get workoutSetsLabel => 'sets';
 
   @override

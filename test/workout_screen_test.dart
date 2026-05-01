@@ -21,6 +21,14 @@ void main() {
       formatWorkoutDuration(const Duration(hours: 1, minutes: 5)),
       '1 h 5 min',
     );
+    expect(
+      formatWorkoutDuration(
+        const Duration(hours: 1, minutes: 5),
+        hourUnit: 'hr-local',
+        minuteUnit: 'min-local',
+      ),
+      '1 hr-local 5 min-local',
+    );
     expect(formatWorkoutDate(DateTime(2026, 4, 25)), '2026-04-25');
   });
 

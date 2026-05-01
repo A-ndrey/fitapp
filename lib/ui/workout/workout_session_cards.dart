@@ -14,6 +14,11 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final duration = formatWorkoutDuration(
+      session.duration,
+      hourUnit: l10n?.workoutHourUnit ?? 'h',
+      minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
+    );
 
     return Card(
       child: Padding(
@@ -42,10 +47,8 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
               children: [
                 WorkoutInfoPill(
                   label:
-                      l10n?.workoutElapsedLabel(
-                        formatWorkoutDuration(session.duration),
-                      ) ??
-                      'Elapsed ${formatWorkoutDuration(session.duration)}',
+                      l10n?.workoutElapsedLabel(duration) ??
+                      'Elapsed $duration',
                 ),
                 WorkoutInfoPill(
                   label:

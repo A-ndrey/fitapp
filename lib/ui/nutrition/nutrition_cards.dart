@@ -32,7 +32,7 @@ class NutritionSummaryGrid extends StatelessWidget {
               child: MetricCard(
                 label: l10n?.nutritionCalories ?? 'Calories',
                 value: formatNutritionNumber(values.calories),
-                suffix: 'kcal',
+                suffix: l10n?.nutritionKilocalorieUnit ?? 'kcal',
                 semanticSuffix:
                     l10n?.nutritionKilocaloriesSemantic ?? 'kilocalories',
                 icon: Icons.local_fire_department_outlined,
@@ -44,7 +44,7 @@ class NutritionSummaryGrid extends StatelessWidget {
               child: MetricCard(
                 label: l10n?.nutritionProtein ?? 'Protein',
                 value: formatNutritionNumber(values.protein),
-                suffix: 'g',
+                suffix: l10n?.nutritionGramUnit ?? 'g',
                 semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
                 icon: Icons.fitness_center_outlined,
                 color: colorScheme.secondary,
@@ -55,7 +55,7 @@ class NutritionSummaryGrid extends StatelessWidget {
               child: MetricCard(
                 label: l10n?.nutritionFat ?? 'Fat',
                 value: formatNutritionNumber(values.fat),
-                suffix: 'g',
+                suffix: l10n?.nutritionGramUnit ?? 'g',
                 semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
                 icon: Icons.water_drop_outlined,
                 color: colorScheme.tertiary,
@@ -66,7 +66,7 @@ class NutritionSummaryGrid extends StatelessWidget {
               child: MetricCard(
                 label: l10n?.nutritionCarbs ?? 'Carbs',
                 value: formatNutritionNumber(values.carbs),
-                suffix: 'g',
+                suffix: l10n?.nutritionGramUnit ?? 'g',
                 semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
                 icon: Icons.grain_outlined,
                 color: colorScheme.primary,

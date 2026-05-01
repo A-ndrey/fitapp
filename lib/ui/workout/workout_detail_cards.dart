@@ -292,6 +292,11 @@ class WorkoutCompletedSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final duration = formatWorkoutDuration(
+      session.duration,
+      hourUnit: l10n?.workoutHourUnit ?? 'h',
+      minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
+    );
 
     return Card(
       child: Padding(
@@ -327,10 +332,8 @@ class WorkoutCompletedSummaryCard extends StatelessWidget {
                 ),
                 WorkoutInfoPill(
                   label:
-                      l10n?.workoutDurationLabel(
-                        formatWorkoutDuration(session.duration),
-                      ) ??
-                      'Duration: ${formatWorkoutDuration(session.duration)}',
+                      l10n?.workoutDurationLabel(duration) ??
+                      'Duration: $duration',
                 ),
               ],
             ),
@@ -433,6 +436,11 @@ class _PreviousResultGroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final duration = formatWorkoutDuration(
+      group.session.duration,
+      hourUnit: l10n?.workoutHourUnit ?? 'h',
+      minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
+    );
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -442,7 +450,7 @@ class _PreviousResultGroupCard extends StatelessWidget {
             Text(
               '${group.session.trainingPlanName} • '
               '${formatWorkoutDate(group.session.startedAt)} • '
-              '${formatWorkoutDuration(group.session.duration)}',
+              '$duration',
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),

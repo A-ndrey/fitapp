@@ -122,7 +122,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   MetricCard(
                     label: l10n?.nutritionCalories ?? 'Calories',
                     value: _formatDouble(dailyTotals.calories),
-                    suffix: 'kcal',
+                    suffix: l10n?.nutritionKilocalorieUnit ?? 'kcal',
                     semanticSuffix:
                         l10n?.nutritionKilocaloriesSemantic ?? 'kilocalories',
                     icon: Icons.local_fire_department_outlined,
@@ -131,7 +131,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   MetricCard(
                     label: l10n?.nutritionProtein ?? 'Protein',
                     value: _formatDouble(dailyTotals.protein),
-                    suffix: 'g',
+                    suffix: l10n?.nutritionGramUnit ?? 'g',
                     semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
                     icon: Icons.egg_alt_outlined,
                     color: AppTheme.pulseLime,
@@ -139,7 +139,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   MetricCard(
                     label: l10n?.nutritionCarbs ?? 'Carbs',
                     value: _formatDouble(dailyTotals.carbs),
-                    suffix: 'g',
+                    suffix: l10n?.nutritionGramUnit ?? 'g',
                     semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
                     icon: Icons.grain_outlined,
                     color: AppTheme.recoveryBlue,

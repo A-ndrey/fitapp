@@ -22,6 +22,11 @@ class ActiveWorkoutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final duration = formatWorkoutDuration(
+      session.duration,
+      hourUnit: l10n?.workoutHourUnit ?? 'h',
+      minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
+    );
 
     return Tooltip(
       message: l10n?.workoutOpenActiveTooltip ?? 'Open active workout',
@@ -55,10 +60,8 @@ class ActiveWorkoutCard extends StatelessWidget {
                   children: [
                     WorkoutInfoPill(
                       label:
-                          l10n?.workoutElapsedLabel(
-                            formatWorkoutDuration(session.duration),
-                          ) ??
-                          'Elapsed ${formatWorkoutDuration(session.duration)}',
+                          l10n?.workoutElapsedLabel(duration) ??
+                          'Elapsed $duration',
                     ),
                     WorkoutInfoPill(
                       label:
@@ -92,6 +95,11 @@ class WorkoutStatsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final duration = formatWorkoutDuration(
+      totalDuration,
+      hourUnit: l10n?.workoutHourUnit ?? 'h',
+      minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
+    );
     final cards = <Widget>[
       MetricCard(
         label: l10n?.workoutCompletedMetricLabel ?? 'Completed',
@@ -104,7 +112,7 @@ class WorkoutStatsGrid extends StatelessWidget {
       ),
       MetricCard(
         label: l10n?.workoutTotalTimeMetricLabel ?? 'Total time',
-        value: formatWorkoutDuration(totalDuration),
+        value: duration,
         icon: Icons.timer_outlined,
         color: AppTheme.recoveryBlue,
       ),
@@ -153,6 +161,11 @@ class WorkoutHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final duration = formatWorkoutDuration(
+      session.duration,
+      hourUnit: l10n?.workoutHourUnit ?? 'h',
+      minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
+    );
     return Card(
       clipBehavior: Clip.antiAlias,
       child: ListTile(
@@ -165,7 +178,7 @@ class WorkoutHistoryCard extends StatelessWidget {
         ),
         subtitle: Text(
           '${formatWorkoutDate(session.startedAt)} • '
-          '${formatWorkoutDuration(session.duration)}',
+          '$duration',
         ),
         trailing: IconButton(
           tooltip:

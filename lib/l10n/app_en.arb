@@ -646,6 +646,14 @@
   "@workoutTargetPrefix": {
     "description": "Prefix label for workout target summaries."
   },
+  "workoutHourUnit": "h",
+  "@workoutHourUnit": {
+    "description": "Compact visible hour unit used in workout duration labels."
+  },
+  "workoutMinuteUnit": "min",
+  "@workoutMinuteUnit": {
+    "description": "Compact visible minute unit used in workout duration labels."
+  },
   "workoutSetsLabel": "sets",
   "@workoutSetsLabel": {
     "description": "Label for workout set counts in compact target summaries."

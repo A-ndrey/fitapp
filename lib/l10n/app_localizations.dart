@@ -886,6 +886,18 @@ abstract class AppLocalizations {
   /// **'Target:'**
   String get workoutTargetPrefix;
 
+  /// Compact visible hour unit used in workout duration labels.
+  ///
+  /// In en, this message translates to:
+  /// **'h'**
+  String get workoutHourUnit;
+
+  /// Compact visible minute unit used in workout duration labels.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get workoutMinuteUnit;
+
   /// Label for workout set counts in compact target summaries.
   ///
   /// In en, this message translates to:

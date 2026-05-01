@@ -2,16 +2,22 @@ import '../../models/training_plan.dart';
 import '../../models/workout_session.dart';
 import '../../state/app_store.dart';
 
-String formatWorkoutDuration(Duration duration) {
+String formatWorkoutDuration(
+  Duration duration, {
+  String hourUnit = 'h',
+  String minuteUnit = 'min',
+}) {
   if (duration.inHours > 0) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
-    return minutes == 0 ? '$hours h' : '$hours h $minutes min';
+    return minutes == 0
+        ? '$hours $hourUnit'
+        : '$hours $hourUnit $minutes $minuteUnit';
   }
   if (duration.inMinutes > 0) {
-    return '${duration.inMinutes} min';
+    return '${duration.inMinutes} $minuteUnit';
   }
-  return '0 min';
+  return '0 $minuteUnit';
 }
 
 String formatWorkoutDate(DateTime value) {
