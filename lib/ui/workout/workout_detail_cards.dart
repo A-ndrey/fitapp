@@ -24,6 +24,7 @@ class WorkoutActiveExerciseSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Card(
       child: Padding(
@@ -39,14 +40,23 @@ class WorkoutActiveExerciseSummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              formatWorkoutTarget(result.target, store),
+              formatWorkoutTarget(
+                result.target,
+                store,
+                targetPrefix: l10n?.workoutTargetPrefix ?? 'Target:',
+                setsLabel: l10n?.workoutSetsLabel ?? 'sets',
+                repsLabel: l10n?.workoutRepsLabel ?? 'reps',
+              ),
               style: textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 12),
             WorkoutInfoPill(
-              label: formatWorkoutSetCount(result.setLogs.length),
+              label: formatWorkoutSetCount(
+                result.setLogs.length,
+                setCountLoggedLabel: l10n?.workoutSetCountLogged,
+              ),
             ),
           ],
         ),
@@ -198,7 +208,14 @@ class WorkoutLoggedSetsCard extends StatelessWidget {
                     title: Text(
                       l10n?.workoutSetLabel(setNumber) ?? 'Set $setNumber',
                     ),
-                    subtitle: Text(formatWorkoutSetLog(target, setLog, store)),
+                    subtitle: Text(
+                      formatWorkoutSetLog(
+                        target,
+                        setLog,
+                        store,
+                        repsLabel: l10n?.workoutRepsLabel ?? 'reps',
+                      ),
+                    ),
                   ),
                 );
               }),
@@ -360,7 +377,15 @@ class WorkoutCompletedExerciseResultGroupCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                 ],
-                Text(formatWorkoutTarget(result.target, store)),
+                Text(
+                  formatWorkoutTarget(
+                    result.target,
+                    store,
+                    targetPrefix: l10n?.workoutTargetPrefix ?? 'Target:',
+                    setsLabel: l10n?.workoutSetsLabel ?? 'sets',
+                    repsLabel: l10n?.workoutRepsLabel ?? 'reps',
+                  ),
+                ),
                 const SizedBox(height: 8),
                 if (result.setLogs.isEmpty)
                   Text(l10n?.workoutNoSetsLogged ?? 'No sets logged')
@@ -374,7 +399,12 @@ class WorkoutCompletedExerciseResultGroupCard extends StatelessWidget {
                         l10n?.workoutSetLabel(setNumber) ?? 'Set $setNumber',
                       ),
                       subtitle: Text(
-                        formatWorkoutSetLog(result.target, setLog, store),
+                        formatWorkoutSetLog(
+                          result.target,
+                          setLog,
+                          store,
+                          repsLabel: l10n?.workoutRepsLabel ?? 'reps',
+                        ),
                       ),
                     );
                   }),
@@ -452,7 +482,12 @@ class _PreviousResultGroupCard extends StatelessWidget {
                       onTap: () => onFillSet(setLog),
                       title: Text(setLabel),
                       subtitle: Text(
-                        formatWorkoutSetLog(result.target, setLog, store),
+                        formatWorkoutSetLog(
+                          result.target,
+                          setLog,
+                          store,
+                          repsLabel: l10n?.workoutRepsLabel ?? 'reps',
+                        ),
                       ),
                     ),
                   );

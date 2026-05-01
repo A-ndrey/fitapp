@@ -880,6 +880,30 @@ abstract class AppLocalizations {
   /// **'No sets logged'**
   String get workoutNoSetsLogged;
 
+  /// Prefix label for workout target summaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Target:'**
+  String get workoutTargetPrefix;
+
+  /// Label for workout set counts in compact target summaries.
+  ///
+  /// In en, this message translates to:
+  /// **'sets'**
+  String get workoutSetsLabel;
+
+  /// Label for workout repetition counts in compact set summaries.
+  ///
+  /// In en, this message translates to:
+  /// **'reps'**
+  String get workoutRepsLabel;
+
+  /// Label for number of workout sets logged.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 set logged} other{{count} sets logged}}'**
+  String workoutSetCountLogged(int count);
+
   /// Library screen header subtitle.
   ///
   /// In en, this message translates to:

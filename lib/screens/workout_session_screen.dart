@@ -138,8 +138,14 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     targetLabel: formatWorkoutTarget(
                       result.target,
                       widget.store,
+                      targetPrefix: l10n?.workoutTargetPrefix ?? 'Target:',
+                      setsLabel: l10n?.workoutSetsLabel ?? 'sets',
+                      repsLabel: l10n?.workoutRepsLabel ?? 'reps',
                     ),
-                    setCountLabel: formatWorkoutSetCount(result.setLogs.length),
+                    setCountLabel: formatWorkoutSetCount(
+                      result.setLogs.length,
+                      setCountLoggedLabel: l10n?.workoutSetCountLogged,
+                    ),
                     tooltip: tooltipLabel,
                     onOpen: () => _openExercise(context, resultIndex),
                   ),

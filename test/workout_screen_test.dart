@@ -99,6 +99,44 @@ void main() {
     expect(formatWorkoutInputNumber(62.5), '62.5');
   });
 
+  test('workout formatters accept localized label fragments', () {
+    const target = TrainingExercise(
+      exerciseId: 'bench-press',
+      sets: 3,
+      reps: 8,
+      weight: 60,
+      unit: 'kg',
+    );
+    final store = AppStore();
+
+    expect(
+      formatWorkoutSetCount(
+        2,
+        setCountLoggedLabel: (count) => '$count localized-sets-logged',
+      ),
+      '2 localized-sets-logged',
+    );
+    expect(
+      formatWorkoutTarget(
+        target,
+        store,
+        targetPrefix: 'Localized target:',
+        setsLabel: 'localized-sets',
+        repsLabel: 'localized-reps',
+      ),
+      'Localized target: 3 localized-sets • 8 localized-reps • 60 kg',
+    );
+    expect(
+      formatWorkoutSetLog(
+        target,
+        const WorkoutSetLog(reps: 8, weight: 62.5),
+        store,
+        repsLabel: 'localized-reps',
+      ),
+      '8 localized-reps • 62.5 kg',
+    );
+  });
+
   Future<void> pumpWorkoutScreen(WidgetTester tester, {AppStore? store}) async {
     await tester.pumpWidget(
       MaterialApp(home: WorkoutScreen(store: store ?? AppStore())),

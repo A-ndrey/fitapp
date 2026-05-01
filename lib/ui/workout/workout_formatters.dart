@@ -27,20 +27,32 @@ String formatWorkoutNumber(double value) {
   return value.toStringAsFixed(1);
 }
 
-String formatWorkoutSetCount(int count) {
+String formatWorkoutSetCount(
+  int count, {
+  String Function(int count)? setCountLoggedLabel,
+}) {
+  if (setCountLoggedLabel != null) {
+    return setCountLoggedLabel(count);
+  }
   if (count == 1) {
     return '1 set logged';
   }
   return '$count sets logged';
 }
 
-String formatWorkoutTarget(TrainingExercise target, AppStore store) {
+String formatWorkoutTarget(
+  TrainingExercise target,
+  AppStore store, {
+  String targetPrefix = 'Target:',
+  String setsLabel = 'sets',
+  String repsLabel = 'reps',
+}) {
   final parts = <String>[];
   if (target.sets != null) {
-    parts.add('${formatWorkoutNumber(target.sets!)} sets');
+    parts.add('${formatWorkoutNumber(target.sets!)} $setsLabel');
   }
   if (target.reps != null) {
-    parts.add('${formatWorkoutNumber(target.reps!)} reps');
+    parts.add('${formatWorkoutNumber(target.reps!)} $repsLabel');
   }
   if (target.weight != null) {
     parts.add(_formatWorkoutWeight(target.weight!, target.unit, store));
@@ -49,17 +61,18 @@ String formatWorkoutTarget(TrainingExercise target, AppStore store) {
   } else if (parts.isEmpty) {
     parts.add(target.unit);
   }
-  return 'Target: ${parts.join(' • ')}';
+  return '$targetPrefix ${parts.join(' • ')}';
 }
 
 String formatWorkoutSetLog(
   TrainingExercise target,
   WorkoutSetLog setLog,
-  AppStore store,
-) {
+  AppStore store, {
+  String repsLabel = 'reps',
+}) {
   final parts = <String>[];
   if (setLog.reps != null) {
-    parts.add('${formatWorkoutNumber(setLog.reps!)} reps');
+    parts.add('${formatWorkoutNumber(setLog.reps!)} $repsLabel');
   }
   if (setLog.weight != null) {
     parts.add(_formatWorkoutWeight(setLog.weight!, target.unit, store));

@@ -64,6 +64,10 @@ void main() {
     expect(l10n.workoutExerciseTitle, 'Workout exercise');
     expect(l10n.workoutHistoryTitle, 'Workout history');
     expect(l10n.workoutDeleteDialogTitle, 'Delete workout?');
+    expect(l10n.workoutTargetPrefix, 'Target:');
+    expect(l10n.workoutSetsLabel, 'sets');
+    expect(l10n.workoutRepsLabel, 'reps');
+    expect(l10n.workoutSetCountLogged(2), '2 sets logged');
     expect(
       l10n.librarySubtitle,
       'Manage reusable plans, exercises, foods, and dishes.',

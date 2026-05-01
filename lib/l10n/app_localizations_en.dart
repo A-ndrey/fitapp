@@ -491,6 +491,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutNoSetsLogged => 'No sets logged';
 
   @override
+  String get workoutTargetPrefix => 'Target:';
+
+  @override
+  String get workoutSetsLabel => 'sets';
+
+  @override
+  String get workoutRepsLabel => 'reps';
+
+  @override
+  String workoutSetCountLogged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sets logged',
+      one: '1 set logged',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get librarySubtitle =>
       'Manage reusable plans, exercises, foods, and dishes.';
 

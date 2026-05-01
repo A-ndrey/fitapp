@@ -642,6 +642,28 @@
   "@workoutNoSetsLogged": {
     "description": "Text shown when a workout exercise has no logged sets."
   },
+  "workoutTargetPrefix": "Target:",
+  "@workoutTargetPrefix": {
+    "description": "Prefix label for workout target summaries."
+  },
+  "workoutSetsLabel": "sets",
+  "@workoutSetsLabel": {
+    "description": "Label for workout set counts in compact target summaries."
+  },
+  "workoutRepsLabel": "reps",
+  "@workoutRepsLabel": {
+    "description": "Label for workout repetition counts in compact set summaries."
+  },
+  "workoutSetCountLogged": "{count, plural, =1{1 set logged} other{{count} sets logged}}",
+  "@workoutSetCountLogged": {
+    "description": "Label for number of workout sets logged.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
   "librarySubtitle": "Manage reusable plans, exercises, foods, and dishes.",
   "@librarySubtitle": {
     "description": "Library screen header subtitle."
