@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
+import '../ui/core/layout/responsive_layout.dart';
 import '../ui/core/theme/app_theme.dart';
 import '../ui/core/widgets/action_card.dart';
 import '../ui/core/widgets/metric_card.dart';
@@ -150,41 +151,47 @@ class _TodayScreenState extends State<TodayScreen> {
               SectionHeader(
                 title: l10n?.todayQuickActionsTitle ?? 'Quick actions',
               ),
-              ActionCard(
-                title: activeSession == null
-                    ? l10n?.todayStartWorkoutAction ?? 'Start workout'
-                    : l10n?.todayOpenWorkoutAction ?? 'Open workout',
-                subtitle: activeSession == null
-                    ? l10n?.todayStartWorkoutSubtitle ??
-                          'Choose a plan and begin training'
-                    : l10n?.todayOpenWorkoutSubtitle ??
-                          'Return to the active session',
-                semanticHint: l10n?.todayOpenTrainHint ?? 'Opens Train tab',
-                icon: activeSession == null
-                    ? Icons.play_arrow
-                    : Icons.open_in_new,
-                onTap: widget.onOpenTrain,
-              ),
-              const SizedBox(height: 12),
-              ActionCard(
-                title: l10n?.todayLogMealAction ?? 'Log meal',
-                subtitle:
-                    l10n?.todayLogMealSubtitle ??
-                    'Add calories and macros for today',
-                semanticHint:
-                    l10n?.todayOpenNutritionHint ?? 'Opens Nutrition tab',
-                icon: Icons.restaurant,
-                onTap: widget.onOpenNutrition,
-              ),
-              const SizedBox(height: 12),
-              ActionCard(
-                title: l10n?.todayManageLibraryAction ?? 'Manage library',
-                subtitle:
-                    l10n?.todayManageLibrarySubtitle ??
-                    'Update foods, dishes, exercises, and plans',
-                semanticHint: l10n?.todayOpenLibraryHint ?? 'Opens Library tab',
-                icon: Icons.inventory_2_outlined,
-                onTap: widget.onOpenLibrary,
+              ResponsiveWrap(
+                maxItemExtent: 360,
+                minItemExtent: 300,
+                spacing: 12,
+                children: [
+                  ActionCard(
+                    title: activeSession == null
+                        ? l10n?.todayStartWorkoutAction ?? 'Start workout'
+                        : l10n?.todayOpenWorkoutAction ?? 'Open workout',
+                    subtitle: activeSession == null
+                        ? l10n?.todayStartWorkoutSubtitle ??
+                              'Choose a plan and begin training'
+                        : l10n?.todayOpenWorkoutSubtitle ??
+                              'Return to the active session',
+                    semanticHint: l10n?.todayOpenTrainHint ?? 'Opens Train tab',
+                    icon: activeSession == null
+                        ? Icons.play_arrow
+                        : Icons.open_in_new,
+                    onTap: widget.onOpenTrain,
+                  ),
+                  ActionCard(
+                    title: l10n?.todayLogMealAction ?? 'Log meal',
+                    subtitle:
+                        l10n?.todayLogMealSubtitle ??
+                        'Add calories and macros for today',
+                    semanticHint:
+                        l10n?.todayOpenNutritionHint ?? 'Opens Nutrition tab',
+                    icon: Icons.restaurant,
+                    onTap: widget.onOpenNutrition,
+                  ),
+                  ActionCard(
+                    title: l10n?.todayManageLibraryAction ?? 'Manage library',
+                    subtitle:
+                        l10n?.todayManageLibrarySubtitle ??
+                        'Update foods, dishes, exercises, and plans',
+                    semanticHint:
+                        l10n?.todayOpenLibraryHint ?? 'Opens Library tab',
+                    icon: Icons.inventory_2_outlined,
+                    onTap: widget.onOpenLibrary,
+                  ),
+                ],
               ),
             ],
           ),
@@ -238,25 +245,6 @@ class _MetricGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = switch (constraints.maxWidth) {
-          >= 720 => 3,
-          >= 560 => 2,
-          _ => 1,
-        };
-        final spacing = columns == 1 ? 12.0 : 16.0;
-        final width =
-            (constraints.maxWidth - (spacing * (columns - 1))) / columns;
-
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: [
-            for (final child in children) SizedBox(width: width, child: child),
-          ],
-        );
-      },
-    );
+    return ResponsiveWrap(maxItemExtent: 280, spacing: 12, children: children);
   }
 }

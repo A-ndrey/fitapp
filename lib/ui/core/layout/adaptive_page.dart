@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'app_breakpoints.dart';
+import 'responsive_layout.dart';
 
 class AdaptivePage extends StatelessWidget {
   const AdaptivePage({
     required this.children,
     super.key,
     this.padding,
-    this.maxWidth = 1120,
+    this.maxWidth = 1280,
     this.fillRemaining,
   });
 
@@ -20,9 +20,13 @@ class AdaptivePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final horizontalPadding = AppBreakpoints.isCompact(constraints.maxWidth)
-            ? 16.0
-            : 24.0;
+        final horizontalPadding = responsivePageHorizontalPadding(
+          constraints.maxWidth,
+        );
+        final contentMaxWidth = responsivePageMaxWidth(
+          constraints.maxWidth,
+          upperBound: maxWidth,
+        );
 
         final resolvedPadding =
             padding ??
@@ -35,7 +39,7 @@ class AdaptivePage extends StatelessWidget {
           return SafeArea(
             child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
+                constraints: BoxConstraints(maxWidth: contentMaxWidth),
                 child: CustomScrollView(
                   slivers: [
                     SliverPadding(
@@ -67,7 +71,7 @@ class AdaptivePage extends StatelessWidget {
         return SafeArea(
           child: Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
+              constraints: BoxConstraints(maxWidth: contentMaxWidth),
               child: ListView(padding: resolvedPadding, children: children),
             ),
           ),

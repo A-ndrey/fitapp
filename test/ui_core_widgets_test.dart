@@ -5,6 +5,7 @@ import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/models/training_plan.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/ui/core/layout/adaptive_page.dart';
+import 'package:fitapp/ui/core/layout/responsive_layout.dart';
 import 'package:fitapp/ui/core/widgets/action_card.dart';
 import 'package:fitapp/ui/core/widgets/empty_state.dart';
 import 'package:fitapp/ui/core/widgets/form_shell.dart';
@@ -68,7 +69,7 @@ void main() {
     expect(tapped, isTrue);
   });
 
-  testWidgets('adaptive page applies compact and medium page padding', (
+  testWidgets('adaptive page applies fluid responsive page padding', (
     tester,
   ) async {
     for (final entry in <({double width, EdgeInsets padding})>[
@@ -78,7 +79,11 @@ void main() {
       ),
       (
         width: 700,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+      ),
+      (
+        width: 1440,
+        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 24),
       ),
     ]) {
       await tester.binding.setSurfaceSize(Size(entry.width, 700));
@@ -99,30 +104,117 @@ void main() {
     }
   });
 
-  testWidgets('adaptive page centers content within max width on desktop', (
+  test('responsive page max width preserves medium window space', () {
+    expect(responsivePageMaxWidth(390), 390);
+    expect(responsivePageMaxWidth(800), 800);
+    expect(responsivePageMaxWidth(1280), 1280);
+    expect(responsivePageMaxWidth(1281), 1280);
+    expect(responsivePageMaxWidth(1440), 1280);
+  });
+
+  testWidgets(
+    'adaptive page centers content within fluid max width on desktop',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1440, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AdaptivePage(children: [Text('Desktop content')]),
+          ),
+        ),
+      );
+
+      final constrainedBox = tester.widget<ConstrainedBox>(
+        find
+            .descendant(
+              of: find.byType(Center),
+              matching: find.byType(ConstrainedBox),
+            )
+            .first,
+      );
+
+      expect(constrainedBox.constraints.maxWidth, 1280);
+      expect(find.text('Desktop content'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  test('responsive item width is derived from available space', () {
+    expect(
+      responsiveItemWidth(maxWidth: 390, maxItemExtent: 260, spacing: 12),
+      390,
+    );
+    expect(
+      responsiveItemWidth(maxWidth: 700, maxItemExtent: 260, spacing: 12),
+      closeTo(225.333, 0.001),
+    );
+    expect(
+      responsiveItemWidth(maxWidth: 1000, maxItemExtent: 260, spacing: 12),
+      241,
+    );
+  });
+
+  test('responsive item width preserves minimum usable card width', () {
+    expect(
+      responsiveItemWidth(maxWidth: 320, maxItemExtent: 260, spacing: 12),
+      320,
+    );
+    expect(
+      responsiveItemWidth(
+        maxWidth: 390,
+        maxItemExtent: 360,
+        minItemExtent: 300,
+        spacing: 12,
+      ),
+      390,
+    );
+    expect(
+      responsiveItemWidth(
+        maxWidth: 700,
+        maxItemExtent: 360,
+        minItemExtent: 300,
+        spacing: 12,
+      ),
+      344,
+    );
+  });
+
+  testWidgets('responsive wrap sizes children from parent constraints', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(1440, 900));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    for (final entry in <({double width, double itemWidth})>[
+      (width: 390, itemWidth: 390),
+      (width: 700, itemWidth: 225.333),
+    ]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: entry.width,
+                child: const ResponsiveWrap(
+                  maxItemExtent: 260,
+                  spacing: 12,
+                  children: [
+                    Placeholder(key: Key('responsive-item-1')),
+                    Placeholder(key: Key('responsive-item-2')),
+                    Placeholder(key: Key('responsive-item-3')),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: AdaptivePage(children: [Text('Desktop content')])),
-      ),
-    );
-
-    final constrainedBox = tester.widget<ConstrainedBox>(
-      find
-          .descendant(
-            of: find.byType(Center),
-            matching: find.byType(ConstrainedBox),
-          )
-          .first,
-    );
-
-    expect(constrainedBox.constraints.maxWidth, 1120);
-    expect(find.text('Desktop content'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+      expect(
+        tester.getSize(find.byKey(const Key('responsive-item-1'))).width,
+        closeTo(entry.itemWidth, 0.001),
+      );
+      expect(tester.takeException(), isNull);
+    }
   });
 
   testWidgets('metric card does not overflow with long value and suffix', (

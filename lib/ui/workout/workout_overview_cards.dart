@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/workout_session.dart';
+import '../core/layout/responsive_layout.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/metric_card.dart';
 import 'workout_formatters.dart';
@@ -125,23 +126,7 @@ class WorkoutStatsGrid extends StatelessWidget {
         ),
     ];
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth >= 720
-            ? (constraints.maxWidth - 24) / 3
-            : constraints.maxWidth >= 480
-            ? (constraints.maxWidth - 12) / 2
-            : constraints.maxWidth;
-
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            for (final card in cards) SizedBox(width: width, child: card),
-          ],
-        );
-      },
-    );
+    return ResponsiveWrap(maxItemExtent: 260, spacing: 12, children: cards);
   }
 }
 

@@ -5,6 +5,7 @@ import '../../models/catalog_item.dart';
 import '../../models/meal_entry.dart';
 import '../../models/nutrition.dart';
 import '../../state/app_store.dart';
+import '../core/layout/responsive_layout.dart';
 import '../core/widgets/metric_card.dart';
 import 'nutrition_formatters.dart';
 
@@ -17,64 +18,44 @@ class NutritionSummaryGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = constraints.maxWidth < 420 ? 2 : 4;
-        final spacing = columns == 2 ? 8.0 : 12.0;
-        final width =
-            (constraints.maxWidth - spacing * (columns - 1)) / columns;
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: [
-            SizedBox(
-              width: width,
-              child: MetricCard(
-                label: l10n?.nutritionCalories ?? 'Calories',
-                value: formatNutritionNumber(values.calories),
-                suffix: l10n?.nutritionKilocalorieUnit ?? 'kcal',
-                semanticSuffix:
-                    l10n?.nutritionKilocaloriesSemantic ?? 'kilocalories',
-                icon: Icons.local_fire_department_outlined,
-                color: colorScheme.primary,
-              ),
-            ),
-            SizedBox(
-              width: width,
-              child: MetricCard(
-                label: l10n?.nutritionProtein ?? 'Protein',
-                value: formatNutritionNumber(values.protein),
-                suffix: l10n?.nutritionGramUnit ?? 'g',
-                semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
-                icon: Icons.fitness_center_outlined,
-                color: colorScheme.secondary,
-              ),
-            ),
-            SizedBox(
-              width: width,
-              child: MetricCard(
-                label: l10n?.nutritionFat ?? 'Fat',
-                value: formatNutritionNumber(values.fat),
-                suffix: l10n?.nutritionGramUnit ?? 'g',
-                semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
-                icon: Icons.water_drop_outlined,
-                color: colorScheme.tertiary,
-              ),
-            ),
-            SizedBox(
-              width: width,
-              child: MetricCard(
-                label: l10n?.nutritionCarbs ?? 'Carbs',
-                value: formatNutritionNumber(values.carbs),
-                suffix: l10n?.nutritionGramUnit ?? 'g',
-                semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
-                icon: Icons.grain_outlined,
-                color: colorScheme.primary,
-              ),
-            ),
-          ],
-        );
-      },
+    return ResponsiveWrap(
+      maxItemExtent: 188,
+      minItemExtent: 156,
+      spacing: 12,
+      children: [
+        MetricCard(
+          label: l10n?.nutritionCalories ?? 'Calories',
+          value: formatNutritionNumber(values.calories),
+          suffix: l10n?.nutritionKilocalorieUnit ?? 'kcal',
+          semanticSuffix: l10n?.nutritionKilocaloriesSemantic ?? 'kilocalories',
+          icon: Icons.local_fire_department_outlined,
+          color: colorScheme.primary,
+        ),
+        MetricCard(
+          label: l10n?.nutritionProtein ?? 'Protein',
+          value: formatNutritionNumber(values.protein),
+          suffix: l10n?.nutritionGramUnit ?? 'g',
+          semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
+          icon: Icons.fitness_center_outlined,
+          color: colorScheme.secondary,
+        ),
+        MetricCard(
+          label: l10n?.nutritionFat ?? 'Fat',
+          value: formatNutritionNumber(values.fat),
+          suffix: l10n?.nutritionGramUnit ?? 'g',
+          semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
+          icon: Icons.water_drop_outlined,
+          color: colorScheme.tertiary,
+        ),
+        MetricCard(
+          label: l10n?.nutritionCarbs ?? 'Carbs',
+          value: formatNutritionNumber(values.carbs),
+          suffix: l10n?.nutritionGramUnit ?? 'g',
+          semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
+          icon: Icons.grain_outlined,
+          color: colorScheme.primary,
+        ),
+      ],
     );
   }
 }
