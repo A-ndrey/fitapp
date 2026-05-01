@@ -395,5 +395,311 @@
   "appearanceDark": "Dark",
   "@appearanceDark": {
     "description": "Dark appearance option label."
+  },
+  "workoutTitle": "Workout",
+  "@workoutTitle": {
+    "description": "Workout tab app bar title."
+  },
+  "workoutTrainingCockpitTitle": "Training cockpit",
+  "@workoutTrainingCockpitTitle": {
+    "description": "Workout overview hero title."
+  },
+  "workoutTrainingCockpitSubtitle": "Start, resume, and review workout sessions.",
+  "@workoutTrainingCockpitSubtitle": {
+    "description": "Workout overview hero subtitle."
+  },
+  "workoutStatsTitle": "Workout stats",
+  "@workoutStatsTitle": {
+    "description": "Workout overview stats section title."
+  },
+  "workoutNoCompletedSessionsSubtitle": "No completed sessions yet.",
+  "@workoutNoCompletedSessionsSubtitle": {
+    "description": "Workout stats subtitle when there is no completed workout history."
+  },
+  "workoutLatestSessionSubtitle": "Latest: {sessionName}",
+  "@workoutLatestSessionSubtitle": {
+    "description": "Workout stats subtitle when there is a latest completed workout.",
+    "placeholders": {
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "workoutHistoryTitle": "Workout history",
+  "@workoutHistoryTitle": {
+    "description": "Workout history section title."
+  },
+  "workoutEmptyHistoryTitle": "No completed workouts yet",
+  "@workoutEmptyHistoryTitle": {
+    "description": "Workout history empty state title."
+  },
+  "workoutEmptyHistoryMessage": "Start a training plan to build your workout history.",
+  "@workoutEmptyHistoryMessage": {
+    "description": "Workout history empty state message."
+  },
+  "workoutChoosePlanTitle": "Choose a training plan",
+  "@workoutChoosePlanTitle": {
+    "description": "Bottom sheet title for choosing a training plan to start."
+  },
+  "workoutStartWorkoutSubtitle": "Choose a training plan and begin tracking sets.",
+  "@workoutStartWorkoutSubtitle": {
+    "description": "Workout overview start workout action subtitle."
+  },
+  "workoutDeleteDialogTitle": "Delete workout?",
+  "@workoutDeleteDialogTitle": {
+    "description": "Confirmation dialog title for deleting a completed workout."
+  },
+  "workoutDeleteDialogMessage": "Delete {sessionName} from {date}?",
+  "@workoutDeleteDialogMessage": {
+    "description": "Confirmation dialog message for deleting a completed workout.",
+    "placeholders": {
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      },
+      "date": {
+        "type": "String",
+        "example": "2026-04-18"
+      }
+    }
+  },
+  "commonDelete": "Delete",
+  "@commonDelete": {
+    "description": "Common delete action label."
+  },
+  "workoutOpenActiveTooltip": "Open active workout",
+  "@workoutOpenActiveTooltip": {
+    "description": "Tooltip for opening the active workout."
+  },
+  "workoutActiveLabel": "Active workout",
+  "@workoutActiveLabel": {
+    "description": "Label for the currently active workout card."
+  },
+  "workoutElapsedLabel": "Elapsed {duration}",
+  "@workoutElapsedLabel": {
+    "description": "Workout info pill label for elapsed duration.",
+    "placeholders": {
+      "duration": {
+        "type": "String",
+        "example": "45 min"
+      }
+    }
+  },
+  "workoutExerciseCount": "{count, plural, =1{1 exercise} other{{count} exercises}}",
+  "@workoutExerciseCount": {
+    "description": "Workout info pill label for exercise count.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "workoutCompletedMetricLabel": "Completed",
+  "@workoutCompletedMetricLabel": {
+    "description": "Metric label for completed workouts."
+  },
+  "workoutSessionCountSuffix": "{count, plural, =1{session} other{sessions}}",
+  "@workoutSessionCountSuffix": {
+    "description": "Metric suffix for completed workout sessions.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "workoutTotalTimeMetricLabel": "Total time",
+  "@workoutTotalTimeMetricLabel": {
+    "description": "Metric label for total workout time."
+  },
+  "workoutLatestMetricLabel": "Latest",
+  "@workoutLatestMetricLabel": {
+    "description": "Metric label for latest workout."
+  },
+  "workoutOpenCompletedTooltip": "Open completed {sessionName}",
+  "@workoutOpenCompletedTooltip": {
+    "description": "Tooltip for opening a completed workout.",
+    "placeholders": {
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "workoutDeleteCompletedTooltip": "Delete completed {sessionName}",
+  "@workoutDeleteCompletedTooltip": {
+    "description": "Tooltip for deleting a completed workout.",
+    "placeholders": {
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "workoutSessionTitle": "Workout session",
+  "@workoutSessionTitle": {
+    "description": "Active workout session screen title."
+  },
+  "workoutSessionCockpitLabel": "Session cockpit",
+  "@workoutSessionCockpitLabel": {
+    "description": "Active workout session header label."
+  },
+  "workoutExerciseQueueTitle": "Exercise queue",
+  "@workoutExerciseQueueTitle": {
+    "description": "Active workout exercise queue section title."
+  },
+  "workoutExerciseQueueSubtitle": "Open an exercise to log sets and compare history.",
+  "@workoutExerciseQueueSubtitle": {
+    "description": "Active workout exercise queue section subtitle."
+  },
+  "workoutOpenExerciseTooltip": "Open {exerciseName}",
+  "@workoutOpenExerciseTooltip": {
+    "description": "Tooltip for opening an exercise in an active workout.",
+    "placeholders": {
+      "exerciseName": {
+        "type": "String",
+        "example": "Bench press"
+      }
+    }
+  },
+  "workoutOpenExerciseEntryTooltip": "Open {exerciseName} entry {entryNumber}",
+  "@workoutOpenExerciseEntryTooltip": {
+    "description": "Tooltip for opening a repeated exercise entry in an active workout.",
+    "placeholders": {
+      "exerciseName": {
+        "type": "String",
+        "example": "Pushups"
+      },
+      "entryNumber": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "workoutFinishAction": "Finish workout",
+  "@workoutFinishAction": {
+    "description": "Action label for finishing the active workout."
+  },
+  "workoutCompletedTitle": "Completed workout",
+  "@workoutCompletedTitle": {
+    "description": "Completed workout screen title and summary label."
+  },
+  "workoutExerciseTitle": "Workout exercise",
+  "@workoutExerciseTitle": {
+    "description": "Active workout exercise screen title and header."
+  },
+  "workoutExerciseSubtitle": "Log sets and reuse recent performance.",
+  "@workoutExerciseSubtitle": {
+    "description": "Active workout exercise screen subtitle."
+  },
+  "workoutExercisesTitle": "Exercises",
+  "@workoutExercisesTitle": {
+    "description": "Completed workout exercises section title."
+  },
+  "workoutDateLabel": "Date: {date}",
+  "@workoutDateLabel": {
+    "description": "Completed workout date info pill.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026-04-18"
+      }
+    }
+  },
+  "workoutDurationLabel": "Duration: {duration}",
+  "@workoutDurationLabel": {
+    "description": "Completed workout duration info pill.",
+    "placeholders": {
+      "duration": {
+        "type": "String",
+        "example": "45 min"
+      }
+    }
+  },
+  "workoutEntryLabel": "Entry {entryNumber}",
+  "@workoutEntryLabel": {
+    "description": "Repeated workout exercise entry label.",
+    "placeholders": {
+      "entryNumber": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "workoutSetLabel": "Set {setNumber}",
+  "@workoutSetLabel": {
+    "description": "Workout set label.",
+    "placeholders": {
+      "setNumber": {
+        "type": "int",
+        "example": "1"
+      }
+    }
+  },
+  "workoutNoSetsLogged": "No sets logged",
+  "@workoutNoSetsLogged": {
+    "description": "Text shown when a workout exercise has no logged sets."
+  },
+  "librarySubtitle": "Manage reusable plans, exercises, foods, and dishes.",
+  "@librarySubtitle": {
+    "description": "Library screen header subtitle."
+  },
+  "libraryTrainingSection": "Training",
+  "@libraryTrainingSection": {
+    "description": "Library segment label for training content."
+  },
+  "libraryFoodsSection": "Foods",
+  "@libraryFoodsSection": {
+    "description": "Library segment label for foods and dishes."
+  },
+  "libraryEditItem": "Edit {itemName}",
+  "@libraryEditItem": {
+    "description": "Tooltip for editing a catalog item.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Rice"
+      }
+    }
+  },
+  "libraryDeleteItem": "Delete {itemName}",
+  "@libraryDeleteItem": {
+    "description": "Tooltip for deleting a catalog item.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Rice"
+      }
+    }
+  },
+  "libraryServingSuffix": "serving",
+  "@libraryServingSuffix": {
+    "description": "Serving suffix used in catalog nutrition summaries."
+  },
+  "libraryCaloriesPerServingLabel": "{calories} kcal per serving",
+  "@libraryCaloriesPerServingLabel": {
+    "description": "Catalog calories per serving summary.",
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "example": "120"
+      }
+    }
+  },
+  "libraryExerciseCount": "{count, plural, =1{1 exercise} other{{count} exercises}}",
+  "@libraryExerciseCount": {
+    "description": "Training plan exercise count label.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "libraryMusclesEmpty": "Muscles: -",
+  "@libraryMusclesEmpty": {
+    "description": "Exercise muscle summary when no muscle groups are selected."
   }
 }

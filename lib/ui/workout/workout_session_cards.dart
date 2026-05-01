@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/workout_session.dart';
 import '../core/theme/app_theme.dart';
 import 'workout_formatters.dart';
 
 class WorkoutSessionHeaderCard extends StatelessWidget {
-  const WorkoutSessionHeaderCard({required this.session, super.key});
+  const WorkoutSessionHeaderCard({required this.session, super.key, this.l10n});
 
   final WorkoutSession session;
+  final AppLocalizations? l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +22,7 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Session cockpit',
+              l10n?.workoutSessionCockpitLabel ?? 'Session cockpit',
               style: textTheme.labelLarge?.copyWith(
                 color: AppTheme.energyOrange,
                 fontWeight: FontWeight.w700,
@@ -39,10 +41,15 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
               runSpacing: 8,
               children: [
                 WorkoutInfoPill(
-                  label: 'Elapsed ${formatWorkoutDuration(session.duration)}',
+                  label:
+                      l10n?.workoutElapsedLabel(
+                        formatWorkoutDuration(session.duration),
+                      ) ??
+                      'Elapsed ${formatWorkoutDuration(session.duration)}',
                 ),
                 WorkoutInfoPill(
                   label:
+                      l10n?.workoutExerciseCount(session.results.length) ??
                       '${session.results.length} ${session.results.length == 1 ? 'exercise' : 'exercises'}',
                 ),
               ],

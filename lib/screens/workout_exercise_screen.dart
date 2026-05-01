@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
@@ -39,12 +40,15 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
     return AnimatedBuilder(
       animation: widget.store,
       builder: (context, _) {
+        final l10n = AppLocalizations.of(context);
         final session = widget.store.activeWorkoutSession;
         if (session == null ||
             widget.resultIndex < 0 ||
             widget.resultIndex >= session.results.length) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Workout exercise')),
+            appBar: AppBar(
+              title: Text(l10n?.workoutExerciseTitle ?? 'Workout exercise'),
+            ),
             body: const AdaptivePage(children: []),
           );
         }
@@ -53,12 +57,16 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
           result.exerciseId,
         );
         return Scaffold(
-          appBar: AppBar(title: const Text('Workout exercise')),
+          appBar: AppBar(
+            title: Text(l10n?.workoutExerciseTitle ?? 'Workout exercise'),
+          ),
           body: AdaptivePage(
             children: [
-              const SectionHeader(
-                title: 'Workout exercise',
-                subtitle: 'Log sets and reuse recent performance.',
+              SectionHeader(
+                title: l10n?.workoutExerciseTitle ?? 'Workout exercise',
+                subtitle:
+                    l10n?.workoutExerciseSubtitle ??
+                    'Log sets and reuse recent performance.',
               ),
               WorkoutActiveExerciseSummaryCard(
                 result: result,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
@@ -87,23 +88,30 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       animation: widget.store,
       builder: (context, _) {
         final session = widget.store.activeWorkoutSession;
+        final l10n = AppLocalizations.of(context);
         if (session == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Workout session')),
+            appBar: AppBar(
+              title: Text(l10n?.workoutSessionTitle ?? 'Workout session'),
+            ),
             body: const AdaptivePage(children: []),
           );
         }
         final exerciseCounts = _exerciseCounts(session.results);
         final seenExercises = <String, int>{};
         return Scaffold(
-          appBar: AppBar(title: const Text('Workout session')),
+          appBar: AppBar(
+            title: Text(l10n?.workoutSessionTitle ?? 'Workout session'),
+          ),
           body: AdaptivePage(
             children: [
-              WorkoutSessionHeaderCard(session: session),
+              WorkoutSessionHeaderCard(session: session, l10n: l10n),
               const SizedBox(height: 24),
-              const SectionHeader(
-                title: 'Exercise queue',
-                subtitle: 'Open an exercise to log sets and compare history.',
+              SectionHeader(
+                title: l10n?.workoutExerciseQueueTitle ?? 'Exercise queue',
+                subtitle:
+                    l10n?.workoutExerciseQueueSubtitle ??
+                    'Open an exercise to log sets and compare history.',
               ),
               ...session.results.indexed.map((entry) {
                 final resultIndex = entry.$1;
@@ -116,8 +124,13 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     ? '${result.exerciseName} ($occurrence)'
                     : result.exerciseName;
                 final tooltipLabel = hasRepeatedExercise
-                    ? 'Open ${result.exerciseName} entry $occurrence'
-                    : 'Open ${result.exerciseName}';
+                    ? l10n?.workoutOpenExerciseEntryTooltip(
+                            result.exerciseName,
+                            occurrence,
+                          ) ??
+                          'Open ${result.exerciseName} entry $occurrence'
+                    : l10n?.workoutOpenExerciseTooltip(result.exerciseName) ??
+                          'Open ${result.exerciseName}';
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: WorkoutExerciseProgressCard(
@@ -136,7 +149,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
               FilledButton.icon(
                 onPressed: () => _finishWorkout(context),
                 icon: const Icon(Icons.flag_outlined),
-                label: const Text('Finish workout'),
+                label: Text(l10n?.workoutFinishAction ?? 'Finish workout'),
               ),
             ],
           ),

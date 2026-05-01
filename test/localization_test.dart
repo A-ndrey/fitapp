@@ -50,4 +50,25 @@ void main() {
     expect(l10n.moreSyncTitle, 'Sync');
     expect(l10n.settingsAppearanceTitle, 'Appearance');
   });
+
+  testWidgets('workout and library surfaces expose localized strings', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const FitApp());
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations.of(tester.element(find.byType(FitHome)))!;
+
+    expect(l10n.workoutTitle, 'Workout');
+    expect(l10n.workoutTrainingCockpitTitle, 'Training cockpit');
+    expect(l10n.workoutExerciseTitle, 'Workout exercise');
+    expect(l10n.workoutHistoryTitle, 'Workout history');
+    expect(l10n.workoutDeleteDialogTitle, 'Delete workout?');
+    expect(
+      l10n.librarySubtitle,
+      'Manage reusable plans, exercises, foods, and dishes.',
+    );
+    expect(l10n.libraryFoodsSection, 'Foods');
+    expect(l10n.libraryEditItem('Rice'), 'Edit Rice');
+  });
 }

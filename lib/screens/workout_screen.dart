@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/training_plan.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
@@ -93,47 +94,63 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         final stats = widget.store.workoutStats;
         final activeSession = widget.store.activeWorkoutSession;
         final completedSessions = widget.store.completedWorkoutSessions;
+        final l10n = AppLocalizations.of(context);
         return Scaffold(
-          appBar: AppBar(title: const Text('Workout')),
+          appBar: AppBar(title: Text(l10n?.workoutTitle ?? 'Workout')),
           floatingActionButton: null,
           body: AdaptivePage(
             children: [
-              const SectionHeader(
-                title: 'Training cockpit',
-                subtitle: 'Start, resume, and review workout sessions.',
+              SectionHeader(
+                title: l10n?.workoutTrainingCockpitTitle ?? 'Training cockpit',
+                subtitle:
+                    l10n?.workoutTrainingCockpitSubtitle ??
+                    'Start, resume, and review workout sessions.',
               ),
               if (activeSession != null)
                 ActiveWorkoutCard(
                   session: activeSession,
+                  l10n: l10n,
                   onOpen: () => _openActiveWorkout(context),
                 )
               else
                 ActionCard(
-                  title: 'Start workout',
-                  subtitle: 'Choose a training plan and begin tracking sets.',
+                  title: l10n?.todayStartWorkoutAction ?? 'Start workout',
+                  subtitle:
+                      l10n?.workoutStartWorkoutSubtitle ??
+                      'Choose a training plan and begin tracking sets.',
                   icon: Icons.play_arrow,
-                  tooltip: 'Start workout',
+                  tooltip: l10n?.todayStartWorkoutAction ?? 'Start workout',
                   onTap: () => _openStartWorkoutPicker(context),
                 ),
               const SizedBox(height: 24),
               SectionHeader(
-                title: 'Workout stats',
+                title: l10n?.workoutStatsTitle ?? 'Workout stats',
                 subtitle: stats.latestSession == null
-                    ? 'No completed sessions yet.'
-                    : 'Latest: ${stats.latestSession!.trainingPlanName}',
+                    ? l10n?.workoutNoCompletedSessionsSubtitle ??
+                          'No completed sessions yet.'
+                    : l10n?.workoutLatestSessionSubtitle(
+                            stats.latestSession!.trainingPlanName,
+                          ) ??
+                          'Latest: ${stats.latestSession!.trainingPlanName}',
               ),
               WorkoutStatsGrid(
                 completedCount: stats.completedCount,
                 totalDuration: stats.totalDuration,
                 latestSessionName: stats.latestSession?.trainingPlanName,
+                l10n: l10n,
               ),
               const SizedBox(height: 24),
-              const SectionHeader(title: 'Workout history'),
+              SectionHeader(
+                title: l10n?.workoutHistoryTitle ?? 'Workout history',
+              ),
               if (completedSessions.isEmpty)
                 AppEmptyState(
                   icon: Icons.history_toggle_off,
-                  title: 'No completed workouts yet',
+                  title:
+                      l10n?.workoutEmptyHistoryTitle ??
+                      'No completed workouts yet',
                   message:
+                      l10n?.workoutEmptyHistoryMessage ??
                       'Start a training plan to build your workout history.',
                 )
               else
@@ -142,6 +159,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: WorkoutHistoryCard(
                       session: session,
+                      l10n: l10n,
                       onOpen: () => _openCompletedWorkout(context, session),
                       onDelete: () =>
                           _confirmDeleteCompletedWorkout(context, session),
@@ -168,7 +186,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Choose a training plan',
+                  AppLocalizations.of(sheetContext)?.workoutChoosePlanTitle ??
+                      'Choose a training plan',
                   style: Theme.of(sheetContext).textTheme.titleMedium,
                 ),
               ),
@@ -231,22 +250,27 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     BuildContext context,
     WorkoutSession session,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete workout?'),
+          title: Text(l10n?.workoutDeleteDialogTitle ?? 'Delete workout?'),
           content: Text(
-            'Delete ${session.trainingPlanName} from ${formatWorkoutDate(session.startedAt)}?',
+            l10n?.workoutDeleteDialogMessage(
+                  session.trainingPlanName,
+                  formatWorkoutDate(session.startedAt),
+                ) ??
+                'Delete ${session.trainingPlanName} from ${formatWorkoutDate(session.startedAt)}?',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n?.commonCancel ?? 'Cancel'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Delete'),
+              child: Text(l10n?.commonDelete ?? 'Delete'),
             ),
           ],
         );

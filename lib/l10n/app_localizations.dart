@@ -639,6 +639,300 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dark'**
   String get appearanceDark;
+
+  /// Workout tab app bar title.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get workoutTitle;
+
+  /// Workout overview hero title.
+  ///
+  /// In en, this message translates to:
+  /// **'Training cockpit'**
+  String get workoutTrainingCockpitTitle;
+
+  /// Workout overview hero subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start, resume, and review workout sessions.'**
+  String get workoutTrainingCockpitSubtitle;
+
+  /// Workout overview stats section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout stats'**
+  String get workoutStatsTitle;
+
+  /// Workout stats subtitle when there is no completed workout history.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed sessions yet.'**
+  String get workoutNoCompletedSessionsSubtitle;
+
+  /// Workout stats subtitle when there is a latest completed workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest: {sessionName}'**
+  String workoutLatestSessionSubtitle(String sessionName);
+
+  /// Workout history section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout history'**
+  String get workoutHistoryTitle;
+
+  /// Workout history empty state title.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed workouts yet'**
+  String get workoutEmptyHistoryTitle;
+
+  /// Workout history empty state message.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a training plan to build your workout history.'**
+  String get workoutEmptyHistoryMessage;
+
+  /// Bottom sheet title for choosing a training plan to start.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a training plan'**
+  String get workoutChoosePlanTitle;
+
+  /// Workout overview start workout action subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a training plan and begin tracking sets.'**
+  String get workoutStartWorkoutSubtitle;
+
+  /// Confirmation dialog title for deleting a completed workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete workout?'**
+  String get workoutDeleteDialogTitle;
+
+  /// Confirmation dialog message for deleting a completed workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {sessionName} from {date}?'**
+  String workoutDeleteDialogMessage(String sessionName, String date);
+
+  /// Common delete action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get commonDelete;
+
+  /// Tooltip for opening the active workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Open active workout'**
+  String get workoutOpenActiveTooltip;
+
+  /// Label for the currently active workout card.
+  ///
+  /// In en, this message translates to:
+  /// **'Active workout'**
+  String get workoutActiveLabel;
+
+  /// Workout info pill label for elapsed duration.
+  ///
+  /// In en, this message translates to:
+  /// **'Elapsed {duration}'**
+  String workoutElapsedLabel(String duration);
+
+  /// Workout info pill label for exercise count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 exercise} other{{count} exercises}}'**
+  String workoutExerciseCount(int count);
+
+  /// Metric label for completed workouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get workoutCompletedMetricLabel;
+
+  /// Metric suffix for completed workout sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{session} other{sessions}}'**
+  String workoutSessionCountSuffix(int count);
+
+  /// Metric label for total workout time.
+  ///
+  /// In en, this message translates to:
+  /// **'Total time'**
+  String get workoutTotalTimeMetricLabel;
+
+  /// Metric label for latest workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest'**
+  String get workoutLatestMetricLabel;
+
+  /// Tooltip for opening a completed workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Open completed {sessionName}'**
+  String workoutOpenCompletedTooltip(String sessionName);
+
+  /// Tooltip for deleting a completed workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete completed {sessionName}'**
+  String workoutDeleteCompletedTooltip(String sessionName);
+
+  /// Active workout session screen title.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout session'**
+  String get workoutSessionTitle;
+
+  /// Active workout session header label.
+  ///
+  /// In en, this message translates to:
+  /// **'Session cockpit'**
+  String get workoutSessionCockpitLabel;
+
+  /// Active workout exercise queue section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise queue'**
+  String get workoutExerciseQueueTitle;
+
+  /// Active workout exercise queue section subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an exercise to log sets and compare history.'**
+  String get workoutExerciseQueueSubtitle;
+
+  /// Tooltip for opening an exercise in an active workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {exerciseName}'**
+  String workoutOpenExerciseTooltip(String exerciseName);
+
+  /// Tooltip for opening a repeated exercise entry in an active workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {exerciseName} entry {entryNumber}'**
+  String workoutOpenExerciseEntryTooltip(String exerciseName, int entryNumber);
+
+  /// Action label for finishing the active workout.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish workout'**
+  String get workoutFinishAction;
+
+  /// Completed workout screen title and summary label.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed workout'**
+  String get workoutCompletedTitle;
+
+  /// Active workout exercise screen title and header.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout exercise'**
+  String get workoutExerciseTitle;
+
+  /// Active workout exercise screen subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log sets and reuse recent performance.'**
+  String get workoutExerciseSubtitle;
+
+  /// Completed workout exercises section title.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercises'**
+  String get workoutExercisesTitle;
+
+  /// Completed workout date info pill.
+  ///
+  /// In en, this message translates to:
+  /// **'Date: {date}'**
+  String workoutDateLabel(String date);
+
+  /// Completed workout duration info pill.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration: {duration}'**
+  String workoutDurationLabel(String duration);
+
+  /// Repeated workout exercise entry label.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry {entryNumber}'**
+  String workoutEntryLabel(int entryNumber);
+
+  /// Workout set label.
+  ///
+  /// In en, this message translates to:
+  /// **'Set {setNumber}'**
+  String workoutSetLabel(int setNumber);
+
+  /// Text shown when a workout exercise has no logged sets.
+  ///
+  /// In en, this message translates to:
+  /// **'No sets logged'**
+  String get workoutNoSetsLogged;
+
+  /// Library screen header subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage reusable plans, exercises, foods, and dishes.'**
+  String get librarySubtitle;
+
+  /// Library segment label for training content.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get libraryTrainingSection;
+
+  /// Library segment label for foods and dishes.
+  ///
+  /// In en, this message translates to:
+  /// **'Foods'**
+  String get libraryFoodsSection;
+
+  /// Tooltip for editing a catalog item.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {itemName}'**
+  String libraryEditItem(String itemName);
+
+  /// Tooltip for deleting a catalog item.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {itemName}'**
+  String libraryDeleteItem(String itemName);
+
+  /// Serving suffix used in catalog nutrition summaries.
+  ///
+  /// In en, this message translates to:
+  /// **'serving'**
+  String get libraryServingSuffix;
+
+  /// Catalog calories per serving summary.
+  ///
+  /// In en, this message translates to:
+  /// **'{calories} kcal per serving'**
+  String libraryCaloriesPerServingLabel(String calories);
+
+  /// Training plan exercise count label.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 exercise} other{{count} exercises}}'**
+  String libraryExerciseCount(int count);
+
+  /// Exercise muscle summary when no muscle groups are selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Muscles: -'**
+  String get libraryMusclesEmpty;
 }
 
 class _AppLocalizationsDelegate

@@ -326,4 +326,209 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearanceDark => 'Dark';
+
+  @override
+  String get workoutTitle => 'Workout';
+
+  @override
+  String get workoutTrainingCockpitTitle => 'Training cockpit';
+
+  @override
+  String get workoutTrainingCockpitSubtitle =>
+      'Start, resume, and review workout sessions.';
+
+  @override
+  String get workoutStatsTitle => 'Workout stats';
+
+  @override
+  String get workoutNoCompletedSessionsSubtitle => 'No completed sessions yet.';
+
+  @override
+  String workoutLatestSessionSubtitle(String sessionName) {
+    return 'Latest: $sessionName';
+  }
+
+  @override
+  String get workoutHistoryTitle => 'Workout history';
+
+  @override
+  String get workoutEmptyHistoryTitle => 'No completed workouts yet';
+
+  @override
+  String get workoutEmptyHistoryMessage =>
+      'Start a training plan to build your workout history.';
+
+  @override
+  String get workoutChoosePlanTitle => 'Choose a training plan';
+
+  @override
+  String get workoutStartWorkoutSubtitle =>
+      'Choose a training plan and begin tracking sets.';
+
+  @override
+  String get workoutDeleteDialogTitle => 'Delete workout?';
+
+  @override
+  String workoutDeleteDialogMessage(String sessionName, String date) {
+    return 'Delete $sessionName from $date?';
+  }
+
+  @override
+  String get commonDelete => 'Delete';
+
+  @override
+  String get workoutOpenActiveTooltip => 'Open active workout';
+
+  @override
+  String get workoutActiveLabel => 'Active workout';
+
+  @override
+  String workoutElapsedLabel(String duration) {
+    return 'Elapsed $duration';
+  }
+
+  @override
+  String workoutExerciseCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count exercises',
+      one: '1 exercise',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workoutCompletedMetricLabel => 'Completed';
+
+  @override
+  String workoutSessionCountSuffix(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'sessions',
+      one: 'session',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workoutTotalTimeMetricLabel => 'Total time';
+
+  @override
+  String get workoutLatestMetricLabel => 'Latest';
+
+  @override
+  String workoutOpenCompletedTooltip(String sessionName) {
+    return 'Open completed $sessionName';
+  }
+
+  @override
+  String workoutDeleteCompletedTooltip(String sessionName) {
+    return 'Delete completed $sessionName';
+  }
+
+  @override
+  String get workoutSessionTitle => 'Workout session';
+
+  @override
+  String get workoutSessionCockpitLabel => 'Session cockpit';
+
+  @override
+  String get workoutExerciseQueueTitle => 'Exercise queue';
+
+  @override
+  String get workoutExerciseQueueSubtitle =>
+      'Open an exercise to log sets and compare history.';
+
+  @override
+  String workoutOpenExerciseTooltip(String exerciseName) {
+    return 'Open $exerciseName';
+  }
+
+  @override
+  String workoutOpenExerciseEntryTooltip(String exerciseName, int entryNumber) {
+    return 'Open $exerciseName entry $entryNumber';
+  }
+
+  @override
+  String get workoutFinishAction => 'Finish workout';
+
+  @override
+  String get workoutCompletedTitle => 'Completed workout';
+
+  @override
+  String get workoutExerciseTitle => 'Workout exercise';
+
+  @override
+  String get workoutExerciseSubtitle =>
+      'Log sets and reuse recent performance.';
+
+  @override
+  String get workoutExercisesTitle => 'Exercises';
+
+  @override
+  String workoutDateLabel(String date) {
+    return 'Date: $date';
+  }
+
+  @override
+  String workoutDurationLabel(String duration) {
+    return 'Duration: $duration';
+  }
+
+  @override
+  String workoutEntryLabel(int entryNumber) {
+    return 'Entry $entryNumber';
+  }
+
+  @override
+  String workoutSetLabel(int setNumber) {
+    return 'Set $setNumber';
+  }
+
+  @override
+  String get workoutNoSetsLogged => 'No sets logged';
+
+  @override
+  String get librarySubtitle =>
+      'Manage reusable plans, exercises, foods, and dishes.';
+
+  @override
+  String get libraryTrainingSection => 'Training';
+
+  @override
+  String get libraryFoodsSection => 'Foods';
+
+  @override
+  String libraryEditItem(String itemName) {
+    return 'Edit $itemName';
+  }
+
+  @override
+  String libraryDeleteItem(String itemName) {
+    return 'Delete $itemName';
+  }
+
+  @override
+  String get libraryServingSuffix => 'serving';
+
+  @override
+  String libraryCaloriesPerServingLabel(String calories) {
+    return '$calories kcal per serving';
+  }
+
+  @override
+  String libraryExerciseCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count exercises',
+      one: '1 exercise',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get libraryMusclesEmpty => 'Muscles: -';
 }

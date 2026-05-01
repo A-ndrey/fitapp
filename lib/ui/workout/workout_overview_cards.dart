@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/workout_session.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/metric_card.dart';
@@ -11,17 +12,19 @@ class ActiveWorkoutCard extends StatelessWidget {
     required this.session,
     required this.onOpen,
     super.key,
+    this.l10n,
   });
 
   final WorkoutSession session;
   final VoidCallback onOpen;
+  final AppLocalizations? l10n;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
     return Tooltip(
-      message: 'Open active workout',
+      message: l10n?.workoutOpenActiveTooltip ?? 'Open active workout',
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -32,7 +35,7 @@ class ActiveWorkoutCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Active workout',
+                  l10n?.workoutActiveLabel ?? 'Active workout',
                   style: textTheme.labelLarge?.copyWith(
                     color: AppTheme.energyOrange,
                     fontWeight: FontWeight.w700,
@@ -52,10 +55,14 @@ class ActiveWorkoutCard extends StatelessWidget {
                   children: [
                     WorkoutInfoPill(
                       label:
+                          l10n?.workoutElapsedLabel(
+                            formatWorkoutDuration(session.duration),
+                          ) ??
                           'Elapsed ${formatWorkoutDuration(session.duration)}',
                     ),
                     WorkoutInfoPill(
                       label:
+                          l10n?.workoutExerciseCount(session.results.length) ??
                           '${session.results.length} ${session.results.length == 1 ? 'exercise' : 'exercises'}',
                     ),
                   ],
@@ -75,31 +82,35 @@ class WorkoutStatsGrid extends StatelessWidget {
     required this.totalDuration,
     this.latestSessionName,
     super.key,
+    this.l10n,
   });
 
   final int completedCount;
   final Duration totalDuration;
   final String? latestSessionName;
+  final AppLocalizations? l10n;
 
   @override
   Widget build(BuildContext context) {
     final cards = <Widget>[
       MetricCard(
-        label: 'Completed',
+        label: l10n?.workoutCompletedMetricLabel ?? 'Completed',
         value: completedCount.toString(),
-        suffix: completedCount == 1 ? 'session' : 'sessions',
+        suffix:
+            l10n?.workoutSessionCountSuffix(completedCount) ??
+            (completedCount == 1 ? 'session' : 'sessions'),
         icon: Icons.check_circle_outline,
         color: AppTheme.energyOrange,
       ),
       MetricCard(
-        label: 'Total time',
+        label: l10n?.workoutTotalTimeMetricLabel ?? 'Total time',
         value: formatWorkoutDuration(totalDuration),
         icon: Icons.timer_outlined,
         color: AppTheme.recoveryBlue,
       ),
       if (latestSessionName != null)
         MetricCard(
-          label: 'Latest',
+          label: l10n?.workoutLatestMetricLabel ?? 'Latest',
           value: latestSessionName!,
           icon: Icons.history,
           color: Theme.of(context).colorScheme.tertiary,
@@ -132,11 +143,13 @@ class WorkoutHistoryCard extends StatelessWidget {
     required this.onOpen,
     required this.onDelete,
     super.key,
+    this.l10n,
   });
 
   final WorkoutSession session;
   final VoidCallback onOpen;
   final VoidCallback onDelete;
+  final AppLocalizations? l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +158,9 @@ class WorkoutHistoryCard extends StatelessWidget {
       child: ListTile(
         onTap: onOpen,
         title: Tooltip(
-          message: 'Open completed ${session.trainingPlanName}',
+          message:
+              l10n?.workoutOpenCompletedTooltip(session.trainingPlanName) ??
+              'Open completed ${session.trainingPlanName}',
           child: Text(session.trainingPlanName),
         ),
         subtitle: Text(
@@ -153,7 +168,9 @@ class WorkoutHistoryCard extends StatelessWidget {
           '${formatWorkoutDuration(session.duration)}',
         ),
         trailing: IconButton(
-          tooltip: 'Delete completed ${session.trainingPlanName}',
+          tooltip:
+              l10n?.workoutDeleteCompletedTooltip(session.trainingPlanName) ??
+              'Delete completed ${session.trainingPlanName}',
           icon: const Icon(Icons.delete_outline),
           onPressed: onDelete,
         ),

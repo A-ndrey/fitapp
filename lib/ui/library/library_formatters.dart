@@ -3,29 +3,49 @@ import '../../models/exercise.dart';
 import '../../models/training_plan.dart';
 import '../../state/app_store.dart';
 
-String formatCatalogItemTypeLabel(CatalogItem item) {
-  return item.isFood ? 'food' : 'dish';
+String formatCatalogItemTypeLabel(
+  CatalogItem item, {
+  String foodLabel = 'food',
+  String dishLabel = 'dish',
+}) {
+  return item.isFood ? foodLabel : dishLabel;
 }
 
-String formatCatalogNutritionServingLabel(CatalogItem item, AppStore store) {
-  return '${store.formatDishWeight(item.servingSizeGrams)} serving';
+String formatCatalogNutritionServingLabel(
+  CatalogItem item,
+  AppStore store, {
+  String servingLabel = 'serving',
+}) {
+  return '${store.formatDishWeight(item.servingSizeGrams)} $servingLabel';
 }
 
-String formatCatalogCaloriesPerServingLabel(CatalogItem item, AppStore store) {
+String formatCatalogCaloriesPerServingLabel(
+  CatalogItem item,
+  AppStore store, {
+  String Function(String calories)? caloriesPerServing,
+}) {
   final nutrition = item.nutritionPerServing(store.catalog);
-  return '${_formatCompactNumber(nutrition.calories)} kcal per serving';
+  final calories = _formatCompactNumber(nutrition.calories);
+  return caloriesPerServing?.call(calories) ?? '$calories kcal per serving';
 }
 
-String formatCatalogServingNutritionLabel(CatalogItem item, AppStore store) {
-  return '${formatCatalogNutritionServingLabel(item, store)} • '
-      '${formatCatalogCaloriesPerServingLabel(item, store)}';
+String formatCatalogServingNutritionLabel(
+  CatalogItem item,
+  AppStore store, {
+  String servingLabel = 'serving',
+  String Function(String calories)? caloriesPerServing,
+}) {
+  return '${formatCatalogNutritionServingLabel(item, store, servingLabel: servingLabel)} • '
+      '${formatCatalogCaloriesPerServingLabel(item, store, caloriesPerServing: caloriesPerServing)}';
 }
 
-String formatTrainingPlanSummaryLabel(TrainingPlan plan) {
-  final exerciseLabel = formatLibraryCountLabel(
-    plan.exercises.length,
-    'exercise',
-  );
+String formatTrainingPlanSummaryLabel(
+  TrainingPlan plan, {
+  String Function(int count)? exerciseCountLabel,
+}) {
+  final exerciseLabel =
+      exerciseCountLabel?.call(plan.exercises.length) ??
+      formatLibraryCountLabel(plan.exercises.length, 'exercise');
   final description = plan.description.trim();
   if (description.isEmpty) {
     return exerciseLabel;
@@ -33,9 +53,12 @@ String formatTrainingPlanSummaryLabel(TrainingPlan plan) {
   return '$exerciseLabel\n$description';
 }
 
-String formatExerciseMuscleGroupSummaryLabel(List<MuscleGroup> muscleGroups) {
+String formatExerciseMuscleGroupSummaryLabel(
+  List<MuscleGroup> muscleGroups, {
+  String emptyLabel = 'Muscles: -',
+}) {
   if (muscleGroups.isEmpty) {
-    return 'Muscles: -';
+    return emptyLabel;
   }
   return muscleGroups.map((group) => group.label).join(', ');
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/section_header.dart';
@@ -22,8 +23,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Library')),
+      appBar: AppBar(title: Text(l10n?.destinationLibrary ?? 'Library')),
       body: AdaptivePage(
         fillRemaining: IndexedStack(
           index: _selectedSection.index,
@@ -33,23 +35,25 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ],
         ),
         children: [
-          const SectionHeader(
-            title: 'Library',
-            subtitle: 'Manage reusable plans, exercises, foods, and dishes.',
+          SectionHeader(
+            title: l10n?.destinationLibrary ?? 'Library',
+            subtitle:
+                l10n?.librarySubtitle ??
+                'Manage reusable plans, exercises, foods, and dishes.',
           ),
           Align(
             alignment: Alignment.centerLeft,
             child: SegmentedButton<LibrarySection>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: LibrarySection.training,
-                  label: Text('Training'),
-                  icon: Icon(Icons.fitness_center_outlined),
+                  label: Text(l10n?.libraryTrainingSection ?? 'Training'),
+                  icon: const Icon(Icons.fitness_center_outlined),
                 ),
                 ButtonSegment(
                   value: LibrarySection.foods,
-                  label: Text('Foods'),
-                  icon: Icon(Icons.inventory_2_outlined),
+                  label: Text(l10n?.libraryFoodsSection ?? 'Foods'),
+                  icon: const Icon(Icons.inventory_2_outlined),
                 ),
               ],
               selected: {_selectedSection},

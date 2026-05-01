@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
@@ -19,13 +20,16 @@ class CompletedWorkoutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resultGroups = _groupResults(session.results);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Completed workout')),
+      appBar: AppBar(
+        title: Text(l10n?.workoutCompletedTitle ?? 'Completed workout'),
+      ),
       body: AdaptivePage(
         children: [
-          WorkoutCompletedSummaryCard(session: session),
+          WorkoutCompletedSummaryCard(session: session, l10n: l10n),
           const SizedBox(height: 24),
-          const SectionHeader(title: 'Exercises'),
+          SectionHeader(title: l10n?.workoutExercisesTitle ?? 'Exercises'),
           ...resultGroups.map(
             (group) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -33,6 +37,7 @@ class CompletedWorkoutScreen extends StatelessWidget {
                 exerciseName: group.exerciseName,
                 results: group.results,
                 store: store,
+                l10n: l10n,
               ),
             ),
           ),

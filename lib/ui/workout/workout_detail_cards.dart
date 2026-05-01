@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/training_plan.dart';
 import '../../models/workout_session.dart';
 import '../../state/app_store.dart';
@@ -244,9 +245,14 @@ class WorkoutPreviousResultsCard extends StatelessWidget {
 }
 
 class WorkoutCompletedSummaryCard extends StatelessWidget {
-  const WorkoutCompletedSummaryCard({required this.session, super.key});
+  const WorkoutCompletedSummaryCard({
+    required this.session,
+    super.key,
+    this.l10n,
+  });
 
   final WorkoutSession session;
+  final AppLocalizations? l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -259,7 +265,7 @@ class WorkoutCompletedSummaryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Completed workout',
+              l10n?.workoutCompletedTitle ?? 'Completed workout',
               style: textTheme.labelLarge?.copyWith(
                 color: AppTheme.recoveryBlue,
                 fontWeight: FontWeight.w700,
@@ -278,10 +284,18 @@ class WorkoutCompletedSummaryCard extends StatelessWidget {
               runSpacing: 8,
               children: [
                 WorkoutInfoPill(
-                  label: 'Date: ${formatWorkoutDate(session.startedAt)}',
+                  label:
+                      l10n?.workoutDateLabel(
+                        formatWorkoutDate(session.startedAt),
+                      ) ??
+                      'Date: ${formatWorkoutDate(session.startedAt)}',
                 ),
                 WorkoutInfoPill(
-                  label: 'Duration: ${formatWorkoutDuration(session.duration)}',
+                  label:
+                      l10n?.workoutDurationLabel(
+                        formatWorkoutDuration(session.duration),
+                      ) ??
+                      'Duration: ${formatWorkoutDuration(session.duration)}',
                 ),
               ],
             ),
@@ -298,11 +312,13 @@ class WorkoutCompletedExerciseResultGroupCard extends StatelessWidget {
     required this.results,
     required this.store,
     super.key,
+    this.l10n,
   });
 
   final String exerciseName;
   final List<WorkoutExerciseResult> results;
   final AppStore store;
+  final AppLocalizations? l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +336,8 @@ class WorkoutCompletedExerciseResultGroupCard extends StatelessWidget {
               return <Widget>[
                 if (results.length > 1) ...[
                   Text(
-                    'Entry $resultNumber',
+                    l10n?.workoutEntryLabel(resultNumber) ??
+                        'Entry $resultNumber',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 4),
@@ -328,14 +345,16 @@ class WorkoutCompletedExerciseResultGroupCard extends StatelessWidget {
                 Text(formatWorkoutTarget(result.target, store)),
                 const SizedBox(height: 8),
                 if (result.setLogs.isEmpty)
-                  const Text('No sets logged')
+                  Text(l10n?.workoutNoSetsLogged ?? 'No sets logged')
                 else
                   ...result.setLogs.indexed.map((setEntry) {
                     final setNumber = setEntry.$1 + 1;
                     final setLog = setEntry.$2;
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text('Set $setNumber'),
+                      title: Text(
+                        l10n?.workoutSetLabel(setNumber) ?? 'Set $setNumber',
+                      ),
                       subtitle: Text(
                         formatWorkoutSetLog(result.target, setLog, store),
                       ),

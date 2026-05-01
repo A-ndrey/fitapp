@@ -17,6 +17,7 @@ import 'package:fitapp/ui/core/layout/adaptive_page.dart';
 import 'package:fitapp/ui/core/widgets/empty_state.dart';
 import 'package:fitapp/ui/core/theme/app_theme.dart';
 import 'package:fitapp/ui/library/library_cards.dart';
+import 'package:fitapp/ui/library/library_formatters.dart';
 import 'package:fitapp/ui/core/widgets/section_header.dart';
 import 'package:fitapp/ui/nutrition/nutrition_cards.dart';
 import 'package:fitapp/ui/nutrition/nutrition_formatters.dart';
@@ -431,6 +432,55 @@ void main() {
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(find.text('Food set'), findsOneWidget);
     expect(find.text('Chicken breast'), findsOneWidget);
+  });
+
+  test('library formatters accept localized labels', () {
+    final store = AppStore();
+    final food = store.itemById('rice')!;
+    final plan = store.trainingPlans.first;
+    final exercise = store.exercises.first;
+
+    expect(
+      formatCatalogItemTypeLabel(food, foodLabel: 'localized-food'),
+      'localized-food',
+    );
+    expect(
+      formatCatalogNutritionServingLabel(
+        food,
+        store,
+        servingLabel: 'localized-serving',
+      ),
+      '150 g localized-serving',
+    );
+    expect(
+      formatCatalogCaloriesPerServingLabel(
+        food,
+        store,
+        caloriesPerServing: (calories) => '$calories localized-kcal',
+      ),
+      '195 localized-kcal',
+    );
+    expect(
+      formatTrainingPlanSummaryLabel(
+        plan,
+        exerciseCountLabel: (count) => '$count localized-exercises',
+      ),
+      contains('localized-exercises'),
+    );
+    expect(
+      formatExerciseMuscleGroupSummaryLabel(
+        exercise.muscleGroups,
+        emptyLabel: 'localized-empty',
+      ),
+      isNot('localized-empty'),
+    );
+    expect(
+      formatExerciseMuscleGroupSummaryLabel(
+        const [],
+        emptyLabel: 'localized-empty',
+      ),
+      'localized-empty',
+    );
   });
 
   testWidgets('redesigned primary screens stay stable at target widths', (
