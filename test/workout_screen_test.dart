@@ -413,7 +413,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Session cockpit'), findsOneWidget);
+    expect(find.text('Active session'), findsOneWidget);
     expect(find.text('Chest day'), findsOneWidget);
     expect(find.text('Bench press'), findsOneWidget);
     expect(find.text('Target: 3 sets • 8 reps • 60 kg'), findsOneWidget);
@@ -661,9 +661,9 @@ void main() {
   testWidgets('shows workout stats and opens the plan picker', (tester) async {
     await pumpWorkoutScreen(tester);
 
-    expect(find.text('Training cockpit'), findsOneWidget);
+    expect(find.text('Training log'), findsOneWidget);
     expect(
-      find.text('Start, resume, and review workout sessions.'),
+      find.text('Start sessions, log sets, and review progress.'),
       findsOneWidget,
     );
     expect(find.text('Workout stats'), findsOneWidget);
@@ -700,7 +700,7 @@ void main() {
 
     expect(store.activeWorkoutSession?.trainingPlanName, 'Chest day');
     expect(find.text('Workout session'), findsOneWidget);
-    expect(find.text('Session cockpit'), findsOneWidget);
+    expect(find.text('Active session'), findsOneWidget);
     expect(find.text('Exercise queue'), findsOneWidget);
     expect(find.text('Bench press'), findsOneWidget);
     expect(find.text('Pushups'), findsOneWidget);
@@ -723,7 +723,7 @@ void main() {
     await openActiveWorkout(tester);
 
     expect(find.text('Workout session'), findsOneWidget);
-    expect(find.text('Session cockpit'), findsOneWidget);
+    expect(find.text('Active session'), findsOneWidget);
     expect(find.text('Exercise queue'), findsOneWidget);
     expect(find.text('Chest day'), findsOneWidget);
     expect(find.text('Bench press'), findsOneWidget);
@@ -873,7 +873,7 @@ void main() {
     expect(store.activeWorkoutSession, isNull);
     expect(find.text('Workout session'), findsNothing);
     expect(find.text('Active workout'), findsNothing);
-    expect(find.text('Training cockpit'), findsOneWidget);
+    expect(find.text('Training log'), findsOneWidget);
     expect(find.text('Workout stats'), findsOneWidget);
     expect(find.text('Latest: Chest day'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
@@ -909,7 +909,7 @@ void main() {
     expect(store.activeWorkoutSession, isNull);
     expect(store.completedWorkoutSessions, hasLength(1));
     expect(find.text('Workout session'), findsNothing);
-    expect(find.text('Training cockpit'), findsOneWidget);
+    expect(find.text('Training log'), findsOneWidget);
     expect(find.text('Workout stats'), findsOneWidget);
     expect(find.text('Latest: Chest day'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);

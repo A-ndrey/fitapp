@@ -27,7 +27,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get destinationMore => 'More';
 
   @override
-  String get todayReadyState => 'Ready state';
+  String get todayReadyState => 'Ready to train';
 
   @override
   String get todayInSession => 'In session';
@@ -87,10 +87,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get todayDailyFuelTitle => 'Daily fuel';
+  String get todayDailyFuelTitle => 'Today\'s macros';
 
   @override
-  String get todayDailyFuelSubtitle => 'Macros logged today';
+  String get todayDailyFuelSubtitle => 'Logged intake';
 
   @override
   String get todayQuickActionsTitle => 'Quick actions';
@@ -124,7 +124,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todayManageLibrarySubtitle =>
-      'Update foods, dishes, exercises, and plans';
+      'Update plans, exercises, foods, and recipes';
 
   @override
   String get todayOpenLibraryHint => 'Opens Library tab';
@@ -166,7 +166,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get catalogSubtypeFood => 'food';
 
   @override
-  String get catalogSubtypeDish => 'dish';
+  String get catalogSubtypeDish => 'recipe';
 
   @override
   String get mealLoggedSuffix => 'logged';
@@ -178,39 +178,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealRemoveEntryTooltip => 'Remove meal entry';
 
   @override
-  String get mealTitle => 'Meal';
+  String get mealTitle => 'Nutrition';
 
   @override
-  String get mealAddItemAction => 'Add meal item';
+  String get mealAddItemAction => 'Log food';
 
   @override
-  String get mealCockpitTitle => 'Nutrition cockpit';
+  String get mealCockpitTitle => 'Nutrition log';
 
   @override
-  String get mealCockpitSubtitle =>
-      'Log food, review macros, and keep today visible.';
+  String get mealCockpitSubtitle => 'Track calories, protein, carbs, and fat.';
 
   @override
   String get mealDailyTotalsTitle => 'Daily totals';
 
   @override
-  String get mealEntriesTitle => 'Meal entries';
+  String get mealEntriesTitle => 'Logged meals';
 
   @override
-  String get mealEmptyTitle => 'No meal entries yet';
+  String get mealEmptyTitle => 'No food logged yet';
 
   @override
-  String get mealEmptyMessage => 'Use Add meal item to start today\'s log.';
+  String get mealEmptyMessage =>
+      'Use Log food to start today\'s nutrition log.';
 
   @override
-  String get mealSearchSheetTitle => 'Add meal item';
+  String get mealSearchSheetTitle => 'Log food';
 
   @override
   String get mealSearchSheetSubtitle =>
-      'Search your saved foods and dishes, or create a new food from your query.';
+      'Search saved foods and recipes, or create a new food from your query.';
 
   @override
-  String get mealSearchFieldLabel => 'Search foods and dishes';
+  String get mealSearchFieldLabel => 'Search foods and recipes';
 
   @override
   String mealCreateItem(String query) {
@@ -231,10 +231,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonCancel => 'Cancel';
 
   @override
-  String get mealAddToMealAction => 'Add to meal';
+  String get mealAddToMealAction => 'Log food';
 
   @override
-  String get moreSubtitle => 'Tune units, appearance, and sync preferences.';
+  String get moreSubtitle =>
+      'Tune units, appearance, and training-log preferences.';
 
   @override
   String get moreSyncTitle => 'Sync';
@@ -243,12 +244,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moreSyncStatusTitle => 'Sync status';
 
   @override
-  String get moreSyncSignedInMessage =>
-      'Sync status: signed in. Firebase sync is still a placeholder.';
+  String get moreSyncSignedInMessage => 'Signed in. Sync is not available yet.';
 
   @override
   String get moreSyncSignedOutMessage =>
-      'Sync status: signed out. Firebase sync is still a placeholder.';
+      'Signed out. Sync is not available yet.';
 
   @override
   String get moreLoginAction => 'Login';
@@ -331,11 +331,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutTitle => 'Workout';
 
   @override
-  String get workoutTrainingCockpitTitle => 'Training cockpit';
+  String get workoutTrainingCockpitTitle => 'Training log';
 
   @override
   String get workoutTrainingCockpitSubtitle =>
-      'Start, resume, and review workout sessions.';
+      'Start sessions, log sets, and review progress.';
 
   @override
   String get workoutStatsTitle => 'Workout stats';
@@ -432,7 +432,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutSessionTitle => 'Workout session';
 
   @override
-  String get workoutSessionCockpitLabel => 'Session cockpit';
+  String get workoutSessionCockpitLabel => 'Active session';
 
   @override
   String get workoutExerciseQueueTitle => 'Exercise queue';
@@ -517,8 +517,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get librarySubtitle =>
-      'Manage reusable plans, exercises, foods, and dishes.';
+  String get librarySubtitle => 'Manage plans, exercises, foods, and recipes.';
 
   @override
   String get libraryTrainingSection => 'Training';
@@ -774,26 +773,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainingTargetDialogEditTitle => 'Edit exercise';
 
   @override
-  String get trainingTargetSectionTitle => 'Target prescription';
+  String get trainingTargetSectionTitle => 'Set targets';
 
   @override
   String get trainingTargetSectionSubtitle =>
-      'Set expected volume, load, duration, and unit.';
+      'Set working volume, load, duration, and unit.';
 
   @override
-  String get trainingExpectedSetsFieldLabel => 'Expected sets';
+  String get trainingExpectedSetsFieldLabel => 'Working sets';
 
   @override
-  String get trainingExpectedRepsFieldLabel => 'Expected reps';
+  String get trainingExpectedRepsFieldLabel => 'Target reps';
 
   @override
-  String get trainingExpectedWeightFieldLabel => 'Expected weight';
+  String get trainingExpectedWeightFieldLabel => 'Target load';
 
   @override
-  String get trainingExpectedTimeFieldLabel => 'Expected time';
+  String get trainingExpectedTimeFieldLabel => 'Target duration';
 
   @override
-  String get trainingUnitFieldLabel => 'Unit';
+  String get trainingUnitFieldLabel => 'Load or time unit';
 
   @override
   String get trainingTargetValidation =>
@@ -803,17 +802,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foodScreenTitle => 'Food';
 
   @override
-  String get foodSetTitle => 'Food set';
+  String get foodSetTitle => 'Food library';
 
   @override
-  String get foodAddItemAction => 'Add food or dish';
+  String get foodAddItemAction => 'Add food or recipe';
 
   @override
-  String get foodEmptyTitle => 'No foods or dishes yet';
+  String get foodEmptyTitle => 'No foods or recipes yet';
 
   @override
   String get foodEmptyMessage =>
-      'Use Add food or dish to build your reusable catalog.';
+      'Use Add food or recipe to build your reusable catalog.';
 
   @override
   String foodDeleteItemTitle(String itemName) {
@@ -828,7 +827,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foodItemChoiceLabel => 'Food item';
 
   @override
-  String get dishChoiceLabel => 'Dish';
+  String get dishChoiceLabel => 'Recipe';
 
   @override
   String get foodFormTitle => 'Food item';
@@ -879,85 +878,85 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foodCouldNotSave => 'Could not save food.';
 
   @override
-  String get dishFormTitle => 'Dish';
+  String get dishFormTitle => 'Recipe';
 
   @override
-  String get dishFormEditTitle => 'Edit dish';
+  String get dishFormEditTitle => 'Edit recipe';
 
   @override
-  String get dishFormSubtitle =>
-      'Combine foods and dishes into a reusable recipe.';
+  String get dishFormSubtitle => 'Combine foods into a reusable recipe.';
 
   @override
-  String get dishSaveAction => 'Save dish';
+  String get dishSaveAction => 'Save recipe';
 
   @override
-  String get dishBasicsSectionTitle => 'Dish basics';
+  String get dishBasicsSectionTitle => 'Recipe basics';
 
   @override
   String get dishBasicsSectionSubtitle =>
       'Name this recipe and define one serving.';
 
   @override
-  String get dishNameFieldLabel => 'Dish name';
+  String get dishNameFieldLabel => 'Recipe name';
 
   @override
-  String get dishDescriptionFieldLabel => 'Dish description';
+  String get dishDescriptionFieldLabel => 'Recipe description';
 
   @override
-  String get dishServingSizeGramsFieldLabel => 'Dish serving size grams';
+  String get dishServingSizeGramsFieldLabel => 'Recipe serving size grams';
 
   @override
-  String get dishComponentsSectionTitle => 'Components';
+  String get dishComponentsSectionTitle => 'Ingredients';
 
   @override
   String get dishComponentsSectionSubtitle =>
       'Add ingredients to calculate serving nutrition.';
 
   @override
-  String get dishAddComponentAction => 'Add component';
+  String get dishAddComponentAction => 'Add ingredient';
 
   @override
-  String get dishNoComponentsTitle => 'No components yet';
+  String get dishNoComponentsTitle => 'No ingredients yet';
 
   @override
-  String get dishNoComponentsMessage =>
-      'Add foods or dishes to calculate this recipe.';
+  String get dishNoComponentsMessage => 'Add foods to calculate this recipe.';
 
   @override
   String dishEditComponentTooltip(String itemName) {
-    return 'Edit $itemName component';
+    return 'Edit $itemName ingredient';
   }
 
   @override
   String dishRemoveComponentTooltip(String itemName) {
-    return 'Remove $itemName component';
+    return 'Remove $itemName ingredient';
   }
 
   @override
-  String get dishComponentAddTitle => 'Add component';
+  String get dishComponentAddTitle => 'Add ingredient';
 
   @override
-  String get dishComponentEditTitle => 'Edit component';
+  String get dishComponentEditTitle => 'Edit ingredient';
 
   @override
-  String get dishComponentAmountTitle => 'Component amount';
+  String get dishComponentAmountTitle => 'Ingredient amount';
 
   @override
-  String get dishComponentGramsFieldLabel => 'Component grams';
+  String get dishComponentGramsFieldLabel => 'Ingredient grams';
 
   @override
   String get dishCatalogItemSectionTitle => 'Catalog item';
 
   @override
-  String get dishSaveComponentAction => 'Save component';
+  String get dishSaveComponentAction => 'Save ingredient';
 
   @override
-  String get dishValidation => 'Enter dish details and at least one component.';
+  String get dishValidation =>
+      'Enter recipe details and at least one ingredient.';
 
   @override
-  String get dishCouldNotSave => 'Could not save dish.';
+  String get dishCouldNotSave => 'Could not save recipe.';
 
   @override
-  String get dishComponentValidation => 'Choose an item and enter valid grams.';
+  String get dishComponentValidation =>
+      'Choose an item and enter valid ingredient grams.';
 }

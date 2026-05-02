@@ -6,7 +6,7 @@ import '../../state/app_store.dart';
 String formatCatalogItemTypeLabel(
   CatalogItem item, {
   String foodLabel = 'food',
-  String dishLabel = 'dish',
+  String dishLabel = 'recipe',
 }) {
   return item.isFood ? foodLabel : dishLabel;
 }

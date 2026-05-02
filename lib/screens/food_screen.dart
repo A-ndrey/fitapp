@@ -21,7 +21,7 @@ class FoodScreen extends StatelessWidget {
       builder: (context, _) {
         final body = _buildBody(context);
         final l10n = AppLocalizations.of(context);
-        final addLabel = l10n?.foodAddItemAction ?? 'Add food or dish';
+        final addLabel = l10n?.foodAddItemAction ?? 'Add food or recipe';
         if (embedded) {
           return body;
         }
@@ -48,10 +48,10 @@ class FoodScreen extends StatelessWidget {
         if (store.items.isEmpty)
           AppEmptyState(
             icon: Icons.inventory_2_outlined,
-            title: l10n?.foodEmptyTitle ?? 'No foods or dishes yet',
+            title: l10n?.foodEmptyTitle ?? 'No foods or recipes yet',
             message:
                 l10n?.foodEmptyMessage ??
-                'Use Add food or dish to build your reusable catalog.',
+                'Use Add food or recipe to build your reusable catalog.',
           )
         else
           ...store.items.map(
@@ -71,9 +71,9 @@ class FoodScreen extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final addLabel = l10n?.foodAddItemAction ?? 'Add food or dish';
+    final addLabel = l10n?.foodAddItemAction ?? 'Add food or recipe';
     final title = Text(
-      l10n?.foodSetTitle ?? 'Food set',
+      l10n?.foodSetTitle ?? 'Food library',
       style: Theme.of(context).textTheme.titleMedium,
     );
     if (!embedded) {
@@ -174,7 +174,7 @@ class FoodScreen extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.ramen_dining_outlined),
-                title: Text(l10n?.dishChoiceLabel ?? 'Dish'),
+                title: Text(l10n?.dishChoiceLabel ?? 'Recipe'),
                 onTap: () {
                   Navigator.of(context).pop(_AddFoodChoice.dish);
                 },

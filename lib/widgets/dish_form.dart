@@ -54,12 +54,11 @@ class _DishFormState extends State<DishForm> {
     final l10n = AppLocalizations.of(context);
     return FormShellDialog(
       title: _isEditing
-          ? l10n?.dishFormEditTitle ?? 'Edit dish'
-          : l10n?.dishFormTitle ?? 'Dish',
+          ? l10n?.dishFormEditTitle ?? 'Edit recipe'
+          : l10n?.dishFormTitle ?? 'Recipe',
       subtitle:
-          l10n?.dishFormSubtitle ??
-          'Combine foods and dishes into a reusable recipe.',
-      primaryActionLabel: l10n?.dishSaveAction ?? 'Save dish',
+          l10n?.dishFormSubtitle ?? 'Combine foods into a reusable recipe.',
+      primaryActionLabel: l10n?.dishSaveAction ?? 'Save recipe',
       onPrimaryAction: _saveDish,
       maxWidth: 640,
       children: [
@@ -74,7 +73,7 @@ class _DishFormState extends State<DishForm> {
   Widget _buildBasicsSection() {
     final l10n = AppLocalizations.of(context);
     return FormSectionCard(
-      title: l10n?.dishBasicsSectionTitle ?? 'Dish basics',
+      title: l10n?.dishBasicsSectionTitle ?? 'Recipe basics',
       subtitle:
           l10n?.dishBasicsSectionSubtitle ??
           'Name this recipe and define one serving.',
@@ -85,14 +84,15 @@ class _DishFormState extends State<DishForm> {
             controller: _nameController,
             textInputAction: TextInputAction.next,
             decoration: InputDecoration(
-              labelText: l10n?.dishNameFieldLabel ?? 'Dish name',
+              labelText: l10n?.dishNameFieldLabel ?? 'Recipe name',
             ),
           ),
           TextField(
             controller: _descriptionController,
             textInputAction: TextInputAction.next,
             decoration: InputDecoration(
-              labelText: l10n?.dishDescriptionFieldLabel ?? 'Dish description',
+              labelText:
+                  l10n?.dishDescriptionFieldLabel ?? 'Recipe description',
             ),
           ),
           TextField(
@@ -101,7 +101,7 @@ class _DishFormState extends State<DishForm> {
             decoration: InputDecoration(
               labelText:
                   l10n?.dishServingSizeGramsFieldLabel ??
-                  'Dish serving size grams',
+                  'Recipe serving size grams',
             ),
           ),
         ],
@@ -112,7 +112,7 @@ class _DishFormState extends State<DishForm> {
   Widget _buildComponentsSection() {
     final l10n = AppLocalizations.of(context);
     return FormSectionCard(
-      title: l10n?.dishComponentsSectionTitle ?? 'Components',
+      title: l10n?.dishComponentsSectionTitle ?? 'Ingredients',
       subtitle:
           l10n?.dishComponentsSectionSubtitle ??
           'Add ingredients to calculate serving nutrition.',
@@ -125,17 +125,17 @@ class _DishFormState extends State<DishForm> {
             child: OutlinedButton.icon(
               onPressed: _openComponentDialog,
               icon: const Icon(Icons.add),
-              label: Text(l10n?.dishAddComponentAction ?? 'Add component'),
+              label: Text(l10n?.dishAddComponentAction ?? 'Add ingredient'),
             ),
           ),
           const SizedBox(height: 12),
           if (_components.isEmpty)
             AppEmptyState(
               icon: Icons.restaurant_menu_outlined,
-              title: l10n?.dishNoComponentsTitle ?? 'No components yet',
+              title: l10n?.dishNoComponentsTitle ?? 'No ingredients yet',
               message:
                   l10n?.dishNoComponentsMessage ??
-                  'Add foods or dishes to calculate this recipe.',
+                  'Add foods to calculate this recipe.',
             )
           else
             ..._components.indexed.map((entry) {
@@ -154,14 +154,14 @@ class _DishFormState extends State<DishForm> {
                       IconButton(
                         tooltip:
                             l10n?.dishEditComponentTooltip(itemName) ??
-                            'Edit $itemName component',
+                            'Edit $itemName ingredient',
                         icon: const Icon(Icons.edit_outlined),
                         onPressed: () => _openComponentDialog(index: index),
                       ),
                       IconButton(
                         tooltip:
                             l10n?.dishRemoveComponentTooltip(itemName) ??
-                            'Remove $itemName component',
+                            'Remove $itemName ingredient',
                         icon: const Icon(Icons.remove_circle_outline),
                         onPressed: () {
                           setState(() {
@@ -216,7 +216,7 @@ class _DishFormState extends State<DishForm> {
       setState(() {
         _errorText =
             AppLocalizations.of(context)?.dishValidation ??
-            'Enter dish details and at least one component.';
+            'Enter recipe details and at least one ingredient.';
       });
       return;
     }
@@ -239,7 +239,7 @@ class _DishFormState extends State<DishForm> {
         _errorText =
             error.message?.toString() ??
             AppLocalizations.of(context)?.dishCouldNotSave ??
-            'Could not save dish.';
+            'Could not save recipe.';
       });
       return;
     }
@@ -307,8 +307,8 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
     return AlertDialog(
       title: Text(
         widget.initialComponent == null
-            ? l10n?.dishComponentAddTitle ?? 'Add component'
-            : l10n?.dishComponentEditTitle ?? 'Edit component',
+            ? l10n?.dishComponentAddTitle ?? 'Add ingredient'
+            : l10n?.dishComponentEditTitle ?? 'Edit ingredient',
       ),
       content: SizedBox(
         width: double.maxFinite,
@@ -318,10 +318,10 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               FormSectionCard(
-                title: l10n?.dishComponentAmountTitle ?? 'Component amount',
+                title: l10n?.dishComponentAmountTitle ?? 'Ingredient amount',
                 child: Semantics(
                   label:
-                      l10n?.dishComponentGramsFieldLabel ?? 'Component grams',
+                      l10n?.dishComponentGramsFieldLabel ?? 'Ingredient grams',
                   textField: true,
                   child: TextField(
                     controller: _gramsController,
@@ -331,7 +331,7 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
                     decoration: InputDecoration(
                       labelText:
                           l10n?.dishComponentGramsFieldLabel ??
-                          'Component grams',
+                          'Ingredient grams',
                     ),
                   ),
                 ),
@@ -351,7 +351,7 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
                         subtitle: Text(
                           item.isFood
                               ? l10n?.catalogSubtypeFood ?? 'food'
-                              : l10n?.catalogSubtypeDish ?? 'dish',
+                              : l10n?.catalogSubtypeDish ?? 'recipe',
                         ),
                         trailing: selected ? const Icon(Icons.check) : null,
                         selected: selected,
@@ -378,7 +378,7 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
         ),
         FilledButton(
           onPressed: _saveComponent,
-          child: Text(l10n?.dishSaveComponentAction ?? 'Save component'),
+          child: Text(l10n?.dishSaveComponentAction ?? 'Save ingredient'),
         ),
       ],
     );

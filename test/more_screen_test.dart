@@ -27,7 +27,7 @@ void main() {
     expect(find.byType(AdaptivePage), findsOneWidget);
     expect(find.text('More'), findsOneWidget);
     expect(
-      find.text('Tune units, appearance, and sync preferences.'),
+      find.text('Tune units, appearance, and training-log preferences.'),
       findsOneWidget,
     );
     expect(find.text('Sync status'), findsOneWidget);

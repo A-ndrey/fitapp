@@ -123,11 +123,11 @@ void main() {
     await tester.tap(find.text('Pushups').last);
     await tester.pumpAndSettle();
 
-    await enterLabeledText(tester, 'Expected sets', '4');
-    await enterLabeledText(tester, 'Expected reps', '12');
-    await enterLabeledText(tester, 'Expected weight', '0');
-    await enterLabeledText(tester, 'Expected time', '0');
-    await enterLabeledText(tester, 'Unit', 'reps');
+    await enterLabeledText(tester, 'Working sets', '4');
+    await enterLabeledText(tester, 'Target reps', '12');
+    await enterLabeledText(tester, 'Target load', '0');
+    await enterLabeledText(tester, 'Target duration', '0');
+    await enterLabeledText(tester, 'Load or time unit', 'reps');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
@@ -161,11 +161,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Pushups').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Expected sets', '3');
-    await enterLabeledText(tester, 'Expected reps', '10');
-    await enterLabeledText(tester, 'Expected weight', '0');
-    await enterLabeledText(tester, 'Expected time', '0');
-    await enterLabeledText(tester, 'Unit', 'reps');
+    await enterLabeledText(tester, 'Working sets', '3');
+    await enterLabeledText(tester, 'Target reps', '10');
+    await enterLabeledText(tester, 'Target load', '0');
+    await enterLabeledText(tester, 'Target duration', '0');
+    await enterLabeledText(tester, 'Load or time unit', 'reps');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save training'));
@@ -263,7 +263,7 @@ void main() {
     await tester.tap(find.text('Pushups').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Target prescription'), findsOneWidget);
+    expect(find.text('Set targets'), findsOneWidget);
   });
 
   testWidgets('creates a custom exercise and shows it in the plan picker', (

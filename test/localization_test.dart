@@ -41,11 +41,11 @@ void main() {
 
     final l10n = AppLocalizations.of(tester.element(find.byType(FitHome)))!;
 
-    expect(l10n.todayReadyState, 'Ready state');
-    expect(l10n.todayDailyFuelTitle, 'Daily fuel');
+    expect(l10n.todayReadyState, 'Ready to train');
+    expect(l10n.todayDailyFuelTitle, "Today's macros");
     expect(l10n.todayQuickActionsTitle, 'Quick actions');
-    expect(l10n.mealTitle, 'Meal');
-    expect(l10n.mealAddItemAction, 'Add meal item');
+    expect(l10n.mealTitle, 'Nutrition');
+    expect(l10n.mealAddItemAction, 'Log food');
     expect(l10n.mealCreateItem('Tomato'), 'Create "Tomato"');
     expect(l10n.moreSyncTitle, 'Sync');
     expect(l10n.settingsAppearanceTitle, 'Appearance');
@@ -60,7 +60,7 @@ void main() {
     final l10n = AppLocalizations.of(tester.element(find.byType(FitHome)))!;
 
     expect(l10n.workoutTitle, 'Workout');
-    expect(l10n.workoutTrainingCockpitTitle, 'Training cockpit');
+    expect(l10n.workoutTrainingCockpitTitle, 'Training log');
     expect(l10n.workoutExerciseTitle, 'Workout exercise');
     expect(l10n.workoutHistoryTitle, 'Workout history');
     expect(l10n.workoutDeleteDialogTitle, 'Delete workout?');
@@ -72,7 +72,7 @@ void main() {
     expect(l10n.workoutSetCountLogged(2), '2 sets logged');
     expect(
       l10n.librarySubtitle,
-      'Manage reusable plans, exercises, foods, and dishes.',
+      'Manage plans, exercises, foods, and recipes.',
     );
     expect(l10n.libraryFoodsSection, 'Foods');
     expect(l10n.libraryEditItem('Rice'), 'Edit Rice');
@@ -93,7 +93,7 @@ void main() {
     expect(l10n.trainingSetsSummaryLabel, 'sets');
     expect(l10n.exerciseProfileSectionTitle, 'Exercise profile');
     expect(l10n.foodFormTitle, 'Food item');
-    expect(l10n.dishFormTitle, 'Dish');
-    expect(l10n.dishComponentGramsFieldLabel, 'Component grams');
+    expect(l10n.dishFormTitle, 'Recipe');
+    expect(l10n.dishComponentGramsFieldLabel, 'Ingredient grams');
   });
 }

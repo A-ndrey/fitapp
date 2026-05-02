@@ -26,7 +26,7 @@ class MealScreen extends StatelessWidget {
               constraints.maxWidth,
             );
             final l10n = AppLocalizations.of(context);
-            final addMealLabel = l10n?.mealAddItemAction ?? 'Add meal item';
+            final addMealLabel = l10n?.mealAddItemAction ?? 'Log food';
 
             return Scaffold(
               appBar: AppBar(title: Text(l10n?.mealTitle ?? 'Meal')),
@@ -41,7 +41,7 @@ class MealScreen extends StatelessWidget {
               body: AdaptivePage(
                 children: [
                   SectionHeader(
-                    title: l10n?.mealCockpitTitle ?? 'Nutrition cockpit',
+                    title: l10n?.mealCockpitTitle ?? 'Nutrition log',
                     subtitle:
                         l10n?.mealCockpitSubtitle ??
                         'Log food, review macros, and keep today visible.',
@@ -66,7 +66,7 @@ class MealScreen extends StatelessWidget {
                   NutritionSummaryGrid(values: store.dailyTotals),
                   const SizedBox(height: 24),
                   Text(
-                    l10n?.mealEntriesTitle ?? 'Meal entries',
+                    l10n?.mealEntriesTitle ?? 'Logged meals',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
@@ -76,7 +76,7 @@ class MealScreen extends StatelessWidget {
                       title: l10n?.mealEmptyTitle ?? 'No meal entries yet',
                       message:
                           l10n?.mealEmptyMessage ??
-                          "Use Add meal item to start today's log.",
+                          "Use Log food to start today's nutrition log.",
                     )
                   else
                     ...store.mealEntries.map(
@@ -203,7 +203,7 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            l10n?.mealSearchSheetTitle ?? 'Add meal item',
+            l10n?.mealSearchSheetTitle ?? 'Log food',
             style: Theme.of(
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
@@ -211,7 +211,7 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
           const SizedBox(height: 4),
           Text(
             l10n?.mealSearchSheetSubtitle ??
-                'Search your saved foods and dishes, or create a new food from your query.',
+                'Search saved foods and recipes, or create a new food from your query.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -219,7 +219,7 @@ class _MealSearchSheetState extends State<_MealSearchSheet> {
             controller: _searchController,
             decoration: InputDecoration(
               labelText:
-                  l10n?.mealSearchFieldLabel ?? 'Search foods and dishes',
+                  l10n?.mealSearchFieldLabel ?? 'Search foods and recipes',
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -356,7 +356,7 @@ class _LogAmountDialogState extends State<_LogAmountDialog> {
             widget.onAdd(_mode, amount);
             Navigator.of(context).pop();
           },
-          child: Text(l10n?.mealAddToMealAction ?? 'Add to meal'),
+          child: Text(l10n?.mealAddToMealAction ?? 'Log food'),
         ),
       ],
     );

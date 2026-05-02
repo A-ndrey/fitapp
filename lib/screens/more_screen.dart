@@ -26,7 +26,7 @@ class MoreScreen extends StatelessWidget {
               title: l10n?.destinationMore ?? 'More',
               subtitle:
                   l10n?.moreSubtitle ??
-                  'Tune units, appearance, and sync preferences.',
+                  'Tune units, appearance, and training-log preferences.',
             ),
             Text(
               l10n?.moreSyncTitle ?? 'Sync',
@@ -39,9 +39,9 @@ class MoreScreen extends StatelessWidget {
               title: l10n?.moreSyncStatusTitle ?? 'Sync status',
               message: store.isLoggedIn
                   ? l10n?.moreSyncSignedInMessage ??
-                        'Sync status: signed in. Firebase sync is still a placeholder.'
+                        'Signed in. Sync is not available yet.'
                   : l10n?.moreSyncSignedOutMessage ??
-                        'Sync status: signed out. Firebase sync is still a placeholder.',
+                        'Signed out. Sync is not available yet.',
               actionLabel: store.isLoggedIn
                   ? l10n?.moreLogoutAction ?? 'Logout'
                   : l10n?.moreLoginAction ?? 'Login',

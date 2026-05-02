@@ -24,7 +24,7 @@
   "@destinationMore": {
     "description": "Root navigation destination for settings and preferences."
   },
-  "todayReadyState": "Ready state",
+  "todayReadyState": "Ready to train",
   "@todayReadyState": {
     "description": "Today screen header when no workout is active."
   },
@@ -82,11 +82,11 @@
       }
     }
   },
-  "todayDailyFuelTitle": "Daily fuel",
+  "todayDailyFuelTitle": "Today's macros",
   "@todayDailyFuelTitle": {
     "description": "Today screen nutrition summary section title."
   },
-  "todayDailyFuelSubtitle": "Macros logged today",
+  "todayDailyFuelSubtitle": "Logged intake",
   "@todayDailyFuelSubtitle": {
     "description": "Today screen nutrition summary section subtitle."
   },
@@ -130,7 +130,7 @@
   "@todayManageLibraryAction": {
     "description": "Today screen action to open the library."
   },
-  "todayManageLibrarySubtitle": "Update foods, dishes, exercises, and plans",
+  "todayManageLibrarySubtitle": "Update plans, exercises, foods, and recipes",
   "@todayManageLibrarySubtitle": {
     "description": "Subtitle for the Today manage library action."
   },
@@ -186,7 +186,7 @@
   "@catalogSubtypeFood": {
     "description": "Catalog subtype label for food items."
   },
-  "catalogSubtypeDish": "dish",
+  "catalogSubtypeDish": "recipe",
   "@catalogSubtypeDish": {
     "description": "Catalog subtype label for dish items."
   },
@@ -202,19 +202,19 @@
   "@mealRemoveEntryTooltip": {
     "description": "Tooltip for removing a meal entry."
   },
-  "mealTitle": "Meal",
+  "mealTitle": "Nutrition",
   "@mealTitle": {
     "description": "Nutrition screen app bar title."
   },
-  "mealAddItemAction": "Add meal item",
+  "mealAddItemAction": "Log food",
   "@mealAddItemAction": {
     "description": "Action label for adding a food or dish to the meal log."
   },
-  "mealCockpitTitle": "Nutrition cockpit",
+  "mealCockpitTitle": "Nutrition log",
   "@mealCockpitTitle": {
     "description": "Nutrition screen hero title."
   },
-  "mealCockpitSubtitle": "Log food, review macros, and keep today visible.",
+  "mealCockpitSubtitle": "Track calories, protein, carbs, and fat.",
   "@mealCockpitSubtitle": {
     "description": "Nutrition screen hero subtitle."
   },
@@ -222,27 +222,27 @@
   "@mealDailyTotalsTitle": {
     "description": "Nutrition screen daily totals section title."
   },
-  "mealEntriesTitle": "Meal entries",
+  "mealEntriesTitle": "Logged meals",
   "@mealEntriesTitle": {
     "description": "Nutrition screen meal entries section title."
   },
-  "mealEmptyTitle": "No meal entries yet",
+  "mealEmptyTitle": "No food logged yet",
   "@mealEmptyTitle": {
     "description": "Empty state title for meal entries."
   },
-  "mealEmptyMessage": "Use Add meal item to start today's log.",
+  "mealEmptyMessage": "Use Log food to start today's nutrition log.",
   "@mealEmptyMessage": {
     "description": "Empty state message for meal entries."
   },
-  "mealSearchSheetTitle": "Add meal item",
+  "mealSearchSheetTitle": "Log food",
   "@mealSearchSheetTitle": {
     "description": "Bottom sheet title for searching meal items."
   },
-  "mealSearchSheetSubtitle": "Search your saved foods and dishes, or create a new food from your query.",
+  "mealSearchSheetSubtitle": "Search saved foods and recipes, or create a new food from your query.",
   "@mealSearchSheetSubtitle": {
     "description": "Bottom sheet helper text for meal item search."
   },
-  "mealSearchFieldLabel": "Search foods and dishes",
+  "mealSearchFieldLabel": "Search foods and recipes",
   "@mealSearchFieldLabel": {
     "description": "Search field label for foods and dishes."
   },
@@ -272,11 +272,11 @@
   "@commonCancel": {
     "description": "Common cancel action label."
   },
-  "mealAddToMealAction": "Add to meal",
+  "mealAddToMealAction": "Log food",
   "@mealAddToMealAction": {
     "description": "Dialog action to add a selected item amount to the meal log."
   },
-  "moreSubtitle": "Tune units, appearance, and sync preferences.",
+  "moreSubtitle": "Tune units, appearance, and training-log preferences.",
   "@moreSubtitle": {
     "description": "More screen header subtitle."
   },
@@ -288,11 +288,11 @@
   "@moreSyncStatusTitle": {
     "description": "Title for sync status card."
   },
-  "moreSyncSignedInMessage": "Sync status: signed in. Firebase sync is still a placeholder.",
+  "moreSyncSignedInMessage": "Signed in. Sync is not available yet.",
   "@moreSyncSignedInMessage": {
     "description": "Sync status message when signed in."
   },
-  "moreSyncSignedOutMessage": "Sync status: signed out. Firebase sync is still a placeholder.",
+  "moreSyncSignedOutMessage": "Signed out. Sync is not available yet.",
   "@moreSyncSignedOutMessage": {
     "description": "Sync status message when signed out."
   },
@@ -400,11 +400,11 @@
   "@workoutTitle": {
     "description": "Workout tab app bar title."
   },
-  "workoutTrainingCockpitTitle": "Training cockpit",
+  "workoutTrainingCockpitTitle": "Training log",
   "@workoutTrainingCockpitTitle": {
     "description": "Workout overview hero title."
   },
-  "workoutTrainingCockpitSubtitle": "Start, resume, and review workout sessions.",
+  "workoutTrainingCockpitSubtitle": "Start sessions, log sets, and review progress.",
   "@workoutTrainingCockpitSubtitle": {
     "description": "Workout overview hero subtitle."
   },
@@ -542,7 +542,7 @@
   "@workoutSessionTitle": {
     "description": "Active workout session screen title."
   },
-  "workoutSessionCockpitLabel": "Session cockpit",
+  "workoutSessionCockpitLabel": "Active session",
   "@workoutSessionCockpitLabel": {
     "description": "Active workout session header label."
   },
@@ -672,7 +672,7 @@
       }
     }
   },
-  "librarySubtitle": "Manage reusable plans, exercises, foods, and dishes.",
+  "librarySubtitle": "Manage plans, exercises, foods, and recipes.",
   "@librarySubtitle": {
     "description": "Library screen header subtitle."
   },
@@ -1044,31 +1044,31 @@
   "@trainingTargetDialogEditTitle": {
     "description": "Training exercise target dialog edit title."
   },
-  "trainingTargetSectionTitle": "Target prescription",
+  "trainingTargetSectionTitle": "Set targets",
   "@trainingTargetSectionTitle": {
     "description": "Training exercise target prescription section title."
   },
-  "trainingTargetSectionSubtitle": "Set expected volume, load, duration, and unit.",
+  "trainingTargetSectionSubtitle": "Set working volume, load, duration, and unit.",
   "@trainingTargetSectionSubtitle": {
     "description": "Training exercise target prescription section subtitle."
   },
-  "trainingExpectedSetsFieldLabel": "Expected sets",
+  "trainingExpectedSetsFieldLabel": "Working sets",
   "@trainingExpectedSetsFieldLabel": {
-    "description": "Expected sets field label."
+    "description": "Working sets field label."
   },
-  "trainingExpectedRepsFieldLabel": "Expected reps",
+  "trainingExpectedRepsFieldLabel": "Target reps",
   "@trainingExpectedRepsFieldLabel": {
-    "description": "Expected reps field label."
+    "description": "Target reps field label."
   },
-  "trainingExpectedWeightFieldLabel": "Expected weight",
+  "trainingExpectedWeightFieldLabel": "Target load",
   "@trainingExpectedWeightFieldLabel": {
-    "description": "Expected weight field label."
+    "description": "Target load field label."
   },
-  "trainingExpectedTimeFieldLabel": "Expected time",
+  "trainingExpectedTimeFieldLabel": "Target duration",
   "@trainingExpectedTimeFieldLabel": {
-    "description": "Expected time field label."
+    "description": "Target duration field label."
   },
-  "trainingUnitFieldLabel": "Unit",
+  "trainingUnitFieldLabel": "Load or time unit",
   "@trainingUnitFieldLabel": {
     "description": "Training target unit field label."
   },
@@ -1080,19 +1080,19 @@
   "@foodScreenTitle": {
     "description": "Standalone food screen title."
   },
-  "foodSetTitle": "Food set",
+  "foodSetTitle": "Food library",
   "@foodSetTitle": {
     "description": "Food catalog section title."
   },
-  "foodAddItemAction": "Add food or dish",
+  "foodAddItemAction": "Add food or recipe",
   "@foodAddItemAction": {
     "description": "Action label for adding food or dish."
   },
-  "foodEmptyTitle": "No foods or dishes yet",
+  "foodEmptyTitle": "No foods or recipes yet",
   "@foodEmptyTitle": {
     "description": "Empty state title for food catalog."
   },
-  "foodEmptyMessage": "Use Add food or dish to build your reusable catalog.",
+  "foodEmptyMessage": "Use Add food or recipe to build your reusable catalog.",
   "@foodEmptyMessage": {
     "description": "Empty state message for food catalog."
   },
@@ -1114,7 +1114,7 @@
   "@foodItemChoiceLabel": {
     "description": "Bottom sheet choice label for creating a food item."
   },
-  "dishChoiceLabel": "Dish",
+  "dishChoiceLabel": "Recipe",
   "@dishChoiceLabel": {
     "description": "Bottom sheet choice label for creating a dish."
   },
@@ -1178,23 +1178,23 @@
   "@foodCouldNotSave": {
     "description": "Fallback save error for food form."
   },
-  "dishFormTitle": "Dish",
+  "dishFormTitle": "Recipe",
   "@dishFormTitle": {
     "description": "Dish form title."
   },
-  "dishFormEditTitle": "Edit dish",
+  "dishFormEditTitle": "Edit recipe",
   "@dishFormEditTitle": {
     "description": "Edit dish form title."
   },
-  "dishFormSubtitle": "Combine foods and dishes into a reusable recipe.",
+  "dishFormSubtitle": "Combine foods into a reusable recipe.",
   "@dishFormSubtitle": {
     "description": "Dish form subtitle."
   },
-  "dishSaveAction": "Save dish",
+  "dishSaveAction": "Save recipe",
   "@dishSaveAction": {
     "description": "Save dish action label."
   },
-  "dishBasicsSectionTitle": "Dish basics",
+  "dishBasicsSectionTitle": "Recipe basics",
   "@dishBasicsSectionTitle": {
     "description": "Dish basics section title."
   },
@@ -1202,19 +1202,19 @@
   "@dishBasicsSectionSubtitle": {
     "description": "Dish basics section subtitle."
   },
-  "dishNameFieldLabel": "Dish name",
+  "dishNameFieldLabel": "Recipe name",
   "@dishNameFieldLabel": {
     "description": "Dish name field label."
   },
-  "dishDescriptionFieldLabel": "Dish description",
+  "dishDescriptionFieldLabel": "Recipe description",
   "@dishDescriptionFieldLabel": {
     "description": "Dish description field label."
   },
-  "dishServingSizeGramsFieldLabel": "Dish serving size grams",
+  "dishServingSizeGramsFieldLabel": "Recipe serving size grams",
   "@dishServingSizeGramsFieldLabel": {
     "description": "Dish serving size grams field label."
   },
-  "dishComponentsSectionTitle": "Components",
+  "dishComponentsSectionTitle": "Ingredients",
   "@dishComponentsSectionTitle": {
     "description": "Dish components section title."
   },
@@ -1222,19 +1222,19 @@
   "@dishComponentsSectionSubtitle": {
     "description": "Dish components section subtitle."
   },
-  "dishAddComponentAction": "Add component",
+  "dishAddComponentAction": "Add ingredient",
   "@dishAddComponentAction": {
     "description": "Add dish component action label."
   },
-  "dishNoComponentsTitle": "No components yet",
+  "dishNoComponentsTitle": "No ingredients yet",
   "@dishNoComponentsTitle": {
     "description": "Dish components empty state title."
   },
-  "dishNoComponentsMessage": "Add foods or dishes to calculate this recipe.",
+  "dishNoComponentsMessage": "Add foods to calculate this recipe.",
   "@dishNoComponentsMessage": {
     "description": "Dish components empty state message."
   },
-  "dishEditComponentTooltip": "Edit {itemName} component",
+  "dishEditComponentTooltip": "Edit {itemName} ingredient",
   "@dishEditComponentTooltip": {
     "description": "Tooltip for editing a dish component.",
     "placeholders": {
@@ -1244,7 +1244,7 @@
       }
     }
   },
-  "dishRemoveComponentTooltip": "Remove {itemName} component",
+  "dishRemoveComponentTooltip": "Remove {itemName} ingredient",
   "@dishRemoveComponentTooltip": {
     "description": "Tooltip for removing a dish component.",
     "placeholders": {
@@ -1254,19 +1254,19 @@
       }
     }
   },
-  "dishComponentAddTitle": "Add component",
+  "dishComponentAddTitle": "Add ingredient",
   "@dishComponentAddTitle": {
     "description": "Add dish component dialog title."
   },
-  "dishComponentEditTitle": "Edit component",
+  "dishComponentEditTitle": "Edit ingredient",
   "@dishComponentEditTitle": {
     "description": "Edit dish component dialog title."
   },
-  "dishComponentAmountTitle": "Component amount",
+  "dishComponentAmountTitle": "Ingredient amount",
   "@dishComponentAmountTitle": {
     "description": "Dish component amount section title."
   },
-  "dishComponentGramsFieldLabel": "Component grams",
+  "dishComponentGramsFieldLabel": "Ingredient grams",
   "@dishComponentGramsFieldLabel": {
     "description": "Dish component grams field label and semantic label."
   },
@@ -1274,19 +1274,19 @@
   "@dishCatalogItemSectionTitle": {
     "description": "Dish component catalog item selector title."
   },
-  "dishSaveComponentAction": "Save component",
+  "dishSaveComponentAction": "Save ingredient",
   "@dishSaveComponentAction": {
     "description": "Save dish component action label."
   },
-  "dishValidation": "Enter dish details and at least one component.",
+  "dishValidation": "Enter recipe details and at least one ingredient.",
   "@dishValidation": {
     "description": "Dish form validation message."
   },
-  "dishCouldNotSave": "Could not save dish.",
+  "dishCouldNotSave": "Could not save recipe.",
   "@dishCouldNotSave": {
     "description": "Fallback save error for dish form."
   },
-  "dishComponentValidation": "Choose an item and enter valid grams.",
+  "dishComponentValidation": "Choose an item and enter valid ingredient grams.",
   "@dishComponentValidation": {
     "description": "Dish component validation message."
   }

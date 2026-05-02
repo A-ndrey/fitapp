@@ -133,7 +133,7 @@ abstract class AppLocalizations {
   /// Today screen header when no workout is active.
   ///
   /// In en, this message translates to:
-  /// **'Ready state'**
+  /// **'Ready to train'**
   String get todayReadyState;
 
   /// Today screen header when a workout is active.
@@ -181,13 +181,13 @@ abstract class AppLocalizations {
   /// Today screen nutrition summary section title.
   ///
   /// In en, this message translates to:
-  /// **'Daily fuel'**
+  /// **'Today\'s macros'**
   String get todayDailyFuelTitle;
 
   /// Today screen nutrition summary section subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Macros logged today'**
+  /// **'Logged intake'**
   String get todayDailyFuelSubtitle;
 
   /// Today screen quick action section title.
@@ -253,7 +253,7 @@ abstract class AppLocalizations {
   /// Subtitle for the Today manage library action.
   ///
   /// In en, this message translates to:
-  /// **'Update foods, dishes, exercises, and plans'**
+  /// **'Update plans, exercises, foods, and recipes'**
   String get todayManageLibrarySubtitle;
 
   /// Accessibility hint for Today action that opens Library.
@@ -337,7 +337,7 @@ abstract class AppLocalizations {
   /// Catalog subtype label for dish items.
   ///
   /// In en, this message translates to:
-  /// **'dish'**
+  /// **'recipe'**
   String get catalogSubtypeDish;
 
   /// Suffix shown after a logged meal quantity.
@@ -361,25 +361,25 @@ abstract class AppLocalizations {
   /// Nutrition screen app bar title.
   ///
   /// In en, this message translates to:
-  /// **'Meal'**
+  /// **'Nutrition'**
   String get mealTitle;
 
   /// Action label for adding a food or dish to the meal log.
   ///
   /// In en, this message translates to:
-  /// **'Add meal item'**
+  /// **'Log food'**
   String get mealAddItemAction;
 
   /// Nutrition screen hero title.
   ///
   /// In en, this message translates to:
-  /// **'Nutrition cockpit'**
+  /// **'Nutrition log'**
   String get mealCockpitTitle;
 
   /// Nutrition screen hero subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Log food, review macros, and keep today visible.'**
+  /// **'Track calories, protein, carbs, and fat.'**
   String get mealCockpitSubtitle;
 
   /// Nutrition screen daily totals section title.
@@ -391,37 +391,37 @@ abstract class AppLocalizations {
   /// Nutrition screen meal entries section title.
   ///
   /// In en, this message translates to:
-  /// **'Meal entries'**
+  /// **'Logged meals'**
   String get mealEntriesTitle;
 
   /// Empty state title for meal entries.
   ///
   /// In en, this message translates to:
-  /// **'No meal entries yet'**
+  /// **'No food logged yet'**
   String get mealEmptyTitle;
 
   /// Empty state message for meal entries.
   ///
   /// In en, this message translates to:
-  /// **'Use Add meal item to start today\'s log.'**
+  /// **'Use Log food to start today\'s nutrition log.'**
   String get mealEmptyMessage;
 
   /// Bottom sheet title for searching meal items.
   ///
   /// In en, this message translates to:
-  /// **'Add meal item'**
+  /// **'Log food'**
   String get mealSearchSheetTitle;
 
   /// Bottom sheet helper text for meal item search.
   ///
   /// In en, this message translates to:
-  /// **'Search your saved foods and dishes, or create a new food from your query.'**
+  /// **'Search saved foods and recipes, or create a new food from your query.'**
   String get mealSearchSheetSubtitle;
 
   /// Search field label for foods and dishes.
   ///
   /// In en, this message translates to:
-  /// **'Search foods and dishes'**
+  /// **'Search foods and recipes'**
   String get mealSearchFieldLabel;
 
   /// Create action for a missing meal search item.
@@ -457,13 +457,13 @@ abstract class AppLocalizations {
   /// Dialog action to add a selected item amount to the meal log.
   ///
   /// In en, this message translates to:
-  /// **'Add to meal'**
+  /// **'Log food'**
   String get mealAddToMealAction;
 
   /// More screen header subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Tune units, appearance, and sync preferences.'**
+  /// **'Tune units, appearance, and training-log preferences.'**
   String get moreSubtitle;
 
   /// More screen sync section title.
@@ -481,13 +481,13 @@ abstract class AppLocalizations {
   /// Sync status message when signed in.
   ///
   /// In en, this message translates to:
-  /// **'Sync status: signed in. Firebase sync is still a placeholder.'**
+  /// **'Signed in. Sync is not available yet.'**
   String get moreSyncSignedInMessage;
 
   /// Sync status message when signed out.
   ///
   /// In en, this message translates to:
-  /// **'Sync status: signed out. Firebase sync is still a placeholder.'**
+  /// **'Signed out. Sync is not available yet.'**
   String get moreSyncSignedOutMessage;
 
   /// Login action label.
@@ -649,13 +649,13 @@ abstract class AppLocalizations {
   /// Workout overview hero title.
   ///
   /// In en, this message translates to:
-  /// **'Training cockpit'**
+  /// **'Training log'**
   String get workoutTrainingCockpitTitle;
 
   /// Workout overview hero subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Start, resume, and review workout sessions.'**
+  /// **'Start sessions, log sets, and review progress.'**
   String get workoutTrainingCockpitSubtitle;
 
   /// Workout overview stats section title.
@@ -793,7 +793,7 @@ abstract class AppLocalizations {
   /// Active workout session header label.
   ///
   /// In en, this message translates to:
-  /// **'Session cockpit'**
+  /// **'Active session'**
   String get workoutSessionCockpitLabel;
 
   /// Active workout exercise queue section title.
@@ -919,7 +919,7 @@ abstract class AppLocalizations {
   /// Library screen header subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Manage reusable plans, exercises, foods, and dishes.'**
+  /// **'Manage plans, exercises, foods, and recipes.'**
   String get librarySubtitle;
 
   /// Library segment label for training content.
@@ -1349,43 +1349,43 @@ abstract class AppLocalizations {
   /// Training exercise target prescription section title.
   ///
   /// In en, this message translates to:
-  /// **'Target prescription'**
+  /// **'Set targets'**
   String get trainingTargetSectionTitle;
 
   /// Training exercise target prescription section subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Set expected volume, load, duration, and unit.'**
+  /// **'Set working volume, load, duration, and unit.'**
   String get trainingTargetSectionSubtitle;
 
-  /// Expected sets field label.
+  /// Working sets field label.
   ///
   /// In en, this message translates to:
-  /// **'Expected sets'**
+  /// **'Working sets'**
   String get trainingExpectedSetsFieldLabel;
 
-  /// Expected reps field label.
+  /// Target reps field label.
   ///
   /// In en, this message translates to:
-  /// **'Expected reps'**
+  /// **'Target reps'**
   String get trainingExpectedRepsFieldLabel;
 
-  /// Expected weight field label.
+  /// Target load field label.
   ///
   /// In en, this message translates to:
-  /// **'Expected weight'**
+  /// **'Target load'**
   String get trainingExpectedWeightFieldLabel;
 
-  /// Expected time field label.
+  /// Target duration field label.
   ///
   /// In en, this message translates to:
-  /// **'Expected time'**
+  /// **'Target duration'**
   String get trainingExpectedTimeFieldLabel;
 
   /// Training target unit field label.
   ///
   /// In en, this message translates to:
-  /// **'Unit'**
+  /// **'Load or time unit'**
   String get trainingUnitFieldLabel;
 
   /// Training target validation error.
@@ -1403,25 +1403,25 @@ abstract class AppLocalizations {
   /// Food catalog section title.
   ///
   /// In en, this message translates to:
-  /// **'Food set'**
+  /// **'Food library'**
   String get foodSetTitle;
 
   /// Action label for adding food or dish.
   ///
   /// In en, this message translates to:
-  /// **'Add food or dish'**
+  /// **'Add food or recipe'**
   String get foodAddItemAction;
 
   /// Empty state title for food catalog.
   ///
   /// In en, this message translates to:
-  /// **'No foods or dishes yet'**
+  /// **'No foods or recipes yet'**
   String get foodEmptyTitle;
 
   /// Empty state message for food catalog.
   ///
   /// In en, this message translates to:
-  /// **'Use Add food or dish to build your reusable catalog.'**
+  /// **'Use Add food or recipe to build your reusable catalog.'**
   String get foodEmptyMessage;
 
   /// Delete food or dish confirmation title.
@@ -1445,7 +1445,7 @@ abstract class AppLocalizations {
   /// Bottom sheet choice label for creating a dish.
   ///
   /// In en, this message translates to:
-  /// **'Dish'**
+  /// **'Recipe'**
   String get dishChoiceLabel;
 
   /// Food form title.
@@ -1541,31 +1541,31 @@ abstract class AppLocalizations {
   /// Dish form title.
   ///
   /// In en, this message translates to:
-  /// **'Dish'**
+  /// **'Recipe'**
   String get dishFormTitle;
 
   /// Edit dish form title.
   ///
   /// In en, this message translates to:
-  /// **'Edit dish'**
+  /// **'Edit recipe'**
   String get dishFormEditTitle;
 
   /// Dish form subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Combine foods and dishes into a reusable recipe.'**
+  /// **'Combine foods into a reusable recipe.'**
   String get dishFormSubtitle;
 
   /// Save dish action label.
   ///
   /// In en, this message translates to:
-  /// **'Save dish'**
+  /// **'Save recipe'**
   String get dishSaveAction;
 
   /// Dish basics section title.
   ///
   /// In en, this message translates to:
-  /// **'Dish basics'**
+  /// **'Recipe basics'**
   String get dishBasicsSectionTitle;
 
   /// Dish basics section subtitle.
@@ -1577,25 +1577,25 @@ abstract class AppLocalizations {
   /// Dish name field label.
   ///
   /// In en, this message translates to:
-  /// **'Dish name'**
+  /// **'Recipe name'**
   String get dishNameFieldLabel;
 
   /// Dish description field label.
   ///
   /// In en, this message translates to:
-  /// **'Dish description'**
+  /// **'Recipe description'**
   String get dishDescriptionFieldLabel;
 
   /// Dish serving size grams field label.
   ///
   /// In en, this message translates to:
-  /// **'Dish serving size grams'**
+  /// **'Recipe serving size grams'**
   String get dishServingSizeGramsFieldLabel;
 
   /// Dish components section title.
   ///
   /// In en, this message translates to:
-  /// **'Components'**
+  /// **'Ingredients'**
   String get dishComponentsSectionTitle;
 
   /// Dish components section subtitle.
@@ -1607,55 +1607,55 @@ abstract class AppLocalizations {
   /// Add dish component action label.
   ///
   /// In en, this message translates to:
-  /// **'Add component'**
+  /// **'Add ingredient'**
   String get dishAddComponentAction;
 
   /// Dish components empty state title.
   ///
   /// In en, this message translates to:
-  /// **'No components yet'**
+  /// **'No ingredients yet'**
   String get dishNoComponentsTitle;
 
   /// Dish components empty state message.
   ///
   /// In en, this message translates to:
-  /// **'Add foods or dishes to calculate this recipe.'**
+  /// **'Add foods to calculate this recipe.'**
   String get dishNoComponentsMessage;
 
   /// Tooltip for editing a dish component.
   ///
   /// In en, this message translates to:
-  /// **'Edit {itemName} component'**
+  /// **'Edit {itemName} ingredient'**
   String dishEditComponentTooltip(String itemName);
 
   /// Tooltip for removing a dish component.
   ///
   /// In en, this message translates to:
-  /// **'Remove {itemName} component'**
+  /// **'Remove {itemName} ingredient'**
   String dishRemoveComponentTooltip(String itemName);
 
   /// Add dish component dialog title.
   ///
   /// In en, this message translates to:
-  /// **'Add component'**
+  /// **'Add ingredient'**
   String get dishComponentAddTitle;
 
   /// Edit dish component dialog title.
   ///
   /// In en, this message translates to:
-  /// **'Edit component'**
+  /// **'Edit ingredient'**
   String get dishComponentEditTitle;
 
   /// Dish component amount section title.
   ///
   /// In en, this message translates to:
-  /// **'Component amount'**
+  /// **'Ingredient amount'**
   String get dishComponentAmountTitle;
 
   /// Dish component grams field label and semantic label.
   ///
   /// In en, this message translates to:
-  /// **'Component grams'**
+  /// **'Ingredient grams'**
   String get dishComponentGramsFieldLabel;
 
   /// Dish component catalog item selector title.
@@ -1667,25 +1667,25 @@ abstract class AppLocalizations {
   /// Save dish component action label.
   ///
   /// In en, this message translates to:
-  /// **'Save component'**
+  /// **'Save ingredient'**
   String get dishSaveComponentAction;
 
   /// Dish form validation message.
   ///
   /// In en, this message translates to:
-  /// **'Enter dish details and at least one component.'**
+  /// **'Enter recipe details and at least one ingredient.'**
   String get dishValidation;
 
   /// Fallback save error for dish form.
   ///
   /// In en, this message translates to:
-  /// **'Could not save dish.'**
+  /// **'Could not save recipe.'**
   String get dishCouldNotSave;
 
   /// Dish component validation message.
   ///
   /// In en, this message translates to:
-  /// **'Choose an item and enter valid grams.'**
+  /// **'Choose an item and enter valid ingredient grams.'**
   String get dishComponentValidation;
 }
 

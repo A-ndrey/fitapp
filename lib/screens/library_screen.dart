@@ -39,7 +39,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             title: l10n?.destinationLibrary ?? 'Library',
             subtitle:
                 l10n?.librarySubtitle ??
-                'Manage reusable plans, exercises, foods, and dishes.',
+                'Manage plans, exercises, foods, and recipes.',
           ),
           Align(
             alignment: Alignment.centerLeft,

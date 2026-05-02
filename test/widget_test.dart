@@ -256,23 +256,26 @@ void main() {
       ),
     );
 
-    expect(find.text('Dish basics'), findsOneWidget);
-    expect(find.text('Components'), findsOneWidget);
-    expect(find.text('No components yet'), findsOneWidget);
-    expect(
-      find.text('Add foods or dishes to calculate this recipe.'),
-      findsOneWidget,
-    );
-    expect(find.text('Add component'), findsOneWidget);
+    expect(find.text('Recipe basics'), findsOneWidget);
+    expect(find.text('Ingredients'), findsOneWidget);
+    expect(find.text('No ingredients yet'), findsOneWidget);
+    expect(find.text('Add foods to calculate this recipe.'), findsOneWidget);
+    expect(find.text('Add ingredient'), findsOneWidget);
   });
 
-  testWidgets('uses FitApp performance cockpit theme', (tester) async {
+  testWidgets('uses FitApp performance logbook theme', (tester) async {
     await tester.pumpWidget(const FitApp());
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
-    expect(app.theme?.colorScheme.primary, AppTheme.energyOrange);
+    expect(app.theme?.colorScheme.primary, AppTheme.trainingRed);
+    expect(app.theme?.colorScheme.onPrimary, const Color(0xFF120806));
+    expect(app.theme?.colorScheme.secondary, AppTheme.adherenceOlive);
+    expect(app.theme?.colorScheme.onSecondary, const Color(0xFF0B0E08));
+    expect(app.theme?.colorScheme.onTertiary, const Color(0xFF071014));
     expect(app.darkTheme?.colorScheme.surface, AppTheme.deepSurface);
+    expect(app.darkTheme?.colorScheme.onPrimary, const Color(0xFF120806));
+    expect(app.darkTheme?.scaffoldBackgroundColor, AppTheme.deepBackground);
     expect(app.theme?.useMaterial3, isTrue);
     expect(app.darkTheme?.useMaterial3, isTrue);
   });
@@ -297,8 +300,8 @@ void main() {
     );
 
     expect(find.text('Today'), findsWidgets);
-    expect(find.text('Ready state'), findsOneWidget);
-    expect(find.text('Daily fuel'), findsOneWidget);
+    expect(find.text('Ready to train'), findsOneWidget);
+    expect(find.text("Today's macros"), findsOneWidget);
     expect(find.text('Quick actions'), findsOneWidget);
     expect(find.text('Start workout'), findsOneWidget);
 
@@ -402,7 +405,7 @@ void main() {
 
     expect(find.text('Library'), findsNWidgets(2));
     expect(
-      find.text('Manage reusable plans, exercises, foods, and dishes.'),
+      find.text('Manage plans, exercises, foods, and recipes.'),
       findsOneWidget,
     );
     expect(find.byType(SectionHeader), findsOneWidget);
@@ -420,7 +423,7 @@ void main() {
 
     expect(find.text('Library'), findsNWidgets(2));
     expect(
-      find.text('Manage reusable plans, exercises, foods, and dishes.'),
+      find.text('Manage plans, exercises, foods, and recipes.'),
       findsOneWidget,
     );
     expect(find.byType(SectionHeader), findsOneWidget);
@@ -430,7 +433,7 @@ void main() {
     expect(find.byType(Scaffold), findsOneWidget);
     expect(find.byType(AppBar), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
-    expect(find.text('Food set'), findsOneWidget);
+    expect(find.text('Food library'), findsOneWidget);
     expect(find.text('Chicken breast'), findsOneWidget);
   });
 
@@ -507,8 +510,8 @@ void main() {
         ),
       );
 
-      expect(find.text('Ready state'), findsOneWidget);
-      expect(find.text('Daily fuel'), findsOneWidget);
+      expect(find.text('Ready to train'), findsOneWidget);
+      expect(find.text("Today's macros"), findsOneWidget);
       expect(find.text('Quick actions'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
@@ -518,9 +521,9 @@ void main() {
         MaterialApp(home: MealScreen(store: AppStore())),
       );
 
-      expect(find.text('Nutrition cockpit'), findsOneWidget);
+      expect(find.text('Nutrition log'), findsOneWidget);
       expect(find.text('Daily totals'), findsOneWidget);
-      expect(find.text('Meal entries'), findsOneWidget);
+      expect(find.text('Logged meals'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await pumpAtSurfaceSize(
@@ -536,7 +539,7 @@ void main() {
       await tester.tap(find.text('Foods'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Food set'), findsOneWidget);
+      expect(find.text('Food library'), findsOneWidget);
       expect(find.text('Chicken breast'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
@@ -594,11 +597,11 @@ void main() {
   }
 
   Future<void> openAddFoodOrDish(WidgetTester tester) async {
-    final tooltip = find.byTooltip('Add food or dish');
+    final tooltip = find.byTooltip('Add food or recipe');
     if (tester.any(tooltip)) {
       await tester.tap(tooltip);
     } else {
-      await tester.tap(find.widgetWithText(FilledButton, 'Add food or dish'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Add food or recipe'));
     }
     await tester.pumpAndSettle();
   }
@@ -607,10 +610,20 @@ void main() {
     final action = tester.any(find.byType(FloatingActionButton))
         ? find.descendant(
             of: find.byType(FloatingActionButton),
-            matching: find.byTooltip('Add meal item'),
+            matching: find.byTooltip('Log food'),
           )
-        : find.widgetWithText(FilledButton, 'Add meal item');
+        : find.widgetWithText(FilledButton, 'Log food');
     await tester.tap(action);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> tapLogFoodDialogAction(WidgetTester tester) async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(FilledButton, 'Log food'),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -670,15 +683,14 @@ void main() {
     await openNutritionDestination(tester);
     await tapAddMealFab(tester);
     await tester.enterText(
-      find.bySemanticsLabel('Search foods and dishes'),
+      find.bySemanticsLabel('Search foods and recipes'),
       'Rice',
     );
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ListTile, 'Rice'));
     await tester.pumpAndSettle();
     await tester.enterText(find.bySemanticsLabel('Grams'), '150');
-    await tester.tap(find.text('Add to meal'));
-    await tester.pumpAndSettle();
+    await tapLogFoodDialogAction(tester);
   }
 
   Future<void> fillTomatoNutrition(WidgetTester tester) async {
@@ -693,20 +705,20 @@ void main() {
   Future<void> createSimpleSalad(WidgetTester tester) async {
     await openLibraryFoodsSection(tester);
     await openAddFoodOrDish(tester);
-    await tester.tap(find.text('Dish'));
+    await tester.tap(find.text('Recipe'));
     await tester.pumpAndSettle();
 
-    await enterLabeledText(tester, 'Dish name', 'Simple salad');
-    await enterLabeledText(tester, 'Dish description', 'Carrot');
-    await enterLabeledText(tester, 'Dish serving size grams', '100');
-    await tester.tap(find.text('Add component'));
+    await enterLabeledText(tester, 'Recipe name', 'Simple salad');
+    await enterLabeledText(tester, 'Recipe description', 'Carrot');
+    await enterLabeledText(tester, 'Recipe serving size grams', '100');
+    await tester.tap(find.text('Add ingredient'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Carrot').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Component grams', '100');
-    await tester.tap(find.text('Save component'));
+    await enterLabeledText(tester, 'Ingredient grams', '100');
+    await tester.tap(find.text('Save ingredient'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save dish'));
+    await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
   }
 
@@ -720,7 +732,7 @@ void main() {
     expect(find.text('Nutrition'), findsWidgets);
     expect(find.text('Library'), findsWidgets);
     expect(find.text('More'), findsWidgets);
-    expect(find.text('Ready state'), findsOneWidget);
+    expect(find.text('Ready to train'), findsOneWidget);
     expect(find.text('Chicken breast'), findsNothing);
 
     await openLibraryDestination(tester);
@@ -734,7 +746,7 @@ void main() {
 
     await openLibraryFoodsSection(tester);
 
-    expect(find.text('Food set'), findsOneWidget);
+    expect(find.text('Food library'), findsOneWidget);
     expect(find.text('Chicken breast'), findsOneWidget);
     expect(find.text('food'), findsWidgets);
   });
@@ -746,10 +758,10 @@ void main() {
 
     await openNutritionDestination(tester);
 
-    expect(find.text('Meal'), findsWidgets);
-    expect(find.text('Nutrition cockpit'), findsOneWidget);
+    expect(find.text('Nutrition'), findsWidgets);
+    expect(find.text('Nutrition log'), findsOneWidget);
     expect(
-      find.text('Log food, review macros, and keep today visible.'),
+      find.text('Track calories, protein, carbs, and fat.'),
       findsOneWidget,
     );
     expect(find.text('Daily totals'), findsOneWidget);
@@ -757,9 +769,9 @@ void main() {
     expect(find.text('Protein'), findsOneWidget);
     expect(find.text('Fat'), findsOneWidget);
     expect(find.text('Carbs'), findsOneWidget);
-    expect(find.text('No meal entries yet'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Add meal item'), findsOneWidget);
-    expect(find.byTooltip('Add meal item'), findsOneWidget);
+    expect(find.text('No food logged yet'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Log food'), findsOneWidget);
+    expect(find.byTooltip('Log food'), findsOneWidget);
   });
 
   testWidgets('Nutrition uses one primary add action per responsive mode', (
@@ -771,9 +783,9 @@ void main() {
       MaterialApp(home: MealScreen(store: AppStore())),
     );
 
-    expect(find.widgetWithText(FilledButton, 'Add meal item'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Log food'), findsNothing);
     expect(find.byType(FloatingActionButton), findsOneWidget);
-    expect(find.byTooltip('Add meal item'), findsOneWidget);
+    expect(find.byTooltip('Log food'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await pumpAtSurfaceSize(
@@ -782,9 +794,9 @@ void main() {
       MaterialApp(home: MealScreen(store: AppStore())),
     );
 
-    expect(find.widgetWithText(FilledButton, 'Add meal item'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Log food'), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
-    expect(find.byTooltip('Add meal item'), findsOneWidget);
+    expect(find.byTooltip('Log food'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -892,8 +904,7 @@ void main() {
     await tester.tap(find.text('Chicken breast').last);
     await tester.pumpAndSettle();
     await tester.enterText(find.bySemanticsLabel('Grams'), '200');
-    await tester.tap(find.text('Add to meal'));
-    await tester.pumpAndSettle();
+    await tapLogFoodDialogAction(tester);
 
     expect(find.text('Chicken breast'), findsOneWidget);
     expect(find.textContaining('330'), findsWidgets);
@@ -911,20 +922,20 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(BottomSheet),
-        matching: find.text('Add meal item'),
+        matching: find.text('Log food'),
       ),
       findsOneWidget,
     );
     expect(
       find.text(
-        'Search your saved foods and dishes, or create a new food from your query.',
+        'Search saved foods and recipes, or create a new food from your query.',
       ),
       findsOneWidget,
     );
-    expect(find.bySemanticsLabel('Search foods and dishes'), findsOneWidget);
+    expect(find.bySemanticsLabel('Search foods and recipes'), findsOneWidget);
 
     await tester.enterText(
-      find.bySemanticsLabel('Search foods and dishes'),
+      find.bySemanticsLabel('Search foods and recipes'),
       'Rice',
     );
     await tester.pumpAndSettle();
@@ -961,11 +972,11 @@ void main() {
     expect(find.byType(Scaffold), findsOneWidget);
     expect(find.byType(AdaptivePage), findsOneWidget);
     expect(find.byType(FoodCatalogCard), findsWidgets);
-    expect(find.text('Food set'), findsOneWidget);
+    expect(find.text('Food library'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
     expect(find.textContaining('5.3 oz serving'), findsWidgets);
     expect(find.textContaining('41 kcal per serving'), findsWidgets);
-    expect(find.byTooltip('Add food or dish'), findsOneWidget);
+    expect(find.byTooltip('Add food or recipe'), findsOneWidget);
     expect(find.byTooltip('Edit Rice'), findsOneWidget);
     expect(find.byTooltip('Delete Rice'), findsOneWidget);
   });
@@ -980,14 +991,14 @@ void main() {
     expect(find.byType(Scaffold), findsNothing);
     expect(find.byType(AdaptivePage), findsOneWidget);
     expect(find.byType(AppEmptyState), findsOneWidget);
-    expect(find.text('Food set'), findsOneWidget);
-    expect(find.text('No foods or dishes yet'), findsOneWidget);
+    expect(find.text('Food library'), findsOneWidget);
+    expect(find.text('No foods or recipes yet'), findsOneWidget);
     expect(
-      find.text('Use Add food or dish to build your reusable catalog.'),
+      find.text('Use Add food or recipe to build your reusable catalog.'),
       findsOneWidget,
     );
     expect(
-      find.widgetWithText(FilledButton, 'Add food or dish'),
+      find.widgetWithText(FilledButton, 'Add food or recipe'),
       findsOneWidget,
     );
     expect(find.byType(FloatingActionButton), findsNothing);
@@ -998,25 +1009,25 @@ void main() {
 
     await openLibraryFoodsSection(tester);
     await openAddFoodOrDish(tester);
-    await tester.tap(find.text('Dish'));
+    await tester.tap(find.text('Recipe'));
     await tester.pumpAndSettle();
 
-    await enterLabeledText(tester, 'Dish name', 'Simple salad');
-    await enterLabeledText(tester, 'Dish description', 'Carrot and onion');
-    await enterLabeledText(tester, 'Dish serving size grams', '150');
-    await tester.tap(find.text('Add component'));
+    await enterLabeledText(tester, 'Recipe name', 'Simple salad');
+    await enterLabeledText(tester, 'Recipe description', 'Carrot and onion');
+    await enterLabeledText(tester, 'Recipe serving size grams', '150');
+    await tester.tap(find.text('Add ingredient'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Carrot').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Component grams', '100');
-    await tester.tap(find.text('Save component'));
+    await enterLabeledText(tester, 'Ingredient grams', '100');
+    await tester.tap(find.text('Save ingredient'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save dish'));
+    await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
 
     await scrollToText(tester, 'Simple salad');
     expect(find.text('Simple salad'), findsOneWidget);
-    expect(find.text('dish'), findsWidgets);
+    expect(find.text('recipe'), findsWidgets);
     expect(find.textContaining('150 g serving'), findsWidgets);
   });
 
@@ -1062,7 +1073,7 @@ void main() {
 
     await tapAddMealFab(tester);
     await tester.enterText(
-      find.bySemanticsLabel('Search foods and dishes'),
+      find.bySemanticsLabel('Search foods and recipes'),
       'Tomato',
     );
     await tester.pumpAndSettle();
@@ -1070,13 +1081,13 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(BottomSheet),
-        matching: find.text('Add meal item'),
+        matching: find.text('Log food'),
       ),
       findsOneWidget,
     );
     expect(
       find.text(
-        'Search your saved foods and dishes, or create a new food from your query.',
+        'Search saved foods and recipes, or create a new food from your query.',
       ),
       findsOneWidget,
     );
@@ -1094,8 +1105,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.bySemanticsLabel('Grams'), '100');
-    await tester.tap(find.text('Add to meal'));
-    await tester.pumpAndSettle();
+    await tapLogFoodDialogAction(tester);
 
     expect(find.text('Tomato'), findsOneWidget);
     expect(find.textContaining('18'), findsWidgets);
@@ -1107,7 +1117,7 @@ void main() {
 
     await tapAddMealFab(tester);
     await tester.enterText(
-      find.bySemanticsLabel('Search foods and dishes'),
+      find.bySemanticsLabel('Search foods and recipes'),
       'tom',
     );
     await tester.pumpAndSettle();
@@ -1122,8 +1132,7 @@ void main() {
     expect(find.text('Tomato'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Grams'), findsOneWidget);
     await tester.enterText(find.bySemanticsLabel('Grams'), '100');
-    await tester.tap(find.text('Add to meal'));
-    await tester.pumpAndSettle();
+    await tapLogFoodDialogAction(tester);
 
     expect(find.text('Tomato'), findsOneWidget);
     expect(find.textContaining('18'), findsWidgets);
@@ -1137,7 +1146,7 @@ void main() {
 
     await tapAddMealFab(tester);
     await tester.enterText(
-      find.bySemanticsLabel('Search foods and dishes'),
+      find.bySemanticsLabel('Search foods and recipes'),
       'Rice',
     );
     await tester.pumpAndSettle();
@@ -1154,7 +1163,7 @@ void main() {
 
     await tapAddMealFab(tester);
     await tester.enterText(
-      find.bySemanticsLabel('Search foods and dishes'),
+      find.bySemanticsLabel('Search foods and recipes'),
       'Rice',
     );
     await tester.pumpAndSettle();
@@ -1170,13 +1179,12 @@ void main() {
 
     for (final value in ['abc', '0', '-1', 'NaN', 'Infinity']) {
       await tester.enterText(find.bySemanticsLabel('Grams'), value);
-      await tester.tap(find.text('Add to meal'));
-      await tester.pumpAndSettle();
+      await tapLogFoodDialogAction(tester);
 
       expect(tester.takeException(), isNull);
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.widgetWithText(ListTile, 'Rice'), findsNothing);
-      expect(find.text('No meal entries yet'), findsOneWidget);
+      expect(find.text('No food logged yet'), findsOneWidget);
     }
   });
 
@@ -1204,7 +1212,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(ListTile, 'Rice'), findsNothing);
-    expect(find.text('No meal entries yet'), findsOneWidget);
+    expect(find.text('No food logged yet'), findsOneWidget);
     expect(find.textContaining('195 kcal'), findsNothing);
   });
 
@@ -1214,7 +1222,7 @@ void main() {
 
     await tapAddMealFab(tester);
     await tester.enterText(
-      find.bySemanticsLabel('Search foods and dishes'),
+      find.bySemanticsLabel('Search foods and recipes'),
       'Rice',
     );
     await tester.pumpAndSettle();
@@ -1224,8 +1232,7 @@ void main() {
     await tester.tap(find.text('Servings'));
     await tester.pumpAndSettle();
     await tester.enterText(find.bySemanticsLabel('Servings'), '2');
-    await tester.tap(find.text('Add to meal'));
-    await tester.pumpAndSettle();
+    await tapLogFoodDialogAction(tester);
 
     expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
     expect(find.textContaining('2 servings logged'), findsOneWidget);
@@ -1259,20 +1266,20 @@ void main() {
 
     await openLibraryFoodsSection(tester);
     await openAddFoodOrDish(tester);
-    await tester.tap(find.text('Dish'));
+    await tester.tap(find.text('Recipe'));
     await tester.pumpAndSettle();
 
-    await enterLabeledText(tester, 'Dish name', 'Simple salad');
-    await enterLabeledText(tester, 'Dish description', 'Carrot');
-    await enterLabeledText(tester, 'Dish serving size grams', '100');
-    await tester.tap(find.text('Add component'));
+    await enterLabeledText(tester, 'Recipe name', 'Simple salad');
+    await enterLabeledText(tester, 'Recipe description', 'Carrot');
+    await enterLabeledText(tester, 'Recipe serving size grams', '100');
+    await tester.tap(find.text('Add ingredient'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Carrot').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Component grams', '100');
-    await tester.tap(find.text('Save component'));
+    await enterLabeledText(tester, 'Ingredient grams', '100');
+    await tester.tap(find.text('Save ingredient'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save dish'));
+    await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
 
     await tapRowAction(tester, 'Carrot', 'Delete Carrot', Icons.delete_outline);
@@ -1280,7 +1287,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(ListTile, 'Carrot'), findsOneWidget);
-    expect(find.textContaining('used by a dish'), findsOneWidget);
+    expect(find.textContaining('used by a recipe'), findsOneWidget);
   });
 
   testWidgets(
@@ -1314,20 +1321,20 @@ void main() {
 
     await openLibraryFoodsSection(tester);
     await openAddFoodOrDish(tester);
-    await tester.tap(find.text('Dish'));
+    await tester.tap(find.text('Recipe'));
     await tester.pumpAndSettle();
 
-    await enterLabeledText(tester, 'Dish name', 'Simple salad');
-    await enterLabeledText(tester, 'Dish description', 'Carrot and onion');
-    await enterLabeledText(tester, 'Dish serving size grams', '150');
-    await tester.tap(find.text('Add component'));
+    await enterLabeledText(tester, 'Recipe name', 'Simple salad');
+    await enterLabeledText(tester, 'Recipe description', 'Carrot and onion');
+    await enterLabeledText(tester, 'Recipe serving size grams', '150');
+    await tester.tap(find.text('Add ingredient'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Carrot').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Component grams', '100');
-    await tester.tap(find.text('Save component'));
+    await enterLabeledText(tester, 'Ingredient grams', '100');
+    await tester.tap(find.text('Save ingredient'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save dish'));
+    await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
 
     await scrollToText(tester, 'Simple salad');
@@ -1337,8 +1344,8 @@ void main() {
       'Edit Simple salad',
       Icons.edit_outlined,
     );
-    await enterLabeledText(tester, 'Dish name', 'Carrot salad');
-    await tester.tap(find.text('Save dish'));
+    await enterLabeledText(tester, 'Recipe name', 'Carrot salad');
+    await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(ListTile, 'Carrot salad'), findsOneWidget);
@@ -1360,13 +1367,13 @@ void main() {
       'Edit Simple salad',
       Icons.edit_outlined,
     );
-    await tester.tap(find.byTooltip('Edit Carrot component'));
+    await tester.tap(find.byTooltip('Edit Carrot ingredient'));
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Component grams', '50');
-    await tester.tap(find.text('Save component'));
+    await enterLabeledText(tester, 'Ingredient grams', '50');
+    await tester.tap(find.text('Save ingredient'));
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Dish name', 'Half carrot salad');
-    await tester.tap(find.text('Save dish'));
+    await enterLabeledText(tester, 'Recipe name', 'Half carrot salad');
+    await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(ListTile, 'Half carrot salad'), findsOneWidget);
@@ -1404,12 +1411,12 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byTooltip('Edit Carrot component'));
+    await tester.tap(find.byTooltip('Edit Carrot ingredient'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, '33.33'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Save component'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Save ingredient'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Save dish'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Save recipe'));
     await tester.pumpAndSettle();
 
     final updated = store.itemById('fractional-salad')!.dish!;

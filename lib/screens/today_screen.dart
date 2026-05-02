@@ -84,7 +84,7 @@ class _TodayScreenState extends State<TodayScreen> {
             children: [
               SectionHeader(
                 title: activeSession == null
-                    ? l10n?.todayReadyState ?? 'Ready state'
+                    ? l10n?.todayReadyState ?? 'Ready to train'
                     : l10n?.todayInSession ?? 'In session',
               ),
               _MetricGrid(
@@ -115,8 +115,8 @@ class _TodayScreenState extends State<TodayScreen> {
               ),
               const SizedBox(height: 28),
               SectionHeader(
-                title: l10n?.todayDailyFuelTitle ?? 'Daily fuel',
-                subtitle: l10n?.todayDailyFuelSubtitle ?? 'Macros logged today',
+                title: l10n?.todayDailyFuelTitle ?? "Today's macros",
+                subtitle: l10n?.todayDailyFuelSubtitle ?? 'Logged intake',
               ),
               _MetricGrid(
                 children: [
@@ -185,7 +185,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     title: l10n?.todayManageLibraryAction ?? 'Manage library',
                     subtitle:
                         l10n?.todayManageLibrarySubtitle ??
-                        'Update foods, dishes, exercises, and plans',
+                        'Update plans, exercises, foods, and recipes',
                     semanticHint:
                         l10n?.todayOpenLibraryHint ?? 'Opens Library tab',
                     icon: Icons.inventory_2_outlined,

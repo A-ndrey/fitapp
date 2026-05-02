@@ -35,7 +35,7 @@ class FoodCatalogCard extends StatelessWidget {
               formatCatalogItemTypeLabel(
                 item,
                 foodLabel: l10n?.catalogSubtypeFood ?? 'food',
-                dishLabel: l10n?.catalogSubtypeDish ?? 'dish',
+                dishLabel: l10n?.catalogSubtypeDish ?? 'recipe',
               ),
             ),
             _BoundedText(

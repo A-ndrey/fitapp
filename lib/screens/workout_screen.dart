@@ -101,10 +101,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           body: AdaptivePage(
             children: [
               SectionHeader(
-                title: l10n?.workoutTrainingCockpitTitle ?? 'Training cockpit',
+                title: l10n?.workoutTrainingCockpitTitle ?? 'Training log',
                 subtitle:
                     l10n?.workoutTrainingCockpitSubtitle ??
-                    'Start, resume, and review workout sessions.',
+                    'Start sessions, log sets, and review progress.',
               ),
               if (activeSession != null)
                 ActiveWorkoutCard(

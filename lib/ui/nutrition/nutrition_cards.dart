@@ -77,7 +77,7 @@ class MealEntryCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final subtypeLabel = entry.itemType == CatalogItemType.food
         ? l10n?.catalogSubtypeFood ?? 'food'
-        : l10n?.catalogSubtypeDish ?? 'dish';
+        : l10n?.catalogSubtypeDish ?? 'recipe';
     return Card(
       child: ListTile(
         title: Text(entry.itemName),
@@ -137,7 +137,7 @@ class MealSearchResultTile extends StatelessWidget {
       subtitle: Text(
         item.isFood
             ? l10n?.catalogSubtypeFood ?? 'food'
-            : l10n?.catalogSubtypeDish ?? 'dish',
+            : l10n?.catalogSubtypeDish ?? 'recipe',
       ),
       onTap: onTap,
     );

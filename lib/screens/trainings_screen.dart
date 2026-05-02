@@ -888,10 +888,10 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
       onPrimaryAction: _saveExercise,
       children: [
         FormSectionCard(
-          title: l10n?.trainingTargetSectionTitle ?? 'Target prescription',
+          title: l10n?.trainingTargetSectionTitle ?? 'Set targets',
           subtitle:
               l10n?.trainingTargetSectionSubtitle ??
-              'Set expected volume, load, duration, and unit.',
+              'Set working volume, load, duration, and unit.',
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -904,7 +904,7 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText:
-                      l10n?.trainingExpectedSetsFieldLabel ?? 'Expected sets',
+                      l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
                 ),
               ),
               TextField(
@@ -915,7 +915,7 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText:
-                      l10n?.trainingExpectedRepsFieldLabel ?? 'Expected reps',
+                      l10n?.trainingExpectedRepsFieldLabel ?? 'Target reps',
                 ),
               ),
               TextField(
@@ -926,8 +926,7 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText:
-                      l10n?.trainingExpectedWeightFieldLabel ??
-                      'Expected weight',
+                      l10n?.trainingExpectedWeightFieldLabel ?? 'Target load',
                 ),
               ),
               TextField(
@@ -938,14 +937,15 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText:
-                      l10n?.trainingExpectedTimeFieldLabel ?? 'Expected time',
+                      l10n?.trainingExpectedTimeFieldLabel ?? 'Target duration',
                 ),
               ),
               TextField(
                 controller: _unitController,
                 textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
-                  labelText: l10n?.trainingUnitFieldLabel ?? 'Unit',
+                  labelText:
+                      l10n?.trainingUnitFieldLabel ?? 'Load or time unit',
                 ),
               ),
             ],

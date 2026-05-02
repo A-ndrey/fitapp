@@ -27,7 +27,7 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n?.workoutSessionCockpitLabel ?? 'Session cockpit',
+              l10n?.workoutSessionCockpitLabel ?? 'Active session',
               style: textTheme.labelLarge?.copyWith(
                 color: AppTheme.energyOrange,
                 fontWeight: FontWeight.w700,

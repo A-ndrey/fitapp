@@ -14,9 +14,9 @@ void main() {
   ];
 
   const destinationBodyText = {
-    'Today': 'Ready state',
-    'Train': 'Training cockpit',
-    'Nutrition': 'Nutrition cockpit',
+    'Today': 'Ready to train',
+    'Train': 'Training log',
+    'Nutrition': 'Nutrition log',
     'Library': 'Training plans',
     'More': 'Sync',
   };
