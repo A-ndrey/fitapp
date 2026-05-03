@@ -20,8 +20,10 @@ class AdaptivePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final brightness = Theme.of(context).brightness;
         final horizontalPadding = responsivePageHorizontalPadding(
           constraints.maxWidth,
+          minPadding: brightness == Brightness.light ? 20 : 16,
         );
         final contentMaxWidth = responsivePageMaxWidth(
           constraints.maxWidth,

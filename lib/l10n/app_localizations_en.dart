@@ -24,7 +24,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get destinationLibrary => 'Library';
 
   @override
-  String get destinationMore => 'More';
+  String get destinationMore => 'Settings';
 
   @override
   String get todayReadyState => 'Ready to train';

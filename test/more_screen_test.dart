@@ -19,13 +19,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('more screen uses redesigned settings surface', (tester) async {
+  testWidgets('settings screen uses redesigned settings surface', (
+    tester,
+  ) async {
     final store = AppStore();
 
     await pumpScreen(tester, store);
 
     expect(find.byType(AdaptivePage), findsOneWidget);
-    expect(find.text('More'), findsWidgets);
+    expect(find.text('Settings'), findsWidgets);
     expect(
       find.text('Tune units, appearance, and training-log preferences.'),
       findsOneWidget,

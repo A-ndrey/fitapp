@@ -25,6 +25,20 @@ class MetricCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final accentColor = color ?? colorScheme.primary;
     final textTheme = Theme.of(context).textTheme;
+    final metricStyle = colorScheme.brightness == Brightness.light
+        ? textTheme.displayLarge?.copyWith(
+            fontFamily: 'Lexend',
+            fontSize: 48,
+            height: 1,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -1.2,
+          )
+        : textTheme.displayMedium?.copyWith(
+            fontFamily: 'Lexend',
+            fontSize: 20,
+            height: 1,
+            fontWeight: FontWeight.w500,
+          );
 
     final expandedValue = semanticValue ?? _expandSemanticValue(value);
     final semanticLabel = suffix == null
@@ -72,9 +86,7 @@ class MetricCard extends StatelessWidget {
                             value,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: metricStyle,
                           ),
                         ),
                         if (suffix != null)

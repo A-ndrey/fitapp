@@ -10,15 +10,15 @@ void main() {
     'Train',
     'Nutrition',
     'Library',
-    'More',
+    'Settings',
   ];
 
   const destinationBodyText = {
     'Today': 'Daily progress',
     'Train': 'Training log',
     'Nutrition': 'Nutrition log',
-    'Library': 'Training plans',
-    'More': 'Sync',
+    'Library': 'Training library',
+    'Settings': 'Sync',
   };
 
   Future<void> pumpFitAppAtSize(WidgetTester tester, Size size) async {

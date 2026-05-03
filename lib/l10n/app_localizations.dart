@@ -127,7 +127,7 @@ abstract class AppLocalizations {
   /// Root navigation destination for settings and preferences.
   ///
   /// In en, this message translates to:
-  /// **'More'**
+  /// **'Settings'**
   String get destinationMore;
 
   /// Today screen header when no workout is active.

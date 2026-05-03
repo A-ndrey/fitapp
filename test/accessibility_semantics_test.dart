@@ -173,8 +173,8 @@ void main() {
         contains('Library'),
       );
       expect(
-        tester.getSemantics(find.text('More').last).label,
-        contains('More'),
+        tester.getSemantics(find.text('Settings').last).label,
+        contains('Settings'),
       );
     }
     tester.view.resetPhysicalSize();

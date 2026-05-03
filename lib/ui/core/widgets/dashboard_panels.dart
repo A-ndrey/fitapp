@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class DashboardPanel extends StatelessWidget {
   const DashboardPanel({
     required this.title,
@@ -24,24 +26,27 @@ class DashboardPanel extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final colors = switch (emphasis) {
       DashboardPanelEmphasis.defaultSurface => (
-        background: colorScheme.surfaceContainer,
-        border: colorScheme.outlineVariant,
+        background: colorScheme.surfaceContainerLow,
+        border: AppTheme.surfaceBorderColor(colorScheme),
       ),
       DashboardPanelEmphasis.raisedSurface => (
         background: colorScheme.surfaceContainerHigh,
-        border: colorScheme.outline,
+        border: AppTheme.surfaceBorderColor(colorScheme),
       ),
       DashboardPanelEmphasis.live => (
         background: colorScheme.surfaceContainerHigh,
-        border: colorScheme.primary.withValues(alpha: 0.28),
+        border: colorScheme.primaryContainer,
       ),
     };
 
     return Container(
       decoration: BoxDecoration(
         color: colors.background,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(
+          AppTheme.standardSurfaceRadius(colorScheme.brightness),
+        ),
         border: Border.all(color: colors.border),
+        boxShadow: AppTheme.ambientShadow(colorScheme.brightness),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -54,10 +59,10 @@ class DashboardPanel extends StatelessWidget {
                 if (eyebrow != null)
                   Expanded(
                     child: Text(
-                      eyebrow!,
+                      eyebrow!.toUpperCase(),
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
-                        letterSpacing: 0.4,
+                        letterSpacing: 0.6,
                       ),
                     ),
                   )
@@ -72,7 +77,7 @@ class DashboardPanel extends StatelessWidget {
           if (eyebrow != null || trailing != null) const SizedBox(height: 8),
           Text(title, style: theme.textTheme.titleLarge),
           if (subtitle != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               subtitle!,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -123,11 +128,14 @@ class GoalProgressRow extends StatelessWidget {
             ? null
             : Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+                  horizontal: 12,
+                  vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHigh,
+                  color: colorScheme.surfaceContainerLow,
+                  border: Border.all(
+                    color: AppTheme.surfaceBorderColor(colorScheme),
+                  ),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -144,13 +152,13 @@ class GoalProgressRow extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (leading != null) ...[leading!, const SizedBox(width: 12)],
+                if (leading != null) ...[leading!, const SizedBox(width: 8)],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(label, style: theme.textTheme.labelLarge),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       Text(
                         '$valueLabel / $targetLabel',
                         style: theme.textTheme.bodyLarge?.copyWith(
@@ -161,7 +169,7 @@ class GoalProgressRow extends StatelessWidget {
                   ),
                 ),
                 if (!compact && statusChip != null) ...[
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   statusChip,
                 ],
               ],
@@ -170,14 +178,14 @@ class GoalProgressRow extends StatelessWidget {
               const SizedBox(height: 8),
               statusChip,
             ],
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 value: clampedProgress,
                 minHeight: 8,
-                backgroundColor: colorScheme.surfaceContainerHigh,
-                color: barColor ?? colorScheme.primary,
+                backgroundColor: AppTheme.progressTrackColor(colorScheme),
+                color: barColor ?? AppTheme.primaryAccent,
               ),
             ),
           ],
@@ -203,11 +211,12 @@ class DashboardStatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final color = tone ?? colorScheme.primary;
+    final color = tone ?? colorScheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
+        color: colorScheme.surfaceContainerLow,
+        border: Border.all(color: AppTheme.surfaceBorderColor(colorScheme)),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(

@@ -128,9 +128,9 @@ class _FitHomeState extends State<FitHome> {
         screen: LibraryScreen(store: widget.store),
       ),
       _AppDestination(
-        label: l10n?.destinationMore ?? 'More',
-        icon: Icons.more_horiz,
-        selectedIcon: Icons.more_horiz,
+        label: l10n?.destinationMore ?? 'Settings',
+        icon: Icons.settings_outlined,
+        selectedIcon: Icons.settings,
         screen: MoreScreen(store: widget.store),
       ),
     ];

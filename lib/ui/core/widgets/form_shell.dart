@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../theme/app_theme.dart';
 
 class FormShellDialog extends StatelessWidget {
   const FormShellDialog({
@@ -35,14 +36,14 @@ class FormShellDialog extends StatelessWidget {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: 720),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(title, style: textTheme.headlineSmall),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Text(
                     subtitle!,
                     style: textTheme.bodyMedium?.copyWith(
@@ -50,7 +51,7 @@ class FormShellDialog extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Flexible(
                   child: SingleChildScrollView(
                     child: Column(
@@ -60,7 +61,7 @@ class FormShellDialog extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 OverflowBar(
                   alignment: MainAxisAlignment.end,
                   spacing: 8,
@@ -110,7 +111,7 @@ class FormShellPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        minimum: const EdgeInsets.fromLTRB(20, 8, 20, 20),
         child: Row(
           children: [
             Expanded(
@@ -119,7 +120,7 @@ class FormShellPage extends StatelessWidget {
                 child: Text(l10n?.formCancelAction ?? 'Cancel'),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: FilledButton(
                 onPressed: onPrimaryAction,
@@ -131,11 +132,11 @@ class FormShellPage extends StatelessWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
           children: [
             Text(title, style: textTheme.headlineSmall),
             if (subtitle != null) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
                 subtitle!,
                 style: textTheme.bodyMedium?.copyWith(
@@ -170,10 +171,10 @@ class FormSectionCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: colorScheme.surfaceContainerHighest,
+      margin: const EdgeInsets.only(bottom: 16),
+      color: colorScheme.surfaceContainerLow,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -185,7 +186,7 @@ class FormSectionCard extends StatelessWidget {
               ),
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 subtitle!,
                 style: textTheme.bodySmall?.copyWith(
@@ -193,7 +194,7 @@ class FormSectionCard extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             child,
           ],
         ),
@@ -213,16 +214,18 @@ class InlineErrorBanner extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          AppTheme.standardSurfaceRadius(colorScheme.brightness),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.error_outline, color: colorScheme.onErrorContainer),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,

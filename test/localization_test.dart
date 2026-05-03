@@ -30,7 +30,7 @@ void main() {
     expect(find.text('Train'), findsOneWidget);
     expect(find.text('Nutrition'), findsOneWidget);
     expect(find.text('Library'), findsOneWidget);
-    expect(find.text('More'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
   });
 
   testWidgets('core redesigned surfaces expose localized strings', (

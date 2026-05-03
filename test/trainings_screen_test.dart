@@ -158,7 +158,7 @@ void main() {
     await tester.tap(find.text('Save training'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byType(Scaffold), findsWidgets);
     expect(find.text('Training name'), findsOneWidget);
 
     await enterLabeledText(tester, 'Training name', 'Push day');
@@ -244,7 +244,7 @@ void main() {
     expect(find.widgetWithText(FilterChip, 'Core'), findsOneWidget);
   });
 
-  testWidgets('exercise and training dialogs use polished sections', (
+  testWidgets('exercise and training forms use polished sections', (
     tester,
   ) async {
     await pumpScreen(tester);
@@ -326,7 +326,7 @@ void main() {
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.text('Add exercise'), findsWidgets);
     expect(find.text('Enter a valid exercise name.'), findsOneWidget);
   });
 

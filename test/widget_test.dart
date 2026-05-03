@@ -16,6 +16,7 @@ import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/ui/core/layout/adaptive_page.dart';
 import 'package:fitapp/ui/core/widgets/empty_state.dart';
 import 'package:fitapp/ui/core/theme/app_theme.dart';
+import 'package:fitapp/ui/core/widgets/action_card.dart';
 import 'package:fitapp/ui/library/library_cards.dart';
 import 'package:fitapp/ui/library/library_formatters.dart';
 import 'package:fitapp/ui/core/widgets/section_header.dart';
@@ -23,6 +24,136 @@ import 'package:fitapp/ui/nutrition/nutrition_cards.dart';
 import 'package:fitapp/ui/nutrition/nutrition_formatters.dart';
 import 'package:fitapp/widgets/dish_form.dart';
 import 'package:fitapp/widgets/food_form.dart';
+
+Future<void> scrollToText(WidgetTester tester, String text) async {
+  await tester.scrollUntilVisible(
+    find.text(text),
+    200,
+    scrollable: find.byType(Scrollable).last,
+  );
+  await tester.pumpAndSettle();
+}
+
+const rootDestinationLabels = [
+  'Today',
+  'Train',
+  'Nutrition',
+  'Library',
+  'Settings',
+];
+
+Future<void> tapRootDestination(WidgetTester tester, String label) async {
+  if (tester.any(find.byType(NavigationBar))) {
+    await tester.tap(
+      find
+          .descendant(
+            of: find.byType(NavigationBar),
+            matching: find.text(label),
+          )
+          .last,
+    );
+    return;
+  }
+
+  final index = rootDestinationLabels.indexOf(label);
+  if (index == -1) {
+    throw ArgumentError.value(label, 'label', 'Unknown root destination');
+  }
+  final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
+  rail.onDestinationSelected?.call(index);
+}
+
+Future<void> openLibraryFoodsSection(WidgetTester tester) async {
+  if (tester.any(find.byType(NavigationBar)) ||
+      tester.any(find.byType(NavigationRail))) {
+    await tapRootDestination(tester, 'Library');
+    await tester.pumpAndSettle();
+  }
+  while (!tester.any(find.widgetWithText(ActionCard, 'Food library')) &&
+      tester.any(find.byIcon(Icons.arrow_back))) {
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+  }
+  if (tester.any(find.widgetWithText(ActionCard, 'Food library'))) {
+    await tester.tap(find.widgetWithText(ActionCard, 'Food library'));
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(find.text('Foods'));
+  await tester.pumpAndSettle();
+}
+
+Future<void> openLibraryRecipesSection(WidgetTester tester) async {
+  if (tester.any(find.byType(NavigationBar)) ||
+      tester.any(find.byType(NavigationRail))) {
+    await tapRootDestination(tester, 'Library');
+    await tester.pumpAndSettle();
+  }
+  while (!tester.any(find.widgetWithText(ActionCard, 'Food library')) &&
+      tester.any(find.byIcon(Icons.arrow_back))) {
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+  }
+  if (tester.any(find.widgetWithText(ActionCard, 'Food library'))) {
+    await tester.tap(find.widgetWithText(ActionCard, 'Food library'));
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(find.text('Recipes'));
+  await tester.pumpAndSettle();
+}
+
+Future<void> openLibraryTrainingPlansSection(WidgetTester tester) async {
+  if (tester.any(find.byType(NavigationBar)) ||
+      tester.any(find.byType(NavigationRail))) {
+    await tapRootDestination(tester, 'Library');
+    await tester.pumpAndSettle();
+  }
+  while (!tester.any(find.widgetWithText(ActionCard, 'Training library')) &&
+      tester.any(find.byIcon(Icons.arrow_back))) {
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+  }
+  if (tester.any(find.widgetWithText(ActionCard, 'Training library'))) {
+    await tester.tap(find.widgetWithText(ActionCard, 'Training library'));
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(find.text('Plans'));
+  await tester.pumpAndSettle();
+}
+
+Future<void> openNutritionDestination(WidgetTester tester) async {
+  await tapRootDestination(tester, 'Nutrition');
+  await tester.pumpAndSettle();
+}
+
+Future<void> openLibraryDestination(WidgetTester tester) async {
+  await tapRootDestination(tester, 'Library');
+  await tester.pumpAndSettle();
+}
+
+Future<void> openMoreDestination(WidgetTester tester) async {
+  await tapRootDestination(tester, 'Settings');
+  await tester.pumpAndSettle();
+}
+
+Future<void> openAddFood(WidgetTester tester) async {
+  final tooltip = find.byTooltip('Add food');
+  if (tester.any(tooltip)) {
+    await tester.tap(tooltip);
+  } else {
+    await tester.tap(find.widgetWithText(FilledButton, 'Add food'));
+  }
+  await tester.pumpAndSettle();
+}
+
+Future<void> openAddRecipe(WidgetTester tester) async {
+  final tooltip = find.byTooltip('Add recipe');
+  if (tester.any(tooltip)) {
+    await tester.tap(tooltip);
+  } else {
+    await tester.tap(find.widgetWithText(FilledButton, 'Add recipe'));
+  }
+  await tester.pumpAndSettle();
+}
 
 void main() {
   const tomatoNutrition = NutritionValues(
@@ -280,7 +411,7 @@ void main() {
       sectionCard.color,
       Theme.of(
         tester.element(find.byType(DishForm)),
-      ).colorScheme.surfaceContainerHighest,
+      ).colorScheme.surfaceContainerLow,
     );
   });
 
@@ -289,7 +420,7 @@ void main() {
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
-    expect(app.darkTheme?.colorScheme.primary, AppTheme.primaryAccent);
+    expect(app.darkTheme?.colorScheme.primary, Colors.white);
     expect(app.darkTheme?.colorScheme.secondary, AppTheme.secondaryAccent);
     expect(app.darkTheme?.colorScheme.surface, AppTheme.darkSurface);
     expect(
@@ -308,10 +439,13 @@ void main() {
     expect(app.darkTheme?.scaffoldBackgroundColor, AppTheme.darkBackground);
     expect(
       app.darkTheme?.navigationBarTheme.indicatorColor,
-      AppTheme.primaryAccent.withValues(alpha: 0.18),
+      app.darkTheme?.colorScheme.primaryContainer,
     );
     expect(app.darkTheme?.inputDecorationTheme.filled, isTrue);
-    expect(app.darkTheme?.cardTheme.color, AppTheme.darkSurfaceContainer);
+    expect(
+      app.darkTheme?.cardTheme.color,
+      app.darkTheme?.colorScheme.surfaceContainerLow,
+    );
     expect(app.theme?.useMaterial3, isTrue);
     expect(app.darkTheme?.useMaterial3, isTrue);
   });
@@ -337,8 +471,8 @@ void main() {
 
     expect(find.text('Today'), findsWidgets);
     expect(find.text('Daily progress'), findsWidgets);
-    expect(find.text('Next workout'), findsOneWidget);
-    expect(find.text('Performance insight'), findsOneWidget);
+    expect(find.text('NEXT WORKOUT'), findsOneWidget);
+    expect(find.text('PERFORMANCE INSIGHT'), findsOneWidget);
     expect(find.text('Calories'), findsOneWidget);
     expect(find.text('Protein'), findsOneWidget);
     await tester.scrollUntilVisible(
@@ -427,8 +561,8 @@ void main() {
       );
 
       expect(find.text('Daily progress'), findsWidgets);
-      expect(find.text('Next workout'), findsOneWidget);
-      expect(find.text('Performance insight'), findsOneWidget);
+      expect(find.text('NEXT WORKOUT'), findsOneWidget);
+      expect(find.text('PERFORMANCE INSIGHT'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
   });
@@ -446,31 +580,25 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(SectionHeader), findsOneWidget);
-    expect(find.text('Training'), findsOneWidget);
-    expect(find.text('Foods'), findsOneWidget);
+    expect(find.text('Training library'), findsOneWidget);
+    expect(find.text('Food library'), findsOneWidget);
     expect(find.byType(Scaffold), findsOneWidget);
     expect(find.byType(AppBar), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(find.text('Trainings'), findsNothing);
-    expect(find.text('Training plans'), findsOneWidget);
-    expect(find.text('Chest day'), findsOneWidget);
+    expect(find.text('Training plans'), findsNothing);
+    expect(find.text('Chest day'), findsNothing);
 
-    await tester.tap(find.text('Foods'));
+    await tester.tap(find.text('Food library'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Library'), findsNWidgets(2));
-    expect(
-      find.text('Manage plans, exercises, foods, and recipes.'),
-      findsOneWidget,
-    );
-    expect(find.byType(SectionHeader), findsOneWidget);
-    expect(find.text('Training'), findsOneWidget);
+    expect(find.text('Food library'), findsWidgets);
     expect(find.text('Foods'), findsOneWidget);
-    expect(find.text('Food'), findsNothing);
-    expect(find.byType(Scaffold), findsOneWidget);
-    expect(find.byType(AppBar), findsOneWidget);
+    expect(find.text('Recipes'), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
-    expect(find.text('Food library'), findsOneWidget);
+    await tester.tap(find.text('Foods'));
+    await tester.pumpAndSettle();
+    await scrollToText(tester, 'Chicken breast');
     expect(find.text('Chicken breast'), findsOneWidget);
   });
 
@@ -548,7 +676,7 @@ void main() {
       );
 
       expect(find.text('Daily progress'), findsWidgets);
-      expect(find.text('Next workout'), findsOneWidget);
+      expect(find.text('NEXT WORKOUT'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await pumpAtSurfaceSize(
@@ -568,78 +696,15 @@ void main() {
       );
 
       expect(find.text('Library'), findsNWidgets(2));
-      expect(find.text('Training plans'), findsOneWidget);
+      expect(find.text('Training library'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      await tester.tap(find.text('Foods'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Food library'), findsOneWidget);
+      await openLibraryFoodsSection(tester);
+      await scrollToText(tester, 'Chicken breast');
       expect(find.text('Chicken breast'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
   });
-
-  const rootDestinationLabels = [
-    'Today',
-    'Train',
-    'Nutrition',
-    'Library',
-    'More',
-  ];
-
-  Future<void> tapRootDestination(WidgetTester tester, String label) async {
-    if (tester.any(find.byType(NavigationBar))) {
-      await tester.tap(
-        find
-            .descendant(
-              of: find.byType(NavigationBar),
-              matching: find.text(label),
-            )
-            .last,
-      );
-      return;
-    }
-
-    final index = rootDestinationLabels.indexOf(label);
-    if (index == -1) {
-      throw ArgumentError.value(label, 'label', 'Unknown root destination');
-    }
-    final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
-    rail.onDestinationSelected?.call(index);
-  }
-
-  Future<void> openLibraryFoodsSection(WidgetTester tester) async {
-    await tapRootDestination(tester, 'Library');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Foods').last);
-    await tester.pumpAndSettle();
-  }
-
-  Future<void> openNutritionDestination(WidgetTester tester) async {
-    await tapRootDestination(tester, 'Nutrition');
-    await tester.pumpAndSettle();
-  }
-
-  Future<void> openLibraryDestination(WidgetTester tester) async {
-    await tapRootDestination(tester, 'Library');
-    await tester.pumpAndSettle();
-  }
-
-  Future<void> openMoreDestination(WidgetTester tester) async {
-    await tapRootDestination(tester, 'More');
-    await tester.pumpAndSettle();
-  }
-
-  Future<void> openAddFoodOrDish(WidgetTester tester) async {
-    final tooltip = find.byTooltip('Add food or recipe');
-    if (tester.any(tooltip)) {
-      await tester.tap(tooltip);
-    } else {
-      await tester.tap(find.widgetWithText(FilledButton, 'Add food or recipe'));
-    }
-    await tester.pumpAndSettle();
-  }
 
   Future<void> tapAddMealFab(WidgetTester tester) async {
     final action = tester.any(find.byType(FloatingActionButton))
@@ -670,15 +735,6 @@ void main() {
     final finder = find.bySemanticsLabel(label);
     await tester.ensureVisible(finder);
     await tester.enterText(finder, value);
-    await tester.pumpAndSettle();
-  }
-
-  Future<void> scrollToText(WidgetTester tester, String text) async {
-    await tester.scrollUntilVisible(
-      find.text(text),
-      200,
-      scrollable: find.byType(Scrollable).last,
-    );
     await tester.pumpAndSettle();
   }
 
@@ -726,10 +782,8 @@ void main() {
   }
 
   Future<void> createSimpleSalad(WidgetTester tester) async {
-    await openLibraryFoodsSection(tester);
-    await openAddFoodOrDish(tester);
-    await tester.tap(find.text('Recipe'));
-    await tester.pumpAndSettle();
+    await openLibraryRecipesSection(tester);
+    await openAddRecipe(tester);
 
     await enterLabeledText(tester, 'Recipe name', 'Simple salad');
     await enterLabeledText(tester, 'Recipe description', 'Carrot');
@@ -745,34 +799,41 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('shows Today, Train, Nutrition, Library and More destinations', (
-    tester,
-  ) async {
-    await tester.pumpWidget(const FitApp());
+  testWidgets(
+    'shows Today, Train, Nutrition, Library and Settings destinations',
+    (tester) async {
+      await tester.pumpWidget(const FitApp());
 
-    expect(find.text('Today'), findsWidgets);
-    expect(find.text('Train'), findsWidgets);
-    expect(find.text('Nutrition'), findsWidgets);
-    expect(find.text('Library'), findsWidgets);
-    expect(find.text('More'), findsWidgets);
-    expect(find.text('Daily progress'), findsWidgets);
-    expect(find.text('Chicken breast'), findsNothing);
+      expect(find.text('Today'), findsWidgets);
+      expect(find.text('Train'), findsWidgets);
+      expect(find.text('Nutrition'), findsWidgets);
+      expect(find.text('Library'), findsWidgets);
+      expect(find.text('Settings'), findsWidgets);
+      expect(find.text('Daily progress'), findsWidgets);
+      expect(find.text('Chicken breast'), findsNothing);
 
-    await openLibraryDestination(tester);
+      await openLibraryDestination(tester);
 
-    expect(find.text('Training plans'), findsOneWidget);
-    expect(find.text('Chest day'), findsOneWidget);
+      expect(find.text('Training library'), findsOneWidget);
+      expect(find.text('Food library'), findsOneWidget);
 
-    await openNutritionDestination(tester);
+      await openLibraryTrainingPlansSection(tester);
 
-    expect(find.text('Macro targets'), findsOneWidget);
+      expect(find.text('Training plans'), findsWidgets);
+      expect(find.text('Chest day'), findsOneWidget);
 
-    await openLibraryFoodsSection(tester);
+      await openNutritionDestination(tester);
 
-    expect(find.text('Food library'), findsOneWidget);
-    expect(find.text('Chicken breast'), findsOneWidget);
-    expect(find.text('food'), findsWidgets);
-  });
+      expect(find.text('Macro targets'), findsOneWidget);
+
+      await openLibraryFoodsSection(tester);
+
+      expect(find.text('Foods'), findsWidgets);
+      await scrollToText(tester, 'Chicken breast');
+      expect(find.text('Chicken breast'), findsOneWidget);
+      expect(find.text('food'), findsWidgets);
+    },
+  );
 
   testWidgets('Nutrition shell shows cockpit header and add action', (
     tester,
@@ -818,10 +879,10 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('shows More tab and opens settings screen', (tester) async {
+  testWidgets('shows Settings tab and opens settings screen', (tester) async {
     await tester.pumpWidget(const FitApp());
 
-    expect(find.text('More'), findsWidgets);
+    expect(find.text('Settings'), findsWidgets);
 
     await openMoreDestination(tester);
 
@@ -969,9 +1030,7 @@ void main() {
     await tester.pumpWidget(const FitApp());
 
     await openLibraryFoodsSection(tester);
-    await openAddFoodOrDish(tester);
-    await tester.tap(find.text('Food item'));
-    await tester.pumpAndSettle();
+    await openAddFood(tester);
 
     await enterLabeledText(tester, 'Name', 'Tomato');
     await fillTomatoNutrition(tester);
@@ -1027,10 +1086,8 @@ void main() {
   testWidgets('creates a dish from existing foods', (tester) async {
     await tester.pumpWidget(const FitApp());
 
-    await openLibraryFoodsSection(tester);
-    await openAddFoodOrDish(tester);
-    await tester.tap(find.text('Recipe'));
-    await tester.pumpAndSettle();
+    await openLibraryRecipesSection(tester);
+    await openAddRecipe(tester);
 
     await enterLabeledText(tester, 'Recipe name', 'Simple salad');
     await enterLabeledText(tester, 'Recipe description', 'Carrot and onion');
@@ -1056,10 +1113,8 @@ void main() {
     (tester) async {
       await tester.pumpWidget(const FitApp());
 
-      await openLibraryFoodsSection(tester);
-      await openAddFoodOrDish(tester);
-      await tester.tap(find.text('Recipe'));
-      await tester.pumpAndSettle();
+      await openLibraryRecipesSection(tester);
+      await openAddRecipe(tester);
 
       await enterLabeledText(tester, 'Recipe name', 'Auto serving salad');
       await enterLabeledText(tester, 'Recipe description', 'Carrot only');
@@ -1104,7 +1159,7 @@ void main() {
     store.setWorkoutWeightUnit(WorkoutWeightUnit.pounds);
 
     await tester.pumpWidget(FitApp(store: store));
-    await openLibraryDestination(tester);
+    await openLibraryTrainingPlansSection(tester);
 
     final chestDayCard = find.ancestor(
       of: find.text('Chest day'),
@@ -1329,10 +1384,8 @@ void main() {
   testWidgets('blocks deleting an item referenced by a dish', (tester) async {
     await tester.pumpWidget(const FitApp());
 
-    await openLibraryFoodsSection(tester);
-    await openAddFoodOrDish(tester);
-    await tester.tap(find.text('Recipe'));
-    await tester.pumpAndSettle();
+    await openLibraryRecipesSection(tester);
+    await openAddRecipe(tester);
 
     await enterLabeledText(tester, 'Recipe name', 'Simple salad');
     await enterLabeledText(tester, 'Recipe description', 'Carrot');
@@ -1347,6 +1400,8 @@ void main() {
     await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
 
+    await openLibraryFoodsSection(tester);
+    await scrollToText(tester, 'Carrot');
     await tapRowAction(tester, 'Carrot', 'Delete Carrot', Icons.delete_outline);
     await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
     await tester.pumpAndSettle();
@@ -1393,10 +1448,8 @@ void main() {
   testWidgets('editing a dish updates the dish row', (tester) async {
     await tester.pumpWidget(const FitApp());
 
-    await openLibraryFoodsSection(tester);
-    await openAddFoodOrDish(tester);
-    await tester.tap(find.text('Recipe'));
-    await tester.pumpAndSettle();
+    await openLibraryRecipesSection(tester);
+    await openAddRecipe(tester);
 
     await enterLabeledText(tester, 'Recipe name', 'Simple salad');
     await enterLabeledText(tester, 'Recipe description', 'Carrot and onion');

@@ -75,7 +75,7 @@ void main() {
     for (final entry in <({double width, EdgeInsets padding})>[
       (
         width: 390,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       ),
       (
         width: 700,

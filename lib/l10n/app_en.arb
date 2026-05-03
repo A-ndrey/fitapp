@@ -20,7 +20,7 @@
   "@destinationLibrary": {
     "description": "Root navigation destination for reusable app content."
   },
-  "destinationMore": "More",
+  "destinationMore": "Settings",
   "@destinationMore": {
     "description": "Root navigation destination for settings and preferences."
   },

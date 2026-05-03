@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/workout_session.dart';
-import '../core/theme/app_theme.dart';
 import 'workout_formatters.dart';
 
 class WorkoutSessionHeaderCard extends StatelessWidget {
@@ -14,6 +13,7 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
     final duration = formatWorkoutDuration(
       session.duration,
       hourUnit: l10n?.workoutHourUnit ?? 'h',
@@ -40,7 +40,7 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
             Text(
               l10n?.workoutSessionCockpitLabel ?? 'Active session',
               style: textTheme.labelLarge?.copyWith(
-                color: AppTheme.energyOrange,
+                color: colorScheme.onPrimaryContainer,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -115,10 +115,10 @@ class WorkoutExerciseProgressCard extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppTheme.energyOrange.withValues(
+                  backgroundColor: colorScheme.primaryContainer.withValues(
                     alpha: 0.14,
                   ),
-                  foregroundColor: AppTheme.energyOrange,
+                  foregroundColor: colorScheme.onPrimaryContainer,
                   child: const Icon(Icons.fitness_center),
                 ),
                 const SizedBox(width: 14),
@@ -143,7 +143,7 @@ class WorkoutExerciseProgressCard extends StatelessWidget {
                       Text(
                         setCountLabel,
                         style: textTheme.labelMedium?.copyWith(
-                          color: AppTheme.recoveryBlue,
+                          color: colorScheme.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -172,8 +172,8 @@ class WorkoutInfoPill extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppTheme.energyOrange.withValues(alpha: 0.12),
-        border: Border.all(color: AppTheme.energyOrange.withValues(alpha: 0.4)),
+        color: colorScheme.surfaceContainerHigh,
+        border: Border.all(color: colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Padding(

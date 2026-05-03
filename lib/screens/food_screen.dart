@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/catalog_item.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/empty_state.dart';
@@ -8,11 +9,68 @@ import '../ui/library/library_cards.dart';
 import '../widgets/dish_form.dart';
 import '../widgets/food_form.dart';
 
+enum FoodLibraryView { all, foods, recipes }
+
+Future<void> openFoodFormScreen(
+  BuildContext context,
+  AppStore store, {
+  CatalogItem? initialItem,
+}) async {
+  final item = initialItem;
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (context) {
+        if (item != null && !item.isFood) {
+          return DishForm(
+            store: store,
+            initialDish: item.dish,
+            fullScreen: true,
+          );
+        }
+        return FoodForm(
+          store: store,
+          initialFood: item?.food,
+          fullScreen: true,
+        );
+      },
+    ),
+  );
+}
+
+Future<void> openRecipeFormScreen(
+  BuildContext context,
+  AppStore store, {
+  CatalogItem? initialItem,
+}) async {
+  final item = initialItem;
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (context) {
+        return DishForm(
+          store: store,
+          initialDish: item?.dish,
+          fullScreen: true,
+        );
+      },
+    ),
+  );
+}
+
 class FoodScreen extends StatelessWidget {
-  const FoodScreen({super.key, required this.store, this.embedded = false});
+  const FoodScreen({
+    super.key,
+    required this.store,
+    this.embedded = false,
+    this.view = FoodLibraryView.all,
+    this.showEmbeddedAction = true,
+  });
 
   final AppStore store;
   final bool embedded;
+  final FoodLibraryView view;
+  final bool showEmbeddedAction;
 
   @override
   Widget build(BuildContext context) {
@@ -41,20 +99,25 @@ class FoodScreen extends StatelessWidget {
 
   Widget _buildBody(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final items = switch (view) {
+      FoodLibraryView.all => store.items,
+      FoodLibraryView.foods =>
+        store.items.where((item) => item.isFood).toList(),
+      FoodLibraryView.recipes =>
+        store.items.where((item) => !item.isFood).toList(),
+    };
     return AdaptivePage(
       children: [
         _buildHeader(context),
         const SizedBox(height: 12),
-        if (store.items.isEmpty)
+        if (items.isEmpty)
           AppEmptyState(
             icon: Icons.inventory_2_outlined,
-            title: l10n?.foodEmptyTitle ?? 'No foods or recipes yet',
-            message:
-                l10n?.foodEmptyMessage ??
-                'Use Add food or recipe to build your reusable catalog.',
+            title: _emptyTitle(l10n),
+            message: _emptyMessage(l10n),
           )
         else
-          ...store.items.map(
+          ...items.map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: FoodCatalogCard(
@@ -71,12 +134,15 @@ class FoodScreen extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final addLabel = l10n?.foodAddItemAction ?? 'Add food or recipe';
+    final addLabel = _addLabel(l10n);
     final title = Text(
-      l10n?.foodSetTitle ?? 'Food library',
+      _title(l10n),
       style: Theme.of(context).textTheme.titleMedium,
     );
     if (!embedded) {
+      return title;
+    }
+    if (!showEmbeddedAction) {
       return title;
     }
     return Wrap(
@@ -88,7 +154,7 @@ class FoodScreen extends StatelessWidget {
         title,
         IntrinsicWidth(
           child: FilledButton.icon(
-            onPressed: () => _openAddItemFlow(context),
+            onPressed: () => _handleAddPressed(context),
             icon: const Icon(Icons.add),
             label: Text(addLabel),
           ),
@@ -102,25 +168,9 @@ class FoodScreen extends StatelessWidget {
     if (item == null) {
       return;
     }
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (context) {
-          if (item.isFood) {
-            return FoodForm(
-              store: store,
-              initialFood: item.food,
-              fullScreen: true,
-            );
-          }
-          return DishForm(
-            store: store,
-            initialDish: item.dish,
-            fullScreen: true,
-          );
-        },
-      ),
-    );
+    await (item.isFood
+        ? openFoodFormScreen(context, store, initialItem: item)
+        : openRecipeFormScreen(context, store, initialItem: item));
   }
 
   Future<void> _confirmDeleteItem(BuildContext context, String itemId) async {
@@ -197,16 +247,54 @@ class FoodScreen extends StatelessWidget {
     if (!context.mounted || choice == null) {
       return;
     }
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (context) {
-          return choice == _AddFoodChoice.food
-              ? FoodForm(store: store, fullScreen: true)
-              : DishForm(store: store, fullScreen: true);
-        },
-      ),
-    );
+    await (choice == _AddFoodChoice.food
+        ? openFoodFormScreen(context, store)
+        : openRecipeFormScreen(context, store));
+  }
+
+  Future<void> _handleAddPressed(BuildContext context) async {
+    switch (view) {
+      case FoodLibraryView.all:
+        await _openAddItemFlow(context);
+      case FoodLibraryView.foods:
+        await openFoodFormScreen(context, store);
+      case FoodLibraryView.recipes:
+        await openRecipeFormScreen(context, store);
+    }
+  }
+
+  String _title(AppLocalizations? l10n) {
+    return switch (view) {
+      FoodLibraryView.all => l10n?.foodSetTitle ?? 'Food library',
+      FoodLibraryView.foods => 'Foods',
+      FoodLibraryView.recipes => 'Recipes',
+    };
+  }
+
+  String _addLabel(AppLocalizations? l10n) {
+    return switch (view) {
+      FoodLibraryView.all => l10n?.foodAddItemAction ?? 'Add food or recipe',
+      FoodLibraryView.foods => 'Add food',
+      FoodLibraryView.recipes => 'Add recipe',
+    };
+  }
+
+  String _emptyTitle(AppLocalizations? l10n) {
+    return switch (view) {
+      FoodLibraryView.all => l10n?.foodEmptyTitle ?? 'No foods or recipes yet',
+      FoodLibraryView.foods => 'No foods yet',
+      FoodLibraryView.recipes => 'No recipes yet',
+    };
+  }
+
+  String _emptyMessage(AppLocalizations? l10n) {
+    return switch (view) {
+      FoodLibraryView.all =>
+        l10n?.foodEmptyMessage ??
+            'Use Add food or recipe to build your reusable catalog.',
+      FoodLibraryView.foods => 'Add foods to build your reusable catalog.',
+      FoodLibraryView.recipes => 'Add recipes to build your reusable catalog.',
+    };
   }
 }
 

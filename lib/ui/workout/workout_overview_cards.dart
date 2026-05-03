@@ -23,6 +23,7 @@ class ActiveWorkoutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
     final duration = formatWorkoutDuration(
       session.duration,
       hourUnit: l10n?.workoutHourUnit ?? 'h',
@@ -43,7 +44,7 @@ class ActiveWorkoutCard extends StatelessWidget {
                 Text(
                   l10n?.workoutActiveLabel ?? 'Active workout',
                   style: textTheme.labelLarge?.copyWith(
-                    color: AppTheme.energyOrange,
+                    color: colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -109,7 +110,7 @@ class WorkoutStatsGrid extends StatelessWidget {
             l10n?.workoutSessionCountSuffix(completedCount) ??
             (completedCount == 1 ? 'session' : 'sessions'),
         icon: Icons.check_circle_outline,
-        color: AppTheme.energyOrange,
+        color: Theme.of(context).colorScheme.primary,
       ),
       MetricCard(
         label: l10n?.workoutTotalTimeMetricLabel ?? 'Total time',

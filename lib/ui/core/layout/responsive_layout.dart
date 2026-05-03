@@ -2,8 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-double responsivePageHorizontalPadding(double maxWidth) {
-  return (maxWidth * 0.04).clamp(16.0, 36.0).toDouble();
+double responsivePageHorizontalPadding(
+  double maxWidth, {
+  double minPadding = 16,
+}) {
+  return (maxWidth * 0.04).clamp(minPadding, 36.0).toDouble();
 }
 
 double responsivePageMaxWidth(double maxWidth, {double upperBound = 1280}) {

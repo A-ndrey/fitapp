@@ -9,26 +9,84 @@ import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/form_shell.dart';
 import '../ui/library/library_cards.dart';
 
-enum _TrainingsView { plans, exercises }
+enum TrainingsCatalogView { plans, exercises }
+
+Future<void> openTrainingPlanForm(
+  BuildContext context,
+  AppStore store, {
+  TrainingPlan? initialPlan,
+}) {
+  return Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (context) {
+        return _TrainingPlanDialog(
+          store: store,
+          initialPlan: initialPlan,
+          fullScreen: true,
+        );
+      },
+    ),
+  );
+}
+
+Future<void> openExerciseForm(
+  BuildContext context,
+  AppStore store, {
+  Exercise? initialExercise,
+}) {
+  return Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (context) {
+        return _ExerciseDialog(
+          store: store,
+          initialExercise: initialExercise,
+          fullScreen: true,
+        );
+      },
+    ),
+  );
+}
 
 class TrainingsScreen extends StatefulWidget {
   const TrainingsScreen({
     super.key,
     required this.store,
     this.embedded = false,
+    this.initialView = TrainingsCatalogView.plans,
+    this.showEmbeddedAction = true,
+    this.showViewSwitcher = true,
   });
 
   final AppStore store;
   final bool embedded;
+  final TrainingsCatalogView initialView;
+  final bool showEmbeddedAction;
+  final bool showViewSwitcher;
 
   @override
   State<TrainingsScreen> createState() => _TrainingsScreenState();
 }
 
 class _TrainingsScreenState extends State<TrainingsScreen> {
-  _TrainingsView _selectedView = _TrainingsView.plans;
+  late TrainingsCatalogView _selectedView;
 
   AppStore get store => widget.store;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedView = widget.initialView;
+  }
+
+  @override
+  void didUpdateWidget(covariant TrainingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialView != widget.initialView) {
+      _selectedView = widget.initialView;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +95,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
       builder: (context, _) {
         final body = _buildBody(context);
         final l10n = AppLocalizations.of(context);
-        final addLabel = _selectedView == _TrainingsView.plans
+        final addLabel = _selectedView == TrainingsCatalogView.plans
             ? l10n?.trainingAddPlanAction ?? 'Add training plan'
             : l10n?.trainingAddExerciseAction ?? 'Add exercise';
         if (widget.embedded) {
@@ -48,7 +106,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
           floatingActionButton: FloatingActionButton(
             heroTag: 'trainings-action-fab',
             tooltip: addLabel,
-            onPressed: _selectedView == _TrainingsView.plans
+            onPressed: _selectedView == TrainingsCatalogView.plans
                 ? () => _openPlanDialog(context)
                 : () => _openExerciseDialog(context),
             child: const Icon(Icons.add),
@@ -63,28 +121,30 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     final l10n = AppLocalizations.of(context);
     return AdaptivePage(
       children: [
-        SegmentedButton<_TrainingsView>(
-          segments: [
-            ButtonSegment(
-              value: _TrainingsView.plans,
-              label: Text(l10n?.trainingPlansSegment ?? 'Plans'),
-              icon: const Icon(Icons.assignment_outlined),
-            ),
-            ButtonSegment(
-              value: _TrainingsView.exercises,
-              label: Text(l10n?.trainingExercisesSegment ?? 'Exercises'),
-              icon: const Icon(Icons.fitness_center_outlined),
-            ),
-          ],
-          selected: <_TrainingsView>{_selectedView},
-          onSelectionChanged: (selection) {
-            setState(() {
-              _selectedView = selection.first;
-            });
-          },
-        ),
-        const SizedBox(height: 16),
-        if (_selectedView == _TrainingsView.plans)
+        if (widget.showViewSwitcher) ...[
+          SegmentedButton<TrainingsCatalogView>(
+            segments: [
+              ButtonSegment(
+                value: TrainingsCatalogView.plans,
+                label: Text(l10n?.trainingPlansSegment ?? 'Plans'),
+                icon: const Icon(Icons.assignment_outlined),
+              ),
+              ButtonSegment(
+                value: TrainingsCatalogView.exercises,
+                label: Text(l10n?.trainingExercisesSegment ?? 'Exercises'),
+                icon: const Icon(Icons.fitness_center_outlined),
+              ),
+            ],
+            selected: <TrainingsCatalogView>{_selectedView},
+            onSelectionChanged: (selection) {
+              setState(() {
+                _selectedView = selection.first;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (_selectedView == TrainingsCatalogView.plans)
           ..._buildPlansView(context)
         else
           ..._buildExercisesView(context),
@@ -170,6 +230,9 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     if (!widget.embedded) {
       return titleWidget;
     }
+    if (!widget.showEmbeddedAction) {
+      return titleWidget;
+    }
     return Wrap(
       spacing: 12,
       runSpacing: 8,
@@ -195,24 +258,14 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     BuildContext context, {
     TrainingPlan? initialPlan,
   }) async {
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return _TrainingPlanDialog(store: store, initialPlan: initialPlan);
-      },
-    );
+    await openTrainingPlanForm(context, store, initialPlan: initialPlan);
   }
 
   Future<void> _openExerciseDialog(
     BuildContext context, {
     Exercise? initialExercise,
   }) async {
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return _ExerciseDialog(store: store, initialExercise: initialExercise);
-      },
-    );
+    await openExerciseForm(context, store, initialExercise: initialExercise);
   }
 
   Future<void> _confirmDeletePlan(
@@ -315,10 +368,15 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
 }
 
 class _ExerciseDialog extends StatefulWidget {
-  const _ExerciseDialog({required this.store, this.initialExercise});
+  const _ExerciseDialog({
+    required this.store,
+    this.initialExercise,
+    this.fullScreen = false,
+  });
 
   final AppStore store;
   final Exercise? initialExercise;
+  final bool fullScreen;
 
   @override
   State<_ExerciseDialog> createState() => _ExerciseDialogState();
@@ -358,95 +416,109 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final title = _isEditing
+        ? l10n?.exerciseDialogEditTitle ?? 'Edit exercise'
+        : l10n?.exerciseDialogAddTitle ?? 'Add exercise';
+    final subtitle =
+        l10n?.exerciseDialogSubtitle ??
+        'Define instructions and muscle focus for workout plans.';
+    final children = [
+      FormSectionCard(
+        title: l10n?.exerciseProfileSectionTitle ?? 'Exercise profile',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _nameController,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n?.exerciseNameFieldLabel ?? 'Exercise name',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _descriptionController,
+              textInputAction: TextInputAction.next,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText:
+                    l10n?.exerciseDescriptionFieldLabel ??
+                    'Exercise description',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _instructionController,
+              textInputAction: TextInputAction.next,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText:
+                    l10n?.exerciseInstructionFieldLabel ??
+                    'Exercise instruction',
+              ),
+            ),
+          ],
+        ),
+      ),
+      FormSectionCard(
+        title: l10n?.exerciseMuscleFocusTitle ?? 'Muscle focus',
+        subtitle:
+            l10n?.exerciseMuscleFocusSubtitle ??
+            'Choose every area this exercise primarily trains.',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n?.exerciseSelectMuscleGroups ?? 'Select muscle groups',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: MuscleGroup.values
+                  .map((muscleGroup) {
+                    return FilterChip(
+                      label: Text(muscleGroup.label),
+                      selected: _selectedMuscleGroups.contains(muscleGroup),
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedMuscleGroups.add(muscleGroup);
+                          } else {
+                            _selectedMuscleGroups.remove(muscleGroup);
+                          }
+                          _errorText = null;
+                        });
+                      },
+                    );
+                  })
+                  .toList(growable: false),
+            ),
+          ],
+        ),
+      ),
+      if (_errorText != null) InlineErrorBanner(message: _errorText!),
+    ];
+    if (widget.fullScreen) {
+      return FormShellPage(
+        title: title,
+        subtitle: subtitle,
+        primaryActionLabel: l10n?.exerciseSaveAction ?? 'Save exercise',
+        onPrimaryAction: _saveExercise,
+        children: children,
+      );
+    }
     return FormShellDialog(
-      title: _isEditing
-          ? l10n?.exerciseDialogEditTitle ?? 'Edit exercise'
-          : l10n?.exerciseDialogAddTitle ?? 'Add exercise',
-      subtitle:
-          l10n?.exerciseDialogSubtitle ??
-          'Define instructions and muscle focus for workout plans.',
+      title: title,
+      subtitle: subtitle,
       primaryActionLabel: l10n?.exerciseSaveAction ?? 'Save exercise',
       onPrimaryAction: _saveExercise,
       maxWidth: 640,
-      children: [
-        FormSectionCard(
-          title: l10n?.exerciseProfileSectionTitle ?? 'Exercise profile',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _nameController,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n?.exerciseNameFieldLabel ?? 'Exercise name',
-                ),
-              ),
-              TextField(
-                controller: _descriptionController,
-                textInputAction: TextInputAction.next,
-                minLines: 2,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  labelText:
-                      l10n?.exerciseDescriptionFieldLabel ??
-                      'Exercise description',
-                ),
-              ),
-              TextField(
-                controller: _instructionController,
-                textInputAction: TextInputAction.next,
-                minLines: 2,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  labelText:
-                      l10n?.exerciseInstructionFieldLabel ??
-                      'Exercise instruction',
-                ),
-              ),
-            ],
-          ),
-        ),
-        FormSectionCard(
-          title: l10n?.exerciseMuscleFocusTitle ?? 'Muscle focus',
-          subtitle:
-              l10n?.exerciseMuscleFocusSubtitle ??
-              'Choose every area this exercise primarily trains.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n?.exerciseSelectMuscleGroups ?? 'Select muscle groups',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: MuscleGroup.values
-                    .map((muscleGroup) {
-                      return FilterChip(
-                        label: Text(muscleGroup.label),
-                        selected: _selectedMuscleGroups.contains(muscleGroup),
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _selectedMuscleGroups.add(muscleGroup);
-                            } else {
-                              _selectedMuscleGroups.remove(muscleGroup);
-                            }
-                            _errorText = null;
-                          });
-                        },
-                      );
-                    })
-                    .toList(growable: false),
-              ),
-            ],
-          ),
-        ),
-        if (_errorText != null) InlineErrorBanner(message: _errorText!),
-      ],
+      children: children,
     );
   }
 
@@ -509,10 +581,15 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
 }
 
 class _TrainingPlanDialog extends StatefulWidget {
-  const _TrainingPlanDialog({required this.store, this.initialPlan});
+  const _TrainingPlanDialog({
+    required this.store,
+    this.initialPlan,
+    this.fullScreen = false,
+  });
 
   final AppStore store;
   final TrainingPlan? initialPlan;
+  final bool fullScreen;
 
   @override
   State<_TrainingPlanDialog> createState() => _TrainingPlanDialogState();
@@ -549,150 +626,163 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final title = _isEditing
+        ? l10n?.trainingPlanEditDialogTitle ?? 'Edit training'
+        : l10n?.trainingPlanDialogTitle ?? 'Training plan';
+    final subtitle =
+        l10n?.trainingPlanDialogSubtitle ??
+        'Assemble a reusable sequence for workout sessions.';
+    final children = [
+      FormSectionCard(
+        title: l10n?.trainingBasicsSectionTitle ?? 'Training basics',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _nameController,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n?.trainingNameFieldLabel ?? 'Training name',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _descriptionController,
+              textInputAction: TextInputAction.newline,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText:
+                    l10n?.trainingDescriptionFieldLabel ??
+                    'Training description',
+              ),
+            ),
+          ],
+        ),
+      ),
+      FormSectionCard(
+        title: l10n?.trainingExerciseSequenceTitle ?? 'Exercise sequence',
+        subtitle:
+            l10n?.trainingExerciseSequenceSubtitle ??
+            'Add targets in the order you want to train.',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            OutlinedButton.icon(
+              onPressed: _openExercisePicker,
+              icon: const Icon(Icons.add),
+              label: Text(l10n?.trainingAddExerciseAction ?? 'Add exercise'),
+            ),
+            const SizedBox(height: 12),
+            if (_exercises.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  l10n?.trainingNoExercisesAdded ?? 'No exercises added yet',
+                ),
+              )
+            else
+              ..._exercises.indexed.map((entry) {
+                final index = entry.$1;
+                final exercise = entry.$2;
+                final catalogExercise = widget.store.exerciseById(
+                  exercise.exerciseId,
+                );
+                final exerciseName =
+                    catalogExercise?.name ?? exercise.exerciseId;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Card(
+                    child: ListTile(
+                      title: Text(exerciseName),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _formatTarget(
+                              exercise.sets,
+                              l10n?.trainingSetsSummaryLabel ?? 'sets',
+                            ),
+                          ),
+                          Text(
+                            _formatTarget(
+                              exercise.reps,
+                              l10n?.trainingRepsSummaryLabel ?? 'reps',
+                            ),
+                          ),
+                          Text(
+                            _formatTarget(
+                              exercise.weight,
+                              l10n?.trainingWeightSummaryLabel ?? 'weight',
+                            ),
+                          ),
+                          Text(
+                            _formatTarget(
+                              exercise.time,
+                              l10n?.trainingTimeSummaryLabel ?? 'time',
+                            ),
+                          ),
+                          Text(
+                            l10n?.trainingTargetUnitLabel(exercise.unit) ??
+                                'Unit: ${exercise.unit}',
+                          ),
+                        ],
+                      ),
+                      isThreeLine: true,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip:
+                                l10n?.libraryEditItem(exerciseName) ??
+                                'Edit $exerciseName',
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () => _editExercise(index),
+                          ),
+                          IconButton(
+                            tooltip:
+                                l10n?.trainingRemoveExerciseTooltip(
+                                  exerciseName,
+                                ) ??
+                                'Remove $exerciseName',
+                            icon: const Icon(Icons.remove_circle_outline),
+                            onPressed: () {
+                              setState(() {
+                                _exercises.removeAt(index);
+                                _errorText = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+          ],
+        ),
+      ),
+      if (_errorText != null) InlineErrorBanner(message: _errorText!),
+    ];
+    if (widget.fullScreen) {
+      return FormShellPage(
+        title: title,
+        subtitle: subtitle,
+        primaryActionLabel: l10n?.trainingSaveAction ?? 'Save training',
+        onPrimaryAction: _savePlan,
+        children: children,
+      );
+    }
     return FormShellDialog(
-      title: _isEditing
-          ? l10n?.trainingPlanEditDialogTitle ?? 'Edit training'
-          : l10n?.trainingPlanDialogTitle ?? 'Training plan',
-      subtitle:
-          l10n?.trainingPlanDialogSubtitle ??
-          'Assemble a reusable sequence for workout sessions.',
+      title: title,
+      subtitle: subtitle,
       primaryActionLabel: l10n?.trainingSaveAction ?? 'Save training',
       onPrimaryAction: _savePlan,
       maxWidth: 720,
-      children: [
-        FormSectionCard(
-          title: l10n?.trainingBasicsSectionTitle ?? 'Training basics',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _nameController,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n?.trainingNameFieldLabel ?? 'Training name',
-                ),
-              ),
-              TextField(
-                controller: _descriptionController,
-                textInputAction: TextInputAction.newline,
-                minLines: 2,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  labelText:
-                      l10n?.trainingDescriptionFieldLabel ??
-                      'Training description',
-                ),
-              ),
-            ],
-          ),
-        ),
-        FormSectionCard(
-          title: l10n?.trainingExerciseSequenceTitle ?? 'Exercise sequence',
-          subtitle:
-              l10n?.trainingExerciseSequenceSubtitle ??
-              'Add targets in the order you want to train.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              OutlinedButton.icon(
-                onPressed: _openExercisePicker,
-                icon: const Icon(Icons.add),
-                label: Text(l10n?.trainingAddExerciseAction ?? 'Add exercise'),
-              ),
-              const SizedBox(height: 12),
-              if (_exercises.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    l10n?.trainingNoExercisesAdded ?? 'No exercises added yet',
-                  ),
-                )
-              else
-                ..._exercises.indexed.map((entry) {
-                  final index = entry.$1;
-                  final exercise = entry.$2;
-                  final catalogExercise = widget.store.exerciseById(
-                    exercise.exerciseId,
-                  );
-                  final exerciseName =
-                      catalogExercise?.name ?? exercise.exerciseId;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Card(
-                      child: ListTile(
-                        title: Text(exerciseName),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _formatTarget(
-                                exercise.sets,
-                                l10n?.trainingSetsSummaryLabel ?? 'sets',
-                              ),
-                            ),
-                            Text(
-                              _formatTarget(
-                                exercise.reps,
-                                l10n?.trainingRepsSummaryLabel ?? 'reps',
-                              ),
-                            ),
-                            Text(
-                              _formatTarget(
-                                exercise.weight,
-                                l10n?.trainingWeightSummaryLabel ?? 'weight',
-                              ),
-                            ),
-                            Text(
-                              _formatTarget(
-                                exercise.time,
-                                l10n?.trainingTimeSummaryLabel ?? 'time',
-                              ),
-                            ),
-                            Text(
-                              l10n?.trainingTargetUnitLabel(exercise.unit) ??
-                                  'Unit: ${exercise.unit}',
-                            ),
-                          ],
-                        ),
-                        isThreeLine: true,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              tooltip:
-                                  l10n?.libraryEditItem(exerciseName) ??
-                                  'Edit $exerciseName',
-                              icon: const Icon(Icons.edit_outlined),
-                              onPressed: () => _editExercise(index),
-                            ),
-                            IconButton(
-                              tooltip:
-                                  l10n?.trainingRemoveExerciseTooltip(
-                                    exerciseName,
-                                  ) ??
-                                  'Remove $exerciseName',
-                              icon: const Icon(Icons.remove_circle_outline),
-                              onPressed: () {
-                                setState(() {
-                                  _exercises.removeAt(index);
-                                  _errorText = null;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-            ],
-          ),
-        ),
-        if (_errorText != null) InlineErrorBanner(message: _errorText!),
-      ],
+      children: children,
     );
   }
 
@@ -721,14 +811,17 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
     if (!mounted || exercise == null) {
       return;
     }
-    final entry = await showDialog<TrainingExercise>(
-      context: context,
-      builder: (dialogContext) {
-        return _TrainingExerciseDialog(
-          exercise: exercise,
-          initialExercise: null,
-        );
-      },
+    final entry = await Navigator.of(context).push<TrainingExercise>(
+      MaterialPageRoute<TrainingExercise>(
+        fullscreenDialog: true,
+        builder: (context) {
+          return _TrainingExerciseDialog(
+            exercise: exercise,
+            initialExercise: null,
+            fullScreen: true,
+          );
+        },
+      ),
     );
     if (!mounted || entry == null) {
       return;
@@ -745,14 +838,17 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
     if (exercise == null) {
       return;
     }
-    final updated = await showDialog<TrainingExercise>(
-      context: context,
-      builder: (dialogContext) {
-        return _TrainingExerciseDialog(
-          exercise: exercise,
-          initialExercise: current,
-        );
-      },
+    final updated = await Navigator.of(context).push<TrainingExercise>(
+      MaterialPageRoute<TrainingExercise>(
+        fullscreenDialog: true,
+        builder: (context) {
+          return _TrainingExerciseDialog(
+            exercise: exercise,
+            initialExercise: current,
+            fullScreen: true,
+          );
+        },
+      ),
     );
     if (!mounted || updated == null) {
       return;
@@ -829,10 +925,12 @@ class _TrainingExerciseDialog extends StatefulWidget {
   const _TrainingExerciseDialog({
     required this.exercise,
     required this.initialExercise,
+    this.fullScreen = false,
   });
 
   final Exercise exercise;
   final TrainingExercise? initialExercise;
+  final bool fullScreen;
 
   @override
   State<_TrainingExerciseDialog> createState() =>
@@ -879,80 +977,94 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final title = widget.initialExercise == null
+        ? l10n?.trainingTargetDialogTitle ?? 'Add exercise'
+        : l10n?.trainingTargetDialogEditTitle ?? 'Edit exercise';
+    final children = [
+      FormSectionCard(
+        title: l10n?.trainingTargetSectionTitle ?? 'Set targets',
+        subtitle:
+            l10n?.trainingTargetSectionSubtitle ??
+            'Set working volume, load, duration, and unit.',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _setsController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText:
+                    l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _repsController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText:
+                    l10n?.trainingExpectedRepsFieldLabel ?? 'Target reps',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _weightController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText:
+                    l10n?.trainingExpectedWeightFieldLabel ?? 'Target load',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _timeController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText:
+                    l10n?.trainingExpectedTimeFieldLabel ?? 'Target duration',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _unitController,
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                labelText: l10n?.trainingUnitFieldLabel ?? 'Load or time unit',
+              ),
+            ),
+          ],
+        ),
+      ),
+      if (_errorText != null) InlineErrorBanner(message: _errorText!),
+    ];
+    if (widget.fullScreen) {
+      return FormShellPage(
+        title: title,
+        subtitle: widget.exercise.name,
+        primaryActionLabel: l10n?.exerciseSaveAction ?? 'Save exercise',
+        onPrimaryAction: _saveExercise,
+        children: children,
+      );
+    }
     return FormShellDialog(
-      title: widget.initialExercise == null
-          ? l10n?.trainingTargetDialogTitle ?? 'Add exercise'
-          : l10n?.trainingTargetDialogEditTitle ?? 'Edit exercise',
+      title: title,
       subtitle: widget.exercise.name,
       primaryActionLabel: l10n?.exerciseSaveAction ?? 'Save exercise',
       onPrimaryAction: _saveExercise,
-      children: [
-        FormSectionCard(
-          title: l10n?.trainingTargetSectionTitle ?? 'Set targets',
-          subtitle:
-              l10n?.trainingTargetSectionSubtitle ??
-              'Set working volume, load, duration, and unit.',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _setsController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText:
-                      l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
-                ),
-              ),
-              TextField(
-                controller: _repsController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText:
-                      l10n?.trainingExpectedRepsFieldLabel ?? 'Target reps',
-                ),
-              ),
-              TextField(
-                controller: _weightController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText:
-                      l10n?.trainingExpectedWeightFieldLabel ?? 'Target load',
-                ),
-              ),
-              TextField(
-                controller: _timeController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText:
-                      l10n?.trainingExpectedTimeFieldLabel ?? 'Target duration',
-                ),
-              ),
-              TextField(
-                controller: _unitController,
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
-                  labelText:
-                      l10n?.trainingUnitFieldLabel ?? 'Load or time unit',
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (_errorText != null) InlineErrorBanner(message: _errorText!),
-      ],
+      children: children,
     );
   }
 

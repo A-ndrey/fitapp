@@ -167,15 +167,9 @@ void main() {
     String workoutName,
   ) async {
     final tooltip = find.byTooltip('Open completed $workoutName');
-    if (!tester.any(tooltip)) {
-      await tester.scrollUntilVisible(
-        tooltip,
-        300,
-        scrollable: find.byType(Scrollable).last,
-      );
-      await tester.pumpAndSettle();
-    }
     if (tester.any(tooltip)) {
+      await tester.ensureVisible(tooltip.first);
+      await tester.pumpAndSettle();
       await tester.tap(tooltip.first);
       await tester.pumpAndSettle();
       return;
@@ -200,12 +194,23 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> tapVisibleTooltip(
+    WidgetTester tester,
+    String tooltipLabel,
+  ) async {
+    final tooltip = find.byTooltip(tooltipLabel);
+    await tester.ensureVisible(tooltip.first);
+    await tester.pumpAndSettle();
+    await tester.tap(tooltip.first);
+    await tester.pumpAndSettle();
+  }
+
   const rootDestinationLabels = [
     'Today',
     'Train',
     'Nutrition',
     'Library',
-    'More',
+    'Settings',
   ];
 
   Future<void> openRootDestination(
@@ -375,8 +380,7 @@ void main() {
     await tester.tap(find.byTooltip('Open active workout'));
     await tester.pumpAndSettle();
     await openCompletedWorkout(tester, 'Chest day');
-    await tester.tap(find.byTooltip('Delete completed Chest day'));
-    await tester.pumpAndSettle();
+    await tapVisibleTooltip(tester, 'Delete completed Chest day');
 
     expect(openedActive, isTrue);
     expect(openedHistory, isTrue);
@@ -897,7 +901,7 @@ void main() {
 
     await openRootDestination(tester, 'Library');
 
-    expect(find.text('Training plans'), findsOneWidget);
+    expect(find.text('Training library'), findsOneWidget);
     expect(find.text('Active workout'), findsNothing);
 
     await openTrainDestination(tester);
@@ -963,8 +967,7 @@ void main() {
 
     expect(find.text('2026-04-18 • 45 min'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Delete completed Chest day'));
-    await tester.pumpAndSettle();
+    await tapVisibleTooltip(tester, 'Delete completed Chest day');
 
     expect(find.text('Delete workout?'), findsOneWidget);
 
@@ -1119,7 +1122,7 @@ void main() {
 
     await openRootDestination(tester, 'Library');
 
-    expect(find.text('Training plans'), findsOneWidget);
+    expect(find.text('Training library'), findsOneWidget);
 
     await openTrainDestination(tester);
 

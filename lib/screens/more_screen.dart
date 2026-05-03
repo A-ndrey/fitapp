@@ -22,20 +22,21 @@ class MoreScreen extends StatelessWidget {
         final l10n = AppLocalizations.of(context);
 
         return AppScreenScaffold(
-          title: l10n?.destinationMore ?? 'More',
+          title: l10n?.destinationMore ?? 'Settings',
           body: AdaptivePage(
             children: [
               SectionHeader(
-                title: l10n?.destinationMore ?? 'More',
+                title: l10n?.destinationMore ?? 'Settings',
                 subtitle:
                     l10n?.moreSubtitle ??
                     'Tune units, appearance, and training-log preferences.',
               ),
               Text(
                 l10n?.moreSyncTitle ?? 'Sync',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               SettingsStatusCard(
@@ -226,9 +227,10 @@ class _SettingsGroup extends StatelessWidget {
           children: [
             Text(
               title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 12),
             Wrap(
