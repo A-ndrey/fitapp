@@ -397,10 +397,24 @@ void main() {
     expect(find.text('Keep your core tight.'), findsOneWidget);
     expect(find.text('Chest, Triceps'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Edit Rice bowl'));
-    await tester.tap(find.byTooltip('Delete Upper body'));
-    await tester.tap(find.byTooltip('Edit Pushups'));
-    await tester.pumpAndSettle();
+    Future<void> selectCardAction(String title, String actionLabel) async {
+      final card = find.ancestor(
+        of: find.text(title),
+        matching: find.byType(Card),
+      );
+      final menuButton = find.descendant(
+        of: card,
+        matching: find.byTooltip('More actions'),
+      );
+      await tester.tap(menuButton);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(actionLabel).last);
+      await tester.pumpAndSettle();
+    }
+
+    await selectCardAction('Rice bowl', 'Edit Rice bowl');
+    await selectCardAction('Upper body', 'Delete Upper body');
+    await selectCardAction('Pushups', 'Edit Pushups');
 
     expect(edited, ['rice', 'pushups']);
     expect(deleted, ['upper']);

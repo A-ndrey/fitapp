@@ -165,27 +165,30 @@ class _CatalogCardActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 96,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            tooltip: editTooltip,
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: onEdit,
-          ),
-          IconButton(
-            tooltip: deleteTooltip,
-            icon: const Icon(Icons.delete_outline),
-            onPressed: onDelete,
-          ),
-        ],
-      ),
+    return PopupMenuButton<_CatalogAction>(
+      tooltip: 'More actions',
+      onSelected: (action) {
+        if (action == _CatalogAction.edit) {
+          onEdit();
+        } else {
+          onDelete();
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<_CatalogAction>(
+          value: _CatalogAction.edit,
+          child: Text(editTooltip),
+        ),
+        PopupMenuItem<_CatalogAction>(
+          value: _CatalogAction.delete,
+          child: Text(deleteTooltip),
+        ),
+      ],
     );
   }
 }
+
+enum _CatalogAction { edit, delete }
 
 class _BoundedText extends StatelessWidget {
   const _BoundedText(this.data, {this.maxLines = 1});

@@ -8,10 +8,16 @@ import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/form_shell.dart';
 
 class DishForm extends StatefulWidget {
-  const DishForm({super.key, required this.store, this.initialDish});
+  const DishForm({
+    super.key,
+    required this.store,
+    this.initialDish,
+    this.fullScreen = false,
+  });
 
   final AppStore store;
   final DishItem? initialDish;
+  final bool fullScreen;
 
   @override
   State<DishForm> createState() => _DishFormState();
@@ -52,21 +58,35 @@ class _DishFormState extends State<DishForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final title = _isEditing
+        ? l10n?.dishFormEditTitle ?? 'Edit recipe'
+        : l10n?.dishFormTitle ?? 'Recipe';
+    final subtitle =
+        l10n?.dishFormSubtitle ?? 'Combine foods into a reusable recipe.';
+    final primaryActionLabel = l10n?.dishSaveAction ?? 'Save recipe';
+    final children = [
+      if (_isEditing) _buildComponentsSection(),
+      _buildBasicsSection(),
+      if (!_isEditing) _buildComponentsSection(),
+      if (_errorText != null) InlineErrorBanner(message: _errorText!),
+    ];
+
+    if (widget.fullScreen) {
+      return FormShellPage(
+        title: title,
+        subtitle: subtitle,
+        primaryActionLabel: primaryActionLabel,
+        onPrimaryAction: _saveDish,
+        children: children,
+      );
+    }
     return FormShellDialog(
-      title: _isEditing
-          ? l10n?.dishFormEditTitle ?? 'Edit recipe'
-          : l10n?.dishFormTitle ?? 'Recipe',
-      subtitle:
-          l10n?.dishFormSubtitle ?? 'Combine foods into a reusable recipe.',
-      primaryActionLabel: l10n?.dishSaveAction ?? 'Save recipe',
+      title: title,
+      subtitle: subtitle,
+      primaryActionLabel: primaryActionLabel,
       onPrimaryAction: _saveDish,
       maxWidth: 640,
-      children: [
-        if (_isEditing) _buildComponentsSection(),
-        _buildBasicsSection(),
-        if (!_isEditing) _buildComponentsSection(),
-        if (_errorText != null) InlineErrorBanner(message: _errorText!),
-      ],
+      children: children,
     );
   }
 

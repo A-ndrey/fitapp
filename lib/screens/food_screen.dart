@@ -102,14 +102,24 @@ class FoodScreen extends StatelessWidget {
     if (item == null) {
       return;
     }
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        if (item.isFood) {
-          return FoodForm(store: store, initialFood: item.food);
-        }
-        return DishForm(store: store, initialDish: item.dish);
-      },
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (context) {
+          if (item.isFood) {
+            return FoodForm(
+              store: store,
+              initialFood: item.food,
+              fullScreen: true,
+            );
+          }
+          return DishForm(
+            store: store,
+            initialDish: item.dish,
+            fullScreen: true,
+          );
+        },
+      ),
     );
   }
 
@@ -187,13 +197,15 @@ class FoodScreen extends StatelessWidget {
     if (!context.mounted || choice == null) {
       return;
     }
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return choice == _AddFoodChoice.food
-            ? FoodForm(store: store)
-            : DishForm(store: store);
-      },
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (context) {
+          return choice == _AddFoodChoice.food
+              ? FoodForm(store: store, fullScreen: true)
+              : DishForm(store: store, fullScreen: true);
+        },
+      ),
     );
   }
 }

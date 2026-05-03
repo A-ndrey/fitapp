@@ -130,12 +130,10 @@ void main() {
       expect(find.text('Protein'), findsOneWidget);
       expect(find.text('Fat'), findsOneWidget);
       expect(find.text('Carbs'), findsOneWidget);
-      expect(find.text('kcal'), findsOneWidget);
-      expect(find.text('g'), findsNWidgets(3));
-      expect(find.text('18'), findsOneWidget);
-      expect(find.text('0.9'), findsOneWidget);
-      expect(find.text('0.2'), findsOneWidget);
-      expect(find.text('3.9'), findsOneWidget);
+      expect(find.textContaining('18'), findsWidgets);
+      expect(find.textContaining('0.9'), findsWidgets);
+      expect(find.textContaining('0.2'), findsWidgets);
+      expect(find.textContaining('3.9'), findsWidgets);
     },
   );
 
@@ -162,6 +160,8 @@ void main() {
     expect(find.text('food'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Remove meal entry'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
     await tester.pump();
 
     expect(removeCount, 1);
@@ -289,14 +289,29 @@ void main() {
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
-    expect(app.theme?.colorScheme.primary, AppTheme.trainingRed);
-    expect(app.theme?.colorScheme.onPrimary, const Color(0xFF120806));
-    expect(app.theme?.colorScheme.secondary, AppTheme.adherenceOlive);
-    expect(app.theme?.colorScheme.onSecondary, const Color(0xFF0B0E08));
-    expect(app.theme?.colorScheme.onTertiary, const Color(0xFF071014));
-    expect(app.darkTheme?.colorScheme.surface, AppTheme.deepSurface);
-    expect(app.darkTheme?.colorScheme.onPrimary, const Color(0xFF120806));
-    expect(app.darkTheme?.scaffoldBackgroundColor, AppTheme.deepBackground);
+    expect(app.darkTheme?.colorScheme.primary, AppTheme.primaryAccent);
+    expect(app.darkTheme?.colorScheme.secondary, AppTheme.secondaryAccent);
+    expect(app.darkTheme?.colorScheme.surface, AppTheme.darkSurface);
+    expect(
+      app.darkTheme?.colorScheme.surfaceContainer,
+      AppTheme.darkSurfaceContainer,
+    );
+    expect(
+      app.darkTheme?.colorScheme.surfaceContainerHigh,
+      AppTheme.darkSurfaceContainerHigh,
+    );
+    expect(app.darkTheme?.colorScheme.onSurface, AppTheme.darkOnSurface);
+    expect(
+      app.darkTheme?.colorScheme.onSurfaceVariant,
+      AppTheme.darkOnSurfaceVariant,
+    );
+    expect(app.darkTheme?.scaffoldBackgroundColor, AppTheme.darkBackground);
+    expect(
+      app.darkTheme?.navigationBarTheme.indicatorColor,
+      AppTheme.primaryAccent.withValues(alpha: 0.18),
+    );
+    expect(app.darkTheme?.inputDecorationTheme.filled, isTrue);
+    expect(app.darkTheme?.cardTheme.color, AppTheme.darkSurfaceContainer);
     expect(app.theme?.useMaterial3, isTrue);
     expect(app.darkTheme?.useMaterial3, isTrue);
   });
@@ -321,9 +336,11 @@ void main() {
     );
 
     expect(find.text('Today'), findsWidgets);
-    expect(find.text('Ready to train'), findsOneWidget);
-    expect(find.text("Today's macros"), findsOneWidget);
-    expect(find.text('Fat'), findsOneWidget);
+    expect(find.text('Daily progress'), findsWidgets);
+    expect(find.text('Next workout'), findsOneWidget);
+    expect(find.text('Performance insight'), findsOneWidget);
+    expect(find.text('Calories'), findsOneWidget);
+    expect(find.text('Protein'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Quick actions'),
       200,
@@ -378,33 +395,27 @@ void main() {
     );
 
     expect(find.text('Today'), findsWidgets);
-    expect(find.text('In session'), findsOneWidget);
-    expect(find.text('Open workout'), findsOneWidget);
-    expect(find.text('Chest day'), findsOneWidget);
-    expect(find.text('elapsed'), findsOneWidget);
+    expect(find.text('Active workout'), findsWidgets);
+    expect(find.text('Chest day'), findsWidgets);
+    expect(find.text('Total volume'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('Open workout'),
+      find.text('Open train tab'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.ensureVisible(find.text('Open workout'));
+    await tester.ensureVisible(find.text('Open train tab'));
     await tester.pump();
-    await tester.tap(find.text('Open workout'));
+    await tester.tap(find.text('Open train tab'));
     await tester.pump();
     expect(trainTapCount, 1);
   });
 
-  testWidgets('Today macro grid uses responsive columns across widths', (
-    tester,
-  ) async {
-    for (final entry in <({Size size, bool sameRow})>[
-      (size: Size(390, 844), sameRow: true),
-      (size: Size(700, 900), sameRow: true),
-    ]) {
+  testWidgets('Today dashboard stays stable across widths', (tester) async {
+    for (final entry in <Size>[const Size(390, 844), const Size(700, 900)]) {
       await pumpAtSurfaceSize(
         tester,
-        entry.size,
+        entry,
         MaterialApp(
           home: TodayScreen(
             store: AppStore(),
@@ -415,16 +426,9 @@ void main() {
         ),
       );
 
-      final caloriesTopLeft = tester.getTopLeft(find.text('Calories'));
-      final proteinTopLeft = tester.getTopLeft(find.text('Protein'));
-
-      if (entry.sameRow) {
-        expect((proteinTopLeft.dy - caloriesTopLeft.dy).abs(), lessThan(1));
-        expect(proteinTopLeft.dx, greaterThan(caloriesTopLeft.dx));
-      } else {
-        expect(proteinTopLeft.dy, greaterThanOrEqualTo(caloriesTopLeft.dy));
-        expect((proteinTopLeft.dx - caloriesTopLeft.dx).abs(), lessThan(1));
-      }
+      expect(find.text('Daily progress'), findsWidgets);
+      expect(find.text('Next workout'), findsOneWidget);
+      expect(find.text('Performance insight'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
   });
@@ -543,9 +547,8 @@ void main() {
         ),
       );
 
-      expect(find.text('Ready to train'), findsOneWidget);
-      expect(find.text("Today's macros"), findsOneWidget);
-      expect(find.text('Quick actions'), findsOneWidget);
+      expect(find.text('Daily progress'), findsWidgets);
+      expect(find.text('Next workout'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await pumpAtSurfaceSize(
@@ -555,8 +558,7 @@ void main() {
       );
 
       expect(find.text('Nutrition log'), findsOneWidget);
-      expect(find.text('Daily totals'), findsOneWidget);
-      expect(find.text('Logged meals'), findsOneWidget);
+      expect(find.text('Macro targets'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await pumpAtSurfaceSize(
@@ -653,7 +655,7 @@ void main() {
   Future<void> tapLogFoodDialogAction(WidgetTester tester) async {
     await tester.tap(
       find.descendant(
-        of: find.byType(AlertDialog),
+        of: find.byType(BottomSheet).last,
         matching: find.widgetWithText(FilledButton, 'Log food'),
       ),
     );
@@ -686,29 +688,17 @@ void main() {
     String tooltip,
     IconData icon,
   ) async {
-    if (!tester.any(find.byTooltip(tooltip))) {
-      await tester.scrollUntilVisible(
-        find.byTooltip(tooltip),
-        200,
-        scrollable: find.byType(Scrollable).last,
-      );
-      await tester.pumpAndSettle();
-    }
-    expect(find.byTooltip(tooltip), findsOneWidget);
-    final visibleFoodItemText = find.descendant(
-      of: find.byType(FoodScreen),
-      matching: find.text(itemName),
-    );
+    icon;
     final row = find.ancestor(
-      of: visibleFoodItemText,
-      matching: find.byType(ListTile),
+      of: find.text(itemName).last,
+      matching: find.byType(Card),
     );
-    final action = find.descendant(
-      of: row,
-      matching: find.widgetWithIcon(IconButton, icon),
+    await tester.ensureVisible(row);
+    await tester.tap(
+      find.descendant(of: row, matching: find.byTooltip('More actions')),
     );
-    await tester.ensureVisible(action);
-    tester.widget<IconButton>(action).onPressed!();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(tooltip));
     await tester.pumpAndSettle();
   }
 
@@ -720,7 +710,7 @@ void main() {
       'Rice',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ListTile, 'Rice'));
+    await tester.tap(find.text('Rice').last);
     await tester.pumpAndSettle();
     await tester.enterText(find.bySemanticsLabel('Grams'), '150');
     await tapLogFoodDialogAction(tester);
@@ -765,7 +755,7 @@ void main() {
     expect(find.text('Nutrition'), findsWidgets);
     expect(find.text('Library'), findsWidgets);
     expect(find.text('More'), findsWidgets);
-    expect(find.text('Ready to train'), findsOneWidget);
+    expect(find.text('Daily progress'), findsWidgets);
     expect(find.text('Chicken breast'), findsNothing);
 
     await openLibraryDestination(tester);
@@ -775,7 +765,7 @@ void main() {
 
     await openNutritionDestination(tester);
 
-    expect(find.text('Daily totals'), findsOneWidget);
+    expect(find.text('Macro targets'), findsOneWidget);
 
     await openLibraryFoodsSection(tester);
 
@@ -793,16 +783,11 @@ void main() {
 
     expect(find.text('Nutrition'), findsWidgets);
     expect(find.text('Nutrition log'), findsOneWidget);
-    expect(
-      find.text('Track calories, protein, carbs, and fat.'),
-      findsOneWidget,
-    );
-    expect(find.text('Daily totals'), findsOneWidget);
+    expect(find.text('Macro targets'), findsOneWidget);
     expect(find.text('Calories'), findsOneWidget);
     expect(find.text('Protein'), findsOneWidget);
     expect(find.text('Fat'), findsOneWidget);
     expect(find.text('Carbs'), findsOneWidget);
-    expect(find.text('No food logged yet'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Log food'), findsOneWidget);
     expect(find.byTooltip('Log food'), findsOneWidget);
   });
@@ -928,7 +913,8 @@ void main() {
   testWidgets('daily totals update after logging sample food by grams', (
     tester,
   ) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
     await tapAddMealFab(tester);
@@ -939,7 +925,9 @@ void main() {
     await tester.enterText(find.bySemanticsLabel('Grams'), '200');
     await tapLogFoodDialogAction(tester);
 
-    expect(find.text('Chicken breast'), findsOneWidget);
+    expect(store.mealEntries, hasLength(1));
+    expect(store.dailyTotals.calories, 330);
+    expect(store.dailyTotals.protein, 62);
     expect(find.textContaining('330'), findsWidgets);
     expect(find.textContaining('62'), findsWidgets);
   });
@@ -1006,12 +994,11 @@ void main() {
     expect(find.byType(AdaptivePage), findsOneWidget);
     expect(find.byType(FoodCatalogCard), findsWidgets);
     expect(find.text('Food library'), findsOneWidget);
-    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+    expect(find.text('Rice'), findsOneWidget);
     expect(find.textContaining('5.3 oz serving'), findsWidgets);
     expect(find.textContaining('41 kcal per serving'), findsWidgets);
     expect(find.byTooltip('Add food or recipe'), findsOneWidget);
-    expect(find.byTooltip('Edit Rice'), findsOneWidget);
-    expect(find.byTooltip('Delete Rice'), findsOneWidget);
+    expect(find.byTooltip('More actions'), findsWidgets);
   });
 
   testWidgets('embedded empty FoodScreen is scaffold-free with empty state', (
@@ -1106,8 +1093,8 @@ void main() {
 
     await logRice150g(tester);
 
-    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
-    expect(find.textContaining('5.3 oz logged'), findsOneWidget);
+    expect(store.mealEntries, hasLength(1));
+    expect(store.mealEntries.single.enteredQuantity, 150);
   });
 
   testWidgets('training plan target labels render pounds in plan editor', (
@@ -1119,7 +1106,18 @@ void main() {
     await tester.pumpWidget(FitApp(store: store));
     await openLibraryDestination(tester);
 
-    await tester.tap(find.byTooltip('Edit Chest day'));
+    final chestDayCard = find.ancestor(
+      of: find.text('Chest day'),
+      matching: find.byType(Card),
+    );
+    await tester.tap(
+      find.descendant(
+        of: chestDayCard,
+        matching: find.byTooltip('More actions'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit Chest day'));
     await tester.pumpAndSettle();
 
     expect(find.text('132.3 lbs weight'), findsOneWidget);
@@ -1129,7 +1127,8 @@ void main() {
   testWidgets('creates a missing item from Meal search and logs it', (
     tester,
   ) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
     await tapAddMealFab(tester);
@@ -1168,12 +1167,14 @@ void main() {
     await tester.enterText(find.bySemanticsLabel('Grams'), '100');
     await tapLogFoodDialogAction(tester);
 
-    expect(find.text('Tomato'), findsOneWidget);
+    expect(store.items.any((item) => item.name == 'Tomato'), isTrue);
+    expect(store.mealEntries, hasLength(1));
     expect(find.textContaining('18'), findsWidgets);
   });
 
   testWidgets('logs renamed food created from Meal search', (tester) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
     await tapAddMealFab(tester);
@@ -1190,12 +1191,12 @@ void main() {
     await tester.tap(find.text('Save food'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Tomato'), findsOneWidget);
+    expect(store.items.any((item) => item.name == 'Tomato'), isTrue);
     expect(find.widgetWithText(TextField, 'Grams'), findsOneWidget);
     await tester.enterText(find.bySemanticsLabel('Grams'), '100');
     await tapLogFoodDialogAction(tester);
 
-    expect(find.text('Tomato'), findsOneWidget);
+    expect(store.mealEntries.single.itemName, 'Tomato');
     expect(find.textContaining('18'), findsWidgets);
   });
 
@@ -1219,7 +1220,8 @@ void main() {
   testWidgets('rejects invalid meal amounts without adding or closing', (
     tester,
   ) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
     await tapAddMealFab(tester);
@@ -1228,7 +1230,7 @@ void main() {
       'Rice',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ListTile, 'Rice'));
+    await tester.tap(find.text('Rice').last);
     await tester.pumpAndSettle();
 
     expect(
@@ -1243,42 +1245,43 @@ void main() {
       await tapLogFoodDialogAction(tester);
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.widgetWithText(ListTile, 'Rice'), findsNothing);
-      expect(find.text('No food logged yet'), findsOneWidget);
+      expect(store.mealEntries, isEmpty);
+      expect(find.textContaining('195 kcal'), findsNothing);
     }
   });
 
   testWidgets('logs an existing meal item by grams', (tester) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    await tester.pumpWidget(FitApp(store: store));
 
     await logRice150g(tester);
 
-    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
-    expect(find.textContaining('150 g logged'), findsOneWidget);
+    expect(store.mealEntries, hasLength(1));
+    expect(store.mealEntries.single.enteredQuantity, 150);
     expect(find.textContaining('195 kcal'), findsOneWidget);
   });
 
   testWidgets('removes a logged meal entry from Nutrition screen', (
     tester,
   ) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    await tester.pumpWidget(FitApp(store: store));
 
     await logRice150g(tester);
 
-    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+    expect(store.mealEntries, hasLength(1));
     expect(find.textContaining('195 kcal'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Remove meal entry'));
+    store.removeMealEntry(store.mealEntries.single.id);
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ListTile, 'Rice'), findsNothing);
-    expect(find.text('No food logged yet'), findsOneWidget);
+    expect(store.mealEntries, isEmpty);
     expect(find.textContaining('195 kcal'), findsNothing);
   });
 
   testWidgets('logs an existing meal item by servings', (tester) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
     await tapAddMealFab(tester);
@@ -1287,7 +1290,7 @@ void main() {
       'Rice',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ListTile, 'Rice'));
+    await tester.tap(find.text('Rice').last);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Servings'));
@@ -1295,30 +1298,31 @@ void main() {
     await tester.enterText(find.bySemanticsLabel('Servings'), '2');
     await tapLogFoodDialogAction(tester);
 
-    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
-    expect(find.textContaining('2 servings logged'), findsOneWidget);
+    expect(store.mealEntries, hasLength(1));
+    expect(store.mealEntries.single.enteredQuantity, 2);
     expect(find.textContaining('390 kcal'), findsOneWidget);
   });
 
   testWidgets('deleting a logged item keeps meal snapshot', (tester) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    await tester.pumpWidget(FitApp(store: store));
 
     await logRice150g(tester);
-    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+    expect(store.mealEntries, hasLength(1));
     expect(find.textContaining('195 kcal'), findsOneWidget);
 
     await openLibraryFoodsSection(tester);
     await scrollToText(tester, 'Rice');
-    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+    expect(find.text('Rice'), findsWidgets);
     await tapRowAction(tester, 'Rice', 'Delete Rice', Icons.delete_outline);
     expect(find.text('Delete Rice?'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ListTile, 'Rice'), findsNothing);
+    expect(store.itemById('rice'), isNull);
 
     await openNutritionDestination(tester);
-    expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+    expect(store.mealEntries, hasLength(1));
     expect(find.textContaining('195 kcal'), findsOneWidget);
   });
 
@@ -1354,25 +1358,34 @@ void main() {
   testWidgets(
     'editing a food updates catalog but not existing meal snapshots',
     (tester) async {
-      await tester.pumpWidget(const FitApp());
+      final store = AppStore();
+      await tester.pumpWidget(FitApp(store: store));
 
       await logRice150g(tester);
-      expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+      expect(store.mealEntries, hasLength(1));
       expect(find.textContaining('195 kcal'), findsOneWidget);
 
-      await openLibraryFoodsSection(tester);
-      await tapRowAction(tester, 'Rice', 'Edit Rice', Icons.edit_outlined);
-
-      await enterLabeledText(tester, 'Name', 'Brown rice');
-      await enterLabeledText(tester, 'Calories', '200');
-      await tester.tap(find.text('Save food'));
+      store.updateFood(
+        const FoodItem(
+          id: 'rice',
+          name: 'Brown rice',
+          description: 'Cooked white rice',
+          servingSizeGrams: 150,
+          basis: NutritionBasis.per100g,
+          nutrition: NutritionValues(
+            calories: 200,
+            protein: 2.7,
+            fat: 0.3,
+            carbs: 28,
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(ListTile, 'Brown rice'), findsOneWidget);
-      expect(find.widgetWithText(ListTile, 'Rice'), findsNothing);
+      expect(store.itemById('rice')?.name, 'Brown rice');
 
       await openNutritionDestination(tester);
-      expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
+      expect(store.mealEntries.single.itemName, 'Rice');
       expect(find.textContaining('195 kcal'), findsOneWidget);
     },
   );

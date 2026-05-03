@@ -103,6 +103,14 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
           appBar: AppBar(
             title: Text(l10n?.workoutSessionTitle ?? 'Workout session'),
           ),
+          bottomNavigationBar: SafeArea(
+            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: FilledButton.icon(
+              onPressed: () => _finishWorkout(context),
+              icon: const Icon(Icons.flag_outlined),
+              label: Text(l10n?.workoutFinishAction ?? 'Finish workout'),
+            ),
+          ),
           body: AdaptivePage(
             children: [
               WorkoutSessionHeaderCard(session: session, l10n: l10n),
@@ -151,12 +159,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                   ),
                 );
               }),
-              const SizedBox(height: 8),
-              FilledButton.icon(
-                onPressed: () => _finishWorkout(context),
-                icon: const Icon(Icons.flag_outlined),
-                label: Text(l10n?.workoutFinishAction ?? 'Finish workout'),
-              ),
             ],
           ),
         );

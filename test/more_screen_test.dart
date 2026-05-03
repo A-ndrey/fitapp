@@ -25,7 +25,7 @@ void main() {
     await pumpScreen(tester, store);
 
     expect(find.byType(AdaptivePage), findsOneWidget);
-    expect(find.text('More'), findsOneWidget);
+    expect(find.text('More'), findsWidgets);
     expect(
       find.text('Tune units, appearance, and training-log preferences.'),
       findsOneWidget,

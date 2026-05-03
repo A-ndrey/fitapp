@@ -85,6 +85,73 @@ class FormShellDialog extends StatelessWidget {
   }
 }
 
+class FormShellPage extends StatelessWidget {
+  const FormShellPage({
+    required this.title,
+    required this.primaryActionLabel,
+    required this.onPrimaryAction,
+    required this.children,
+    super.key,
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final String primaryActionLabel;
+  final VoidCallback onPrimaryAction;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(l10n?.formCancelAction ?? 'Cancel'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: onPrimaryAction,
+                child: Text(primaryActionLabel),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+          children: [
+            Text(title, style: textTheme.headlineSmall),
+            if (subtitle != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                subtitle!,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class FormSectionCard extends StatelessWidget {
   const FormSectionCard({
     required this.title,

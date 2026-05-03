@@ -73,6 +73,9 @@ class WorkoutSetInputCard extends StatelessWidget {
     required this.target,
     required this.onLogSet,
     super.key,
+    this.progressionHint,
+    this.previousSetLabel,
+    this.quickFillChips = const [],
   });
 
   final TextEditingController repsController;
@@ -80,6 +83,9 @@ class WorkoutSetInputCard extends StatelessWidget {
   final TextEditingController timeController;
   final TrainingExercise target;
   final VoidCallback onLogSet;
+  final String? progressionHint;
+  final String? previousSetLabel;
+  final List<Widget> quickFillChips;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +96,43 @@ class WorkoutSetInputCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text(
+              'Fast set logging',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            if (previousSetLabel != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                previousSetLabel!,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+            if (progressionHint != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  progressionHint!,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ),
+            ],
+            if (quickFillChips.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(spacing: 8, runSpacing: 8, children: quickFillChips),
+            ],
+            const SizedBox(height: 16),
             LayoutBuilder(
               builder: (context, constraints) {
                 final fieldWidth = constraints.maxWidth >= 640
@@ -99,33 +142,36 @@ class WorkoutSetInputCard extends StatelessWidget {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    SizedBox(
-                      width: fieldWidth,
-                      child: TextField(
-                        controller: repsController,
-                        decoration: InputDecoration(
-                          labelText: l10n?.workoutRepsFieldLabel ?? 'Reps',
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: fieldWidth,
-                      child: TextField(
-                        controller: weightController,
-                        decoration: InputDecoration(
-                          labelText: l10n?.workoutWeightFieldLabel ?? 'Weight',
-                          helperText: target.weight != null
-                              ? target.unit
-                              : null,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
+                    if (target.reps != null)
+                      SizedBox(
+                        width: fieldWidth,
+                        child: TextField(
+                          controller: repsController,
+                          decoration: InputDecoration(
+                            labelText: l10n?.workoutRepsFieldLabel ?? 'Reps',
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                         ),
                       ),
-                    ),
+                    if (target.weight != null || target.unit == 'kg')
+                      SizedBox(
+                        width: fieldWidth,
+                        child: TextField(
+                          controller: weightController,
+                          decoration: InputDecoration(
+                            labelText:
+                                l10n?.workoutWeightFieldLabel ?? 'Weight',
+                            helperText: target.weight != null
+                                ? target.unit
+                                : null,
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                        ),
+                      ),
                     SizedBox(
                       width: fieldWidth,
                       child: TextField(
@@ -144,11 +190,11 @@ class WorkoutSetInputCard extends StatelessWidget {
               },
             ),
             const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerLeft,
+            SizedBox(
+              width: double.infinity,
               child: FilledButton.icon(
                 onPressed: onLogSet,
-                icon: const Icon(Icons.add),
+                icon: const Icon(Icons.check_rounded),
                 label: Text(l10n?.workoutLogSetAction ?? 'Log set'),
               ),
             ),

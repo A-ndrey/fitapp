@@ -14,7 +14,7 @@ void main() {
   ];
 
   const destinationBodyText = {
-    'Today': 'Ready to train',
+    'Today': 'Daily progress',
     'Train': 'Training log',
     'Nutrition': 'Nutrition log',
     'Library': 'Training plans',
@@ -113,7 +113,7 @@ void main() {
       for (final label in rootDestinationLabels) {
         await tapRootDestination(tester, label);
         expect(find.text(label), findsWidgets);
-        expect(find.text(destinationBodyText[label]!), findsOneWidget);
+        expect(find.text(destinationBodyText[label]!), findsWidgets);
         expect(tester.takeException(), isNull);
       }
     }

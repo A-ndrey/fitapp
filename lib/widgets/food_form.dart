@@ -12,11 +12,13 @@ class FoodForm extends StatefulWidget {
     required this.store,
     this.initialName = '',
     this.initialFood,
+    this.fullScreen = false,
   });
 
   final AppStore store;
   final String initialName;
   final FoodItem? initialFood;
+  final bool fullScreen;
 
   @override
   State<FoodForm> createState() => _FoodFormState();
@@ -77,128 +79,144 @@ class _FoodFormState extends State<FoodForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final title = _isEditing
+        ? l10n?.foodFormEditTitle ?? 'Edit food'
+        : l10n?.foodFormTitle ?? 'Food item';
+    final subtitle =
+        l10n?.foodFormSubtitle ??
+        'Define reusable food data for faster meal logging.';
+    final primaryActionLabel = l10n?.foodSaveAction ?? 'Save food';
+    final children = [
+      FormSectionCard(
+        title: l10n?.foodBasicsSectionTitle ?? 'Food basics',
+        subtitle:
+            l10n?.foodBasicsSectionSubtitle ??
+            'Name this item and define the serving anchor.',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameController,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n?.foodNameFieldLabel ?? 'Name',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _descriptionController,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n?.foodDescriptionFieldLabel ?? 'Description',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _servingSizeController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText:
+                    l10n?.foodServingSizeGramsFieldLabel ??
+                    'Serving size grams',
+              ),
+            ),
+          ],
+        ),
+      ),
+      FormSectionCard(
+        title: l10n?.foodNutritionFactsTitle ?? 'Nutrition facts',
+        subtitle:
+            l10n?.foodNutritionFactsSubtitle ??
+            'Enter values using the selected nutrition basis.',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SegmentedButton<NutritionBasis>(
+              segments: [
+                ButtonSegment(
+                  value: NutritionBasis.per100g,
+                  label: Text(l10n?.foodNutritionPer100g ?? 'Per 100g'),
+                ),
+                ButtonSegment(
+                  value: NutritionBasis.perServing,
+                  label: Text(l10n?.foodNutritionPerServing ?? 'Per serving'),
+                ),
+              ],
+              selected: {_basis},
+              onSelectionChanged: (selection) {
+                setState(() {
+                  _basis = selection.first;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            ResponsiveFormGrid(
+              children: [
+                TextField(
+                  controller: _caloriesController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: l10n?.nutritionCalories ?? 'Calories',
+                  ),
+                ),
+                TextField(
+                  controller: _proteinController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: l10n?.nutritionProtein ?? 'Protein',
+                  ),
+                ),
+                TextField(
+                  controller: _fatController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: l10n?.nutritionFat ?? 'Fat',
+                  ),
+                ),
+                TextField(
+                  controller: _carbsController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: l10n?.nutritionCarbs ?? 'Carbs',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      if (_errorText != null) InlineErrorBanner(message: _errorText!),
+    ];
+
+    if (widget.fullScreen) {
+      return FormShellPage(
+        title: title,
+        subtitle: subtitle,
+        primaryActionLabel: primaryActionLabel,
+        onPrimaryAction: _saveFood,
+        children: children,
+      );
+    }
     return FormShellDialog(
-      title: _isEditing
-          ? l10n?.foodFormEditTitle ?? 'Edit food'
-          : l10n?.foodFormTitle ?? 'Food item',
-      subtitle:
-          l10n?.foodFormSubtitle ??
-          'Define reusable food data for faster meal logging.',
-      primaryActionLabel: l10n?.foodSaveAction ?? 'Save food',
+      title: title,
+      subtitle: subtitle,
+      primaryActionLabel: primaryActionLabel,
       onPrimaryAction: _saveFood,
-      children: [
-        FormSectionCard(
-          title: l10n?.foodBasicsSectionTitle ?? 'Food basics',
-          subtitle:
-              l10n?.foodBasicsSectionSubtitle ??
-              'Name this item and define the serving anchor.',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _nameController,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n?.foodNameFieldLabel ?? 'Name',
-                ),
-              ),
-              TextField(
-                controller: _descriptionController,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n?.foodDescriptionFieldLabel ?? 'Description',
-                ),
-              ),
-              TextField(
-                controller: _servingSizeController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText:
-                      l10n?.foodServingSizeGramsFieldLabel ??
-                      'Serving size grams',
-                ),
-              ),
-            ],
-          ),
-        ),
-        FormSectionCard(
-          title: l10n?.foodNutritionFactsTitle ?? 'Nutrition facts',
-          subtitle:
-              l10n?.foodNutritionFactsSubtitle ??
-              'Enter values using the selected nutrition basis.',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SegmentedButton<NutritionBasis>(
-                segments: [
-                  ButtonSegment(
-                    value: NutritionBasis.per100g,
-                    label: Text(l10n?.foodNutritionPer100g ?? 'Per 100g'),
-                  ),
-                  ButtonSegment(
-                    value: NutritionBasis.perServing,
-                    label: Text(l10n?.foodNutritionPerServing ?? 'Per serving'),
-                  ),
-                ],
-                selected: {_basis},
-                onSelectionChanged: (selection) {
-                  setState(() {
-                    _basis = selection.first;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-              ResponsiveFormGrid(
-                children: [
-                  TextField(
-                    controller: _caloriesController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: l10n?.nutritionCalories ?? 'Calories',
-                    ),
-                  ),
-                  TextField(
-                    controller: _proteinController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: l10n?.nutritionProtein ?? 'Protein',
-                    ),
-                  ),
-                  TextField(
-                    controller: _fatController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: l10n?.nutritionFat ?? 'Fat',
-                    ),
-                  ),
-                  TextField(
-                    controller: _carbsController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: l10n?.nutritionCarbs ?? 'Carbs',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        if (_errorText != null) InlineErrorBanner(message: _errorText!),
-      ],
+      children: children,
     );
   }
 
