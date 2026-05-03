@@ -261,6 +261,27 @@ void main() {
     expect(find.text('No ingredients yet'), findsOneWidget);
     expect(find.text('Add foods to calculate this recipe.'), findsOneWidget);
     expect(find.text('Add ingredient'), findsOneWidget);
+
+    final nameBottom = tester.getBottomLeft(
+      find.bySemanticsLabel('Recipe name'),
+    );
+    final descriptionTop = tester.getTopLeft(
+      find.bySemanticsLabel('Recipe description'),
+    );
+    expect(descriptionTop.dy - nameBottom.dy, greaterThanOrEqualTo(12));
+
+    final sectionCard = tester.widget<Card>(
+      find.ancestor(
+        of: find.text('Recipe basics'),
+        matching: find.byType(Card),
+      ),
+    );
+    expect(
+      sectionCard.color,
+      Theme.of(
+        tester.element(find.byType(DishForm)),
+      ).colorScheme.surfaceContainerHighest,
+    );
   });
 
   testWidgets('uses FitApp performance logbook theme', (tester) async {
@@ -302,8 +323,16 @@ void main() {
     expect(find.text('Today'), findsWidgets);
     expect(find.text('Ready to train'), findsOneWidget);
     expect(find.text("Today's macros"), findsOneWidget);
+    expect(find.text('Fat'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Quick actions'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Quick actions'), findsOneWidget);
     expect(find.text('Start workout'), findsOneWidget);
+    await tester.ensureVisible(find.text('Start workout'));
+    await tester.pump();
 
     await tester.tap(find.text('Start workout'));
     await tester.pump();
@@ -354,47 +383,51 @@ void main() {
     expect(find.text('Chest day'), findsOneWidget);
     expect(find.text('elapsed'), findsOneWidget);
 
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -120));
+    await tester.scrollUntilVisible(
+      find.text('Open workout'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.text('Open workout'));
     await tester.pump();
     await tester.tap(find.text('Open workout'));
     await tester.pump();
     expect(trainTapCount, 1);
   });
 
-  testWidgets(
-    'Today metric grid uses one column on compact and two on medium',
-    (tester) async {
-      for (final entry in <({Size size, bool sameRow})>[
-        (size: Size(390, 844), sameRow: false),
-        (size: Size(700, 900), sameRow: true),
-      ]) {
-        await pumpAtSurfaceSize(
-          tester,
-          entry.size,
-          MaterialApp(
-            home: TodayScreen(
-              store: AppStore(),
-              onOpenTrain: () {},
-              onOpenNutrition: () {},
-              onOpenLibrary: () {},
-            ),
+  testWidgets('Today macro grid uses responsive columns across widths', (
+    tester,
+  ) async {
+    for (final entry in <({Size size, bool sameRow})>[
+      (size: Size(390, 844), sameRow: true),
+      (size: Size(700, 900), sameRow: true),
+    ]) {
+      await pumpAtSurfaceSize(
+        tester,
+        entry.size,
+        MaterialApp(
+          home: TodayScreen(
+            store: AppStore(),
+            onOpenTrain: () {},
+            onOpenNutrition: () {},
+            onOpenLibrary: () {},
           ),
-        );
+        ),
+      );
 
-        final caloriesTopLeft = tester.getTopLeft(find.text('Calories'));
-        final proteinTopLeft = tester.getTopLeft(find.text('Protein'));
+      final caloriesTopLeft = tester.getTopLeft(find.text('Calories'));
+      final proteinTopLeft = tester.getTopLeft(find.text('Protein'));
 
-        if (entry.sameRow) {
-          expect((proteinTopLeft.dy - caloriesTopLeft.dy).abs(), lessThan(1));
-          expect(proteinTopLeft.dx, greaterThan(caloriesTopLeft.dx));
-        } else {
-          expect(proteinTopLeft.dy, greaterThan(caloriesTopLeft.dy));
-          expect((proteinTopLeft.dx - caloriesTopLeft.dx).abs(), lessThan(1));
-        }
-        expect(tester.takeException(), isNull);
+      if (entry.sameRow) {
+        expect((proteinTopLeft.dy - caloriesTopLeft.dy).abs(), lessThan(1));
+        expect(proteinTopLeft.dx, greaterThan(caloriesTopLeft.dx));
+      } else {
+        expect(proteinTopLeft.dy, greaterThanOrEqualTo(caloriesTopLeft.dy));
+        expect((proteinTopLeft.dx - caloriesTopLeft.dx).abs(), lessThan(1));
       }
-    },
-  );
+      expect(tester.takeException(), isNull);
+    }
+  });
 
   testWidgets('LibraryScreen switches between training and food libraries', (
     tester,
@@ -1030,6 +1063,34 @@ void main() {
     expect(find.text('recipe'), findsWidgets);
     expect(find.textContaining('150 g serving'), findsWidgets);
   });
+
+  testWidgets(
+    'recipe form calculates serving size from ingredients when empty',
+    (tester) async {
+      await tester.pumpWidget(const FitApp());
+
+      await openLibraryFoodsSection(tester);
+      await openAddFoodOrDish(tester);
+      await tester.tap(find.text('Recipe'));
+      await tester.pumpAndSettle();
+
+      await enterLabeledText(tester, 'Recipe name', 'Auto serving salad');
+      await enterLabeledText(tester, 'Recipe description', 'Carrot only');
+      await tester.tap(find.text('Add ingredient'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Carrot').last);
+      await tester.pumpAndSettle();
+      await enterLabeledText(tester, 'Ingredient grams', '125');
+      await tester.tap(find.text('Save ingredient'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save recipe'));
+      await tester.pumpAndSettle();
+
+      await scrollToText(tester, 'Auto serving salad');
+      expect(find.text('Auto serving salad'), findsOneWidget);
+      expect(find.textContaining('125 g serving'), findsWidgets);
+    },
+  );
 
   testWidgets('food and meal displays render ounces when dish unit is ounces', (
     tester,

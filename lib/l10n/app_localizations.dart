@@ -544,6 +544,12 @@ abstract class AppLocalizations {
   /// **'Distance'**
   String get settingsDistanceTitle;
 
+  /// Settings section title for app preferences.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get settingsAppTitle;
+
   /// Preference title for language.
   ///
   /// In en, this message translates to:

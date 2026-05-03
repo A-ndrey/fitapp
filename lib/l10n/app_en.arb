@@ -332,6 +332,10 @@
   "@settingsDistanceTitle": {
     "description": "Preference title for distance unit."
   },
+  "settingsAppTitle": "App",
+  "@settingsAppTitle": {
+    "description": "Settings section title for app preferences."
+  },
   "settingsLanguageTitle": "Language",
   "@settingsLanguageTitle": {
     "description": "Preference title for language."

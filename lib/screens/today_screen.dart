@@ -118,7 +118,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 title: l10n?.todayDailyFuelTitle ?? "Today's macros",
                 subtitle: l10n?.todayDailyFuelSubtitle ?? 'Logged intake',
               ),
-              _MetricGrid(
+              _MacroGrid(
                 children: [
                   MetricCard(
                     label: l10n?.nutritionCalories ?? 'Calories',
@@ -136,6 +136,14 @@ class _TodayScreenState extends State<TodayScreen> {
                     semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
                     icon: Icons.egg_alt_outlined,
                     color: AppTheme.pulseLime,
+                  ),
+                  MetricCard(
+                    label: l10n?.nutritionFat ?? 'Fat',
+                    value: _formatDouble(dailyTotals.fat),
+                    suffix: l10n?.nutritionGramUnit ?? 'g',
+                    semanticSuffix: l10n?.nutritionGramsSemantic ?? 'grams',
+                    icon: Icons.water_drop_outlined,
+                    color: Theme.of(context).colorScheme.tertiary,
                   ),
                   MetricCard(
                     label: l10n?.nutritionCarbs ?? 'Carbs',
@@ -246,5 +254,21 @@ class _MetricGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ResponsiveWrap(maxItemExtent: 280, spacing: 12, children: children);
+  }
+}
+
+class _MacroGrid extends StatelessWidget {
+  const _MacroGrid({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return ResponsiveWrap(
+      maxItemExtent: 188,
+      minItemExtent: 156,
+      spacing: 12,
+      children: children,
+    );
   }
 }

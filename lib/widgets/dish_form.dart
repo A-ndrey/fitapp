@@ -87,6 +87,7 @@ class _DishFormState extends State<DishForm> {
               labelText: l10n?.dishNameFieldLabel ?? 'Recipe name',
             ),
           ),
+          const SizedBox(height: 12),
           TextField(
             controller: _descriptionController,
             textInputAction: TextInputAction.next,
@@ -95,6 +96,7 @@ class _DishFormState extends State<DishForm> {
                   l10n?.dishDescriptionFieldLabel ?? 'Recipe description',
             ),
           ),
+          const SizedBox(height: 12),
           TextField(
             controller: _servingSizeController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -207,7 +209,13 @@ class _DishFormState extends State<DishForm> {
   void _saveDish() {
     final name = _nameController.text.trim();
     final description = _descriptionController.text.trim();
-    final servingSize = double.tryParse(_servingSizeController.text.trim());
+    final servingSizeInput = _servingSizeController.text.trim();
+    final servingSize = servingSizeInput.isEmpty
+        ? _components.fold<double>(
+            0,
+            (total, component) => total + component.grams,
+          )
+        : double.tryParse(servingSizeInput);
     if (name.isEmpty ||
         servingSize == null ||
         !servingSize.isFinite ||

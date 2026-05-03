@@ -280,6 +280,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDistanceTitle => 'Distance';
 
   @override
+  String get settingsAppTitle => 'App';
+
+  @override
   String get settingsLanguageTitle => 'Language';
 
   @override

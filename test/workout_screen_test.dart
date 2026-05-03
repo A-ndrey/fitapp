@@ -630,8 +630,8 @@ void main() {
     expect(find.text('sessions'), findsOneWidget);
     expect(find.text('Total time'), findsOneWidget);
     expect(find.text('1 h 15 min'), findsOneWidget);
-    expect(find.text('Latest'), findsOneWidget);
-    expect(find.text('Chest day'), findsOneWidget);
+    expect(find.text('Latest'), findsNothing);
+    expect(find.text('Chest day'), findsNothing);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(
@@ -878,7 +878,7 @@ void main() {
     expect(find.text('Latest: Chest day'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
-    expect(find.text('Latest'), findsOneWidget);
+    expect(find.text('Latest'), findsNothing);
   });
 
   testWidgets('finishes active session after switching tabs', (tester) async {

@@ -117,13 +117,6 @@ class WorkoutStatsGrid extends StatelessWidget {
         icon: Icons.timer_outlined,
         color: AppTheme.recoveryBlue,
       ),
-      if (latestSessionName != null)
-        MetricCard(
-          label: l10n?.workoutLatestMetricLabel ?? 'Latest',
-          value: latestSessionName!,
-          icon: Icons.history,
-          color: Theme.of(context).colorScheme.tertiary,
-        ),
     ];
 
     return ResponsiveWrap(maxItemExtent: 260, spacing: 12, children: cards);

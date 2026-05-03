@@ -48,16 +48,9 @@ class MoreScreen extends StatelessWidget {
               onPressed: store.isLoggedIn ? store.logOut : store.logIn,
             ),
             const SizedBox(height: 20),
-            Text(
-              l10n?.settingsUnitsTitle ?? 'Units',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
-                final cards = [
+                final unitsCards = [
                   PreferenceChipCard<WorkoutWeightUnit>(
                     title: l10n?.settingsWorkoutWeightTitle ?? 'Workout weight',
                     subtitle:
@@ -124,6 +117,8 @@ class MoreScreen extends StatelessWidget {
                     ],
                     onChanged: store.setDistanceUnit,
                   ),
+                ];
+                final appCards = [
                   PreferenceChipCard<LanguagePreference>(
                     title: l10n?.settingsLanguageTitle ?? 'Language',
                     subtitle: l10n?.settingsLanguageSubtitle ?? 'App language',
@@ -160,27 +155,83 @@ class MoreScreen extends StatelessWidget {
 
                 if (constraints.maxWidth < 720) {
                   return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (final card in cards) ...[
-                        card,
-                        const SizedBox(height: 12),
-                      ],
+                      _SettingsGroup(
+                        title: l10n?.settingsUnitsTitle ?? 'Units',
+                        children: unitsCards,
+                      ),
+                      const SizedBox(height: 20),
+                      _SettingsGroup(
+                        title: l10n?.settingsAppTitle ?? 'App',
+                        children: appCards,
+                      ),
                     ],
                   );
                 }
 
-                return Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (final card in cards)
-                      SizedBox(
-                        width: (constraints.maxWidth - 12) / 2,
-                        child: card,
-                      ),
+                    _SettingsGroup(
+                      title: l10n?.settingsUnitsTitle ?? 'Units',
+                      columns: 2,
+                      children: unitsCards,
+                    ),
+                    const SizedBox(height: 20),
+                    _SettingsGroup(
+                      title: l10n?.settingsAppTitle ?? 'App',
+                      columns: 2,
+                      children: appCards,
+                    ),
                   ],
                 );
               },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SettingsGroup extends StatelessWidget {
+  const _SettingsGroup({
+    required this.title,
+    required this.children,
+    this.columns = 1,
+  });
+
+  final String title;
+  final List<Widget> children;
+  final int columns;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final spacing = columns > 1 ? 12.0 : 0.0;
+        final itemWidth = columns > 1
+            ? (constraints.maxWidth - spacing) / columns
+            : constraints.maxWidth;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: spacing,
+              runSpacing: 12,
+              children: [
+                for (final child in children)
+                  SizedBox(width: itemWidth, child: child),
+              ],
             ),
           ],
         );

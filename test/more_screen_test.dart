@@ -32,6 +32,7 @@ void main() {
     );
     expect(find.text('Sync status'), findsOneWidget);
     expect(find.text('Units'), findsOneWidget);
+    expect(find.text('App'), findsOneWidget);
     expect(find.text('Language'), findsOneWidget);
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('Login'), findsOneWidget);
@@ -63,9 +64,18 @@ void main() {
 
     final workoutTopLeft = tester.getTopLeft(find.text('Workout weight'));
     final dishTopLeft = tester.getTopLeft(find.text('Dish weight'));
+    final cardWidth = tester
+        .getSize(
+          find.ancestor(
+            of: find.text('Workout weight'),
+            matching: find.byType(Card),
+          ),
+        )
+        .width;
 
     expect(dishTopLeft.dy, greaterThan(workoutTopLeft.dy));
     expect((dishTopLeft.dx - workoutTopLeft.dx).abs(), lessThan(1));
+    expect(cardWidth, greaterThan(320));
     expect(tester.takeException(), isNull);
   });
 
