@@ -471,7 +471,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             theme: theme,
-            home: Scaffold(
+            home: const Scaffold(
               body: Center(
                 child: MetricCard(
                   label: 'Completed',

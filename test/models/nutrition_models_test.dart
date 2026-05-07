@@ -130,8 +130,8 @@ void main() {
         ],
       );
       final catalog = <String, CatalogItem>{
-        carrot.id: CatalogItem.food(carrot),
-        oil.id: CatalogItem.food(oil),
+        carrot.id: const CatalogItem.food(carrot),
+        oil.id: const CatalogItem.food(oil),
       };
 
       final values = dish.nutritionForGrams(110, catalog);
@@ -190,13 +190,16 @@ void main() {
           ],
         );
         final catalog = <String, CatalogItem>{
-          carrot.id: CatalogItem.food(carrot),
-          oil.id: CatalogItem.food(oil),
-          dishA.id: CatalogItem.dish(dishA),
-          dishB.id: CatalogItem.dish(dishB),
+          carrot.id: const CatalogItem.food(carrot),
+          oil.id: const CatalogItem.food(oil),
+          dishA.id: const CatalogItem.dish(dishA),
+          dishB.id: const CatalogItem.dish(dishB),
         };
 
-        final values = CatalogItem.dish(dishA).nutritionForGrams(100, catalog);
+        final values = const CatalogItem.dish(dishA).nutritionForGrams(
+          100,
+          catalog,
+        );
 
         expect(values.calories, 131);
         expect(values.fat, 10.2);
@@ -238,13 +241,19 @@ void main() {
         ],
       );
       final catalog = <String, CatalogItem>{
-        carrot.id: CatalogItem.food(carrot),
-        oil.id: CatalogItem.food(oil),
-        dish.id: CatalogItem.dish(dish),
+        carrot.id: const CatalogItem.food(carrot),
+        oil.id: const CatalogItem.food(oil),
+        dish.id: const CatalogItem.dish(dish),
       };
 
-      expect(CatalogItem.dish(dish).nutritionPerServing(catalog).calories, 131);
-      expect(CatalogItem.dish(dish).nutritionPerServing(catalog).fat, 10.2);
+      expect(
+        const CatalogItem.dish(dish).nutritionPerServing(catalog).calories,
+        131,
+      );
+      expect(
+        const CatalogItem.dish(dish).nutritionPerServing(catalog).fat,
+        10.2,
+      );
     });
   });
 
@@ -266,7 +275,7 @@ void main() {
 
       final entry = MealEntry.fromItem(
         id: 'entry-1',
-        item: CatalogItem.food(source),
+        item: const CatalogItem.food(source),
         consumedGrams: 200,
         mode: MealEntryMode.grams,
         enteredQuantity: 200,
