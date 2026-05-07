@@ -138,8 +138,11 @@ class _TodayScreenState extends State<TodayScreen> {
                       progress: dailyTotals.calories / _calorieGoal,
                       statusLabel:
                           '${_formatDouble((_calorieGoal - dailyTotals.calories).clamp(0, _calorieGoal))} left',
-                      leading: const Icon(Icons.local_fire_department_outlined),
-                      barColor: AppTheme.primaryAccent,
+                      leading: const Icon(
+                        Icons.local_fire_department_outlined,
+                        color: AppTheme.calorieAccent,
+                      ),
+                      barColor: AppTheme.calorieAccent,
                     ),
                     const SizedBox(height: 16),
                     GoalProgressRow(
@@ -151,8 +154,11 @@ class _TodayScreenState extends State<TodayScreen> {
                       progress: dailyTotals.protein / _proteinGoal,
                       statusLabel:
                           '${_formatDouble((_proteinGoal - dailyTotals.protein).clamp(0, _proteinGoal))} left',
-                      leading: const Icon(Icons.egg_alt_outlined),
-                      barColor: AppTheme.successAccent,
+                      leading: const Icon(
+                        Icons.egg_alt_outlined,
+                        color: AppTheme.proteinAccent,
+                      ),
+                      barColor: AppTheme.proteinAccent,
                     ),
                     if (activeSession != null) ...[
                       const SizedBox(height: 18),

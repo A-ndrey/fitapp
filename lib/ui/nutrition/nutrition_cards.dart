@@ -41,8 +41,11 @@ class NutritionSummaryGrid extends StatelessWidget {
             progress: values.calories / _calorieGoal,
             statusLabel:
                 '${formatNutritionNumber((_calorieGoal - values.calories).clamp(0, _calorieGoal))} left',
-            leading: const Icon(Icons.local_fire_department_outlined),
-            barColor: AppTheme.primaryAccent,
+            leading: const Icon(
+              Icons.local_fire_department_outlined,
+              color: AppTheme.calorieAccent,
+            ),
+            barColor: AppTheme.calorieAccent,
           ),
           const SizedBox(height: 14),
           GoalProgressRow(
@@ -54,8 +57,11 @@ class NutritionSummaryGrid extends StatelessWidget {
             progress: values.protein / _proteinGoal,
             statusLabel:
                 '${formatNutritionNumber((_proteinGoal - values.protein).clamp(0, _proteinGoal))} left',
-            leading: const Icon(Icons.egg_alt_outlined),
-            barColor: AppTheme.successAccent,
+            leading: const Icon(
+              Icons.egg_alt_outlined,
+              color: AppTheme.proteinAccent,
+            ),
+            barColor: AppTheme.proteinAccent,
           ),
           const SizedBox(height: 14),
           GoalProgressRow(
@@ -67,8 +73,11 @@ class NutritionSummaryGrid extends StatelessWidget {
             progress: values.carbs / _carbGoal,
             statusLabel:
                 '${formatNutritionNumber((_carbGoal - values.carbs).clamp(0, _carbGoal))} left',
-            leading: const Icon(Icons.grain_outlined),
-            barColor: AppTheme.secondaryAccent,
+            leading: const Icon(
+              Icons.grain_outlined,
+              color: AppTheme.carbAccent,
+            ),
+            barColor: AppTheme.carbAccent,
           ),
           const SizedBox(height: 14),
           GoalProgressRow(
@@ -80,8 +89,11 @@ class NutritionSummaryGrid extends StatelessWidget {
             progress: values.fat / _fatGoal,
             statusLabel:
                 '${formatNutritionNumber((_fatGoal - values.fat).clamp(0, _fatGoal))} left',
-            leading: const Icon(Icons.water_drop_outlined),
-            barColor: AppTheme.primaryAccent.withValues(alpha: 0.75),
+            leading: const Icon(
+              Icons.water_drop_outlined,
+              color: AppTheme.fatAccent,
+            ),
+            barColor: AppTheme.fatAccent,
           ),
         ],
       ),

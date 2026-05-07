@@ -6,6 +6,10 @@ class AppTheme {
   static const primaryAccent = Color(0xFFCCFF00);
   static const secondaryAccent = Color(0xFFC8C6C5);
   static const successAccent = Color(0xFF4ADE80);
+  static const calorieAccent = Color(0xFFFF7A59);
+  static const proteinAccent = Color(0xFF6EA8FF);
+  static const carbAccent = Color(0xFFFFC857);
+  static const fatAccent = Color(0xFF43C6AC);
 
   static const darkBackground = Color(0xFF111508);
   static const darkSurface = Color(0xFF111508);
