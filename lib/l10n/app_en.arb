@@ -1,0 +1,1297 @@
+{
+  "@@locale": "en",
+  "appTitle": "FitApp",
+  "@appTitle": {
+    "description": "Application title used by the host platform."
+  },
+  "destinationToday": "Today",
+  "@destinationToday": {
+    "description": "Root navigation destination for the dashboard."
+  },
+  "destinationTrain": "Train",
+  "@destinationTrain": {
+    "description": "Root navigation destination for workouts."
+  },
+  "destinationNutrition": "Nutrition",
+  "@destinationNutrition": {
+    "description": "Root navigation destination for meal logging and nutrition."
+  },
+  "destinationLibrary": "Library",
+  "@destinationLibrary": {
+    "description": "Root navigation destination for reusable app content."
+  },
+  "destinationMore": "Settings",
+  "@destinationMore": {
+    "description": "Root navigation destination for settings and preferences."
+  },
+  "todayReadyState": "Ready to train",
+  "@todayReadyState": {
+    "description": "Today screen header when no workout is active."
+  },
+  "todayInSession": "In session",
+  "@todayInSession": {
+    "description": "Today screen header when a workout is active."
+  },
+  "todayCompletedWorkouts": "Completed workouts",
+  "@todayCompletedWorkouts": {
+    "description": "Metric label for completed workout count."
+  },
+  "todaySessionsSuffix": "sessions",
+  "@todaySessionsSuffix": {
+    "description": "Metric suffix for completed workout count."
+  },
+  "todayElapsedSuffix": "elapsed",
+  "@todayElapsedSuffix": {
+    "description": "Metric suffix for active workout duration."
+  },
+  "durationHoursMinutesSemantic": "{hours, plural, =1{1 hour} other{{hours} hours}} {minutes, plural, =1{1 minute} other{{minutes} minutes}}",
+  "@durationHoursMinutesSemantic": {
+    "description": "Semantic duration label for durations of at least one hour.",
+    "placeholders": {
+      "hours": {
+        "type": "int",
+        "example": "1"
+      },
+      "minutes": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "durationMinutesSecondsSemantic": "{minutes, plural, =1{1 minute} other{{minutes} minutes}} {seconds, plural, =1{1 second} other{{seconds} seconds}}",
+  "@durationMinutesSecondsSemantic": {
+    "description": "Semantic duration label for durations below one hour.",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "12"
+      },
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "durationSecondsSemantic": "{seconds, plural, =1{1 second} other{{seconds} seconds}}",
+  "@durationSecondsSemantic": {
+    "description": "Semantic duration label for durations below one minute.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "todayDailyFuelTitle": "Today's macros",
+  "@todayDailyFuelTitle": {
+    "description": "Today screen nutrition summary section title."
+  },
+  "todayDailyFuelSubtitle": "Logged intake",
+  "@todayDailyFuelSubtitle": {
+    "description": "Today screen nutrition summary section subtitle."
+  },
+  "todayQuickActionsTitle": "Quick actions",
+  "@todayQuickActionsTitle": {
+    "description": "Today screen quick action section title."
+  },
+  "todayStartWorkoutAction": "Start workout",
+  "@todayStartWorkoutAction": {
+    "description": "Today screen action to start a workout."
+  },
+  "todayOpenWorkoutAction": "Open workout",
+  "@todayOpenWorkoutAction": {
+    "description": "Today screen action to return to an active workout."
+  },
+  "todayStartWorkoutSubtitle": "Choose a plan and begin training",
+  "@todayStartWorkoutSubtitle": {
+    "description": "Subtitle for the Today start workout action."
+  },
+  "todayOpenWorkoutSubtitle": "Return to the active session",
+  "@todayOpenWorkoutSubtitle": {
+    "description": "Subtitle for the Today open workout action."
+  },
+  "todayOpenTrainHint": "Opens Train tab",
+  "@todayOpenTrainHint": {
+    "description": "Accessibility hint for Today actions that open the Train tab."
+  },
+  "todayLogMealAction": "Log meal",
+  "@todayLogMealAction": {
+    "description": "Today screen action to open nutrition logging."
+  },
+  "todayLogMealSubtitle": "Add calories and macros for today",
+  "@todayLogMealSubtitle": {
+    "description": "Subtitle for the Today log meal action."
+  },
+  "todayOpenNutritionHint": "Opens Nutrition tab",
+  "@todayOpenNutritionHint": {
+    "description": "Accessibility hint for Today action that opens Nutrition."
+  },
+  "todayManageLibraryAction": "Manage library",
+  "@todayManageLibraryAction": {
+    "description": "Today screen action to open the library."
+  },
+  "todayManageLibrarySubtitle": "Update plans, exercises, foods, and recipes",
+  "@todayManageLibrarySubtitle": {
+    "description": "Subtitle for the Today manage library action."
+  },
+  "todayOpenLibraryHint": "Opens Library tab",
+  "@todayOpenLibraryHint": {
+    "description": "Accessibility hint for Today action that opens Library."
+  },
+  "nutritionCalories": "Calories",
+  "@nutritionCalories": {
+    "description": "Nutrition metric label for calories."
+  },
+  "nutritionProtein": "Protein",
+  "@nutritionProtein": {
+    "description": "Nutrition metric label for protein."
+  },
+  "nutritionFat": "Fat",
+  "@nutritionFat": {
+    "description": "Nutrition metric label for fat."
+  },
+  "nutritionCarbs": "Carbs",
+  "@nutritionCarbs": {
+    "description": "Nutrition metric label for carbohydrates."
+  },
+  "nutritionKilocaloriesSemantic": "kilocalories",
+  "@nutritionKilocaloriesSemantic": {
+    "description": "Semantic unit label for kcal."
+  },
+  "nutritionGramsSemantic": "grams",
+  "@nutritionGramsSemantic": {
+    "description": "Semantic unit label for gram-based nutrition metrics."
+  },
+  "nutritionKilocalorieUnit": "kcal",
+  "@nutritionKilocalorieUnit": {
+    "description": "Visible abbreviated unit for kilocalories in compact nutrition lines."
+  },
+  "nutritionGramUnit": "g",
+  "@nutritionGramUnit": {
+    "description": "Visible abbreviated unit for grams in compact nutrition lines."
+  },
+  "nutritionProteinInlineLabel": "protein",
+  "@nutritionProteinInlineLabel": {
+    "description": "Inline lowercase protein label used in compact nutrition lines."
+  },
+  "nutritionFatInlineLabel": "fat",
+  "@nutritionFatInlineLabel": {
+    "description": "Inline lowercase fat label used in compact nutrition lines."
+  },
+  "nutritionCarbsInlineLabel": "carbs",
+  "@nutritionCarbsInlineLabel": {
+    "description": "Inline lowercase carbs label used in compact nutrition lines."
+  },
+  "catalogSubtypeFood": "food",
+  "@catalogSubtypeFood": {
+    "description": "Catalog subtype label for food items."
+  },
+  "catalogSubtypeDish": "recipe",
+  "@catalogSubtypeDish": {
+    "description": "Catalog subtype label for dish items."
+  },
+  "mealLoggedSuffix": "logged",
+  "@mealLoggedSuffix": {
+    "description": "Suffix shown after a logged meal quantity."
+  },
+  "mealServingsQuantitySuffix": "servings",
+  "@mealServingsQuantitySuffix": {
+    "description": "Suffix shown after a meal quantity entered as servings."
+  },
+  "mealRemoveEntryTooltip": "Remove meal entry",
+  "@mealRemoveEntryTooltip": {
+    "description": "Tooltip for removing a meal entry."
+  },
+  "mealTitle": "Nutrition",
+  "@mealTitle": {
+    "description": "Nutrition screen app bar title."
+  },
+  "mealAddItemAction": "Log food",
+  "@mealAddItemAction": {
+    "description": "Action label for adding a food or dish to the meal log."
+  },
+  "mealCockpitTitle": "Nutrition log",
+  "@mealCockpitTitle": {
+    "description": "Nutrition screen hero title."
+  },
+  "mealCockpitSubtitle": "Track calories, protein, carbs, and fat.",
+  "@mealCockpitSubtitle": {
+    "description": "Nutrition screen hero subtitle."
+  },
+  "mealDailyTotalsTitle": "Daily totals",
+  "@mealDailyTotalsTitle": {
+    "description": "Nutrition screen daily totals section title."
+  },
+  "mealEntriesTitle": "Logged meals",
+  "@mealEntriesTitle": {
+    "description": "Nutrition screen meal entries section title."
+  },
+  "mealEmptyTitle": "No food logged yet",
+  "@mealEmptyTitle": {
+    "description": "Empty state title for meal entries."
+  },
+  "mealEmptyMessage": "Use Log food to start today's nutrition log.",
+  "@mealEmptyMessage": {
+    "description": "Empty state message for meal entries."
+  },
+  "mealSearchSheetTitle": "Log food",
+  "@mealSearchSheetTitle": {
+    "description": "Bottom sheet title for searching meal items."
+  },
+  "mealSearchSheetSubtitle": "Search saved foods and recipes, or create a new food from your query.",
+  "@mealSearchSheetSubtitle": {
+    "description": "Bottom sheet helper text for meal item search."
+  },
+  "mealSearchFieldLabel": "Search foods and recipes",
+  "@mealSearchFieldLabel": {
+    "description": "Search field label for foods and dishes."
+  },
+  "mealCreateItem": "Create \"{query}\"",
+  "@mealCreateItem": {
+    "description": "Create action for a missing meal search item.",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "Tomato"
+      }
+    }
+  },
+  "mealAmountPrompt": "Choose how much you ate, then add it to today's meal log.",
+  "@mealAmountPrompt": {
+    "description": "Prompt in the log meal amount dialog."
+  },
+  "mealGramsLabel": "Grams",
+  "@mealGramsLabel": {
+    "description": "Label for grams amount mode."
+  },
+  "mealServingsLabel": "Servings",
+  "@mealServingsLabel": {
+    "description": "Label for servings amount mode."
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Common cancel action label."
+  },
+  "mealAddToMealAction": "Log food",
+  "@mealAddToMealAction": {
+    "description": "Dialog action to add a selected item amount to the meal log."
+  },
+  "moreSubtitle": "Tune units, appearance, and training-log preferences.",
+  "@moreSubtitle": {
+    "description": "More screen header subtitle."
+  },
+  "moreSyncTitle": "Sync",
+  "@moreSyncTitle": {
+    "description": "More screen sync section title."
+  },
+  "moreSyncStatusTitle": "Sync status",
+  "@moreSyncStatusTitle": {
+    "description": "Title for sync status card."
+  },
+  "moreSyncSignedInMessage": "Signed in. Sync is not available yet.",
+  "@moreSyncSignedInMessage": {
+    "description": "Sync status message when signed in."
+  },
+  "moreSyncSignedOutMessage": "Signed out. Sync is not available yet.",
+  "@moreSyncSignedOutMessage": {
+    "description": "Sync status message when signed out."
+  },
+  "moreLoginAction": "Login",
+  "@moreLoginAction": {
+    "description": "Login action label."
+  },
+  "moreLogoutAction": "Logout",
+  "@moreLogoutAction": {
+    "description": "Logout action label."
+  },
+  "settingsUnitsTitle": "Units",
+  "@settingsUnitsTitle": {
+    "description": "Settings units section title."
+  },
+  "settingsWorkoutWeightTitle": "Workout weight",
+  "@settingsWorkoutWeightTitle": {
+    "description": "Preference title for workout weight unit."
+  },
+  "settingsWorkoutWeightSubtitle": "Weights shown during training sessions.",
+  "@settingsWorkoutWeightSubtitle": {
+    "description": "Preference subtitle for workout weight unit."
+  },
+  "settingsDishWeightTitle": "Dish weight",
+  "@settingsDishWeightTitle": {
+    "description": "Preference title for dish weight unit."
+  },
+  "settingsDishWeightSubtitle": "Food and recipe serving measurements.",
+  "@settingsDishWeightSubtitle": {
+    "description": "Preference subtitle for dish weight unit."
+  },
+  "settingsHeightTitle": "Height",
+  "@settingsHeightTitle": {
+    "description": "Preference title for height unit."
+  },
+  "settingsDistanceTitle": "Distance",
+  "@settingsDistanceTitle": {
+    "description": "Preference title for distance unit."
+  },
+  "settingsAppTitle": "App",
+  "@settingsAppTitle": {
+    "description": "Settings section title for app preferences."
+  },
+  "settingsLanguageTitle": "Language",
+  "@settingsLanguageTitle": {
+    "description": "Preference title for language."
+  },
+  "settingsLanguageSubtitle": "App language",
+  "@settingsLanguageSubtitle": {
+    "description": "Preference subtitle for language."
+  },
+  "settingsAppearanceTitle": "Appearance",
+  "@settingsAppearanceTitle": {
+    "description": "Preference title for app appearance."
+  },
+  "settingsAppearanceSubtitle": "Theme",
+  "@settingsAppearanceSubtitle": {
+    "description": "Preference subtitle for app appearance."
+  },
+  "unitKilograms": "Kilograms",
+  "@unitKilograms": {
+    "description": "Kilograms unit label."
+  },
+  "unitPounds": "Pounds",
+  "@unitPounds": {
+    "description": "Pounds unit label."
+  },
+  "unitGrams": "Grams",
+  "@unitGrams": {
+    "description": "Grams unit label."
+  },
+  "unitOunces": "Ounces",
+  "@unitOunces": {
+    "description": "Ounces unit label."
+  },
+  "unitCentimeters": "Centimeters",
+  "@unitCentimeters": {
+    "description": "Centimeters unit label."
+  },
+  "unitInches": "Inches",
+  "@unitInches": {
+    "description": "Inches unit label."
+  },
+  "unitKilometers": "Kilometers",
+  "@unitKilometers": {
+    "description": "Kilometers unit label."
+  },
+  "unitMiles": "Miles",
+  "@unitMiles": {
+    "description": "Miles unit label."
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "English language option label."
+  },
+  "appearanceSystem": "System",
+  "@appearanceSystem": {
+    "description": "System appearance option label."
+  },
+  "appearanceLight": "Light",
+  "@appearanceLight": {
+    "description": "Light appearance option label."
+  },
+  "appearanceDark": "Dark",
+  "@appearanceDark": {
+    "description": "Dark appearance option label."
+  },
+  "workoutTitle": "Workout",
+  "@workoutTitle": {
+    "description": "Workout tab app bar title."
+  },
+  "workoutTrainingCockpitTitle": "Training log",
+  "@workoutTrainingCockpitTitle": {
+    "description": "Workout overview hero title."
+  },
+  "workoutTrainingCockpitSubtitle": "Start sessions, log sets, and review progress.",
+  "@workoutTrainingCockpitSubtitle": {
+    "description": "Workout overview hero subtitle."
+  },
+  "workoutStatsTitle": "Workout stats",
+  "@workoutStatsTitle": {
+    "description": "Workout overview stats section title."
+  },
+  "workoutNoCompletedSessionsSubtitle": "No completed sessions yet.",
+  "@workoutNoCompletedSessionsSubtitle": {
+    "description": "Workout stats subtitle when there is no completed workout history."
+  },
+  "workoutLatestSessionSubtitle": "Latest: {sessionName}",
+  "@workoutLatestSessionSubtitle": {
+    "description": "Workout stats subtitle when there is a latest completed workout.",
+    "placeholders": {
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "workoutHistoryTitle": "Workout history",
+  "@workoutHistoryTitle": {
+    "description": "Workout history section title."
+  },
+  "workoutEmptyHistoryTitle": "No completed workouts yet",
+  "@workoutEmptyHistoryTitle": {
+    "description": "Workout history empty state title."
+  },
+  "workoutEmptyHistoryMessage": "Start a training plan to build your workout history.",
+  "@workoutEmptyHistoryMessage": {
+    "description": "Workout history empty state message."
+  },
+  "workoutChoosePlanTitle": "Choose a training plan",
+  "@workoutChoosePlanTitle": {
+    "description": "Bottom sheet title for choosing a training plan to start."
+  },
+  "workoutStartWorkoutSubtitle": "Choose a training plan and begin tracking sets.",
+  "@workoutStartWorkoutSubtitle": {
+    "description": "Workout overview start workout action subtitle."
+  },
+  "workoutDeleteDialogTitle": "Delete workout?",
+  "@workoutDeleteDialogTitle": {
+    "description": "Confirmation dialog title for deleting a completed workout."
+  },
+  "workoutDeleteDialogMessage": "Delete {sessionName} from {date}?",
+  "@workoutDeleteDialogMessage": {
+    "description": "Confirmation dialog message for deleting a completed workout.",
+    "placeholders": {
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      },
+      "date": {
+        "type": "String",
+        "example": "2026-04-18"
+      }
+    }
+  },
+  "commonDelete": "Delete",
+  "@commonDelete": {
+    "description": "Common delete action label."
+  },
+  "workoutOpenActiveTooltip": "Open active workout",
+  "@workoutOpenActiveTooltip": {
+    "description": "Tooltip for opening the active workout."
+  },
+  "workoutActiveLabel": "Active workout",
+  "@workoutActiveLabel": {
+    "description": "Label for the currently active workout card."
+  },
+  "workoutElapsedLabel": "Elapsed {duration}",
+  "@workoutElapsedLabel": {
+    "description": "Workout info pill label for elapsed duration.",
+    "placeholders": {
+      "duration": {
+        "type": "String",
+        "example": "45 min"
+      }
+    }
+  },
+  "workoutExerciseCount": "{count, plural, =1{1 exercise} other{{count} exercises}}",
+  "@workoutExerciseCount": {
+    "description": "Workout info pill label for exercise count.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "workoutCompletedMetricLabel": "Completed",
+  "@workoutCompletedMetricLabel": {
+    "description": "Metric label for completed workouts."
+  },
+  "workoutSessionCountSuffix": "{count, plural, =1{session} other{sessions}}",
+  "@workoutSessionCountSuffix": {
+    "description": "Metric suffix for completed workout sessions.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "workoutTotalTimeMetricLabel": "Total time",
+  "@workoutTotalTimeMetricLabel": {
+    "description": "Metric label for total workout time."
+  },
+  "workoutLatestMetricLabel": "Latest",
+  "@workoutLatestMetricLabel": {
+    "description": "Metric label for latest workout."
+  },
+  "workoutOpenCompletedTooltip": "Open completed {sessionName}",
+  "@workoutOpenCompletedTooltip": {
+    "description": "Tooltip for opening a completed workout.",
+    "placeholders": {
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "workoutDeleteCompletedTooltip": "Delete completed {sessionName}",
+  "@workoutDeleteCompletedTooltip": {
+    "description": "Tooltip for deleting a completed workout.",
+    "placeholders": {
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "workoutSessionTitle": "Workout session",
+  "@workoutSessionTitle": {
+    "description": "Active workout session screen title."
+  },
+  "workoutSessionCockpitLabel": "Active session",
+  "@workoutSessionCockpitLabel": {
+    "description": "Active workout session header label."
+  },
+  "workoutExerciseQueueTitle": "Exercise queue",
+  "@workoutExerciseQueueTitle": {
+    "description": "Active workout exercise queue section title."
+  },
+  "workoutExerciseQueueSubtitle": "Open an exercise to log sets and compare history.",
+  "@workoutExerciseQueueSubtitle": {
+    "description": "Active workout exercise queue section subtitle."
+  },
+  "workoutOpenExerciseTooltip": "Open {exerciseName}",
+  "@workoutOpenExerciseTooltip": {
+    "description": "Tooltip for opening an exercise in an active workout.",
+    "placeholders": {
+      "exerciseName": {
+        "type": "String",
+        "example": "Bench press"
+      }
+    }
+  },
+  "workoutOpenExerciseEntryTooltip": "Open {exerciseName} entry {entryNumber}",
+  "@workoutOpenExerciseEntryTooltip": {
+    "description": "Tooltip for opening a repeated exercise entry in an active workout.",
+    "placeholders": {
+      "exerciseName": {
+        "type": "String",
+        "example": "Pushups"
+      },
+      "entryNumber": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "workoutFinishAction": "Finish workout",
+  "@workoutFinishAction": {
+    "description": "Action label for finishing the active workout."
+  },
+  "workoutCompletedTitle": "Completed workout",
+  "@workoutCompletedTitle": {
+    "description": "Completed workout screen title and summary label."
+  },
+  "workoutExerciseTitle": "Workout exercise",
+  "@workoutExerciseTitle": {
+    "description": "Active workout exercise screen title and header."
+  },
+  "workoutExerciseSubtitle": "Log sets and reuse recent performance.",
+  "@workoutExerciseSubtitle": {
+    "description": "Active workout exercise screen subtitle."
+  },
+  "workoutExercisesTitle": "Exercises",
+  "@workoutExercisesTitle": {
+    "description": "Completed workout exercises section title."
+  },
+  "workoutDateLabel": "Date: {date}",
+  "@workoutDateLabel": {
+    "description": "Completed workout date info pill.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026-04-18"
+      }
+    }
+  },
+  "workoutDurationLabel": "Duration: {duration}",
+  "@workoutDurationLabel": {
+    "description": "Completed workout duration info pill.",
+    "placeholders": {
+      "duration": {
+        "type": "String",
+        "example": "45 min"
+      }
+    }
+  },
+  "workoutEntryLabel": "Entry {entryNumber}",
+  "@workoutEntryLabel": {
+    "description": "Repeated workout exercise entry label.",
+    "placeholders": {
+      "entryNumber": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "workoutSetLabel": "Set {setNumber}",
+  "@workoutSetLabel": {
+    "description": "Workout set label.",
+    "placeholders": {
+      "setNumber": {
+        "type": "int",
+        "example": "1"
+      }
+    }
+  },
+  "workoutNoSetsLogged": "No sets logged",
+  "@workoutNoSetsLogged": {
+    "description": "Text shown when a workout exercise has no logged sets."
+  },
+  "workoutTargetPrefix": "Target:",
+  "@workoutTargetPrefix": {
+    "description": "Prefix label for workout target summaries."
+  },
+  "workoutHourUnit": "h",
+  "@workoutHourUnit": {
+    "description": "Compact visible hour unit used in workout duration labels."
+  },
+  "workoutMinuteUnit": "min",
+  "@workoutMinuteUnit": {
+    "description": "Compact visible minute unit used in workout duration labels."
+  },
+  "workoutSetsLabel": "sets",
+  "@workoutSetsLabel": {
+    "description": "Label for workout set counts in compact target summaries."
+  },
+  "workoutRepsLabel": "reps",
+  "@workoutRepsLabel": {
+    "description": "Label for workout repetition counts in compact set summaries."
+  },
+  "workoutSetCountLogged": "{count, plural, =1{1 set logged} other{{count} sets logged}}",
+  "@workoutSetCountLogged": {
+    "description": "Label for number of workout sets logged.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "librarySubtitle": "Manage plans, exercises, foods, and recipes.",
+  "@librarySubtitle": {
+    "description": "Library screen header subtitle."
+  },
+  "libraryTrainingSection": "Training",
+  "@libraryTrainingSection": {
+    "description": "Library segment label for training content."
+  },
+  "libraryFoodsSection": "Foods",
+  "@libraryFoodsSection": {
+    "description": "Library segment label for foods and dishes."
+  },
+  "libraryEditItem": "Edit {itemName}",
+  "@libraryEditItem": {
+    "description": "Tooltip for editing a catalog item.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Rice"
+      }
+    }
+  },
+  "libraryDeleteItem": "Delete {itemName}",
+  "@libraryDeleteItem": {
+    "description": "Tooltip for deleting a catalog item.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Rice"
+      }
+    }
+  },
+  "libraryServingSuffix": "serving",
+  "@libraryServingSuffix": {
+    "description": "Serving suffix used in catalog nutrition summaries."
+  },
+  "libraryCaloriesPerServingLabel": "{calories} kcal per serving",
+  "@libraryCaloriesPerServingLabel": {
+    "description": "Catalog calories per serving summary.",
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "example": "120"
+      }
+    }
+  },
+  "libraryExerciseCount": "{count, plural, =1{1 exercise} other{{count} exercises}}",
+  "@libraryExerciseCount": {
+    "description": "Training plan exercise count label.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "libraryMusclesEmpty": "Muscles: -",
+  "@libraryMusclesEmpty": {
+    "description": "Exercise muscle summary when no muscle groups are selected."
+  },
+  "formCancelAction": "Cancel",
+  "@formCancelAction": {
+    "description": "Shared cancel action label for custom form dialogs."
+  },
+  "workoutRepsFieldLabel": "Reps",
+  "@workoutRepsFieldLabel": {
+    "description": "Workout set input field label for repetitions."
+  },
+  "workoutWeightFieldLabel": "Weight",
+  "@workoutWeightFieldLabel": {
+    "description": "Workout set input field label for weight."
+  },
+  "workoutTimeFieldLabel": "Time",
+  "@workoutTimeFieldLabel": {
+    "description": "Workout set input field label for time."
+  },
+  "workoutLogSetAction": "Log set",
+  "@workoutLogSetAction": {
+    "description": "Action label for logging a workout set."
+  },
+  "workoutLoggedSetsTitle": "Logged sets",
+  "@workoutLoggedSetsTitle": {
+    "description": "Workout logged sets section title."
+  },
+  "workoutNoLoggedSetsYet": "No logged sets yet",
+  "@workoutNoLoggedSetsYet": {
+    "description": "Empty state for active workout logged sets."
+  },
+  "workoutUseSetTooltip": "Use Set {setNumber}",
+  "@workoutUseSetTooltip": {
+    "description": "Tooltip for filling the workout set input from a logged set.",
+    "placeholders": {
+      "setNumber": {
+        "type": "int",
+        "example": "1"
+      }
+    }
+  },
+  "workoutPreviousResultsTitle": "Previous results",
+  "@workoutPreviousResultsTitle": {
+    "description": "Previous workout results section title."
+  },
+  "workoutNoPreviousResults": "No previous results for this exercise",
+  "@workoutNoPreviousResults": {
+    "description": "Empty state for previous workout exercise results."
+  },
+  "workoutPreviousSetLabel": "Entry {entryNumber} • Set {setNumber}",
+  "@workoutPreviousSetLabel": {
+    "description": "Previous result set label when an exercise has repeated entries.",
+    "placeholders": {
+      "entryNumber": {
+        "type": "int",
+        "example": "2"
+      },
+      "setNumber": {
+        "type": "int",
+        "example": "1"
+      }
+    }
+  },
+  "workoutUsePreviousSetTooltip": "Use previous Set {setNumber} from {sessionName}",
+  "@workoutUsePreviousSetTooltip": {
+    "description": "Tooltip for filling workout set input from previous workout history.",
+    "placeholders": {
+      "setNumber": {
+        "type": "int",
+        "example": "1"
+      },
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "workoutUsePreviousEntrySetTooltip": "Use previous Entry {entryNumber} Set {setNumber} from {sessionName}",
+  "@workoutUsePreviousEntrySetTooltip": {
+    "description": "Tooltip for filling workout set input from previous workout history with repeated exercise entries.",
+    "placeholders": {
+      "entryNumber": {
+        "type": "int",
+        "example": "2"
+      },
+      "setNumber": {
+        "type": "int",
+        "example": "1"
+      },
+      "sessionName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "trainingsTitle": "Trainings",
+  "@trainingsTitle": {
+    "description": "Standalone trainings screen title."
+  },
+  "trainingPlansSegment": "Plans",
+  "@trainingPlansSegment": {
+    "description": "Training screen segment label for plans."
+  },
+  "trainingExercisesSegment": "Exercises",
+  "@trainingExercisesSegment": {
+    "description": "Training screen segment label for exercises."
+  },
+  "trainingPlansTitle": "Training plans",
+  "@trainingPlansTitle": {
+    "description": "Training plans section title."
+  },
+  "trainingAddPlanAction": "Add training plan",
+  "@trainingAddPlanAction": {
+    "description": "Action label for adding a training plan."
+  },
+  "trainingAddExerciseAction": "Add exercise",
+  "@trainingAddExerciseAction": {
+    "description": "Action label for adding an exercise."
+  },
+  "trainingNoPlansTitle": "No training plans yet",
+  "@trainingNoPlansTitle": {
+    "description": "Empty state title for training plans."
+  },
+  "trainingNoPlansMessage": "Create a training plan to organize exercises.",
+  "@trainingNoPlansMessage": {
+    "description": "Empty state message for training plans."
+  },
+  "trainingNoExercisesTitle": "No exercises yet",
+  "@trainingNoExercisesTitle": {
+    "description": "Empty state title for exercises."
+  },
+  "trainingNoExercisesMessage": "Create an exercise to use it in training plans.",
+  "@trainingNoExercisesMessage": {
+    "description": "Empty state message for exercises."
+  },
+  "trainingDeletePlanTitle": "Delete {planName}?",
+  "@trainingDeletePlanTitle": {
+    "description": "Delete training plan confirmation title.",
+    "placeholders": {
+      "planName": {
+        "type": "String",
+        "example": "Chest day"
+      }
+    }
+  },
+  "trainingDeletePlanMessage": "This removes the training plan.",
+  "@trainingDeletePlanMessage": {
+    "description": "Delete training plan confirmation message."
+  },
+  "trainingDeleteExerciseTitle": "Delete {exerciseName}?",
+  "@trainingDeleteExerciseTitle": {
+    "description": "Delete exercise confirmation title.",
+    "placeholders": {
+      "exerciseName": {
+        "type": "String",
+        "example": "Pushups"
+      }
+    }
+  },
+  "trainingDeleteExerciseMessage": "This removes the exercise.",
+  "@trainingDeleteExerciseMessage": {
+    "description": "Delete exercise confirmation message."
+  },
+  "trainingCouldNotDelete": "Could not delete.",
+  "@trainingCouldNotDelete": {
+    "description": "Fallback delete error message for training content."
+  },
+  "exerciseDialogAddTitle": "Add exercise",
+  "@exerciseDialogAddTitle": {
+    "description": "Add exercise dialog title."
+  },
+  "exerciseDialogEditTitle": "Edit exercise",
+  "@exerciseDialogEditTitle": {
+    "description": "Edit exercise dialog title."
+  },
+  "exerciseDialogSubtitle": "Define instructions and muscle focus for workout plans.",
+  "@exerciseDialogSubtitle": {
+    "description": "Exercise dialog subtitle."
+  },
+  "exerciseSaveAction": "Save exercise",
+  "@exerciseSaveAction": {
+    "description": "Save exercise action label."
+  },
+  "exerciseProfileSectionTitle": "Exercise profile",
+  "@exerciseProfileSectionTitle": {
+    "description": "Exercise profile section title."
+  },
+  "exerciseNameFieldLabel": "Exercise name",
+  "@exerciseNameFieldLabel": {
+    "description": "Exercise name field label."
+  },
+  "exerciseDescriptionFieldLabel": "Exercise description",
+  "@exerciseDescriptionFieldLabel": {
+    "description": "Exercise description field label."
+  },
+  "exerciseInstructionFieldLabel": "Exercise instruction",
+  "@exerciseInstructionFieldLabel": {
+    "description": "Exercise instruction field label."
+  },
+  "exerciseMuscleFocusTitle": "Muscle focus",
+  "@exerciseMuscleFocusTitle": {
+    "description": "Muscle focus section title."
+  },
+  "exerciseMuscleFocusSubtitle": "Choose every area this exercise primarily trains.",
+  "@exerciseMuscleFocusSubtitle": {
+    "description": "Muscle focus section subtitle."
+  },
+  "exerciseSelectMuscleGroups": "Select muscle groups",
+  "@exerciseSelectMuscleGroups": {
+    "description": "Muscle group selector label."
+  },
+  "exerciseDetailsValidation": "Enter a name, description, instruction, and muscle groups.",
+  "@exerciseDetailsValidation": {
+    "description": "Exercise validation error for missing required details."
+  },
+  "exerciseNameValidation": "Enter a valid exercise name.",
+  "@exerciseNameValidation": {
+    "description": "Exercise validation error for invalid name."
+  },
+  "exerciseCouldNotSave": "Could not save exercise.",
+  "@exerciseCouldNotSave": {
+    "description": "Fallback save error message for exercises."
+  },
+  "trainingPlanDialogTitle": "Training plan",
+  "@trainingPlanDialogTitle": {
+    "description": "Add training plan dialog title."
+  },
+  "trainingPlanEditDialogTitle": "Edit training",
+  "@trainingPlanEditDialogTitle": {
+    "description": "Edit training plan dialog title."
+  },
+  "trainingPlanDialogSubtitle": "Assemble a reusable sequence for workout sessions.",
+  "@trainingPlanDialogSubtitle": {
+    "description": "Training plan dialog subtitle."
+  },
+  "trainingSaveAction": "Save training",
+  "@trainingSaveAction": {
+    "description": "Save training plan action label."
+  },
+  "trainingBasicsSectionTitle": "Training basics",
+  "@trainingBasicsSectionTitle": {
+    "description": "Training plan basics section title."
+  },
+  "trainingNameFieldLabel": "Training name",
+  "@trainingNameFieldLabel": {
+    "description": "Training name field label."
+  },
+  "trainingDescriptionFieldLabel": "Training description",
+  "@trainingDescriptionFieldLabel": {
+    "description": "Training description field label."
+  },
+  "trainingExerciseSequenceTitle": "Exercise sequence",
+  "@trainingExerciseSequenceTitle": {
+    "description": "Training plan exercise sequence section title."
+  },
+  "trainingExerciseSequenceSubtitle": "Add targets in the order you want to train.",
+  "@trainingExerciseSequenceSubtitle": {
+    "description": "Training plan exercise sequence section subtitle."
+  },
+  "trainingNoExercisesAdded": "No exercises added yet",
+  "@trainingNoExercisesAdded": {
+    "description": "Empty state text for a training plan with no selected exercises."
+  },
+  "trainingRemoveExerciseTooltip": "Remove {exerciseName}",
+  "@trainingRemoveExerciseTooltip": {
+    "description": "Tooltip for removing an exercise from a training plan.",
+    "placeholders": {
+      "exerciseName": {
+        "type": "String",
+        "example": "Pushups"
+      }
+    }
+  },
+  "trainingTargetUnitLabel": "Unit: {unit}",
+  "@trainingTargetUnitLabel": {
+    "description": "Training target unit summary label.",
+    "placeholders": {
+      "unit": {
+        "type": "String",
+        "example": "kg"
+      }
+    }
+  },
+  "trainingSetsSummaryLabel": "sets",
+  "@trainingSetsSummaryLabel": {
+    "description": "Training target summary label for sets."
+  },
+  "trainingRepsSummaryLabel": "reps",
+  "@trainingRepsSummaryLabel": {
+    "description": "Training target summary label for repetitions."
+  },
+  "trainingWeightSummaryLabel": "weight",
+  "@trainingWeightSummaryLabel": {
+    "description": "Training target summary label for weight."
+  },
+  "trainingTimeSummaryLabel": "time",
+  "@trainingTimeSummaryLabel": {
+    "description": "Training target summary label for time."
+  },
+  "trainingPlanValidation": "Enter a training name and add at least one exercise.",
+  "@trainingPlanValidation": {
+    "description": "Training plan validation error for missing required details."
+  },
+  "trainingCouldNotSave": "Could not save training.",
+  "@trainingCouldNotSave": {
+    "description": "Fallback save error message for training plans."
+  },
+  "trainingTargetDialogTitle": "Add exercise",
+  "@trainingTargetDialogTitle": {
+    "description": "Training exercise target dialog add title."
+  },
+  "trainingTargetDialogEditTitle": "Edit exercise",
+  "@trainingTargetDialogEditTitle": {
+    "description": "Training exercise target dialog edit title."
+  },
+  "trainingTargetSectionTitle": "Set targets",
+  "@trainingTargetSectionTitle": {
+    "description": "Training exercise target prescription section title."
+  },
+  "trainingTargetSectionSubtitle": "Set working volume, load, duration, and unit.",
+  "@trainingTargetSectionSubtitle": {
+    "description": "Training exercise target prescription section subtitle."
+  },
+  "trainingExpectedSetsFieldLabel": "Working sets",
+  "@trainingExpectedSetsFieldLabel": {
+    "description": "Working sets field label."
+  },
+  "trainingExpectedRepsFieldLabel": "Target reps",
+  "@trainingExpectedRepsFieldLabel": {
+    "description": "Target reps field label."
+  },
+  "trainingExpectedWeightFieldLabel": "Target load",
+  "@trainingExpectedWeightFieldLabel": {
+    "description": "Target load field label."
+  },
+  "trainingExpectedTimeFieldLabel": "Target duration",
+  "@trainingExpectedTimeFieldLabel": {
+    "description": "Target duration field label."
+  },
+  "trainingUnitFieldLabel": "Load or time unit",
+  "@trainingUnitFieldLabel": {
+    "description": "Training target unit field label."
+  },
+  "trainingTargetValidation": "Enter valid exercise targets and a unit.",
+  "@trainingTargetValidation": {
+    "description": "Training target validation error."
+  },
+  "foodScreenTitle": "Food",
+  "@foodScreenTitle": {
+    "description": "Standalone food screen title."
+  },
+  "foodSetTitle": "Food library",
+  "@foodSetTitle": {
+    "description": "Food catalog section title."
+  },
+  "foodAddItemAction": "Add food or recipe",
+  "@foodAddItemAction": {
+    "description": "Action label for adding food or dish."
+  },
+  "foodEmptyTitle": "No foods or recipes yet",
+  "@foodEmptyTitle": {
+    "description": "Empty state title for food catalog."
+  },
+  "foodEmptyMessage": "Use Add food or recipe to build your reusable catalog.",
+  "@foodEmptyMessage": {
+    "description": "Empty state message for food catalog."
+  },
+  "foodDeleteItemTitle": "Delete {itemName}?",
+  "@foodDeleteItemTitle": {
+    "description": "Delete food or dish confirmation title.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Rice"
+      }
+    }
+  },
+  "foodDeleteItemMessage": "This removes the item from the food set.",
+  "@foodDeleteItemMessage": {
+    "description": "Delete food or dish confirmation message."
+  },
+  "foodItemChoiceLabel": "Food item",
+  "@foodItemChoiceLabel": {
+    "description": "Bottom sheet choice label for creating a food item."
+  },
+  "dishChoiceLabel": "Recipe",
+  "@dishChoiceLabel": {
+    "description": "Bottom sheet choice label for creating a dish."
+  },
+  "foodFormTitle": "Food item",
+  "@foodFormTitle": {
+    "description": "Food form title."
+  },
+  "foodFormEditTitle": "Edit food",
+  "@foodFormEditTitle": {
+    "description": "Edit food form title."
+  },
+  "foodFormSubtitle": "Define reusable food data for faster meal logging.",
+  "@foodFormSubtitle": {
+    "description": "Food form subtitle."
+  },
+  "foodSaveAction": "Save food",
+  "@foodSaveAction": {
+    "description": "Save food action label."
+  },
+  "foodBasicsSectionTitle": "Food basics",
+  "@foodBasicsSectionTitle": {
+    "description": "Food basics section title."
+  },
+  "foodBasicsSectionSubtitle": "Name this item and define the serving anchor.",
+  "@foodBasicsSectionSubtitle": {
+    "description": "Food basics section subtitle."
+  },
+  "foodNameFieldLabel": "Name",
+  "@foodNameFieldLabel": {
+    "description": "Food name field label."
+  },
+  "foodDescriptionFieldLabel": "Description",
+  "@foodDescriptionFieldLabel": {
+    "description": "Food description field label."
+  },
+  "foodServingSizeGramsFieldLabel": "Serving size grams",
+  "@foodServingSizeGramsFieldLabel": {
+    "description": "Food serving size grams field label."
+  },
+  "foodNutritionFactsTitle": "Nutrition facts",
+  "@foodNutritionFactsTitle": {
+    "description": "Food nutrition facts section title."
+  },
+  "foodNutritionFactsSubtitle": "Enter values using the selected nutrition basis.",
+  "@foodNutritionFactsSubtitle": {
+    "description": "Food nutrition facts section subtitle."
+  },
+  "foodNutritionPer100g": "Per 100g",
+  "@foodNutritionPer100g": {
+    "description": "Nutrition basis label for per 100 grams."
+  },
+  "foodNutritionPerServing": "Per serving",
+  "@foodNutritionPerServing": {
+    "description": "Nutrition basis label for per serving."
+  },
+  "foodValidation": "Enter a name and valid nutrition values.",
+  "@foodValidation": {
+    "description": "Food form validation message."
+  },
+  "foodCouldNotSave": "Could not save food.",
+  "@foodCouldNotSave": {
+    "description": "Fallback save error for food form."
+  },
+  "dishFormTitle": "Recipe",
+  "@dishFormTitle": {
+    "description": "Dish form title."
+  },
+  "dishFormEditTitle": "Edit recipe",
+  "@dishFormEditTitle": {
+    "description": "Edit dish form title."
+  },
+  "dishFormSubtitle": "Combine foods into a reusable recipe.",
+  "@dishFormSubtitle": {
+    "description": "Dish form subtitle."
+  },
+  "dishSaveAction": "Save recipe",
+  "@dishSaveAction": {
+    "description": "Save dish action label."
+  },
+  "dishBasicsSectionTitle": "Recipe basics",
+  "@dishBasicsSectionTitle": {
+    "description": "Dish basics section title."
+  },
+  "dishBasicsSectionSubtitle": "Name this recipe and define one serving.",
+  "@dishBasicsSectionSubtitle": {
+    "description": "Dish basics section subtitle."
+  },
+  "dishNameFieldLabel": "Recipe name",
+  "@dishNameFieldLabel": {
+    "description": "Dish name field label."
+  },
+  "dishDescriptionFieldLabel": "Recipe description",
+  "@dishDescriptionFieldLabel": {
+    "description": "Dish description field label."
+  },
+  "dishServingSizeGramsFieldLabel": "Recipe serving size grams",
+  "@dishServingSizeGramsFieldLabel": {
+    "description": "Dish serving size grams field label."
+  },
+  "dishComponentsSectionTitle": "Ingredients",
+  "@dishComponentsSectionTitle": {
+    "description": "Dish components section title."
+  },
+  "dishComponentsSectionSubtitle": "Add ingredients to calculate serving nutrition.",
+  "@dishComponentsSectionSubtitle": {
+    "description": "Dish components section subtitle."
+  },
+  "dishAddComponentAction": "Add ingredient",
+  "@dishAddComponentAction": {
+    "description": "Add dish component action label."
+  },
+  "dishNoComponentsTitle": "No ingredients yet",
+  "@dishNoComponentsTitle": {
+    "description": "Dish components empty state title."
+  },
+  "dishNoComponentsMessage": "Add foods to calculate this recipe.",
+  "@dishNoComponentsMessage": {
+    "description": "Dish components empty state message."
+  },
+  "dishEditComponentTooltip": "Edit {itemName} ingredient",
+  "@dishEditComponentTooltip": {
+    "description": "Tooltip for editing a dish component.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Carrot"
+      }
+    }
+  },
+  "dishRemoveComponentTooltip": "Remove {itemName} ingredient",
+  "@dishRemoveComponentTooltip": {
+    "description": "Tooltip for removing a dish component.",
+    "placeholders": {
+      "itemName": {
+        "type": "String",
+        "example": "Carrot"
+      }
+    }
+  },
+  "dishComponentAddTitle": "Add ingredient",
+  "@dishComponentAddTitle": {
+    "description": "Add dish component dialog title."
+  },
+  "dishComponentEditTitle": "Edit ingredient",
+  "@dishComponentEditTitle": {
+    "description": "Edit dish component dialog title."
+  },
+  "dishComponentAmountTitle": "Ingredient amount",
+  "@dishComponentAmountTitle": {
+    "description": "Dish component amount section title."
+  },
+  "dishComponentGramsFieldLabel": "Ingredient grams",
+  "@dishComponentGramsFieldLabel": {
+    "description": "Dish component grams field label and semantic label."
+  },
+  "dishCatalogItemSectionTitle": "Catalog item",
+  "@dishCatalogItemSectionTitle": {
+    "description": "Dish component catalog item selector title."
+  },
+  "dishSaveComponentAction": "Save ingredient",
+  "@dishSaveComponentAction": {
+    "description": "Save dish component action label."
+  },
+  "dishValidation": "Enter recipe details and at least one ingredient.",
+  "@dishValidation": {
+    "description": "Dish form validation message."
+  },
+  "dishCouldNotSave": "Could not save recipe.",
+  "@dishCouldNotSave": {
+    "description": "Fallback save error for dish form."
+  },
+  "dishComponentValidation": "Choose an item and enter valid ingredient grams.",
+  "@dishComponentValidation": {
+    "description": "Dish component validation message."
+  }
+}

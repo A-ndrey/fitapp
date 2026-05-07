@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/catalog_item.dart';
 import '../models/dish_item.dart';
 import '../state/app_store.dart';
+import '../ui/core/widgets/empty_state.dart';
+import '../ui/core/widgets/form_shell.dart';
 
 class DishForm extends StatefulWidget {
-  const DishForm({super.key, required this.store, this.initialDish});
+  const DishForm({
+    super.key,
+    required this.store,
+    this.initialDish,
+    this.fullScreen = false,
+  });
 
   final AppStore store;
   final DishItem? initialDish;
+  final bool fullScreen;
 
   @override
   State<DishForm> createState() => _DishFormState();
@@ -48,89 +57,148 @@ class _DishFormState extends State<DishForm> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(_isEditing ? 'Edit dish' : 'Dish'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _nameController,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Dish name'),
+    final l10n = AppLocalizations.of(context);
+    final title = _isEditing
+        ? l10n?.dishFormEditTitle ?? 'Edit recipe'
+        : l10n?.dishFormTitle ?? 'Recipe';
+    final subtitle =
+        l10n?.dishFormSubtitle ?? 'Combine foods into a reusable recipe.';
+    final primaryActionLabel = l10n?.dishSaveAction ?? 'Save recipe';
+    final children = [
+      if (_isEditing) _buildComponentsSection(),
+      _buildBasicsSection(),
+      if (!_isEditing) _buildComponentsSection(),
+      if (_errorText != null) InlineErrorBanner(message: _errorText!),
+    ];
+
+    if (widget.fullScreen) {
+      return FormShellPage(
+        title: title,
+        subtitle: subtitle,
+        primaryActionLabel: primaryActionLabel,
+        onPrimaryAction: _saveDish,
+        children: children,
+      );
+    }
+    return FormShellDialog(
+      title: title,
+      subtitle: subtitle,
+      primaryActionLabel: primaryActionLabel,
+      onPrimaryAction: _saveDish,
+      maxWidth: 640,
+      children: children,
+    );
+  }
+
+  Widget _buildBasicsSection() {
+    final l10n = AppLocalizations.of(context);
+    return FormSectionCard(
+      title: l10n?.dishBasicsSectionTitle ?? 'Recipe basics',
+      subtitle:
+          l10n?.dishBasicsSectionSubtitle ??
+          'Name this recipe and define one serving.',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              labelText: l10n?.dishNameFieldLabel ?? 'Recipe name',
             ),
-            TextField(
-              controller: _descriptionController,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Dish description'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _descriptionController,
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              labelText:
+                  l10n?.dishDescriptionFieldLabel ?? 'Recipe description',
             ),
-            TextField(
-              controller: _servingSizeController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'Dish serving size grams',
-              ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _servingSizeController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText:
+                  l10n?.dishServingSizeGramsFieldLabel ??
+                  'Recipe serving size grams',
             ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComponentsSection() {
+    final l10n = AppLocalizations.of(context);
+    return FormSectionCard(
+      title: l10n?.dishComponentsSectionTitle ?? 'Ingredients',
+      subtitle:
+          l10n?.dishComponentsSectionSubtitle ??
+          'Add ingredients to calculate serving nutrition.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
               onPressed: _openComponentDialog,
               icon: const Icon(Icons.add),
-              label: const Text('Add component'),
+              label: Text(l10n?.dishAddComponentAction ?? 'Add ingredient'),
             ),
-            const SizedBox(height: 8),
+          ),
+          const SizedBox(height: 12),
+          if (_components.isEmpty)
+            AppEmptyState(
+              icon: Icons.restaurant_menu_outlined,
+              title: l10n?.dishNoComponentsTitle ?? 'No ingredients yet',
+              message:
+                  l10n?.dishNoComponentsMessage ??
+                  'Add foods to calculate this recipe.',
+            )
+          else
             ..._components.indexed.map((entry) {
               final index = entry.$1;
               final component = entry.$2;
               final item = widget.store.itemById(component.itemId);
-              return ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                title: Text(item?.name ?? component.itemId),
-                subtitle: Text('${_format(component.grams)} g'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip:
-                          'Edit ${item?.name ?? component.itemId} component',
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: () => _openComponentDialog(index: index),
-                    ),
-                    IconButton(
-                      tooltip:
-                          'Remove ${item?.name ?? component.itemId} component',
-                      icon: const Icon(Icons.remove_circle_outline),
-                      onPressed: () {
-                        setState(() {
-                          _components.removeAt(index);
-                          _errorText = null;
-                        });
-                      },
-                    ),
-                  ],
+              final itemName = item?.name ?? component.itemId;
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  title: Text(itemName),
+                  subtitle: Text('${_format(component.grams)} g'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip:
+                            l10n?.dishEditComponentTooltip(itemName) ??
+                            'Edit $itemName ingredient',
+                        icon: const Icon(Icons.edit_outlined),
+                        onPressed: () => _openComponentDialog(index: index),
+                      ),
+                      IconButton(
+                        tooltip:
+                            l10n?.dishRemoveComponentTooltip(itemName) ??
+                            'Remove $itemName ingredient',
+                        icon: const Icon(Icons.remove_circle_outline),
+                        onPressed: () {
+                          setState(() {
+                            _components.removeAt(index);
+                            _errorText = null;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               );
             }),
-            if (_errorText != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _errorText!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-          ],
-        ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(onPressed: _saveDish, child: const Text('Save dish')),
-      ],
     );
   }
 
@@ -161,14 +229,22 @@ class _DishFormState extends State<DishForm> {
   void _saveDish() {
     final name = _nameController.text.trim();
     final description = _descriptionController.text.trim();
-    final servingSize = double.tryParse(_servingSizeController.text.trim());
+    final servingSizeInput = _servingSizeController.text.trim();
+    final servingSize = servingSizeInput.isEmpty
+        ? _components.fold<double>(
+            0,
+            (total, component) => total + component.grams,
+          )
+        : double.tryParse(servingSizeInput);
     if (name.isEmpty ||
         servingSize == null ||
         !servingSize.isFinite ||
         servingSize <= 0 ||
         _components.isEmpty) {
       setState(() {
-        _errorText = 'Enter dish details and at least one component.';
+        _errorText =
+            AppLocalizations.of(context)?.dishValidation ??
+            'Enter recipe details and at least one ingredient.';
       });
       return;
     }
@@ -188,7 +264,10 @@ class _DishFormState extends State<DishForm> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText = error.message?.toString() ?? 'Could not save dish.';
+        _errorText =
+            error.message?.toString() ??
+            AppLocalizations.of(context)?.dishCouldNotSave ??
+            'Could not save recipe.';
       });
       return;
     }
@@ -252,64 +331,82 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(
-        widget.initialComponent == null ? 'Add component' : 'Edit component',
+        widget.initialComponent == null
+            ? l10n?.dishComponentAddTitle ?? 'Add ingredient'
+            : l10n?.dishComponentEditTitle ?? 'Edit ingredient',
       ),
       content: SizedBox(
         width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              height: 220,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: widget.items.length,
-                itemBuilder: (context, index) {
-                  final item = widget.items[index];
-                  final selected = _selectedItem?.id == item.id;
-                  return ListTile(
-                    title: Text(item.name),
-                    subtitle: Text(item.isFood ? 'food' : 'dish'),
-                    trailing: selected ? const Icon(Icons.check) : null,
-                    selected: selected,
-                    onTap: () {
-                      setState(() {
-                        _selectedItem = item;
-                        _errorText = null;
-                      });
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FormSectionCard(
+                title: l10n?.dishComponentAmountTitle ?? 'Ingredient amount',
+                child: Semantics(
+                  label:
+                      l10n?.dishComponentGramsFieldLabel ?? 'Ingredient grams',
+                  textField: true,
+                  child: TextField(
+                    controller: _gramsController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText:
+                          l10n?.dishComponentGramsFieldLabel ??
+                          'Ingredient grams',
+                    ),
+                  ),
+                ),
+              ),
+              FormSectionCard(
+                title: l10n?.dishCatalogItemSectionTitle ?? 'Catalog item',
+                child: SizedBox(
+                  height: 160,
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: widget.items.length,
+                    itemBuilder: (context, index) {
+                      final item = widget.items[index];
+                      final selected = _selectedItem?.id == item.id;
+                      return ListTile(
+                        title: Text(item.name),
+                        subtitle: Text(
+                          item.isFood
+                              ? l10n?.catalogSubtypeFood ?? 'food'
+                              : l10n?.catalogSubtypeDish ?? 'recipe',
+                        ),
+                        trailing: selected ? const Icon(Icons.check) : null,
+                        selected: selected,
+                        onTap: () {
+                          setState(() {
+                            _selectedItem = item;
+                            _errorText = null;
+                          });
+                        },
+                      );
                     },
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
-            TextField(
-              controller: _gramsController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(labelText: 'Component grams'),
-            ),
-            if (_errorText != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _errorText!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
+              if (_errorText != null) InlineErrorBanner(message: _errorText!),
             ],
-          ],
+          ),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n?.commonCancel ?? 'Cancel'),
         ),
         FilledButton(
           onPressed: _saveComponent,
-          child: const Text('Save component'),
+          child: Text(l10n?.dishSaveComponentAction ?? 'Save ingredient'),
         ),
       ],
     );
@@ -322,7 +419,9 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
         !grams.isFinite ||
         grams <= 0) {
       setState(() {
-        _errorText = 'Choose an item and enter valid grams.';
+        _errorText =
+            AppLocalizations.of(context)?.dishComponentValidation ??
+            'Choose an item and enter valid grams.';
       });
       return;
     }

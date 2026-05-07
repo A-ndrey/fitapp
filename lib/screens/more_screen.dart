@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/app_preferences.dart';
 import '../state/app_store.dart';
+import '../ui/core/layout/adaptive_page.dart';
+import '../ui/core/widgets/app_screen_scaffold.dart';
+import '../ui/core/widgets/section_header.dart';
+import '../ui/settings/settings_cards.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key, required this.store});
@@ -14,140 +19,180 @@ class MoreScreen extends StatelessWidget {
       animation: store,
       builder: (context, _) {
         final preferences = store.preferences;
+        final l10n = AppLocalizations.of(context);
 
-        return SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+        return AppScreenScaffold(
+          title: l10n?.destinationMore ?? 'Settings',
+          body: AdaptivePage(
             children: [
-              Text('More', style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 16),
-              _SectionCard(
-                title: 'Sync',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      store.isLoggedIn
-                          ? 'Signed in. Firebase sync is still a placeholder.'
-                          : 'Signed out. Firebase sync is still a placeholder.',
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: store.isLoggedIn ? store.logOut : store.logIn,
-                        child: Text(store.isLoggedIn ? 'Logout' : 'Login'),
-                      ),
-                    ),
-                  ],
+              SectionHeader(
+                title: l10n?.destinationMore ?? 'Settings',
+                subtitle:
+                    l10n?.moreSubtitle ??
+                    'Tune units, appearance, and training-log preferences.',
+              ),
+              Text(
+                l10n?.moreSyncTitle ?? 'Sync',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              _SectionCard(
-                title: 'Units',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _PreferenceField<WorkoutWeightUnit>(
-                      label: 'Workout weight',
+              const SizedBox(height: 12),
+              SettingsStatusCard(
+                title: l10n?.moreSyncStatusTitle ?? 'Sync status',
+                message: store.isLoggedIn
+                    ? l10n?.moreSyncSignedInMessage ??
+                          'Signed in. Sync is not available yet.'
+                    : l10n?.moreSyncSignedOutMessage ??
+                          'Signed out. Sync is not available yet.',
+                actionLabel: store.isLoggedIn
+                    ? l10n?.moreLogoutAction ?? 'Logout'
+                    : l10n?.moreLoginAction ?? 'Login',
+                onPressed: store.isLoggedIn ? store.logOut : store.logIn,
+              ),
+              const SizedBox(height: 20),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final unitsCards = [
+                    PreferenceChipCard<WorkoutWeightUnit>(
+                      title:
+                          l10n?.settingsWorkoutWeightTitle ?? 'Workout weight',
+                      subtitle:
+                          l10n?.settingsWorkoutWeightSubtitle ??
+                          'Weights shown during training sessions.',
                       value: preferences.workoutWeightUnit,
-                      options: const [
-                        _PreferenceOption(
+                      options: [
+                        PreferenceChipOption(
                           value: WorkoutWeightUnit.kilograms,
-                          label: 'Kilograms',
+                          label: l10n?.unitKilograms ?? 'Kilograms',
                         ),
-                        _PreferenceOption(
+                        PreferenceChipOption(
                           value: WorkoutWeightUnit.pounds,
-                          label: 'Pounds',
+                          label: l10n?.unitPounds ?? 'Pounds',
                         ),
                       ],
                       onChanged: store.setWorkoutWeightUnit,
                     ),
-                    const SizedBox(height: 16),
-                    _PreferenceField<DishWeightUnit>(
-                      label: 'Dish weight',
+                    PreferenceChipCard<DishWeightUnit>(
+                      title: l10n?.settingsDishWeightTitle ?? 'Dish weight',
+                      subtitle:
+                          l10n?.settingsDishWeightSubtitle ??
+                          'Food and recipe serving measurements.',
                       value: preferences.dishWeightUnit,
-                      options: const [
-                        _PreferenceOption(
+                      options: [
+                        PreferenceChipOption(
                           value: DishWeightUnit.grams,
-                          label: 'Grams',
+                          label: l10n?.unitGrams ?? 'Grams',
                         ),
-                        _PreferenceOption(
+                        PreferenceChipOption(
                           value: DishWeightUnit.ounces,
-                          label: 'Ounces',
+                          label: l10n?.unitOunces ?? 'Ounces',
                         ),
                       ],
                       onChanged: store.setDishWeightUnit,
                     ),
-                    const SizedBox(height: 16),
-                    _PreferenceField<HeightUnit>(
-                      label: 'Height',
+                    PreferenceChipCard<HeightUnit>(
+                      title: l10n?.settingsHeightTitle ?? 'Height',
                       value: preferences.heightUnit,
-                      options: const [
-                        _PreferenceOption(
+                      options: [
+                        PreferenceChipOption(
                           value: HeightUnit.centimeters,
-                          label: 'Centimeters',
+                          label: l10n?.unitCentimeters ?? 'Centimeters',
                         ),
-                        _PreferenceOption(
+                        PreferenceChipOption(
                           value: HeightUnit.inches,
-                          label: 'Inches',
+                          label: l10n?.unitInches ?? 'Inches',
                         ),
                       ],
                       onChanged: store.setHeightUnit,
                     ),
-                    const SizedBox(height: 16),
-                    _PreferenceField<DistanceUnit>(
-                      label: 'Distance',
+                    PreferenceChipCard<DistanceUnit>(
+                      title: l10n?.settingsDistanceTitle ?? 'Distance',
                       value: preferences.distanceUnit,
-                      options: const [
-                        _PreferenceOption(
+                      options: [
+                        PreferenceChipOption(
                           value: DistanceUnit.kilometers,
-                          label: 'Kilometers',
+                          label: l10n?.unitKilometers ?? 'Kilometers',
                         ),
-                        _PreferenceOption(
+                        PreferenceChipOption(
                           value: DistanceUnit.miles,
-                          label: 'Miles',
+                          label: l10n?.unitMiles ?? 'Miles',
                         ),
                       ],
                       onChanged: store.setDistanceUnit,
                     ),
-                  ],
-                ),
-              ),
-              _SectionCard(
-                title: 'Language',
-                child: _PreferenceField<LanguagePreference>(
-                  label: 'App language',
-                  value: preferences.language,
-                  options: const [
-                    _PreferenceOption(
-                      value: LanguagePreference.english,
-                      label: 'English',
+                  ];
+                  final appCards = [
+                    PreferenceChipCard<LanguagePreference>(
+                      title: l10n?.settingsLanguageTitle ?? 'Language',
+                      subtitle:
+                          l10n?.settingsLanguageSubtitle ?? 'App language',
+                      value: preferences.language,
+                      options: [
+                        PreferenceChipOption(
+                          value: LanguagePreference.english,
+                          label: l10n?.languageEnglish ?? 'English',
+                        ),
+                      ],
+                      onChanged: store.setLanguagePreference,
                     ),
-                  ],
-                  onChanged: store.setLanguagePreference,
-                ),
-              ),
-              _SectionCard(
-                title: 'Appearance',
-                child: _PreferenceField<AppearancePreference>(
-                  label: 'Theme',
-                  value: preferences.appearance,
-                  options: const [
-                    _PreferenceOption(
-                      value: AppearancePreference.system,
-                      label: 'System',
+                    PreferenceChipCard<AppearancePreference>(
+                      title: l10n?.settingsAppearanceTitle ?? 'Appearance',
+                      subtitle: l10n?.settingsAppearanceSubtitle ?? 'Theme',
+                      value: preferences.appearance,
+                      options: [
+                        PreferenceChipOption(
+                          value: AppearancePreference.system,
+                          label: l10n?.appearanceSystem ?? 'System',
+                        ),
+                        PreferenceChipOption(
+                          value: AppearancePreference.light,
+                          label: l10n?.appearanceLight ?? 'Light',
+                        ),
+                        PreferenceChipOption(
+                          value: AppearancePreference.dark,
+                          label: l10n?.appearanceDark ?? 'Dark',
+                        ),
+                      ],
+                      onChanged: store.setAppearancePreference,
                     ),
-                    _PreferenceOption(
-                      value: AppearancePreference.light,
-                      label: 'Light',
-                    ),
-                    _PreferenceOption(
-                      value: AppearancePreference.dark,
-                      label: 'Dark',
-                    ),
-                  ],
-                  onChanged: store.setAppearancePreference,
-                ),
+                  ];
+
+                  if (constraints.maxWidth < 720) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _SettingsGroup(
+                          title: l10n?.settingsUnitsTitle ?? 'Units',
+                          children: unitsCards,
+                        ),
+                        const SizedBox(height: 20),
+                        _SettingsGroup(
+                          title: l10n?.settingsAppTitle ?? 'App',
+                          children: appCards,
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _SettingsGroup(
+                        title: l10n?.settingsUnitsTitle ?? 'Units',
+                        columns: 2,
+                        children: unitsCards,
+                      ),
+                      const SizedBox(height: 20),
+                      _SettingsGroup(
+                        title: l10n?.settingsAppTitle ?? 'App',
+                        columns: 2,
+                        children: appCards,
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -157,71 +202,48 @@ class MoreScreen extends StatelessWidget {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PreferenceField<T> extends StatelessWidget {
-  const _PreferenceField({
-    required this.label,
-    required this.value,
-    required this.options,
-    required this.onChanged,
+class _SettingsGroup extends StatelessWidget {
+  const _SettingsGroup({
+    required this.title,
+    required this.children,
+    this.columns = 1,
   });
 
-  final String label;
-  final T value;
-  final List<_PreferenceOption<T>> options;
-  final ValueChanged<T> onChanged;
+  final String title;
+  final List<Widget> children;
+  final int columns;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final spacing = columns > 1 ? 12.0 : 0.0;
+        final itemWidth = columns > 1
+            ? (constraints.maxWidth - spacing) / columns
+            : constraints.maxWidth;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final option in options)
-              ChoiceChip(
-                label: Text(option.label),
-                selected: value == option.value,
-                onSelected: (_) => onChanged(option.value),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
               ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: spacing,
+              runSpacing: 12,
+              children: [
+                for (final child in children)
+                  SizedBox(width: itemWidth, child: child),
+              ],
+            ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
-}
-
-class _PreferenceOption<T> {
-  const _PreferenceOption({required this.value, required this.label});
-
-  final T value;
-  final String label;
 }

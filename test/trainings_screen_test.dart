@@ -1,5 +1,8 @@
 import 'package:fitapp/screens/trainings_screen.dart';
 import 'package:fitapp/state/app_store.dart';
+import 'package:fitapp/ui/core/layout/adaptive_page.dart';
+import 'package:fitapp/ui/core/widgets/empty_state.dart';
+import 'package:fitapp/ui/library/library_cards.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -76,10 +79,17 @@ void main() {
     }
   }
 
-  Future<void> tapTooltip(WidgetTester tester, String tooltip) async {
-    final finder = find.byTooltip(tooltip);
-    await tester.ensureVisible(finder);
-    await tester.tap(finder);
+  Future<void> openCatalogActions(WidgetTester tester, String title) async {
+    final card = find.ancestor(
+      of: find.text(title),
+      matching: find.byType(Card),
+    );
+    final menuButton = find.descendant(
+      of: card,
+      matching: find.byTooltip('More actions'),
+    );
+    await tester.ensureVisible(menuButton);
+    await tester.tap(menuButton);
     await tester.pumpAndSettle();
   }
 
@@ -88,12 +98,13 @@ void main() {
   ) async {
     await pumpScreen(tester);
 
+    expect(find.byType(AdaptivePage), findsOneWidget);
+    expect(find.byType(TrainingPlanCatalogCard), findsNWidgets(2));
     expect(find.text('Training plans'), findsOneWidget);
     expect(find.text('Chest day'), findsOneWidget);
     expect(find.text('Leg day'), findsOneWidget);
     expect(find.byTooltip('Add training plan'), findsOneWidget);
-    expect(find.byTooltip('Edit Chest day'), findsOneWidget);
-    expect(find.byTooltip('Delete Chest day'), findsOneWidget);
+    expect(find.byTooltip('More actions'), findsNWidgets(2));
   });
 
   testWidgets('creates a training plan from predefined exercises', (
@@ -118,11 +129,11 @@ void main() {
     await tester.tap(find.text('Pushups').last);
     await tester.pumpAndSettle();
 
-    await enterLabeledText(tester, 'Expected sets', '4');
-    await enterLabeledText(tester, 'Expected reps', '12');
-    await enterLabeledText(tester, 'Expected weight', '0');
-    await enterLabeledText(tester, 'Expected time', '0');
-    await enterLabeledText(tester, 'Unit', 'reps');
+    await enterLabeledText(tester, 'Working sets', '4');
+    await enterLabeledText(tester, 'Target reps', '12');
+    await enterLabeledText(tester, 'Target load', '0');
+    await enterLabeledText(tester, 'Target duration', '0');
+    await enterLabeledText(tester, 'Load or time unit', 'reps');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
@@ -147,7 +158,7 @@ void main() {
     await tester.tap(find.text('Save training'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(Scaffold), findsWidgets);
     expect(find.text('Training name'), findsOneWidget);
 
     await enterLabeledText(tester, 'Training name', 'Push day');
@@ -156,11 +167,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Pushups').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Expected sets', '3');
-    await enterLabeledText(tester, 'Expected reps', '10');
-    await enterLabeledText(tester, 'Expected weight', '0');
-    await enterLabeledText(tester, 'Expected time', '0');
-    await enterLabeledText(tester, 'Unit', 'reps');
+    await enterLabeledText(tester, 'Working sets', '3');
+    await enterLabeledText(tester, 'Target reps', '10');
+    await enterLabeledText(tester, 'Target load', '0');
+    await enterLabeledText(tester, 'Target duration', '0');
+    await enterLabeledText(tester, 'Load or time unit', 'reps');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save training'));
@@ -168,7 +179,8 @@ void main() {
 
     expect(find.text('Push day'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Edit Push day'));
+    await openCatalogActions(tester, 'Push day');
+    await tester.tap(find.text('Edit Push day').last);
     await tester.pumpAndSettle();
     await enterLabeledText(tester, 'Training name', 'Push day updated');
     await tester.tap(find.text('Save training'));
@@ -176,7 +188,8 @@ void main() {
 
     expect(find.text('Push day updated'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Delete Push day updated'));
+    await openCatalogActions(tester, 'Push day updated');
+    await tester.tap(find.text('Delete Push day updated').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
@@ -195,11 +208,25 @@ void main() {
       find.byWidgetPredicate((widget) => widget is SegmentedButton),
       findsOneWidget,
     );
+    expect(find.byType(ExerciseCatalogCard), findsWidgets);
     expect(find.text('Pushups'), findsOneWidget);
     expect(find.text('Bench press'), findsOneWidget);
     expect(find.byTooltip('Add exercise'), findsOneWidget);
-    expect(find.byTooltip('Edit Pushups'), findsOneWidget);
-    expect(find.byTooltip('Delete Pushups'), findsOneWidget);
+    expect(find.byTooltip('More actions'), findsWidgets);
+  });
+
+  testWidgets('shows shared empty states for empty training catalog', (
+    tester,
+  ) async {
+    await pumpScreen(tester, store: AppStore.empty());
+
+    expect(find.byType(AppEmptyState), findsOneWidget);
+    expect(find.text('No training plans yet'), findsOneWidget);
+
+    await openExercisesView(tester);
+
+    expect(find.byType(AppEmptyState), findsOneWidget);
+    expect(find.text('No exercises yet'), findsOneWidget);
   });
 
   testWidgets('exercise form uses predefined muscle group choices', (
@@ -215,6 +242,35 @@ void main() {
     expect(find.widgetWithText(FilterChip, 'Cardio'), findsOneWidget);
     expect(find.widgetWithText(FilterChip, 'Legs'), findsOneWidget);
     expect(find.widgetWithText(FilterChip, 'Core'), findsOneWidget);
+  });
+
+  testWidgets('exercise and training forms use polished sections', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await openExercisesView(tester);
+    await openExerciseForm(tester);
+
+    expect(find.text('Exercise profile'), findsOneWidget);
+    expect(find.text('Muscle focus'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    await openPlanView(tester);
+    await tester.tap(find.byTooltip('Add training plan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Training basics'), findsOneWidget);
+    expect(find.text('Exercise sequence'), findsOneWidget);
+
+    await tester.tap(find.text('Add exercise'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pushups').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Set targets'), findsOneWidget);
   });
 
   testWidgets('creates a custom exercise and shows it in the plan picker', (
@@ -270,7 +326,7 @@ void main() {
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('Add exercise'), findsWidgets);
     expect(find.text('Enter a valid exercise name.'), findsOneWidget);
   });
 
@@ -290,8 +346,10 @@ void main() {
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
-    await scrollUntilVisible(tester, find.byTooltip('Edit Custom plank'));
-    await tapTooltip(tester, 'Edit Custom plank');
+    await scrollUntilVisible(tester, find.text('Custom plank'));
+    await openCatalogActions(tester, 'Custom plank');
+    await tester.tap(find.text('Edit Custom plank').last);
+    await tester.pumpAndSettle();
     await fillExerciseForm(
       tester,
       name: 'Custom plank',
@@ -322,8 +380,10 @@ void main() {
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
-    await scrollUntilVisible(tester, find.byTooltip('Delete Custom bridge'));
-    await tapTooltip(tester, 'Delete Custom bridge');
+    await scrollUntilVisible(tester, find.text('Custom bridge'));
+    await openCatalogActions(tester, 'Custom bridge');
+    await tester.tap(find.text('Delete Custom bridge').last);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
 
@@ -336,7 +396,9 @@ void main() {
     await pumpScreen(tester);
 
     await openExercisesView(tester);
-    await tapTooltip(tester, 'Delete Pushups');
+    await openCatalogActions(tester, 'Pushups');
+    await tester.tap(find.text('Delete Pushups').last);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
 

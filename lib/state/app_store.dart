@@ -611,7 +611,7 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Missing item id: $id');
     }
     if (_isReferencedByAnyDish(id)) {
-      throw StateError('Item is used by a dish.');
+      throw StateError('Item is used by a recipe.');
     }
     _catalog.remove(id);
     notifyListeners();
