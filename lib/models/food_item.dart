@@ -1,13 +1,6 @@
 import 'nutrition.dart';
 
 class FoodItem {
-  final String id;
-  final String name;
-  final String description;
-  final double servingSizeGrams;
-  final NutritionBasis basis;
-  final NutritionValues nutrition;
-
   const FoodItem({
     required this.id,
     required this.name,
@@ -16,6 +9,13 @@ class FoodItem {
     required this.basis,
     required this.nutrition,
   });
+
+  final String id;
+  final String name;
+  final String description;
+  final double servingSizeGrams;
+  final NutritionBasis basis;
+  final NutritionValues nutrition;
 
   NutritionValues get nutritionPerServing {
     if (basis == NutritionBasis.per100g) {

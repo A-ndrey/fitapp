@@ -2,19 +2,13 @@ import 'catalog_item.dart';
 import 'nutrition.dart';
 
 class DishComponent {
+  const DishComponent({required this.itemId, required this.grams});
+
   final String itemId;
   final double grams;
-
-  const DishComponent({required this.itemId, required this.grams});
 }
 
 class DishItem {
-  final String id;
-  final String name;
-  final String description;
-  final double servingSizeGrams;
-  final List<DishComponent> components;
-
   const DishItem({
     required this.id,
     required this.name,
@@ -22,6 +16,12 @@ class DishItem {
     required this.servingSizeGrams,
     required this.components,
   });
+
+  final String id;
+  final String name;
+  final String description;
+  final double servingSizeGrams;
+  final List<DishComponent> components;
 
   NutritionValues nutritionForGrams(
     double grams,

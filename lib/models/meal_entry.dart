@@ -4,16 +4,6 @@ import 'nutrition.dart';
 enum MealEntryMode { grams, servings }
 
 class MealEntry {
-  final String id;
-  final String sourceItemId;
-  final String itemName;
-  final CatalogItemType itemType;
-  final double servingSizeGrams;
-  final double consumedGrams;
-  final MealEntryMode mode;
-  final double enteredQuantity;
-  final NutritionValues nutrition;
-
   const MealEntry({
     required this.id,
     required this.sourceItemId,
@@ -46,4 +36,14 @@ class MealEntry {
       nutrition: item.nutritionForGrams(consumedGrams, catalog),
     );
   }
+
+  final String id;
+  final String sourceItemId;
+  final String itemName;
+  final CatalogItemType itemType;
+  final double servingSizeGrams;
+  final double consumedGrams;
+  final MealEntryMode mode;
+  final double enteredQuantity;
+  final NutritionValues nutrition;
 }
