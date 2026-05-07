@@ -3,20 +3,17 @@ import 'package:flutter/material.dart';
 class AppTheme {
   const AppTheme._();
 
-  static const primaryAccent = Color(0xFFCCFF00);
-  static const secondaryAccent = Color(0xFFC8C6C5);
-  static const successAccent = Color(0xFF4ADE80);
   static const calorieAccent = Color(0xFFFF7A59);
   static const proteinAccent = Color(0xFF6EA8FF);
   static const carbAccent = Color(0xFFFFC857);
   static const fatAccent = Color(0xFF43C6AC);
 
-  static const darkBackground = Color(0xFF111508);
-  static const darkSurface = Color(0xFF111508);
-  static const darkSurfaceContainer = Color(0xFF1E2113);
-  static const darkSurfaceContainerHigh = Color(0xFF282B1D);
+  static const darkBackground = Color(0xFF121414);
+  static const darkSurface = Color(0xFF121414);
+  static const darkSurfaceContainer = Color(0xFF1E2020);
+  static const darkSurfaceContainerHigh = Color(0xFF282A2B);
   static const darkOutline = Color(0xFF8E9379);
-  static const darkOnSurface = Color(0xFFE2E4CF);
+  static const darkOnSurface = Color(0xFFE2E2E2);
   static const darkOnSurfaceVariant = Color(0xFFC4C9AC);
   static const darkError = Color(0xFFFFB4AB);
 
@@ -28,10 +25,6 @@ class AppTheme {
   static const lightOnSurface = Color(0xFF1A1C1C);
   static const lightOnSurfaceVariant = Color(0xFF444933);
   static const lightError = Color(0xFFBA1A1A);
-
-  static const energyOrange = Color(0xFFFB923C);
-  static const pulseLime = primaryAccent;
-  static const recoveryBlue = Color(0xFF38BDF8);
 
   static const radiusSmall = 8.0;
   static const radiusMedium = 12.0;
@@ -99,7 +92,7 @@ class AppTheme {
           primaryContainer: Color(0xFFC3F400),
           onPrimaryContainer: Color(0xFF556D00),
           secondary: Color(0xFFC8C6C5),
-          onSecondary: Color(0xFF303030),
+          onSecondary: Color(0xFF313030),
           secondaryContainer: Color(0xFF474746),
           onSecondaryContainer: Color(0xFFB7B5B4),
           tertiary: Colors.white,
@@ -117,16 +110,16 @@ class AppTheme {
           outlineVariant: Color(0xFF444933),
           shadow: Colors.black,
           scrim: Colors.black87,
-          inverseSurface: Color(0xFFE2E4CF),
-          onInverseSurface: Color(0xFF2F3223),
+          inverseSurface: Color(0xFFE2E2E2),
+          onInverseSurface: Color(0xFF2F3131),
           inversePrimary: Color(0xFF506600),
           surfaceTint: Color(0xFFABD600),
         ).copyWith(
-          surfaceContainerLowest: const Color(0xFF0C0F04),
-          surfaceContainerLow: const Color(0xFF1A1D10),
+          surfaceContainerLowest: const Color(0xFF0C0F0F),
+          surfaceContainerLow: const Color(0xFF1A1C1C),
           surfaceContainer: darkSurfaceContainer,
           surfaceContainerHigh: darkSurfaceContainerHigh,
-          surfaceContainerHighest: const Color(0xFF333627),
+          surfaceContainerHighest: const Color(0xFF333535),
         );
 
     return _buildTheme(
@@ -264,9 +257,7 @@ class AppTheme {
           minimumSize: const Size(0, 48),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           backgroundColor: colorScheme.primaryContainer,
-          foregroundColor: colorScheme.brightness == Brightness.light
-              ? const Color(0xFF1A1A1A)
-              : colorScheme.onPrimaryContainer,
+          foregroundColor: const Color(0xFF1A1A1A),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusLarge),
           ),
@@ -282,7 +273,9 @@ class AppTheme {
                 ? colorScheme.onSurface
                 : surfaceBorderColor(colorScheme),
           ),
-          backgroundColor: colorScheme.surfaceContainerLowest,
+          backgroundColor: colorScheme.brightness == Brightness.light
+              ? colorScheme.surfaceContainerLowest
+              : Colors.transparent,
           foregroundColor: colorScheme.onSurface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusLarge),
@@ -482,15 +475,16 @@ class AppTheme {
   }
 
   static List<BoxShadow> ambientShadow(Brightness brightness) {
-    final color = brightness == Brightness.light
-        ? Colors.black.withValues(alpha: 0.05)
-        : Colors.black.withValues(alpha: 0.12);
     return [
-      BoxShadow(color: color, blurRadius: 16, offset: const Offset(0, 4)),
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.05),
+        blurRadius: 16,
+        offset: const Offset(0, 4),
+      ),
     ];
   }
 
   static double standardSurfaceRadius(Brightness brightness) {
-    return brightness == Brightness.light ? 8 : 12;
+    return 8;
   }
 }

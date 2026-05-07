@@ -151,7 +151,7 @@ class MealEntryCard extends StatelessWidget {
               Text(
                 subtypeLabel,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppTheme.secondaryAccent,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

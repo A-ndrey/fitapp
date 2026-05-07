@@ -17,6 +17,7 @@ import 'package:fitapp/ui/core/layout/adaptive_page.dart';
 import 'package:fitapp/ui/core/widgets/empty_state.dart';
 import 'package:fitapp/ui/core/theme/app_theme.dart';
 import 'package:fitapp/ui/core/widgets/action_card.dart';
+import 'package:fitapp/ui/core/widgets/metric_card.dart';
 import 'package:fitapp/ui/library/library_cards.dart';
 import 'package:fitapp/ui/library/library_formatters.dart';
 import 'package:fitapp/ui/core/widgets/section_header.dart';
@@ -420,23 +421,32 @@ void main() {
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
+    expect(app.theme?.colorScheme.surface, const Color(0xFFF9F9F9));
+    expect(app.theme?.colorScheme.primaryContainer, const Color(0xFFCCFF00));
+    expect(app.theme?.colorScheme.surfaceContainerLow, const Color(0xFFF3F3F3));
+    expect(app.theme?.colorScheme.onSurface, const Color(0xFF1A1C1C));
+    expect(
+      app.theme?.outlinedButtonTheme.style?.backgroundColor?.resolve({}),
+      Colors.white,
+    );
+
     expect(app.darkTheme?.colorScheme.primary, Colors.white);
-    expect(app.darkTheme?.colorScheme.secondary, AppTheme.secondaryAccent);
-    expect(app.darkTheme?.colorScheme.surface, AppTheme.darkSurface);
+    expect(app.darkTheme?.colorScheme.secondary, const Color(0xFFC8C6C5));
+    expect(app.darkTheme?.colorScheme.surface, const Color(0xFF121414));
     expect(
       app.darkTheme?.colorScheme.surfaceContainer,
-      AppTheme.darkSurfaceContainer,
+      const Color(0xFF1E2020),
     );
     expect(
       app.darkTheme?.colorScheme.surfaceContainerHigh,
-      AppTheme.darkSurfaceContainerHigh,
+      const Color(0xFF282A2B),
     );
-    expect(app.darkTheme?.colorScheme.onSurface, AppTheme.darkOnSurface);
+    expect(app.darkTheme?.colorScheme.onSurface, const Color(0xFFE2E2E2));
     expect(
       app.darkTheme?.colorScheme.onSurfaceVariant,
-      AppTheme.darkOnSurfaceVariant,
+      const Color(0xFFC4C9AC),
     );
-    expect(app.darkTheme?.scaffoldBackgroundColor, AppTheme.darkBackground);
+    expect(app.darkTheme?.scaffoldBackgroundColor, const Color(0xFF121414));
     expect(
       app.darkTheme?.navigationBarTheme.indicatorColor,
       app.darkTheme?.colorScheme.primaryContainer,
@@ -446,9 +456,85 @@ void main() {
       app.darkTheme?.cardTheme.color,
       app.darkTheme?.colorScheme.surfaceContainerLow,
     );
+    expect(
+      app.darkTheme?.outlinedButtonTheme.style?.backgroundColor?.resolve({}),
+      Colors.transparent,
+    );
     expect(app.theme?.useMaterial3, isTrue);
     expect(app.darkTheme?.useMaterial3, isTrue);
   });
+
+  testWidgets(
+    'MetricCard uses identical typography across light and dark themes',
+    (tester) async {
+      Future<TextStyle?> pumpMetric(ThemeData theme) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Scaffold(
+              body: Center(
+                child: MetricCard(
+                  label: 'Completed',
+                  value: '12',
+                  suffix: 'sessions',
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        return tester.widget<Text>(find.text('12')).style;
+      }
+
+      final lightStyle = await pumpMetric(AppTheme.light());
+      final darkStyle = await pumpMetric(AppTheme.dark());
+
+      expect(darkStyle?.fontFamily, lightStyle?.fontFamily);
+      expect(darkStyle?.fontSize, lightStyle?.fontSize);
+      expect(darkStyle?.fontWeight, lightStyle?.fontWeight);
+      expect(darkStyle?.height, lightStyle?.height);
+      expect(darkStyle?.letterSpacing, lightStyle?.letterSpacing);
+    },
+  );
+
+  testWidgets(
+    'shared non-color theme primitives stay identical across themes',
+    (tester) async {
+      expect(
+        AppTheme.standardSurfaceRadius(Brightness.light),
+        AppTheme.standardSurfaceRadius(Brightness.dark),
+      );
+      expect(
+        AppTheme.ambientShadow(Brightness.dark),
+        AppTheme.ambientShadow(Brightness.light),
+      );
+
+      Future<EdgeInsetsGeometry?> pumpAdaptivePage(ThemeData theme) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: const Scaffold(
+              body: AdaptivePage(
+                children: [SizedBox(height: 24, child: Text('Content'))],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        return tester.widget<ListView>(find.byType(ListView)).padding;
+      }
+
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final lightPadding = await pumpAdaptivePage(AppTheme.light());
+      final darkPadding = await pumpAdaptivePage(AppTheme.dark());
+
+      expect(darkPadding, lightPadding);
+    },
+  );
 
   testWidgets('Today dashboard shows workout and nutrition summary', (
     tester,

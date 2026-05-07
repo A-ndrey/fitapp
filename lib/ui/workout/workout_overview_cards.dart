@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/workout_session.dart';
 import '../core/layout/responsive_layout.dart';
-import '../core/theme/app_theme.dart';
 import '../core/widgets/metric_card.dart';
 import 'workout_formatters.dart';
 import 'workout_session_cards.dart';
@@ -116,7 +115,7 @@ class WorkoutStatsGrid extends StatelessWidget {
         label: l10n?.workoutTotalTimeMetricLabel ?? 'Total time',
         value: duration,
         icon: Icons.timer_outlined,
-        color: AppTheme.recoveryBlue,
+        color: Theme.of(context).colorScheme.secondary,
       ),
     ];
 

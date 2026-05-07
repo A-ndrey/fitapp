@@ -119,12 +119,12 @@ class _TodayScreenState extends State<TodayScreen> {
                           dailyTotals.protein / _proteinGoal,
                         ),
                         icon: Icons.track_changes_outlined,
-                        tone: AppTheme.primaryAccent,
+                        tone: Theme.of(context).colorScheme.onSurfaceVariant,
                       )
                     : DashboardStatChip(
                         label: _formatDuration(activeSession.duration),
                         icon: Icons.timer_outlined,
-                        tone: AppTheme.primaryAccent,
+                        tone: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,13 +170,15 @@ class _TodayScreenState extends State<TodayScreen> {
                             label:
                                 'Total volume ${_formatVolume(_sessionVolume(activeSession))}',
                             icon: Icons.bar_chart_outlined,
-                            tone: AppTheme.secondaryAccent,
+                            tone: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           DashboardStatChip(
                             label:
                                 '${_completedExercises(activeSession)}/${activeSession.results.length} exercises',
                             icon: Icons.check_circle_outline,
-                            tone: AppTheme.successAccent,
+                            tone: Theme.of(context).colorScheme.secondary,
                           ),
                         ],
                       ),
@@ -304,12 +306,12 @@ class _TodayScreenState extends State<TodayScreen> {
                 DashboardStatChip(
                   label: '${latest.results.length} exercises',
                   icon: Icons.fitness_center_outlined,
-                  tone: AppTheme.secondaryAccent,
+                  tone: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 DashboardStatChip(
                   label: _formatVolume(_sessionVolume(latest)),
                   icon: Icons.bar_chart_outlined,
-                  tone: AppTheme.primaryAccent,
+                  tone: Theme.of(context).colorScheme.secondary,
                 ),
               ],
             ),
@@ -414,7 +416,7 @@ class _NextWorkoutContent extends StatelessWidget {
               DashboardStatChip(
                 label: exercise.exerciseId.replaceAll('-', ' '),
                 icon: Icons.fitness_center_outlined,
-                tone: AppTheme.secondaryAccent,
+                tone: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
           ],
         ),

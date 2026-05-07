@@ -4,7 +4,6 @@ import '../../l10n/app_localizations.dart';
 import '../../models/training_plan.dart';
 import '../../models/workout_session.dart';
 import '../../state/app_store.dart';
-import '../core/theme/app_theme.dart';
 import 'workout_formatters.dart';
 import 'workout_session_cards.dart';
 
@@ -353,7 +352,7 @@ class WorkoutCompletedSummaryCard extends StatelessWidget {
             Text(
               l10n?.workoutCompletedTitle ?? 'Completed workout',
               style: textTheme.labelLarge?.copyWith(
-                color: AppTheme.recoveryBlue,
+                color: Theme.of(context).colorScheme.secondary,
                 fontWeight: FontWeight.w700,
               ),
             ),

@@ -185,7 +185,7 @@ class GoalProgressRow extends StatelessWidget {
                 value: clampedProgress,
                 minHeight: 8,
                 backgroundColor: AppTheme.progressTrackColor(colorScheme),
-                color: barColor ?? AppTheme.primaryAccent,
+                color: barColor ?? colorScheme.primaryContainer,
               ),
             ),
           ],
