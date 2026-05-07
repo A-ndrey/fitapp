@@ -265,8 +265,8 @@ void main() {
     tester,
   ) async {
     final store = AppStore.empty();
-    final food = CatalogItem.food(
-      const FoodItem(
+    const food = CatalogItem.food(
+      FoodItem(
         id: 'rice',
         name: 'Rice',
         description: 'Steamed',
@@ -280,11 +280,11 @@ void main() {
         ),
       ),
     );
-    final plan = TrainingPlan(
+    const plan = TrainingPlan(
       id: 'upper',
       name: 'Upper',
       description: 'Strength focus',
-      exercises: const [
+      exercises: [
         TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
         TrainingExercise(exerciseId: 'rows', reps: 10, unit: 'reps'),
       ],
@@ -326,11 +326,11 @@ void main() {
   testWidgets('library cards render labels and invoke action callbacks', (
     tester,
   ) async {
-    var edited = <String>[];
-    var deleted = <String>[];
+    final edited = <String>[];
+    final deleted = <String>[];
     final store = AppStore.empty();
-    final food = CatalogItem.food(
-      const FoodItem(
+    const food = CatalogItem.food(
+      FoodItem(
         id: 'rice',
         name: 'Rice bowl',
         description: 'Steamed',
@@ -344,11 +344,11 @@ void main() {
         ),
       ),
     );
-    final plan = TrainingPlan(
+    const plan = TrainingPlan(
       id: 'upper',
       name: 'Upper body',
       description: 'Strength focus',
-      exercises: const [
+      exercises: [
         TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
       ],
     );
@@ -424,8 +424,8 @@ void main() {
     tester,
   ) async {
     final store = AppStore.empty();
-    final food = CatalogItem.food(
-      const FoodItem(
+    const food = CatalogItem.food(
+      FoodItem(
         id: 'very-long-food',
         name: 'A very long catalog food name that should stay bounded',
         description: 'Dense food',
@@ -439,11 +439,11 @@ void main() {
         ),
       ),
     );
-    final plan = TrainingPlan(
+    const plan = TrainingPlan(
       id: 'very-long-plan',
       name: 'A very long training plan name that should stay bounded',
       description: 'A long description that remains inside the card bounds',
-      exercises: const [
+      exercises: [
         TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
         TrainingExercise(exerciseId: 'rows', reps: 10, unit: 'reps'),
       ],

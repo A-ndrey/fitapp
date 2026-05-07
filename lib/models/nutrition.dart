@@ -1,15 +1,15 @@
 class NutritionValues {
-  final double calories;
-  final double protein;
-  final double fat;
-  final double carbs;
-
   const NutritionValues({
     required this.calories,
     required this.protein,
     required this.fat,
     required this.carbs,
   });
+
+  final double calories;
+  final double protein;
+  final double fat;
+  final double carbs;
 
   static const zero = NutritionValues(
     calories: 0,

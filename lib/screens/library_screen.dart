@@ -102,7 +102,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         _selectedTrainingTab == null) {
       return AdaptivePage(
         children: [
-          SectionHeader(
+          const SectionHeader(
             title: 'Training library',
             subtitle: 'Choose which catalog you want to manage.',
           ),
@@ -134,7 +134,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (_selectedSection == LibrarySection.foods && _selectedFoodTab == null) {
       return AdaptivePage(
         children: [
-          SectionHeader(
+          const SectionHeader(
             title: 'Food library',
             subtitle: 'Choose which catalog you want to manage.',
           ),
