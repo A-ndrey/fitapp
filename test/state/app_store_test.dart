@@ -1,8 +1,8 @@
+import 'package:fitapp/models/catalog_item.dart';
 import 'package:fitapp/models/dish_item.dart';
 import 'package:fitapp/models/exercise.dart';
 import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/app_preferences.dart';
-import 'package:fitapp/models/catalog_item.dart';
 import 'package:fitapp/models/meal_entry.dart';
 import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/models/training_plan.dart';
@@ -10,6 +10,8 @@ import 'package:fitapp/models/workout_session.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/state/persistence/app_store_persistence.dart';
 import 'package:fitapp/state/persistence/persisted_app_state.dart';
+import 'package:fitapp/state/persistence/persisted_app_state_codec.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 FoodItem tomato() => const FoodItem(
@@ -19,6 +21,12 @@ FoodItem tomato() => const FoodItem(
   servingSizeGrams: 100,
   basis: NutritionBasis.per100g,
   nutrition: NutritionValues(calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9),
+);
+
+FoodItem cucumber() => tomato().copyWith(
+  id: 'cucumber',
+  name: 'Cucumber',
+  description: 'Fresh cucumber',
 );
 
 class FakePersistence implements AppStorePersistence {
@@ -34,6 +42,44 @@ class FakePersistence implements AppStorePersistence {
   @override
   Future<void> save(PersistedAppState state) async {
     saveCount += 1;
+    savedState = state;
+    loadedState = state;
+  }
+}
+
+class DecodingPersistence implements AppStorePersistence {
+  DecodingPersistence({
+    required this.encodedState,
+    this.knownExerciseIds = const {},
+  });
+
+  final Object encodedState;
+  final Set<String> knownExerciseIds;
+
+  @override
+  Future<PersistedAppState?> load() async {
+    return PersistedAppStateCodec.decode(
+      encodedState,
+      knownExerciseIds: knownExerciseIds,
+    );
+  }
+
+  @override
+  Future<void> save(PersistedAppState state) async {}
+}
+
+class FlakyPersistence extends FakePersistence {
+  FlakyPersistence({required this.failuresRemaining});
+
+  int failuresRemaining;
+
+  @override
+  Future<void> save(PersistedAppState state) async {
+    saveCount += 1;
+    if (failuresRemaining > 0) {
+      failuresRemaining -= 1;
+      throw StateError('Failed to persist app store state.');
+    }
     savedState = state;
     loadedState = state;
   }
@@ -84,16 +130,7 @@ void main() {
           userFoods: [tomato()],
           userDishes: const [],
           userExercises: const [],
-          userTrainingPlans: const [
-            TrainingPlan(
-              id: 'builtin-pushups-plan',
-              name: 'Builtin pushups plan',
-              description: 'References a built-in exercise.',
-              exercises: [
-                TrainingExercise(exerciseId: 'pushups', reps: 15, unit: 'reps'),
-              ],
-            ),
-          ],
+          userTrainingPlans: const [],
           mealEntries: const [],
           preferences: const AppPreferences.defaults(),
           activeWorkoutSession: null,
@@ -103,14 +140,45 @@ void main() {
         ),
       );
 
-      final store = await AppStore.hydrated(
-        persistence: persistence,
-        knownExerciseIds: const {'pushups'},
-      );
+      final store = await AppStore.hydrated(persistence: persistence);
 
       expect(store.items, hasLength(6));
       expect(store.itemById('carrot'), isNotNull);
       expect(store.itemById('tomato'), isNotNull);
+    },
+  );
+
+  test(
+    'AppStore.hydrated relies on persistence decode for built-in exercise references',
+    () async {
+      final persistedState = PersistedAppState(
+        userFoods: const [],
+        userDishes: const [],
+        userExercises: const [],
+        userTrainingPlans: const [
+          TrainingPlan(
+            id: 'builtin-pushups-plan',
+            name: 'Builtin pushups plan',
+            description: 'References a built-in exercise.',
+            exercises: [
+              TrainingExercise(exerciseId: 'pushups', reps: 15, unit: 'reps'),
+            ],
+          ),
+        ],
+        mealEntries: const [],
+        preferences: const AppPreferences.defaults(),
+        activeWorkoutSession: null,
+        completedWorkoutSessions: const [],
+        mealEntryCounter: 0,
+        workoutSessionCounter: 0,
+      );
+      final persistence = DecodingPersistence(
+        encodedState: PersistedAppStateCodec.encode(persistedState),
+        knownExerciseIds: const {'pushups'},
+      );
+
+      final store = await AppStore.hydrated(persistence: persistence);
+
       expect(store.trainingPlanById('builtin-pushups-plan'), isNotNull);
     },
   );
@@ -147,6 +215,91 @@ void main() {
 
     expect(restored.itemById('tomato'), isNotNull);
     expect(restored.isLoggedIn, isFalse);
+  });
+
+  test('built-in records cannot be mutated or deleted', () {
+    final store = AppStore();
+
+    expect(
+      () => store.updateFood(
+        const FoodItem(
+          id: 'carrot',
+          name: 'Updated carrot',
+          description: 'Updated built-in food',
+          servingSizeGrams: 100,
+          basis: NutritionBasis.per100g,
+          nutrition: NutritionValues(
+            calories: 50,
+            protein: 1,
+            fat: 0.2,
+            carbs: 11,
+          ),
+        ),
+      ),
+      throwsStateError,
+    );
+    expect(() => store.deleteItem('carrot'), throwsStateError);
+    expect(
+      () => store.updateExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Updated pushups',
+          description: 'Updated built-in exercise',
+          instruction: 'Updated built-in instruction.',
+          muscleGroups: [MuscleGroup.chest],
+        ),
+      ),
+      throwsStateError,
+    );
+    expect(() => store.deleteExercise('pushups'), throwsStateError);
+    expect(
+      () => store.updateTrainingPlan(
+        const TrainingPlan(
+          id: 'chest-day',
+          name: 'Updated chest day',
+          description: 'Updated built-in plan',
+          exercises: [
+            TrainingExercise(
+              exerciseId: 'bench-press',
+              sets: 3,
+              reps: 8,
+              weight: 60,
+              unit: 'kg',
+            ),
+          ],
+        ),
+      ),
+      throwsStateError,
+    );
+    expect(() => store.deleteTrainingPlan('chest-day'), throwsStateError);
+  });
+
+  test('save failures are reported and later saves still succeed', () async {
+    final persistence = FlakyPersistence(failuresRemaining: 1);
+    final store = AppStore.empty(persistence: persistence);
+    final originalOnError = FlutterError.onError;
+    final reportedErrors = <FlutterErrorDetails>[];
+    FlutterError.onError = reportedErrors.add;
+    addTearDown(() {
+      FlutterError.onError = originalOnError;
+    });
+
+    store.createFood(tomato());
+    await flushPersistenceQueue();
+
+    expect(persistence.saveCount, 1);
+    expect(reportedErrors, hasLength(1));
+    expect(persistence.savedState, isNull);
+
+    store.createFood(cucumber());
+    await flushPersistenceQueue();
+
+    expect(persistence.saveCount, 2);
+    expect(reportedErrors, hasLength(1));
+    expect(persistence.savedState!.userFoods.map((food) => food.id).toList(), [
+      'tomato',
+      'cucumber',
+    ]);
   });
 
   test('AppStore.hydrated restores counters and runtime state', () async {
@@ -687,29 +840,54 @@ void main() {
   });
 
   test('starts one active workout and snapshots plan data', () {
-    final store = AppStore();
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'bench-press',
+        name: 'Bench press',
+        description: 'Barbell chest press',
+        instruction: 'Keep shoulder blades set and press the bar vertically.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'push-day',
+        name: 'Push day',
+        description: 'Pressing work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'bench-press',
+            sets: 3,
+            reps: 8,
+            weight: 60,
+            unit: 'kg',
+          ),
+        ],
+      ),
+    );
 
     final session = store.startWorkout(
-      trainingPlanId: 'chest-day',
+      trainingPlanId: 'push-day',
       startedAt: DateTime(2026, 4, 19, 10),
     );
     store.updateTrainingPlan(
-      store.trainingPlanById('chest-day')!.copyWith(name: 'Changed chest day'),
+      store.trainingPlanById('push-day')!.copyWith(name: 'Changed push day'),
     );
 
-    expect(session.trainingPlanName, 'Chest day');
+    expect(session.trainingPlanName, 'Push day');
     expect(session.results.first.exerciseName, 'Bench press');
     expect(session.results.first.target.weight, 60);
     expect(session.results.first.setLogs, isEmpty);
-    expect(store.activeWorkoutSession!.trainingPlanName, 'Chest day');
+    expect(store.activeWorkoutSession!.trainingPlanName, 'Push day');
     expect(
       () => store.startWorkout(
-        trainingPlanId: 'leg-day',
+        trainingPlanId: 'push-day',
         startedAt: DateTime(2026, 4, 19, 11),
       ),
       throwsStateError,
     );
-    expect(() => store.deleteTrainingPlan('chest-day'), throwsStateError);
+    expect(() => store.deleteTrainingPlan('push-day'), throwsStateError);
   });
 
   test('appends multiple set logs to one workout result', () {
@@ -972,10 +1150,35 @@ void main() {
   test(
     'exercise rename after start does not change active or completed names',
     () {
-      final store = AppStore();
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'bench-press',
+          name: 'Bench press',
+          description: 'Barbell chest press',
+          instruction: 'Keep shoulder blades set and press the bar vertically.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'push-day',
+          name: 'Push day',
+          description: 'Pressing work',
+          exercises: [
+            TrainingExercise(
+              exerciseId: 'bench-press',
+              sets: 3,
+              reps: 8,
+              weight: 60,
+              unit: 'kg',
+            ),
+          ],
+        ),
+      );
 
       final session = store.startWorkout(
-        trainingPlanId: 'chest-day',
+        trainingPlanId: 'push-day',
         startedAt: DateTime(2026, 4, 19, 10),
       );
       store.updateExercise(

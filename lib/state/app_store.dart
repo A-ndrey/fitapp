@@ -29,14 +29,13 @@ class AppStore extends ChangeNotifier {
 
   static Future<AppStore> hydrated({
     required AppStorePersistence persistence,
-    Set<String> knownExerciseIds = const {},
   }) async {
     final store = AppStore(persistence: persistence);
     final loadedState = await persistence.load();
     if (loadedState == null) {
       return store;
     }
-    store._applyPersistedState(loadedState, knownExerciseIds: knownExerciseIds);
+    store._applyPersistedState(loadedState);
     return store;
   }
 
@@ -441,6 +440,7 @@ class AppStore extends ChangeNotifier {
 
   void updateExercise(Exercise exercise) {
     _validateExercise(exercise);
+    _assertExerciseIsUserDefined(exercise.id);
     if (!_exercises.containsKey(exercise.id)) {
       throw ArgumentError('Missing exercise id: ${exercise.id}');
     }
@@ -449,6 +449,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void deleteExercise(String id) {
+    _assertExerciseIsUserDefined(id);
     if (!_exercises.containsKey(id)) {
       throw ArgumentError('Missing exercise id: $id');
     }
@@ -470,6 +471,7 @@ class AppStore extends ChangeNotifier {
 
   void updateTrainingPlan(TrainingPlan plan) {
     _validateTrainingPlan(plan);
+    _assertTrainingPlanIsUserDefined(plan.id);
     final index = _trainingPlans.indexWhere(
       (existing) => existing.id == plan.id,
     );
@@ -481,6 +483,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void deleteTrainingPlan(String id) {
+    _assertTrainingPlanIsUserDefined(id);
     final index = _trainingPlans.indexWhere((plan) => plan.id == id);
     if (index == -1) {
       throw ArgumentError('Missing training plan id: $id');
@@ -600,6 +603,7 @@ class AppStore extends ChangeNotifier {
 
   void updateFood(FoodItem food) {
     _validateFood(food);
+    _assertCatalogItemIsUserDefined(food.id);
     final existing = _catalog[food.id];
     if (existing == null) {
       throw ArgumentError('Missing item id: ${food.id}');
@@ -622,6 +626,7 @@ class AppStore extends ChangeNotifier {
 
   void updateDish(DishItem dish) {
     _validateDish(dish);
+    _assertCatalogItemIsUserDefined(dish.id);
     final existing = _catalog[dish.id];
     if (existing == null) {
       throw ArgumentError('Missing item id: ${dish.id}');
@@ -634,6 +639,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void deleteItem(String id) {
+    _assertCatalogItemIsUserDefined(id);
     if (!_catalog.containsKey(id)) {
       throw ArgumentError('Missing item id: $id');
     }
@@ -792,10 +798,7 @@ class AppStore extends ChangeNotifier {
     );
   }
 
-  void _applyPersistedState(
-    PersistedAppState state, {
-    Set<String> knownExerciseIds = const {},
-  }) {
+  void _applyPersistedState(PersistedAppState state) {
     _runWithoutPersistence(() {
       _resetRuntimeStateToBuiltIns();
 
@@ -809,12 +812,7 @@ class AppStore extends ChangeNotifier {
         createExercise(exercise);
       }
 
-      final availableExerciseIds = <String>{
-        ..._exercises.keys,
-        ...knownExerciseIds,
-      };
       for (final plan in state.userTrainingPlans) {
-        _validatePersistedTrainingPlanReferences(plan, availableExerciseIds);
         createTrainingPlan(plan);
       }
 
@@ -832,6 +830,24 @@ class AppStore extends ChangeNotifier {
     });
   }
 
+  void _assertCatalogItemIsUserDefined(String id) {
+    if (_builtInCatalogIds.contains(id)) {
+      throw StateError('Built-in catalog items cannot be changed.');
+    }
+  }
+
+  void _assertExerciseIsUserDefined(String id) {
+    if (_builtInExerciseIds.contains(id)) {
+      throw StateError('Built-in exercises cannot be changed.');
+    }
+  }
+
+  void _assertTrainingPlanIsUserDefined(String id) {
+    if (_builtInTrainingPlanIds.contains(id)) {
+      throw StateError('Built-in training plans cannot be changed.');
+    }
+  }
+
   void _resetRuntimeStateToBuiltIns() {
     _catalog.removeWhere((id, _) => !_builtInCatalogIds.contains(id));
     _exercises.removeWhere((id, _) => !_builtInExerciseIds.contains(id));
@@ -845,17 +861,6 @@ class AppStore extends ChangeNotifier {
     _mealEntryCounter = 0;
     _workoutSessionCounter = 0;
     _isLoggedIn = false;
-  }
-
-  void _validatePersistedTrainingPlanReferences(
-    TrainingPlan plan,
-    Set<String> availableExerciseIds,
-  ) {
-    for (final exercise in plan.exercises) {
-      if (!availableExerciseIds.contains(exercise.exerciseId)) {
-        throw ArgumentError('Missing exercise id: ${exercise.exerciseId}');
-      }
-    }
   }
 
   String createIdFromName(String name) {
