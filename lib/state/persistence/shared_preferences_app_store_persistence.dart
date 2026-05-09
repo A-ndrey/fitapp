@@ -7,9 +7,9 @@ import 'persisted_app_state.dart';
 import 'persisted_app_state_codec.dart';
 
 class SharedPreferencesAppStorePersistence implements AppStorePersistence {
-  const SharedPreferencesAppStorePersistence({
-    this.knownExerciseIds = const {},
-  });
+  SharedPreferencesAppStorePersistence({
+    Set<String> knownExerciseIds = const {},
+  }) : knownExerciseIds = Set.unmodifiable(knownExerciseIds);
 
   static const storageKey = 'app_store_state_v1';
 
@@ -19,7 +19,7 @@ class SharedPreferencesAppStorePersistence implements AppStorePersistence {
   Future<PersistedAppState?> load() async {
     final preferences = await SharedPreferences.getInstance();
     final raw = preferences.getString(storageKey);
-    if (raw == null || raw.isEmpty) {
+    if (raw == null) {
       return null;
     }
 
@@ -38,6 +38,9 @@ class SharedPreferencesAppStorePersistence implements AppStorePersistence {
   Future<void> save(PersistedAppState state) async {
     final preferences = await SharedPreferences.getInstance();
     final raw = jsonEncode(PersistedAppStateCodec.encode(state));
-    await preferences.setString(storageKey, raw);
+    final didSave = await preferences.setString(storageKey, raw);
+    if (!didSave) {
+      throw StateError('Failed to persist app store state.');
+    }
   }
 }
