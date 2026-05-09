@@ -154,6 +154,50 @@ void main() {
     expect(state.activeWorkoutSession!.results, hasLength(1));
     expect(state.activeWorkoutSession!.results.single.setLogs, hasLength(1));
     expect(state.completedWorkoutSessions, hasLength(1));
+
+    expect(
+      () => state.userDishes.single.components.add(
+        const DishComponent(itemId: 'banana', grams: 50),
+      ),
+      throwsUnsupportedError,
+    );
+    expect(
+      () => state.userExercises.single.muscleGroups.add(MuscleGroup.fullBody),
+      throwsUnsupportedError,
+    );
+    expect(
+      () => state.userTrainingPlans.single.exercises.add(
+        const TrainingExercise(
+          exerciseId: 'push-ups',
+          reps: 12,
+          sets: 3,
+          unit: 'reps',
+        ),
+      ),
+      throwsUnsupportedError,
+    );
+    expect(
+      () => state.activeWorkoutSession!.results.add(
+        const WorkoutExerciseResult(
+          exerciseId: 'push-ups',
+          exerciseName: 'Push-ups',
+          target: TrainingExercise(
+            exerciseId: 'push-ups',
+            reps: 12,
+            sets: 3,
+            unit: 'reps',
+          ),
+          setLogs: [WorkoutSetLog(reps: 12)],
+        ),
+      ),
+      throwsUnsupportedError,
+    );
+    expect(
+      () => state.activeWorkoutSession!.results.single.setLogs.add(
+        const WorkoutSetLog(reps: 12),
+      ),
+      throwsUnsupportedError,
+    );
   });
 
   test('PersistedAppState exposes unmodifiable top-level collections', () {
@@ -201,7 +245,7 @@ void main() {
     );
   });
 
-  test('PersistedAppState codec round-trips runtime and user data', () {
+  test('PersistedAppState codec is intentionally unimplemented in Task 1', () {
     final state = PersistedAppState(
       userFoods: const [
         FoodItem(
@@ -324,48 +368,13 @@ void main() {
       workoutSessionCounter: 7,
     );
 
-    final encoded = PersistedAppStateCodec.encode(state);
-    final decoded = PersistedAppStateCodec.decode(encoded);
-
-    expect(decoded.userFoods.single.name, 'Oats');
-    expect(decoded.userFoods.single.nutrition.carbs, 27);
-    expect(decoded.userDishes.single.name, 'Oats Bowl');
-    expect(decoded.userDishes.single.components.single.itemId, 'oats');
     expect(
-      decoded.userExercises.single.muscleGroups,
-      contains(MuscleGroup.cardio),
-    );
-    expect(decoded.userExercises.single.instruction, 'Keep pace steady.');
-    expect(decoded.userTrainingPlans.single.name, 'Conditioning');
-    expect(
-      decoded.userTrainingPlans.single.exercises.single.exerciseId,
-      'burpees',
-    );
-    expect(decoded.mealEntries.single.id, 'meal-entry-3');
-    expect(decoded.mealEntries.single.itemType, CatalogItemType.dish);
-    expect(decoded.mealEntries.single.mode, MealEntryMode.grams);
-    expect(decoded.mealEntries.single.nutrition.calories, 75);
-    expect(decoded.preferences.appearance, AppearancePreference.dark);
-    expect(decoded.preferences.workoutWeightUnit, WorkoutWeightUnit.pounds);
-    expect(decoded.preferences.dishWeightUnit, DishWeightUnit.ounces);
-    expect(decoded.preferences.heightUnit, HeightUnit.inches);
-    expect(decoded.preferences.distanceUnit, DistanceUnit.miles);
-    expect(
-      decoded.activeWorkoutSession!.startedAt,
-      DateTime.utc(2026, 5, 9, 10),
-    );
-    expect(decoded.activeWorkoutSession!.results.single.exerciseName, 'Burpees');
-    expect(decoded.activeWorkoutSession!.results.single.setLogs.single.time, 45);
-    expect(decoded.completedWorkoutSessions.single.id, 'workout-session-0');
-    expect(
-      decoded.completedWorkoutSessions.single.finishedAt,
-      DateTime.utc(2026, 5, 8, 10, 20),
+      () => PersistedAppStateCodec.encode(state),
+      throwsA(isA<UnimplementedError>()),
     );
     expect(
-      decoded.completedWorkoutSessions.single.results.single.target.sets,
-      2,
+      () => PersistedAppStateCodec.decode(<String, Object?>{}),
+      throwsA(isA<UnimplementedError>()),
     );
-    expect(decoded.mealEntryCounter, 4);
-    expect(decoded.workoutSessionCounter, 7);
   });
 }
