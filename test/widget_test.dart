@@ -1458,21 +1458,42 @@ void main() {
 
   testWidgets('deleting a logged item keeps meal snapshot', (tester) async {
     final store = AppStore();
+    store.createFood(
+      const FoodItem(
+        id: 'custom-rice',
+        name: 'Custom rice',
+        description: 'User-defined rice',
+        servingSizeGrams: 150,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 130,
+          protein: 2.7,
+          fat: 0.3,
+          carbs: 28,
+        ),
+      ),
+    );
     await tester.pumpWidget(FitApp(store: store));
 
-    await logRice150g(tester);
+    store.addMealByGrams(itemId: 'custom-rice', grams: 150);
+    await tester.pumpAndSettle();
     expect(store.mealEntries, hasLength(1));
     expect(find.textContaining('195 kcal'), findsOneWidget);
 
     await openLibraryFoodsSection(tester);
-    await scrollToText(tester, 'Rice');
-    expect(find.text('Rice'), findsWidgets);
-    await tapRowAction(tester, 'Rice', 'Delete Rice', Icons.delete_outline);
-    expect(find.text('Delete Rice?'), findsOneWidget);
+    await scrollToText(tester, 'Custom rice');
+    expect(find.text('Custom rice'), findsWidgets);
+    await tapRowAction(
+      tester,
+      'Custom rice',
+      'Delete Custom rice',
+      Icons.delete_outline,
+    );
+    expect(find.text('Delete Custom rice?'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
     await tester.pumpAndSettle();
 
-    expect(store.itemById('rice'), isNull);
+    expect(store.itemById('custom-rice'), isNull);
 
     await openNutritionDestination(tester);
     expect(store.mealEntries, hasLength(1));
@@ -1480,31 +1501,47 @@ void main() {
   });
 
   testWidgets('blocks deleting an item referenced by a dish', (tester) async {
-    await tester.pumpWidget(const FitApp());
-
-    await openLibraryRecipesSection(tester);
-    await openAddRecipe(tester);
-
-    await enterLabeledText(tester, 'Recipe name', 'Simple salad');
-    await enterLabeledText(tester, 'Recipe description', 'Carrot');
-    await enterLabeledText(tester, 'Recipe serving size grams', '100');
-    await tester.tap(find.text('Add ingredient'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Carrot').last);
-    await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Ingredient grams', '100');
-    await tester.tap(find.text('Save ingredient'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Save recipe'));
-    await tester.pumpAndSettle();
+    final store = AppStore();
+    store.createFood(
+      const FoodItem(
+        id: 'custom-carrot',
+        name: 'Custom carrot',
+        description: 'User-defined carrot',
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 41,
+          protein: 0.9,
+          fat: 0.2,
+          carbs: 10,
+        ),
+      ),
+    );
+    store.createDish(
+      const DishItem(
+        id: 'custom-salad',
+        name: 'Custom salad',
+        description: 'Uses a custom carrot ingredient',
+        servingSizeGrams: 100,
+        components: [
+          DishComponent(itemId: 'custom-carrot', grams: 100),
+        ],
+      ),
+    );
+    await tester.pumpWidget(FitApp(store: store));
 
     await openLibraryFoodsSection(tester);
-    await scrollToText(tester, 'Carrot');
-    await tapRowAction(tester, 'Carrot', 'Delete Carrot', Icons.delete_outline);
+    await scrollToText(tester, 'Custom carrot');
+    await tapRowAction(
+      tester,
+      'Custom carrot',
+      'Delete Custom carrot',
+      Icons.delete_outline,
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ListTile, 'Carrot'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Custom carrot'), findsOneWidget);
     expect(find.textContaining('used by a recipe'), findsOneWidget);
   });
 
@@ -1512,17 +1549,33 @@ void main() {
     'editing a food updates catalog but not existing meal snapshots',
     (tester) async {
       final store = AppStore();
+      store.createFood(
+        const FoodItem(
+          id: 'custom-rice',
+          name: 'Custom rice',
+          description: 'User-defined rice',
+          servingSizeGrams: 150,
+          basis: NutritionBasis.per100g,
+          nutrition: NutritionValues(
+            calories: 130,
+            protein: 2.7,
+            fat: 0.3,
+            carbs: 28,
+          ),
+        ),
+      );
       await tester.pumpWidget(FitApp(store: store));
 
-      await logRice150g(tester);
+      store.addMealByGrams(itemId: 'custom-rice', grams: 150);
+      await tester.pumpAndSettle();
       expect(store.mealEntries, hasLength(1));
       expect(find.textContaining('195 kcal'), findsOneWidget);
 
       store.updateFood(
         const FoodItem(
-          id: 'rice',
-          name: 'Brown rice',
-          description: 'Cooked white rice',
+          id: 'custom-rice',
+          name: 'Updated rice',
+          description: 'Updated user-defined rice',
           servingSizeGrams: 150,
           basis: NutritionBasis.per100g,
           nutrition: NutritionValues(
@@ -1535,10 +1588,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(store.itemById('rice')?.name, 'Brown rice');
+      expect(store.itemById('custom-rice')?.name, 'Updated rice');
 
       await openNutritionDestination(tester);
-      expect(store.mealEntries.single.itemName, 'Rice');
+      expect(store.mealEntries.single.itemName, 'Custom rice');
       expect(find.textContaining('195 kcal'), findsOneWidget);
     },
   );

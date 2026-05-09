@@ -238,7 +238,7 @@ void main() {
       ),
       throwsArgumentError,
     );
-    expect(() => store.deleteItem('carrot'), throwsArgumentError);
+    expect(() => store.deleteItem('carrot'), throwsStateError);
     expect(
       () => store.updateExercise(
         const Exercise(
@@ -251,7 +251,7 @@ void main() {
       ),
       throwsArgumentError,
     );
-    expect(() => store.deleteExercise('pushups'), throwsArgumentError);
+    expect(() => store.deleteExercise('pushups'), throwsStateError);
     expect(
       () => store.updateTrainingPlan(
         const TrainingPlan(
@@ -271,7 +271,7 @@ void main() {
       ),
       throwsArgumentError,
     );
-    expect(() => store.deleteTrainingPlan('chest-day'), throwsArgumentError);
+    expect(() => store.deleteTrainingPlan('chest-day'), throwsStateError);
   });
 
   test('save failures are reported and later saves still succeed', () async {

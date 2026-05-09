@@ -449,7 +449,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void deleteExercise(String id) {
-    _assertExerciseIsUserDefined(id);
+    _assertExerciseCanBeDeleted(id);
     if (!_exercises.containsKey(id)) {
       throw ArgumentError('Missing exercise id: $id');
     }
@@ -483,7 +483,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void deleteTrainingPlan(String id) {
-    _assertTrainingPlanIsUserDefined(id);
+    _assertTrainingPlanCanBeDeleted(id);
     final index = _trainingPlans.indexWhere((plan) => plan.id == id);
     if (index == -1) {
       throw ArgumentError('Missing training plan id: $id');
@@ -639,7 +639,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void deleteItem(String id) {
-    _assertCatalogItemIsUserDefined(id);
+    _assertCatalogItemCanBeDeleted(id);
     if (!_catalog.containsKey(id)) {
       throw ArgumentError('Missing item id: $id');
     }
@@ -845,6 +845,24 @@ class AppStore extends ChangeNotifier {
   void _assertTrainingPlanIsUserDefined(String id) {
     if (_builtInTrainingPlanIds.contains(id)) {
       throw ArgumentError('Built-in training plans cannot be changed.');
+    }
+  }
+
+  void _assertCatalogItemCanBeDeleted(String id) {
+    if (_builtInCatalogIds.contains(id)) {
+      throw StateError('Built-in catalog items cannot be deleted.');
+    }
+  }
+
+  void _assertExerciseCanBeDeleted(String id) {
+    if (_builtInExerciseIds.contains(id)) {
+      throw StateError('Built-in exercises cannot be deleted.');
+    }
+  }
+
+  void _assertTrainingPlanCanBeDeleted(String id) {
+    if (_builtInTrainingPlanIds.contains(id)) {
+      throw StateError('Built-in training plans cannot be deleted.');
     }
   }
 
