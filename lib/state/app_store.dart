@@ -832,19 +832,19 @@ class AppStore extends ChangeNotifier {
 
   void _assertCatalogItemIsUserDefined(String id) {
     if (_builtInCatalogIds.contains(id)) {
-      throw StateError('Built-in catalog items cannot be changed.');
+      throw ArgumentError('Built-in catalog items cannot be changed.');
     }
   }
 
   void _assertExerciseIsUserDefined(String id) {
     if (_builtInExerciseIds.contains(id)) {
-      throw StateError('Built-in exercises cannot be changed.');
+      throw ArgumentError('Built-in exercises cannot be changed.');
     }
   }
 
   void _assertTrainingPlanIsUserDefined(String id) {
     if (_builtInTrainingPlanIds.contains(id)) {
-      throw StateError('Built-in training plans cannot be changed.');
+      throw ArgumentError('Built-in training plans cannot be changed.');
     }
   }
 

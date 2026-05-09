@@ -236,9 +236,9 @@ void main() {
           ),
         ),
       ),
-      throwsStateError,
+      throwsArgumentError,
     );
-    expect(() => store.deleteItem('carrot'), throwsStateError);
+    expect(() => store.deleteItem('carrot'), throwsArgumentError);
     expect(
       () => store.updateExercise(
         const Exercise(
@@ -249,9 +249,9 @@ void main() {
           muscleGroups: [MuscleGroup.chest],
         ),
       ),
-      throwsStateError,
+      throwsArgumentError,
     );
-    expect(() => store.deleteExercise('pushups'), throwsStateError);
+    expect(() => store.deleteExercise('pushups'), throwsArgumentError);
     expect(
       () => store.updateTrainingPlan(
         const TrainingPlan(
@@ -269,9 +269,9 @@ void main() {
           ],
         ),
       ),
-      throwsStateError,
+      throwsArgumentError,
     );
-    expect(() => store.deleteTrainingPlan('chest-day'), throwsStateError);
+    expect(() => store.deleteTrainingPlan('chest-day'), throwsArgumentError);
   });
 
   test('save failures are reported and later saves still succeed', () async {
