@@ -17,6 +17,7 @@ linter:
     prefer_const_declarations: true
     prefer_final_fields: true
     prefer_final_locals: true
+    secure_pubspec_urls: true
     sized_box_for_whitespace: true
     sort_child_properties_last: true
     sort_constructors_first: true
