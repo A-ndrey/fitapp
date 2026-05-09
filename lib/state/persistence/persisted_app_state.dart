@@ -6,19 +6,27 @@ import '../../models/meal_entry.dart';
 import '../../models/training_plan.dart';
 import '../../models/workout_session.dart';
 
+/// Snapshot of persisted user and runtime state only.
+///
+/// Bootstrapped built-in catalog data is excluded and merged separately on load.
 class PersistedAppState {
-  const PersistedAppState({
-    required this.userFoods,
-    required this.userDishes,
-    required this.userExercises,
-    required this.userTrainingPlans,
-    required this.mealEntries,
+  PersistedAppState({
+    required List<FoodItem> userFoods,
+    required List<DishItem> userDishes,
+    required List<Exercise> userExercises,
+    required List<TrainingPlan> userTrainingPlans,
+    required List<MealEntry> mealEntries,
     required this.preferences,
     required this.activeWorkoutSession,
-    required this.completedWorkoutSessions,
+    required List<WorkoutSession> completedWorkoutSessions,
     required this.mealEntryCounter,
     required this.workoutSessionCounter,
-  });
+  }) : userFoods = List.unmodifiable(userFoods),
+       userDishes = List.unmodifiable(userDishes),
+       userExercises = List.unmodifiable(userExercises),
+       userTrainingPlans = List.unmodifiable(userTrainingPlans),
+       mealEntries = List.unmodifiable(mealEntries),
+       completedWorkoutSessions = List.unmodifiable(completedWorkoutSessions);
 
   const PersistedAppState.empty()
     : userFoods = const [],
