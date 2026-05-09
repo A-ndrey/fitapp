@@ -9,11 +9,25 @@ import 'screens/more_screen.dart';
 import 'screens/today_screen.dart';
 import 'screens/workout_screen.dart';
 import 'state/app_store.dart';
+import 'state/persistence/shared_preferences_app_store_persistence.dart';
 import 'ui/core/layout/app_breakpoints.dart';
 import 'ui/core/theme/app_theme.dart';
 
-void main() {
-  runApp(const FitApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final bootstrapStore = AppStore();
+  final knownExerciseIds = bootstrapStore.exercises
+      .map((exercise) => exercise.id)
+      .toSet();
+  bootstrapStore.dispose();
+  final store = await AppStore.hydrated(
+    persistence: SharedPreferencesAppStorePersistence(
+      knownExerciseIds: knownExerciseIds,
+    ),
+  );
+
+  runApp(FitApp(store: store));
 }
 
 class FitApp extends StatefulWidget {

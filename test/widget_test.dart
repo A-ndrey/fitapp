@@ -985,6 +985,18 @@ void main() {
     expect(find.text('Dark'), findsOneWidget);
   });
 
+  testWidgets(
+    'FitApp can render with a hydrated store supplied from async bootstrap',
+    (tester) async {
+      final store = AppStore.empty();
+
+      await tester.pumpWidget(FitApp(store: store));
+
+      expect(find.text('Today'), findsWidgets);
+      expect(find.text('Settings'), findsWidgets);
+    },
+  );
+
   testWidgets('sync buttons depend on login state', (tester) async {
     final store = AppStore.empty();
 
