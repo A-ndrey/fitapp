@@ -11,6 +11,28 @@ import 'package:fitapp/state/persistence/persisted_app_state.dart';
 import 'package:fitapp/state/persistence/persisted_app_state_codec.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+Map<String, Object?> _basePersistedPayload() {
+  return <String, Object?>{
+    'userFoods': const [],
+    'userDishes': const [],
+    'userExercises': const [],
+    'userTrainingPlans': const [],
+    'mealEntries': const [],
+    'preferences': {
+      'appearance': 'system',
+      'language': 'english',
+      'workoutWeightUnit': 'kilograms',
+      'dishWeightUnit': 'grams',
+      'heightUnit': 'centimeters',
+      'distanceUnit': 'kilometers',
+    },
+    'activeWorkoutSession': null,
+    'completedWorkoutSessions': const [],
+    'mealEntryCounter': 0,
+    'workoutSessionCounter': 0,
+  };
+}
+
 void main() {
   test(
     'PersistedAppState copies nested collection-backed models on construction',
@@ -456,11 +478,8 @@ void main() {
   );
 
   test('PersistedAppState codec rejects invalid plan references', () {
-    final payload = <String, Object?>{
-      'userFoods': const [],
-      'userDishes': const [],
-      'userExercises': const [],
-      'userTrainingPlans': [
+    final payload = _basePersistedPayload()
+      ..['userTrainingPlans'] = [
         {
           'id': 'missing-ref',
           'name': 'Broken plan',
@@ -469,22 +488,54 @@ void main() {
             {'exerciseId': 'ghost', 'sets': 3.0, 'reps': 8.0, 'unit': 'reps'},
           ],
         },
-      ],
-      'mealEntries': const [],
-      'preferences': {
-        'appearance': 'system',
-        'language': 'english',
-        'workoutWeightUnit': 'kilograms',
-        'dishWeightUnit': 'grams',
-        'heightUnit': 'centimeters',
-        'distanceUnit': 'kilometers',
-      },
-      'activeWorkoutSession': null,
-      'completedWorkoutSessions': const [],
-      'mealEntryCounter': 0,
-      'workoutSessionCounter': 0,
-    };
+      ];
 
     expect(() => PersistedAppStateCodec.decode(payload), throwsFormatException);
   });
+
+  test(
+    'PersistedAppState codec accepts plan references from known built-in exercises',
+    () {
+      final payload = _basePersistedPayload()
+        ..['userTrainingPlans'] = [
+          {
+            'id': 'builtin-ref',
+            'name': 'Built-in plan',
+            'description': 'Uses bootstrapped exercises',
+            'exercises': [
+              {
+                'exerciseId': 'pushups',
+                'sets': 4.0,
+                'reps': 10.0,
+                'unit': 'reps',
+              },
+            ],
+          },
+        ];
+
+      final decoded = PersistedAppStateCodec.decode(
+        payload,
+        knownExerciseIds: const {'pushups'},
+      );
+
+      expect(decoded.userTrainingPlans, hasLength(1));
+      expect(
+        decoded.userTrainingPlans.single.exercises.single.exerciseId,
+        'pushups',
+      );
+    },
+  );
+
+  test(
+    'PersistedAppState codec rejects malformed completed workout sessions',
+    () {
+      final payload = _basePersistedPayload()
+        ..['completedWorkoutSessions'] = [null];
+
+      expect(
+        () => PersistedAppStateCodec.decode(payload),
+        throwsFormatException,
+      );
+    },
+  );
 }

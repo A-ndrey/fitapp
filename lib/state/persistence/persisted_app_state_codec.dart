@@ -35,14 +35,20 @@ class PersistedAppStateCodec {
     };
   }
 
-  static PersistedAppState decode(Object encoded) {
+  static PersistedAppState decode(
+    Object encoded, {
+    Set<String> knownExerciseIds = const {},
+  }) {
     final payload = _asMap(encoded, 'PersistedAppState');
 
     final exercises = _readList(
       payload,
       'userExercises',
     ).map((entry) => _decodeExercise(entry)).toList(growable: false);
-    final exerciseIds = exercises.map((exercise) => exercise.id).toSet();
+    final exerciseIds = <String>{
+      ...knownExerciseIds,
+      ...exercises.map((exercise) => exercise.id),
+    };
 
     return PersistedAppState(
       userFoods: _readList(
@@ -68,10 +74,20 @@ class PersistedAppStateCodec {
       completedWorkoutSessions: _readList(
         payload,
         'completedWorkoutSessions',
-      ).map((entry) => _decodeWorkoutSession(entry)!).toList(growable: false),
+      ).map(_decodeCompletedWorkoutSession).toList(growable: false),
       mealEntryCounter: _readInt(payload, 'mealEntryCounter'),
       workoutSessionCounter: _readInt(payload, 'workoutSessionCounter'),
     );
+  }
+
+  static WorkoutSession _decodeCompletedWorkoutSession(Object? encoded) {
+    final session = _decodeWorkoutSession(encoded);
+    if (session == null) {
+      throw FormatException(
+        'Expected "completedWorkoutSessions" entries to be workout sessions.',
+      );
+    }
+    return session;
   }
 
   static Map<String, Object?> _encodeFoodItem(FoodItem item) {
