@@ -2,10 +2,14 @@ import 'package:fitapp/models/dish_item.dart';
 import 'package:fitapp/models/exercise.dart';
 import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/app_preferences.dart';
+import 'package:fitapp/models/catalog_item.dart';
+import 'package:fitapp/models/meal_entry.dart';
 import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/models/training_plan.dart';
 import 'package:fitapp/models/workout_session.dart';
 import 'package:fitapp/state/app_store.dart';
+import 'package:fitapp/state/persistence/app_store_persistence.dart';
+import 'package:fitapp/state/persistence/persisted_app_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 FoodItem tomato() => const FoodItem(
@@ -16,6 +20,29 @@ FoodItem tomato() => const FoodItem(
   basis: NutritionBasis.per100g,
   nutrition: NutritionValues(calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9),
 );
+
+class FakePersistence implements AppStorePersistence {
+  FakePersistence({this.loadedState});
+
+  PersistedAppState? loadedState;
+  PersistedAppState? savedState;
+  int saveCount = 0;
+
+  @override
+  Future<PersistedAppState?> load() async => loadedState;
+
+  @override
+  Future<void> save(PersistedAppState state) async {
+    saveCount += 1;
+    savedState = state;
+    loadedState = state;
+  }
+}
+
+Future<void> flushPersistenceQueue() async {
+  await Future<void>.delayed(Duration.zero);
+  await Future<void>.delayed(Duration.zero);
+}
 
 void main() {
   test('AppStore starts with exactly five sample foods', () {
@@ -47,6 +74,187 @@ void main() {
     expect(store.trainingPlans, isEmpty);
     expect(store.completedWorkoutSessions, isEmpty);
     expect(store.activeWorkoutSession, isNull);
+  });
+
+  test(
+    'AppStore.hydrated merges built-ins with persisted user state',
+    () async {
+      final persistence = FakePersistence(
+        loadedState: PersistedAppState(
+          userFoods: [tomato()],
+          userDishes: const [],
+          userExercises: const [],
+          userTrainingPlans: const [
+            TrainingPlan(
+              id: 'builtin-pushups-plan',
+              name: 'Builtin pushups plan',
+              description: 'References a built-in exercise.',
+              exercises: [
+                TrainingExercise(exerciseId: 'pushups', reps: 15, unit: 'reps'),
+              ],
+            ),
+          ],
+          mealEntries: const [],
+          preferences: const AppPreferences.defaults(),
+          activeWorkoutSession: null,
+          completedWorkoutSessions: const [],
+          mealEntryCounter: 0,
+          workoutSessionCounter: 0,
+        ),
+      );
+
+      final store = await AppStore.hydrated(
+        persistence: persistence,
+        knownExerciseIds: const {'pushups'},
+      );
+
+      expect(store.items, hasLength(6));
+      expect(store.itemById('carrot'), isNotNull);
+      expect(store.itemById('tomato'), isNotNull);
+      expect(store.trainingPlanById('builtin-pushups-plan'), isNotNull);
+    },
+  );
+
+  test('AppStore persists after persisted-state mutations only', () async {
+    final persistence = FakePersistence();
+    final store = AppStore.empty(persistence: persistence);
+
+    store.createFood(tomato());
+    await flushPersistenceQueue();
+
+    expect(persistence.saveCount, 1);
+    expect(persistence.savedState!.userFoods.single.id, 'tomato');
+
+    store.logIn();
+    await flushPersistenceQueue();
+
+    expect(persistence.saveCount, 1);
+    expect(persistence.savedState!.userFoods.single.id, 'tomato');
+  });
+
+  test('AppStore does not persist auth flag', () async {
+    final persistence = FakePersistence();
+    final store = AppStore.empty(persistence: persistence);
+
+    store.createFood(tomato());
+    store.logIn();
+    await flushPersistenceQueue();
+
+    expect(store.isLoggedIn, isTrue);
+    expect(persistence.savedState, isNotNull);
+
+    final restored = await AppStore.hydrated(persistence: persistence);
+
+    expect(restored.itemById('tomato'), isNotNull);
+    expect(restored.isLoggedIn, isFalse);
+  });
+
+  test('AppStore.hydrated restores counters and runtime state', () async {
+    final persistence = FakePersistence(
+      loadedState: PersistedAppState(
+        userFoods: [tomato()],
+        userDishes: const [],
+        userExercises: const [],
+        userTrainingPlans: const [],
+        mealEntries: const [
+          MealEntry(
+            id: 'meal-entry-2',
+            sourceItemId: 'tomato',
+            itemName: 'Tomato',
+            itemType: CatalogItemType.food,
+            servingSizeGrams: 100,
+            consumedGrams: 100,
+            mode: MealEntryMode.grams,
+            enteredQuantity: 100,
+            nutrition: NutritionValues(
+              calories: 18,
+              protein: 0.9,
+              fat: 0.2,
+              carbs: 3.9,
+            ),
+          ),
+        ],
+        preferences: const AppPreferences(
+          appearance: AppearancePreference.dark,
+          language: LanguagePreference.english,
+          workoutWeightUnit: WorkoutWeightUnit.pounds,
+          dishWeightUnit: DishWeightUnit.ounces,
+          heightUnit: HeightUnit.inches,
+          distanceUnit: DistanceUnit.miles,
+        ),
+        activeWorkoutSession: WorkoutSession(
+          id: 'workout-session-3',
+          trainingPlanId: 'chest-day',
+          trainingPlanName: 'Chest day',
+          startedAt: DateTime(2026, 4, 19, 10),
+          results: const [
+            WorkoutExerciseResult(
+              exerciseId: 'bench-press',
+              exerciseName: 'Bench press',
+              target: TrainingExercise(
+                exerciseId: 'bench-press',
+                sets: 3,
+                reps: 8,
+                weight: 60,
+                unit: 'kg',
+              ),
+              setLogs: [WorkoutSetLog(reps: 8, weight: 60)],
+            ),
+          ],
+        ),
+        completedWorkoutSessions: [
+          WorkoutSession(
+            id: 'workout-session-2',
+            trainingPlanId: 'leg-day',
+            trainingPlanName: 'Leg day',
+            startedAt: DateTime(2026, 4, 18, 9),
+            finishedAt: DateTime(2026, 4, 18, 9, 45),
+            results: [
+              WorkoutExerciseResult(
+                exerciseId: 'squat',
+                exerciseName: 'Squat',
+                target: TrainingExercise(
+                  exerciseId: 'squat',
+                  sets: 4,
+                  reps: 6,
+                  weight: 80,
+                  unit: 'kg',
+                ),
+                setLogs: [WorkoutSetLog(reps: 6, weight: 80)],
+              ),
+            ],
+          ),
+        ],
+        mealEntryCounter: 2,
+        workoutSessionCounter: 3,
+      ),
+    );
+
+    final store = await AppStore.hydrated(persistence: persistence);
+    final nextMeal = store.addMealByGrams(itemId: 'tomato', grams: 50);
+
+    expect(store.preferences.appearance, AppearancePreference.dark);
+    expect(store.activeWorkoutSession!.id, 'workout-session-3');
+    expect(store.completedWorkoutSessions.single.id, 'workout-session-2');
+    expect(nextMeal.id, 'meal-entry-3');
+    expect(
+      () => store.startWorkout(
+        trainingPlanId: 'chest-day',
+        startedAt: DateTime(2026, 4, 19, 11),
+      ),
+      throwsStateError,
+    );
+
+    final finished = store.finishActiveWorkout(
+      finishedAt: DateTime(2026, 4, 19, 10, 30),
+    );
+    final newSession = store.startWorkout(
+      trainingPlanId: 'leg-day',
+      startedAt: DateTime(2026, 4, 20, 10),
+    );
+
+    expect(finished.id, 'workout-session-3');
+    expect(newSession.id, 'workout-session-4');
   });
 
   test('creates training plans with existing exercises', () {
