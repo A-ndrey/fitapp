@@ -3,6 +3,7 @@ import '../../models/dish_item.dart';
 import '../../models/exercise.dart';
 import '../../models/food_item.dart';
 import '../../models/meal_entry.dart';
+import '../../models/nutrition.dart';
 import '../../models/training_plan.dart';
 import '../../models/workout_session.dart';
 
@@ -16,17 +17,31 @@ class PersistedAppState {
     required List<Exercise> userExercises,
     required List<TrainingPlan> userTrainingPlans,
     required List<MealEntry> mealEntries,
-    required this.preferences,
-    required this.activeWorkoutSession,
+    required AppPreferences preferences,
+    required WorkoutSession? activeWorkoutSession,
     required List<WorkoutSession> completedWorkoutSessions,
     required this.mealEntryCounter,
     required this.workoutSessionCounter,
-  }) : userFoods = List.unmodifiable(userFoods),
-       userDishes = List.unmodifiable(userDishes),
-       userExercises = List.unmodifiable(userExercises),
-       userTrainingPlans = List.unmodifiable(userTrainingPlans),
-       mealEntries = List.unmodifiable(mealEntries),
-       completedWorkoutSessions = List.unmodifiable(completedWorkoutSessions);
+  }) : userFoods = List.unmodifiable(
+         userFoods.map(_cloneFoodItem),
+       ),
+       userDishes = List.unmodifiable(
+         userDishes.map(_cloneDishItem),
+       ),
+       userExercises = List.unmodifiable(
+         userExercises.map(_cloneExercise),
+       ),
+       userTrainingPlans = List.unmodifiable(
+         userTrainingPlans.map(_cloneTrainingPlan),
+       ),
+       mealEntries = List.unmodifiable(
+         mealEntries.map(_cloneMealEntry),
+       ),
+       preferences = _cloneAppPreferences(preferences),
+       activeWorkoutSession = _cloneWorkoutSession(activeWorkoutSession),
+       completedWorkoutSessions = List.unmodifiable(
+         completedWorkoutSessions.map(_cloneWorkoutSession),
+       );
 
   const PersistedAppState.empty()
     : userFoods = const [],
@@ -50,4 +65,77 @@ class PersistedAppState {
   final List<WorkoutSession> completedWorkoutSessions;
   final int mealEntryCounter;
   final int workoutSessionCounter;
+
+  static FoodItem _cloneFoodItem(FoodItem item) {
+    return item.copyWith();
+  }
+
+  static DishItem _cloneDishItem(DishItem item) {
+    return item.copyWith(
+      components: List.unmodifiable(
+        item.components.map((component) {
+          return DishComponent(itemId: component.itemId, grams: component.grams);
+        }),
+      ),
+    );
+  }
+
+  static Exercise _cloneExercise(Exercise exercise) {
+    return exercise.copyWith(
+      muscleGroups: List.unmodifiable(exercise.muscleGroups),
+    );
+  }
+
+  static TrainingPlan _cloneTrainingPlan(TrainingPlan plan) {
+    return plan.copyWith(
+      exercises: List.unmodifiable(
+        plan.exercises.map((exercise) {
+          return exercise.copyWith();
+        }),
+      ),
+    );
+  }
+
+  static MealEntry _cloneMealEntry(MealEntry entry) {
+    return MealEntry(
+      id: entry.id,
+      sourceItemId: entry.sourceItemId,
+      itemName: entry.itemName,
+      itemType: entry.itemType,
+      servingSizeGrams: entry.servingSizeGrams,
+      consumedGrams: entry.consumedGrams,
+      mode: entry.mode,
+      enteredQuantity: entry.enteredQuantity,
+      nutrition: NutritionValues(
+        calories: entry.nutrition.calories,
+        protein: entry.nutrition.protein,
+        fat: entry.nutrition.fat,
+        carbs: entry.nutrition.carbs,
+      ),
+    );
+  }
+
+  static AppPreferences _cloneAppPreferences(AppPreferences preferences) {
+    return preferences.copyWith();
+  }
+
+  static WorkoutSession? _cloneWorkoutSession(WorkoutSession? session) {
+    if (session == null) {
+      return null;
+    }
+    return session.copyWith(
+      results: List.unmodifiable(
+        session.results.map((result) {
+          return result.copyWith(
+            target: result.target.copyWith(),
+            setLogs: List.unmodifiable(
+              result.setLogs.map((setLog) {
+                return setLog.copyWith();
+              }),
+            ),
+          );
+        }),
+      ),
+    );
+  }
 }

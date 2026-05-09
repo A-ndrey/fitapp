@@ -12,6 +12,195 @@ import 'package:fitapp/state/persistence/persisted_app_state_codec.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('PersistedAppState copies nested collection-backed models on construction', () {
+    final sourceDishComponents = <DishComponent>[
+      const DishComponent(itemId: 'oats', grams: 40),
+    ];
+    final sourceMuscleGroups = <MuscleGroup>[MuscleGroup.cardio];
+    final sourceTrainingExercises = <TrainingExercise>[
+      const TrainingExercise(
+        exerciseId: 'burpees',
+        reps: 10,
+        sets: 3,
+        unit: 'reps',
+      ),
+    ];
+    final sourceSetLogs = <WorkoutSetLog>[const WorkoutSetLog(reps: 10)];
+    final sourceResults = <WorkoutExerciseResult>[
+      WorkoutExerciseResult(
+        exerciseId: 'burpees',
+        exerciseName: 'Burpees',
+        target: sourceTrainingExercises.single,
+        setLogs: sourceSetLogs,
+      ),
+    ];
+    final sourceFoods = <FoodItem>[
+      const FoodItem(
+        id: 'oats',
+        name: 'Oats',
+        description: 'Dry oats',
+        servingSizeGrams: 40,
+        basis: NutritionBasis.perServing,
+        nutrition: NutritionValues(
+          calories: 150,
+          protein: 5,
+          fat: 3,
+          carbs: 27,
+        ),
+      ),
+    ];
+    final sourceDishes = <DishItem>[
+      DishItem(
+        id: 'oats-bowl',
+        name: 'Oats Bowl',
+        description: 'Oats with water',
+        servingSizeGrams: 250,
+        components: sourceDishComponents,
+      ),
+    ];
+    final sourceExercises = <Exercise>[
+      Exercise(
+        id: 'burpees',
+        name: 'Burpees',
+        description: 'Conditioning move',
+        instruction: 'Keep pace steady.',
+        muscleGroups: sourceMuscleGroups,
+      ),
+    ];
+    final sourcePlans = <TrainingPlan>[
+      TrainingPlan(
+        id: 'conditioning',
+        name: 'Conditioning',
+        description: 'Short conditioning block',
+        exercises: sourceTrainingExercises,
+      ),
+    ];
+    final sourceCompletedSessions = <WorkoutSession>[
+      WorkoutSession(
+        id: 'workout-session-1',
+        trainingPlanId: 'conditioning',
+        trainingPlanName: 'Conditioning',
+        startedAt: DateTime.utc(2026, 5, 9, 10),
+        results: sourceResults,
+      ),
+    ];
+
+    final state = PersistedAppState(
+      userFoods: sourceFoods,
+      userDishes: sourceDishes,
+      userExercises: sourceExercises,
+      userTrainingPlans: sourcePlans,
+      mealEntries: const [],
+      preferences: const AppPreferences.defaults(),
+      activeWorkoutSession: sourceCompletedSessions.single,
+      completedWorkoutSessions: sourceCompletedSessions,
+      mealEntryCounter: 1,
+      workoutSessionCounter: 2,
+    );
+
+    sourceFoods.add(
+      const FoodItem(
+        id: 'banana',
+        name: 'Banana',
+        description: 'Fruit',
+        servingSizeGrams: 120,
+        basis: NutritionBasis.perServing,
+        nutrition: NutritionValues(
+          calories: 100,
+          protein: 1,
+          fat: 0,
+          carbs: 23,
+        ),
+      ),
+    );
+    sourceDishComponents.add(const DishComponent(itemId: 'banana', grams: 50));
+    sourceMuscleGroups.add(MuscleGroup.fullBody);
+    sourceTrainingExercises.add(
+      const TrainingExercise(
+        exerciseId: 'push-ups',
+        reps: 12,
+        sets: 3,
+        unit: 'reps',
+      ),
+    );
+    sourceSetLogs.add(const WorkoutSetLog(reps: 12));
+    sourceResults.add(
+      const WorkoutExerciseResult(
+        exerciseId: 'push-ups',
+        exerciseName: 'Push-ups',
+        target: TrainingExercise(
+          exerciseId: 'push-ups',
+          reps: 12,
+          sets: 3,
+          unit: 'reps',
+        ),
+        setLogs: [WorkoutSetLog(reps: 12)],
+      ),
+    );
+    sourceCompletedSessions.add(
+      WorkoutSession(
+        id: 'workout-session-2',
+        trainingPlanId: 'conditioning',
+        trainingPlanName: 'Conditioning',
+        startedAt: DateTime.utc(2026, 5, 10, 10),
+        results: const [],
+      ),
+    );
+
+    expect(state.userFoods, hasLength(1));
+    expect(state.userDishes.single.components, hasLength(1));
+    expect(state.userExercises.single.muscleGroups, hasLength(1));
+    expect(state.userTrainingPlans.single.exercises, hasLength(1));
+    expect(state.activeWorkoutSession!.results, hasLength(1));
+    expect(state.activeWorkoutSession!.results.single.setLogs, hasLength(1));
+    expect(state.completedWorkoutSessions, hasLength(1));
+  });
+
+  test('PersistedAppState exposes unmodifiable top-level collections', () {
+    final state = PersistedAppState.empty();
+
+    expect(
+      () => state.userFoods.add(
+        const FoodItem(
+          id: 'oats',
+          name: 'Oats',
+          description: 'Dry oats',
+          servingSizeGrams: 40,
+          basis: NutritionBasis.perServing,
+          nutrition: NutritionValues(
+            calories: 150,
+            protein: 5,
+            fat: 3,
+            carbs: 27,
+          ),
+        ),
+      ),
+      throwsUnsupportedError,
+    );
+    expect(
+      () => state.userDishes.add(
+        const DishItem(
+          id: 'oats-bowl',
+          name: 'Oats Bowl',
+          description: 'Oats with water',
+          servingSizeGrams: 250,
+          components: [DishComponent(itemId: 'oats', grams: 40)],
+        ),
+      ),
+      throwsUnsupportedError,
+    );
+    expect(() => state.userExercises.addAll(const []), throwsUnsupportedError);
+    expect(
+      () => state.userTrainingPlans.clear(),
+      throwsUnsupportedError,
+    );
+    expect(() => state.mealEntries.addAll(const []), throwsUnsupportedError);
+    expect(
+      () => state.completedWorkoutSessions.addAll(const []),
+      throwsUnsupportedError,
+    );
+  });
+
   test('PersistedAppState codec round-trips runtime and user data', () {
     final state = PersistedAppState(
       userFoods: const [
