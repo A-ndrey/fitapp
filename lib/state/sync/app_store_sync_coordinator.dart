@@ -10,10 +10,13 @@ import '../persistence/sync_metadata.dart';
 import 'app_store_sync_status.dart';
 import 'firebase_app_store_sync_service.dart';
 import 'installation_id_store.dart';
-import 'remote_snapshot.dart';
 
 typedef LocalSnapshotLoader = Future<PersistedAppState?> Function();
-typedef RemoteSnapshotApplier = Future<void> Function(PersistedAppState state);
+typedef RemoteSnapshotApplier =
+    Future<void> Function(
+      PersistedAppState state, {
+      required bool notifyPersistedStateObserver,
+    });
 typedef PersistedStateObserverBinder =
     void Function(void Function(PersistedAppState state) observer);
 
@@ -44,27 +47,29 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
   SyncMetadata? _metadata;
   Future<void>? _initializationFuture;
   Future<void>? _startupFuture;
+  Future<void> _syncOperationTail = Future<void>.value();
   PersistedAppState? _pendingUploadSnapshot;
   Completer<void>? _uploadDrainCompleter;
-  bool _isUploadLoopRunning = false;
+  bool _isUploadDrainScheduled = false;
 
   AppStoreSyncStatus get status => _status;
   void Function(PersistedAppState) get persistedStateObserver =>
       _handlePersistedStateSaved;
 
   Future<void> start() {
-    return _startupFuture ??= _runStartupReconciliation();
+    return _startupFuture ??= _runSerialized(_runStartupReconciliation);
   }
 
   void _handlePersistedStateSaved(PersistedAppState state) {
-    unawaited(_enqueueUpload(state));
+    _pendingUploadSnapshot = state;
+    unawaited(_scheduleUploadDrain());
   }
 
   Future<void> syncNow() async {
     try {
-      await _ensureInitialized();
       final snapshot = await _loadSnapshotOrEmpty();
-      await _enqueueUpload(snapshot);
+      _pendingUploadSnapshot = snapshot;
+      await _scheduleUploadDrain();
     } catch (error, stackTrace) {
       await _handleSyncFailure(error, stackTrace);
     }
@@ -84,7 +89,10 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
       final remoteSnapshot = await _syncService.fetch(_installationId!);
 
       if (remoteSnapshot == null) {
-        await _pushSnapshot(localSnapshot, force: true);
+        await _pushSnapshot(
+          _takePendingUploadSnapshot(localSnapshot),
+          force: true,
+        );
         return;
       }
 
@@ -109,6 +117,7 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
       }
 
       final localHasUnsyncedChanges =
+          _pendingUploadSnapshot != null ||
           lastSyncedSnapshotHash == null ||
           lastSyncedSnapshotHash != localSnapshotHash;
       final remoteIsNewerThanAccepted =
@@ -116,7 +125,10 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
           remoteSnapshot.updatedAt.isAfter(acceptedRemoteTimestamp);
 
       if (remoteIsNewerThanAccepted && !localHasUnsyncedChanges) {
-        await _applyRemoteSnapshot(remoteSnapshot.state);
+        await _applyRemoteSnapshot(
+          remoteSnapshot.state,
+          notifyPersistedStateObserver: false,
+        );
         await _persistSyncMetadata(
           lastKnownRemoteUpdatedAt: remoteSnapshot.updatedAt,
           lastSyncedSnapshotHash: remoteSnapshot.snapshotHash,
@@ -132,12 +144,10 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
         return;
       }
 
-      if (localHasUnsyncedChanges ||
-          !remoteIsNewerThanAccepted ||
-          acceptedRemoteTimestamp == null) {
-        await _pushSnapshot(localSnapshot, force: true);
-        return;
-      }
+      await _pushSnapshot(
+        _takePendingUploadSnapshot(localSnapshot),
+        force: true,
+      );
     } catch (error, stackTrace) {
       await _handleSyncFailure(error, stackTrace);
     }
@@ -165,37 +175,55 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     return await _loadLocalSnapshot() ?? const PersistedAppState.empty();
   }
 
-  Future<void> _enqueueUpload(PersistedAppState snapshot) async {
-    await _ensureInitialized();
-    _pendingUploadSnapshot = snapshot;
+  PersistedAppState _takePendingUploadSnapshot(PersistedAppState fallback) {
+    final pendingSnapshot = _pendingUploadSnapshot;
+    if (pendingSnapshot == null) {
+      return fallback;
+    }
+    _pendingUploadSnapshot = null;
+    return pendingSnapshot;
+  }
+
+  Future<void> _scheduleUploadDrain() async {
     _uploadDrainCompleter ??= Completer<void>();
-    unawaited(_drainUploadQueue());
+    if (_isUploadDrainScheduled) {
+      await _uploadDrainCompleter!.future;
+      return;
+    }
+
+    _isUploadDrainScheduled = true;
+    unawaited(_runSerialized(_drainUploadQueue));
     await _uploadDrainCompleter!.future;
   }
 
   Future<void> _drainUploadQueue() async {
-    if (_isUploadLoopRunning) {
-      return;
-    }
-
-    _isUploadLoopRunning = true;
     try {
+      await _ensureInitialized();
       while (_pendingUploadSnapshot != null) {
         final snapshot = _pendingUploadSnapshot!;
         _pendingUploadSnapshot = null;
         await _pushSnapshot(snapshot);
       }
-
-      _uploadDrainCompleter?.complete();
-      _uploadDrainCompleter = null;
     } catch (error, stackTrace) {
       _pendingUploadSnapshot = null;
       await _handleSyncFailure(error, stackTrace);
+    } finally {
+      final shouldReschedule = _pendingUploadSnapshot != null;
+      _isUploadDrainScheduled = false;
       _uploadDrainCompleter?.complete();
       _uploadDrainCompleter = null;
-    } finally {
-      _isUploadLoopRunning = false;
+      if (shouldReschedule) {
+        unawaited(_scheduleUploadDrain());
+      }
     }
+  }
+
+  Future<void> _runSerialized(Future<void> Function() operation) {
+    final scheduled = _syncOperationTail
+        .catchError((Object _, StackTrace _) {})
+        .then((_) => operation());
+    _syncOperationTail = scheduled.catchError((Object _, StackTrace _) {});
+    return scheduled;
   }
 
   Future<void> _pushSnapshot(
@@ -276,14 +304,18 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
       ),
     );
 
-    FlutterError.reportError(
-      FlutterErrorDetails(
-        exception: error,
-        stack: stackTrace,
-        library: 'fitapp',
-        context: ErrorDescription('while syncing AppStore state'),
-      ),
-    );
+    try {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'fitapp',
+          context: ErrorDescription('while syncing AppStore state'),
+        ),
+      );
+    } catch (_) {
+      // Error reporting must not surface as an additional sync failure.
+    }
   }
 
   void _setStatus(AppStoreSyncStatus nextStatus) {

@@ -76,6 +76,11 @@ void main() {
         harness.metadataStore.savedMetadata.single.lastSyncedSnapshotHash,
         _snapshotHash(remoteSnapshot),
       );
+      expect(harness.applyRemoteCalls, hasLength(1));
+      expect(
+        harness.applyRemoteCalls.single.notifyPersistedStateObserver,
+        isFalse,
+      );
     },
   );
 
@@ -274,6 +279,55 @@ void main() {
     },
   );
 
+  test(
+    'startup uses a newer observer snapshot that arrives while reconciliation is still in flight',
+    () async {
+      final initialSnapshot = _stateWithFood('tomato');
+      final updatedSnapshot = _stateWithFood('cucumber');
+      final fetchCompleter = Completer<RemoteSnapshot?>();
+      final harness = _CoordinatorHarness(
+        localSnapshot: initialSnapshot,
+        onFetch: (installationId) => fetchCompleter.future,
+      );
+
+      final startFuture = harness.coordinator.start();
+      await _pumpEventQueue();
+
+      harness.coordinator.persistedStateObserver(updatedSnapshot);
+      await _pumpEventQueue();
+      expect(harness.pushCalls, isEmpty);
+
+      fetchCompleter.complete(null);
+      await startFuture;
+      await _pumpEventQueue();
+
+      expect(harness.pushCalls, hasLength(1));
+      expect(harness.pushCalls.single.state.userFoods.single.id, 'cucumber');
+    },
+  );
+
+  test(
+    'observer-driven initialization failures surface as error status',
+    () async {
+      final harness = _CoordinatorHarness(
+        localSnapshot: _stateWithFood('tomato'),
+        installationIdStore: _ThrowingInstallationIdStore(
+          StateError('installation load failed'),
+        ),
+      );
+
+      harness.coordinator.persistedStateObserver(_stateWithFood('cucumber'));
+      await _pumpEventQueue();
+
+      expect(harness.coordinator.status.phase, AppStoreSyncPhase.error);
+      expect(
+        harness.coordinator.status.lastErrorMessage,
+        contains('installation load failed'),
+      );
+      expect(harness.pushCalls, isEmpty);
+    },
+  );
+
   test('manual retry triggers a sync from the latest local snapshot', () async {
     final syncedSnapshot = _stateWithFood('tomato');
     final failedSnapshot = _stateWithFood('onion');
@@ -379,58 +433,72 @@ class _CoordinatorHarness {
     SyncMetadata? initialMetadata,
     Object? fetchError,
     FirebaseAppStoreSyncService? syncService,
+    InstallationIdStore? installationIdStore,
     void Function(void Function(PersistedAppState) observer)?
     bindPersistedStateObserver,
+    Future<RemoteSnapshot?> Function(String installationId)? onFetch,
     Future<RemoteSnapshot> Function(
       String installationId,
       PersistedAppState state,
       String snapshotHash,
     )?
     onPush,
-  }) : _currentLocalSnapshot = localSnapshot,
+  }) : currentLocalSnapshot = localSnapshot,
        metadataStore = _FakeSyncMetadataStore(initialMetadata),
-       installationIdStore = _FakeInstallationIdStore(),
+       installationIdStore = installationIdStore ?? _FakeInstallationIdStore(),
        syncService =
            syncService ??
            _FakeFirebaseAppStoreSyncService(
              remoteSnapshot: remoteSnapshot,
              fetchError: fetchError,
+             onFetch: onFetch,
              onPush: onPush,
            ) {
     pushCalls = this.syncService is _FakeFirebaseAppStoreSyncService
         ? (this.syncService as _FakeFirebaseAppStoreSyncService).pushCalls
         : const <_PushCall>[];
     coordinator = AppStoreSyncCoordinator(
-      installationIdStore: installationIdStore,
+      installationIdStore: this.installationIdStore,
       metadataStore: metadataStore,
       syncService: this.syncService,
       bindPersistedStateObserver: bindPersistedStateObserver,
-      loadLocalSnapshot: () async => _currentLocalSnapshot,
-      applyRemoteSnapshot: (state) async {
-        appliedRemoteSnapshots.add(state);
-        _currentLocalSnapshot = state;
-      },
+      loadLocalSnapshot: () async => currentLocalSnapshot,
+      applyRemoteSnapshot:
+          (state, {required notifyPersistedStateObserver}) async {
+            applyRemoteCalls.add(
+              _ApplyRemoteCall(
+                state: state,
+                notifyPersistedStateObserver: notifyPersistedStateObserver,
+              ),
+            );
+            appliedRemoteSnapshots.add(state);
+            currentLocalSnapshot = state;
+          },
     );
   }
 
   final _FakeSyncMetadataStore metadataStore;
-  final _FakeInstallationIdStore installationIdStore;
+  final InstallationIdStore installationIdStore;
   final FirebaseAppStoreSyncService syncService;
   late final List<_PushCall> pushCalls;
   final List<PersistedAppState> appliedRemoteSnapshots = <PersistedAppState>[];
+  final List<_ApplyRemoteCall> applyRemoteCalls = <_ApplyRemoteCall>[];
   late final AppStoreSyncCoordinator coordinator;
-  PersistedAppState _currentLocalSnapshot;
-
-  PersistedAppState get currentLocalSnapshot => _currentLocalSnapshot;
-
-  set currentLocalSnapshot(PersistedAppState value) {
-    _currentLocalSnapshot = value;
-  }
+  PersistedAppState currentLocalSnapshot;
 }
 
 class _FakeInstallationIdStore implements InstallationIdStore {
   @override
   Future<String> loadOrCreate() async => 'installation-1';
+}
+
+class _ThrowingInstallationIdStore implements InstallationIdStore {
+  _ThrowingInstallationIdStore(this.error);
+
+  final Object error;
+
+  @override
+  Future<String> loadOrCreate() async => throw error;
 }
 
 class _FakeSyncMetadataStore implements SharedPreferencesSyncMetadataStore {
@@ -453,6 +521,7 @@ class _FakeFirebaseAppStoreSyncService implements FirebaseAppStoreSyncService {
   _FakeFirebaseAppStoreSyncService({
     this.remoteSnapshot,
     this.fetchError,
+    this.onFetch,
     this.onPush,
   });
 
@@ -464,6 +533,7 @@ class _FakeFirebaseAppStoreSyncService implements FirebaseAppStoreSyncService {
 
   final RemoteSnapshot? remoteSnapshot;
   final Object? fetchError;
+  final Future<RemoteSnapshot?> Function(String installationId)? onFetch;
   final Future<RemoteSnapshot> Function(
     String installationId,
     PersistedAppState state,
@@ -474,6 +544,9 @@ class _FakeFirebaseAppStoreSyncService implements FirebaseAppStoreSyncService {
 
   @override
   Future<RemoteSnapshot?> fetch(String installationId) async {
+    if (onFetch != null) {
+      return onFetch!(installationId);
+    }
     if (fetchError != null) {
       throw fetchError!;
     }
@@ -516,6 +589,16 @@ class _PushCall {
   final String installationId;
   final PersistedAppState state;
   final String snapshotHash;
+}
+
+class _ApplyRemoteCall {
+  const _ApplyRemoteCall({
+    required this.state,
+    required this.notifyPersistedStateObserver,
+  });
+
+  final PersistedAppState state;
+  final bool notifyPersistedStateObserver;
 }
 
 class _NoopRemoteSnapshotStore implements RemoteSnapshotStore {
