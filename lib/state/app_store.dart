@@ -69,6 +69,7 @@ class AppStore extends ChangeNotifier {
   int _workoutSessionCounter = 0;
   Future<void> _pendingSave = Future<void>.value();
   bool _isPersistenceSuspended = false;
+  int _persistedStateObserverGeneration = 0;
 
   void _bootstrapSampleFoods() {
     _createBuiltInFood(
@@ -322,7 +323,9 @@ class AppStore extends ChangeNotifier {
     PersistedAppState state, {
     bool notifyPersistedStateObserver = true,
   }) async {
-    _applyPersistedState(state);
+    _validatePersistedState(state);
+    _persistedStateObserverGeneration += 1;
+    _applyPersistedStateUnchecked(state);
     notifyListeners();
     await _schedulePersistenceSave(
       notifyPersistedStateObserver: notifyPersistedStateObserver,
@@ -776,11 +779,13 @@ class AppStore extends ChangeNotifier {
     }
 
     final snapshot = _toPersistedAppState();
+    final observerGeneration = _persistedStateObserverGeneration;
     _pendingSave = _pendingSave
         .catchError((Object _, StackTrace __) {})
         .then((_) async {
           await persistence.save(snapshot);
-          if (notifyPersistedStateObserver) {
+          if (notifyPersistedStateObserver &&
+              observerGeneration == _persistedStateObserverGeneration) {
             _notifyPersistedStateSaved(snapshot);
           }
         })
@@ -832,6 +837,11 @@ class AppStore extends ChangeNotifier {
   }
 
   void _applyPersistedState(PersistedAppState state) {
+    _validatePersistedState(state);
+    _applyPersistedStateUnchecked(state);
+  }
+
+  void _applyPersistedStateUnchecked(PersistedAppState state) {
     _runWithoutPersistence(() {
       _resetRuntimeStateToBuiltIns();
 
@@ -873,6 +883,23 @@ class AppStore extends ChangeNotifier {
       _workoutSessionCounter = state.workoutSessionCounter;
       _isLoggedIn = false;
     });
+  }
+
+  void _validatePersistedState(PersistedAppState state) {
+    final validationStore = AppStore();
+
+    for (final food in state.userFoods) {
+      validationStore.createFood(food);
+    }
+    for (final dish in state.userDishes) {
+      validationStore.createDish(dish);
+    }
+    for (final exercise in state.userExercises) {
+      validationStore.createExercise(exercise);
+    }
+    for (final plan in state.userTrainingPlans) {
+      validationStore.createTrainingPlan(plan);
+    }
   }
 
   void _notifyPersistedStateSaved(PersistedAppState state) {

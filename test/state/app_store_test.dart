@@ -506,6 +506,55 @@ void main() {
   );
 
   test(
+    'applying a suppressed external snapshot blocks stale queued observer notifications',
+    () async {
+      final persistence = DeferredPersistence();
+      final observedStates = <PersistedAppState>[];
+      final store = AppStore.empty(
+        persistence: persistence,
+        onPersistedStateSaved: observedStates.add,
+      );
+
+      store.createFood(tomato());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(persistence.saveCount, 1);
+      expect(observedStates, isEmpty);
+
+      final applyFuture = store.applyExternalPersistedState(
+        PersistedAppState(
+          userFoods: [cucumber()],
+          userDishes: const [],
+          userExercises: const [],
+          userTrainingPlans: const [],
+          mealEntries: const [],
+          preferences: const AppPreferences.defaults(),
+          activeWorkoutSession: null,
+          completedWorkoutSessions: const [],
+          mealEntryCounter: 0,
+          workoutSessionCounter: 0,
+        ),
+        notifyPersistedStateObserver: false,
+      );
+
+      await Future<void>.delayed(Duration.zero);
+
+      persistence.completeSave();
+      await flushPersistenceQueue();
+
+      expect(persistence.saveCount, 2);
+      expect(observedStates, isEmpty);
+
+      persistence.completeSave();
+      await applyFuture;
+      await flushPersistenceQueue();
+
+      expect(observedStates, isEmpty);
+      expect(persistence.savedState!.userFoods.single.id, 'cucumber');
+    },
+  );
+
+  test(
     'save failures are reported and later callbacks still succeed',
     () async {
       final persistence = FlakyPersistence(failuresRemaining: 1);
@@ -543,6 +592,60 @@ void main() {
         persistence.savedState!.userFoods.map((food) => food.id).toList(),
         ['tomato', 'cucumber'],
       );
+    },
+  );
+
+  test(
+    'applying an invalid external snapshot fails before replacing local state',
+    () async {
+      final persistence = FakePersistence();
+      final observedStates = <PersistedAppState>[];
+      final store = AppStore.empty(
+        persistence: persistence,
+        onPersistedStateSaved: observedStates.add,
+      );
+
+      store.createFood(tomato());
+      await flushPersistenceQueue();
+      observedStates.clear();
+
+      final invalidSnapshot = PersistedAppState(
+        userFoods: const [],
+        userDishes: const [],
+        userExercises: const [],
+        userTrainingPlans: const [
+          TrainingPlan(
+            id: 'broken-plan',
+            name: 'Broken plan',
+            description: 'References a missing exercise.',
+            exercises: [
+              TrainingExercise(
+                exerciseId: 'missing-exercise',
+                sets: 3,
+                reps: 8,
+                unit: 'reps',
+              ),
+            ],
+          ),
+        ],
+        mealEntries: const [],
+        preferences: const AppPreferences.defaults(),
+        activeWorkoutSession: null,
+        completedWorkoutSessions: const [],
+        mealEntryCounter: 0,
+        workoutSessionCounter: 0,
+      );
+
+      await expectLater(
+        store.applyExternalPersistedState(invalidSnapshot),
+        throwsArgumentError,
+      );
+
+      expect(store.itemById('tomato'), isNotNull);
+      expect(store.trainingPlanById('broken-plan'), isNull);
+      expect(persistence.saveCount, 1);
+      expect(observedStates, isEmpty);
+      expect(persistence.savedState!.userFoods.single.id, 'tomato');
     },
   );
 
