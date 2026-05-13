@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fitapp/models/catalog_item.dart';
 import 'package:fitapp/models/dish_item.dart';
 import 'package:fitapp/models/exercise.dart';
@@ -82,6 +84,26 @@ class FlakyPersistence extends FakePersistence {
     }
     savedState = state;
     loadedState = state;
+  }
+}
+
+class DeferredPersistence extends FakePersistence {
+  Completer<void> _saveCompleter = Completer<void>();
+
+  @override
+  Future<void> save(PersistedAppState state) async {
+    saveCount += 1;
+    savedState = state;
+    loadedState = state;
+    await _saveCompleter.future;
+    _saveCompleter = Completer<void>();
+  }
+
+  void completeSave() {
+    if (_saveCompleter.isCompleted) {
+      return;
+    }
+    _saveCompleter.complete();
   }
 }
 
@@ -200,6 +222,63 @@ void main() {
     expect(persistence.savedState!.userFoods.single.id, 'tomato');
   });
 
+  test(
+    'AppStore post-save observer runs only after durable persisted mutations',
+    () async {
+      final persistence = DeferredPersistence();
+      final observedStates = <PersistedAppState>[];
+      final store = AppStore.empty(
+        persistence: persistence,
+        onPersistedStateSaved: observedStates.add,
+      );
+
+      store.createFood(tomato());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(persistence.saveCount, 1);
+      expect(observedStates, isEmpty);
+
+      persistence.completeSave();
+      await flushPersistenceQueue();
+
+      expect(observedStates, hasLength(1));
+      expect(observedStates.single.userFoods.single.id, 'tomato');
+
+      store.createFood(cucumber());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(observedStates, hasLength(1));
+
+      persistence.completeSave();
+      await flushPersistenceQueue();
+
+      expect(observedStates, hasLength(2));
+      expect(observedStates.last.userFoods.map((food) => food.id).toList(), [
+        'tomato',
+        'cucumber',
+      ]);
+    },
+  );
+
+  test(
+    'AppStore post-save observer is not fired for transient auth changes',
+    () async {
+      final persistence = FakePersistence();
+      final observedStates = <PersistedAppState>[];
+      final store = AppStore.empty(
+        persistence: persistence,
+        onPersistedStateSaved: observedStates.add,
+      );
+
+      store.logIn();
+      store.logOut();
+      await flushPersistenceQueue();
+
+      expect(persistence.saveCount, 0);
+      expect(observedStates, isEmpty);
+    },
+  );
+
   test('AppStore does not persist auth flag', () async {
     final persistence = FakePersistence();
     final store = AppStore.empty(persistence: persistence);
@@ -274,33 +353,198 @@ void main() {
     expect(() => store.deleteTrainingPlan('chest-day'), throwsStateError);
   });
 
-  test('save failures are reported and later saves still succeed', () async {
-    final persistence = FlakyPersistence(failuresRemaining: 1);
-    final store = AppStore.empty(persistence: persistence);
-    final originalOnError = FlutterError.onError;
-    final reportedErrors = <FlutterErrorDetails>[];
-    FlutterError.onError = reportedErrors.add;
-    addTearDown(() {
-      FlutterError.onError = originalOnError;
-    });
+  test(
+    'applying an external snapshot replaces persisted state and re-persists it',
+    () async {
+      final persistence = FakePersistence();
+      final observedStates = <PersistedAppState>[];
+      final store = AppStore(
+        persistence: persistence,
+        onPersistedStateSaved: observedStates.add,
+      );
+      var listenerNotifications = 0;
+      store.addListener(() {
+        listenerNotifications += 1;
+      });
 
-    store.createFood(tomato());
-    await flushPersistenceQueue();
+      store.createFood(tomato());
+      store.setAppearancePreference(AppearancePreference.dark);
+      await flushPersistenceQueue();
 
-    expect(persistence.saveCount, 1);
-    expect(reportedErrors, hasLength(1));
-    expect(persistence.savedState, isNull);
+      listenerNotifications = 0;
+      observedStates.clear();
 
-    store.createFood(cucumber());
-    await flushPersistenceQueue();
+      final externalSnapshot = PersistedAppState(
+        userFoods: [cucumber()],
+        userDishes: const [],
+        userExercises: const [],
+        userTrainingPlans: const [
+          TrainingPlan(
+            id: 'remote-plan',
+            name: 'Remote plan',
+            description: 'References a built-in exercise.',
+            exercises: [
+              TrainingExercise(
+                exerciseId: 'pushups',
+                sets: 4,
+                reps: 10,
+                unit: 'reps',
+              ),
+            ],
+          ),
+        ],
+        mealEntries: const [
+          MealEntry(
+            id: 'meal-entry-8',
+            sourceItemId: 'cucumber',
+            itemName: 'Cucumber',
+            itemType: CatalogItemType.food,
+            servingSizeGrams: 100,
+            consumedGrams: 150,
+            mode: MealEntryMode.grams,
+            enteredQuantity: 150,
+            nutrition: NutritionValues(
+              calories: 18,
+              protein: 0.9,
+              fat: 0.2,
+              carbs: 3.9,
+            ),
+          ),
+        ],
+        preferences: const AppPreferences(
+          appearance: AppearancePreference.light,
+          language: LanguagePreference.english,
+          workoutWeightUnit: WorkoutWeightUnit.kilograms,
+          dishWeightUnit: DishWeightUnit.grams,
+          heightUnit: HeightUnit.centimeters,
+          distanceUnit: DistanceUnit.kilometers,
+        ),
+        activeWorkoutSession: WorkoutSession(
+          id: 'workout-session-4',
+          trainingPlanId: 'chest-day',
+          trainingPlanName: 'Chest day',
+          startedAt: DateTime(2026, 4, 20, 10),
+          results: const [
+            WorkoutExerciseResult(
+              exerciseId: 'bench-press',
+              exerciseName: 'Bench press',
+              target: TrainingExercise(
+                exerciseId: 'bench-press',
+                sets: 3,
+                reps: 8,
+                weight: 60,
+                unit: 'kg',
+              ),
+              setLogs: [WorkoutSetLog(reps: 8, weight: 60)],
+            ),
+          ],
+        ),
+        completedWorkoutSessions: const [],
+        mealEntryCounter: 8,
+        workoutSessionCounter: 4,
+      );
 
-    expect(persistence.saveCount, 2);
-    expect(reportedErrors, hasLength(1));
-    expect(persistence.savedState!.userFoods.map((food) => food.id).toList(), [
-      'tomato',
-      'cucumber',
-    ]);
-  });
+      await store.applyExternalPersistedState(externalSnapshot);
+
+      expect(listenerNotifications, 1);
+      expect(store.itemById('carrot'), isNotNull);
+      expect(store.exerciseById('pushups'), isNotNull);
+      expect(store.trainingPlanById('chest-day'), isNotNull);
+      expect(store.itemById('tomato'), isNull);
+      expect(store.itemById('cucumber'), isNotNull);
+      expect(store.trainingPlanById('remote-plan'), isNotNull);
+      expect(store.mealEntries.single.id, 'meal-entry-8');
+      expect(store.preferences.appearance, AppearancePreference.light);
+      expect(store.activeWorkoutSession!.id, 'workout-session-4');
+      expect(observedStates, hasLength(1));
+      expect(persistence.saveCount, 3);
+      expect(persistence.savedState!.userFoods.single.id, 'cucumber');
+      expect(
+        persistence
+            .savedState!
+            .userTrainingPlans
+            .single
+            .exercises
+            .single
+            .exerciseId,
+        'pushups',
+      );
+    },
+  );
+
+  test(
+    'applying an external snapshot can suppress the post-save observer',
+    () async {
+      final persistence = FakePersistence();
+      final observedStates = <PersistedAppState>[];
+      final store = AppStore.empty(
+        persistence: persistence,
+        onPersistedStateSaved: observedStates.add,
+      );
+      final externalSnapshot = PersistedAppState(
+        userFoods: [cucumber()],
+        userDishes: const [],
+        userExercises: const [],
+        userTrainingPlans: const [],
+        mealEntries: const [],
+        preferences: const AppPreferences.defaults(),
+        activeWorkoutSession: null,
+        completedWorkoutSessions: const [],
+        mealEntryCounter: 0,
+        workoutSessionCounter: 0,
+      );
+
+      await store.applyExternalPersistedState(
+        externalSnapshot,
+        notifyPersistedStateObserver: false,
+      );
+
+      expect(observedStates, isEmpty);
+      expect(persistence.saveCount, 1);
+      expect(persistence.savedState!.userFoods.single.id, 'cucumber');
+    },
+  );
+
+  test(
+    'save failures are reported and later callbacks still succeed',
+    () async {
+      final persistence = FlakyPersistence(failuresRemaining: 1);
+      final observedStates = <PersistedAppState>[];
+      final store = AppStore.empty(
+        persistence: persistence,
+        onPersistedStateSaved: observedStates.add,
+      );
+      final originalOnError = FlutterError.onError;
+      final reportedErrors = <FlutterErrorDetails>[];
+      FlutterError.onError = reportedErrors.add;
+      addTearDown(() {
+        FlutterError.onError = originalOnError;
+      });
+
+      store.createFood(tomato());
+      await flushPersistenceQueue();
+
+      expect(persistence.saveCount, 1);
+      expect(reportedErrors, hasLength(1));
+      expect(persistence.savedState, isNull);
+      expect(observedStates, isEmpty);
+
+      store.createFood(cucumber());
+      await flushPersistenceQueue();
+
+      expect(persistence.saveCount, 2);
+      expect(reportedErrors, hasLength(1));
+      expect(observedStates, hasLength(1));
+      expect(observedStates.single.userFoods.map((food) => food.id).toList(), [
+        'tomato',
+        'cucumber',
+      ]);
+      expect(
+        persistence.savedState!.userFoods.map((food) => food.id).toList(),
+        ['tomato', 'cucumber'],
+      );
+    },
+  );
 
   test('AppStore.hydrated restores counters and runtime state', () async {
     final persistence = FakePersistence(

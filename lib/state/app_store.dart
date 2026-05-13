@@ -14,8 +14,14 @@ import '../models/workout_session.dart';
 import 'persistence/app_store_persistence.dart';
 import 'persistence/persisted_app_state.dart';
 
+typedef PersistedAppStateObserver = void Function(PersistedAppState state);
+
 class AppStore extends ChangeNotifier {
-  AppStore({AppStorePersistence? persistence}) : _persistence = persistence {
+  AppStore({
+    AppStorePersistence? persistence,
+    PersistedAppStateObserver? onPersistedStateSaved,
+  }) : _persistence = persistence,
+       _onPersistedStateSaved = onPersistedStateSaved {
     _runWithoutPersistence(() {
       _bootstrapSampleFoods();
       _bootstrapSampleExercises();
@@ -23,14 +29,21 @@ class AppStore extends ChangeNotifier {
     });
   }
 
-  AppStore.empty({AppStorePersistence? persistence})
-    : _persistence = persistence,
-      super();
+  AppStore.empty({
+    AppStorePersistence? persistence,
+    PersistedAppStateObserver? onPersistedStateSaved,
+  }) : _persistence = persistence,
+       _onPersistedStateSaved = onPersistedStateSaved,
+       super();
 
   static Future<AppStore> hydrated({
     required AppStorePersistence persistence,
+    PersistedAppStateObserver? onPersistedStateSaved,
   }) async {
-    final store = AppStore(persistence: persistence);
+    final store = AppStore(
+      persistence: persistence,
+      onPersistedStateSaved: onPersistedStateSaved,
+    );
     final loadedState = await persistence.load();
     if (loadedState == null) {
       return store;
@@ -48,6 +61,7 @@ class AppStore extends ChangeNotifier {
   final Set<String> _builtInExerciseIds = <String>{};
   final Set<String> _builtInTrainingPlanIds = <String>{};
   final AppStorePersistence? _persistence;
+  final PersistedAppStateObserver? _onPersistedStateSaved;
   AppPreferences _preferences = const AppPreferences.defaults();
   bool _isLoggedIn = false;
   WorkoutSession? _activeWorkoutSession;
@@ -302,6 +316,17 @@ class AppStore extends ChangeNotifier {
     }
     _isLoggedIn = false;
     _didMutateTransientState();
+  }
+
+  Future<void> applyExternalPersistedState(
+    PersistedAppState state, {
+    bool notifyPersistedStateObserver = true,
+  }) async {
+    _applyPersistedState(state);
+    notifyListeners();
+    await _schedulePersistenceSave(
+      notifyPersistedStateObserver: notifyPersistedStateObserver,
+    );
   }
 
   String formatWorkoutWeight(double kilograms) {
@@ -725,7 +750,7 @@ class AppStore extends ChangeNotifier {
 
   void _didMutatePersistedState() {
     notifyListeners();
-    _schedulePersistenceSave();
+    unawaited(_schedulePersistenceSave());
   }
 
   void _didMutateTransientState() {
@@ -742,16 +767,23 @@ class AppStore extends ChangeNotifier {
     }
   }
 
-  void _schedulePersistenceSave() {
+  Future<void> _schedulePersistenceSave({
+    bool notifyPersistedStateObserver = true,
+  }) {
     final persistence = _persistence;
     if (persistence == null || _isPersistenceSuspended) {
-      return;
+      return Future<void>.value();
     }
 
     final snapshot = _toPersistedAppState();
     _pendingSave = _pendingSave
         .catchError((Object _, StackTrace __) {})
-        .then((_) => persistence.save(snapshot))
+        .then((_) async {
+          await persistence.save(snapshot);
+          if (notifyPersistedStateObserver) {
+            _notifyPersistedStateSaved(snapshot);
+          }
+        })
         .catchError((Object error, StackTrace stackTrace) {
           FlutterError.reportError(
             FlutterErrorDetails(
@@ -762,6 +794,7 @@ class AppStore extends ChangeNotifier {
             ),
           );
         });
+    return _pendingSave;
   }
 
   PersistedAppState _toPersistedAppState() {
@@ -803,17 +836,29 @@ class AppStore extends ChangeNotifier {
       _resetRuntimeStateToBuiltIns();
 
       for (final food in state.userFoods) {
-        createFood(food);
+        if (_builtInCatalogIds.contains(food.id)) {
+          continue;
+        }
+        _catalog[food.id] = CatalogItem.food(food.copyWith());
       }
       for (final dish in state.userDishes) {
-        createDish(dish);
+        if (_builtInCatalogIds.contains(dish.id)) {
+          continue;
+        }
+        _catalog[dish.id] = CatalogItem.dish(_freezeDish(dish));
       }
       for (final exercise in state.userExercises) {
-        createExercise(exercise);
+        if (_builtInExerciseIds.contains(exercise.id)) {
+          continue;
+        }
+        _exercises[exercise.id] = _freezeExercise(exercise);
       }
 
       for (final plan in state.userTrainingPlans) {
-        createTrainingPlan(plan);
+        if (_builtInTrainingPlanIds.contains(plan.id)) {
+          continue;
+        }
+        _trainingPlans.add(_freezeTrainingPlan(plan));
       }
 
       _mealEntries
@@ -828,6 +873,27 @@ class AppStore extends ChangeNotifier {
       _workoutSessionCounter = state.workoutSessionCounter;
       _isLoggedIn = false;
     });
+  }
+
+  void _notifyPersistedStateSaved(PersistedAppState state) {
+    final observer = _onPersistedStateSaved;
+    if (observer == null) {
+      return;
+    }
+    try {
+      observer(state);
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'fitapp',
+          context: ErrorDescription(
+            'while notifying persisted AppStore state observers',
+          ),
+        ),
+      );
+    }
   }
 
   void _assertCatalogItemIsUserDefined(String id) {
