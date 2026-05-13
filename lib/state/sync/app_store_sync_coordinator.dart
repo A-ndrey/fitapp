@@ -44,12 +44,14 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
   bool _isUploadLoopRunning = false;
 
   AppStoreSyncStatus get status => _status;
+  void Function(PersistedAppState) get persistedStateObserver =>
+      _handlePersistedStateSaved;
 
   Future<void> start() {
     return _startupFuture ??= _runStartupReconciliation();
   }
 
-  void onPersistedStateSaved(PersistedAppState state) {
+  void _handlePersistedStateSaved(PersistedAppState state) {
     unawaited(_enqueueUpload(state));
   }
 
@@ -77,11 +79,14 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
       final remoteSnapshot = await _syncService.fetch(_installationId!);
 
       if (remoteSnapshot == null) {
-        await _pushSnapshot(localSnapshot);
+        await _pushSnapshot(localSnapshot, force: true);
         return;
       }
 
       final localSnapshotHash = _snapshotHash(localSnapshot);
+      final lastSyncedSnapshotHash = _metadata?.lastSyncedSnapshotHash;
+      final acceptedRemoteTimestamp = _metadata?.lastKnownRemoteUpdatedAt;
+
       if (remoteSnapshot.snapshotHash == localSnapshotHash) {
         await _persistSyncMetadata(
           lastKnownRemoteUpdatedAt: remoteSnapshot.updatedAt,
@@ -98,26 +103,36 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
         return;
       }
 
-      final lastSyncedSnapshotHash = _metadata?.lastSyncedSnapshotHash;
-      if (lastSyncedSnapshotHash != null &&
-          lastSyncedSnapshotHash != localSnapshotHash) {
-        await _pushSnapshot(localSnapshot);
+      final localHasUnsyncedChanges =
+          lastSyncedSnapshotHash == null ||
+          lastSyncedSnapshotHash != localSnapshotHash;
+      final remoteIsNewerThanAccepted =
+          acceptedRemoteTimestamp != null &&
+          remoteSnapshot.updatedAt.isAfter(acceptedRemoteTimestamp);
+
+      if (remoteIsNewerThanAccepted && !localHasUnsyncedChanges) {
+        await _applyRemoteSnapshot(remoteSnapshot.state);
+        await _persistSyncMetadata(
+          lastKnownRemoteUpdatedAt: remoteSnapshot.updatedAt,
+          lastSyncedSnapshotHash: remoteSnapshot.snapshotHash,
+          lastSyncError: null,
+        );
+        _setStatus(
+          _status.copyWith(
+            phase: AppStoreSyncPhase.synced,
+            lastSyncedAt: remoteSnapshot.updatedAt,
+            lastErrorMessage: null,
+          ),
+        );
         return;
       }
 
-      await _applyRemoteSnapshot(remoteSnapshot.state);
-      await _persistSyncMetadata(
-        lastKnownRemoteUpdatedAt: remoteSnapshot.updatedAt,
-        lastSyncedSnapshotHash: remoteSnapshot.snapshotHash,
-        lastSyncError: null,
-      );
-      _setStatus(
-        _status.copyWith(
-          phase: AppStoreSyncPhase.synced,
-          lastSyncedAt: remoteSnapshot.updatedAt,
-          lastErrorMessage: null,
-        ),
-      );
+      if (localHasUnsyncedChanges ||
+          !remoteIsNewerThanAccepted ||
+          acceptedRemoteTimestamp == null) {
+        await _pushSnapshot(localSnapshot, force: true);
+        return;
+      }
     } catch (error, stackTrace) {
       await _handleSyncFailure(error, stackTrace);
     }
@@ -178,9 +193,12 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     }
   }
 
-  Future<void> _pushSnapshot(PersistedAppState snapshot) async {
+  Future<void> _pushSnapshot(
+    PersistedAppState snapshot, {
+    bool force = false,
+  }) async {
     final snapshotHash = _snapshotHash(snapshot);
-    if (_metadata?.lastSyncedSnapshotHash == snapshotHash) {
+    if (!force && _metadata?.lastSyncedSnapshotHash == snapshotHash) {
       _setStatus(
         _status.copyWith(
           phase: AppStoreSyncPhase.synced,

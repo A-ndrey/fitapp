@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitapp/models/app_preferences.dart';
 import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/nutrition.dart';
@@ -27,15 +28,9 @@ void main() {
 
       await harness.coordinator.start();
 
-      expect(harness.syncService.pushCalls, hasLength(1));
-      expect(
-        harness.syncService.pushCalls.single.installationId,
-        'installation-1',
-      );
-      expect(
-        harness.syncService.pushCalls.single.state.userFoods.single.id,
-        'tomato',
-      );
+      expect(harness.pushCalls, hasLength(1));
+      expect(harness.pushCalls.single.installationId, 'installation-1');
+      expect(harness.pushCalls.single.state.userFoods.single.id, 'tomato');
       expect(harness.appliedRemoteSnapshots, isEmpty);
       expect(harness.coordinator.status.phase, AppStoreSyncPhase.synced);
       expect(harness.coordinator.status.lastSyncedAt, isNotNull);
@@ -49,7 +44,7 @@ void main() {
   );
 
   test(
-    'startup reconcile applies remote state when remote exists and is newer',
+    'startup reconcile applies remote state when remote timestamp is newer than the accepted remote timestamp',
     () async {
       final localSnapshot = _stateWithFood('tomato');
       final remoteSnapshot = _stateWithFood('cucumber');
@@ -69,7 +64,7 @@ void main() {
 
       await harness.coordinator.start();
 
-      expect(harness.syncService.pushCalls, isEmpty);
+      expect(harness.pushCalls, isEmpty);
       expect(harness.appliedRemoteSnapshots, hasLength(1));
       expect(
         harness.appliedRemoteSnapshots.single.userFoods.single.id,
@@ -85,7 +80,37 @@ void main() {
   );
 
   test(
-    'startup reconcile uploads local when local is unsynced/newer',
+    'startup reconcile uploads local when remote timestamp is not newer than the accepted remote timestamp',
+    () async {
+      final localSnapshot = _stateWithFood('tomato');
+      final remoteSnapshot = _stateWithFood('cucumber');
+      final acceptedRemoteTimestamp = DateTime.utc(2026, 5, 13, 12);
+      final harness = _CoordinatorHarness(
+        localSnapshot: localSnapshot,
+        remoteSnapshot: RemoteSnapshot(
+          state: remoteSnapshot,
+          updatedAt: acceptedRemoteTimestamp,
+          snapshotHash: _snapshotHash(remoteSnapshot),
+        ),
+        initialMetadata: SyncMetadata(
+          installationId: 'installation-1',
+          lastKnownRemoteUpdatedAt: acceptedRemoteTimestamp,
+          lastSyncedSnapshotHash: _snapshotHash(localSnapshot),
+        ),
+      );
+
+      await harness.coordinator.start();
+
+      expect(harness.pushCalls, hasLength(1));
+      expect(harness.pushCalls.single.state.userFoods.single.id, 'tomato');
+      expect(harness.appliedRemoteSnapshots, isEmpty);
+      expect(harness.currentLocalSnapshot.userFoods.single.id, 'tomato');
+      expect(harness.coordinator.status.phase, AppStoreSyncPhase.synced);
+    },
+  );
+
+  test(
+    'startup reconcile uploads local when local is unsynced even if remote timestamp is newer',
     () async {
       final lastSyncedSnapshot = _stateWithFood('tomato');
       final localSnapshot = _stateWithFood('cucumber');
@@ -93,50 +118,55 @@ void main() {
         localSnapshot: localSnapshot,
         remoteSnapshot: RemoteSnapshot(
           state: lastSyncedSnapshot,
-          updatedAt: DateTime.utc(2026, 5, 13, 11),
+          updatedAt: DateTime.utc(2026, 5, 13, 12),
           snapshotHash: _snapshotHash(lastSyncedSnapshot),
         ),
         initialMetadata: SyncMetadata(
           installationId: 'installation-1',
-          lastKnownRemoteUpdatedAt: DateTime.utc(2026, 5, 13, 11),
+          lastKnownRemoteUpdatedAt: DateTime.utc(2026, 5, 13, 10),
           lastSyncedSnapshotHash: _snapshotHash(lastSyncedSnapshot),
         ),
       );
 
       await harness.coordinator.start();
 
-      expect(harness.syncService.pushCalls, hasLength(1));
-      expect(
-        harness.syncService.pushCalls.single.state.userFoods.single.id,
-        'cucumber',
-      );
+      expect(harness.pushCalls, hasLength(1));
+      expect(harness.pushCalls.single.state.userFoods.single.id, 'cucumber');
       expect(harness.appliedRemoteSnapshots, isEmpty);
       expect(harness.coordinator.status.phase, AppStoreSyncPhase.synced);
     },
   );
 
   test(
-    'malformed remote payload leaves local state intact and sets error',
+    'malformed remote payload leaves local state intact and sets error after a real decode failure',
     () async {
       final localSnapshot = _stateWithFood('tomato');
       final harness = _CoordinatorHarness(
         localSnapshot: localSnapshot,
-        fetchError: const FormatException('malformed remote payload'),
+        syncService: FirebaseAppStoreSyncService(
+          backend: _StaticRemoteSnapshotStore({
+            'schemaVersion': 1,
+            'updatedAt': Timestamp.fromDate(DateTime.utc(2026, 5, 13, 9)),
+            'snapshotHash': 'hash-malformed',
+            'payload': const <Object?>[],
+          }),
+          knownExerciseIds: const <String>{},
+        ),
       );
 
       await harness.coordinator.start();
 
       expect(harness.appliedRemoteSnapshots, isEmpty);
       expect(harness.currentLocalSnapshot.userFoods.single.id, 'tomato');
-      expect(harness.syncService.pushCalls, isEmpty);
+      expect(harness.pushCalls, isEmpty);
       expect(harness.coordinator.status.phase, AppStoreSyncPhase.error);
       expect(
         harness.coordinator.status.lastErrorMessage,
-        contains('malformed remote payload'),
+        contains('PersistedAppState'),
       );
       expect(
         harness.metadataStore.savedMetadata.single.lastSyncError,
-        contains('malformed remote payload'),
+        contains('PersistedAppState'),
       );
     },
   );
@@ -178,17 +208,14 @@ void main() {
 
       await harness.coordinator.start();
 
-      harness.coordinator.onPersistedStateSaved(firstQueuedSnapshot);
+      harness.coordinator.persistedStateObserver(firstQueuedSnapshot);
       await _pumpEventQueue();
-      harness.coordinator.onPersistedStateSaved(_stateWithFood('onion'));
-      harness.coordinator.onPersistedStateSaved(finalQueuedSnapshot);
+      harness.coordinator.persistedStateObserver(_stateWithFood('onion'));
+      harness.coordinator.persistedStateObserver(finalQueuedSnapshot);
       await _pumpEventQueue();
 
-      expect(harness.syncService.pushCalls, hasLength(1));
-      expect(
-        harness.syncService.pushCalls.single.state.userFoods.single.id,
-        'cucumber',
-      );
+      expect(harness.pushCalls, hasLength(1));
+      expect(harness.pushCalls.single.state.userFoods.single.id, 'cucumber');
 
       firstPushCompleter.complete(
         RemoteSnapshot(
@@ -199,13 +226,10 @@ void main() {
       );
       await _pumpEventQueue();
 
-      expect(harness.syncService.pushCalls, hasLength(2));
+      expect(harness.pushCalls, hasLength(2));
+      expect(harness.pushCalls.last.state.userFoods.single.id, 'pepper');
       expect(
-        harness.syncService.pushCalls.last.state.userFoods.single.id,
-        'pepper',
-      );
-      expect(
-        harness.syncService.pushCalls.last.snapshotHash,
+        harness.pushCalls.last.snapshotHash,
         _snapshotHash(finalQueuedSnapshot),
       );
       expect(harness.coordinator.status.phase, AppStoreSyncPhase.synced);
@@ -246,18 +270,15 @@ void main() {
 
     await harness.coordinator.start();
 
-    harness.coordinator.onPersistedStateSaved(failedSnapshot);
+    harness.coordinator.persistedStateObserver(failedSnapshot);
     await _pumpEventQueue();
     expect(harness.coordinator.status.phase, AppStoreSyncPhase.error);
 
     harness.currentLocalSnapshot = freshSnapshot;
     await harness.coordinator.syncNow();
 
-    expect(harness.syncService.pushCalls, hasLength(2));
-    expect(
-      harness.syncService.pushCalls.last.state.userFoods.single.id,
-      'cucumber',
-    );
+    expect(harness.pushCalls, hasLength(2));
+    expect(harness.pushCalls.last.state.userFoods.single.id, 'cucumber');
     expect(harness.coordinator.status.phase, AppStoreSyncPhase.synced);
   });
 
@@ -319,6 +340,7 @@ class _CoordinatorHarness {
     RemoteSnapshot? remoteSnapshot,
     SyncMetadata? initialMetadata,
     Object? fetchError,
+    FirebaseAppStoreSyncService? syncService,
     Future<RemoteSnapshot> Function(
       String installationId,
       PersistedAppState state,
@@ -328,15 +350,20 @@ class _CoordinatorHarness {
   }) : _currentLocalSnapshot = localSnapshot,
        metadataStore = _FakeSyncMetadataStore(initialMetadata),
        installationIdStore = _FakeInstallationIdStore(),
-       syncService = _FakeFirebaseAppStoreSyncService(
-         remoteSnapshot: remoteSnapshot,
-         fetchError: fetchError,
-         onPush: onPush,
-       ) {
+       syncService =
+           syncService ??
+           _FakeFirebaseAppStoreSyncService(
+             remoteSnapshot: remoteSnapshot,
+             fetchError: fetchError,
+             onPush: onPush,
+           ) {
+    pushCalls = this.syncService is _FakeFirebaseAppStoreSyncService
+        ? (this.syncService as _FakeFirebaseAppStoreSyncService).pushCalls
+        : const <_PushCall>[];
     coordinator = AppStoreSyncCoordinator(
       installationIdStore: installationIdStore,
       metadataStore: metadataStore,
-      syncService: syncService,
+      syncService: this.syncService,
       loadLocalSnapshot: () async => _currentLocalSnapshot,
       applyRemoteSnapshot: (state) async {
         appliedRemoteSnapshots.add(state);
@@ -347,7 +374,8 @@ class _CoordinatorHarness {
 
   final _FakeSyncMetadataStore metadataStore;
   final _FakeInstallationIdStore installationIdStore;
-  final _FakeFirebaseAppStoreSyncService syncService;
+  final FirebaseAppStoreSyncService syncService;
+  late final List<_PushCall> pushCalls;
   final List<PersistedAppState> appliedRemoteSnapshots = <PersistedAppState>[];
   late final AppStoreSyncCoordinator coordinator;
   PersistedAppState _currentLocalSnapshot;
@@ -452,6 +480,18 @@ class _PushCall {
 class _NoopRemoteSnapshotStore implements RemoteSnapshotStore {
   @override
   Future<Map<String, Object?>?> fetch(String path) async => null;
+
+  @override
+  Future<void> set(String path, Map<String, Object?> data) async {}
+}
+
+class _StaticRemoteSnapshotStore implements RemoteSnapshotStore {
+  _StaticRemoteSnapshotStore(this.document);
+
+  final Map<String, Object?> document;
+
+  @override
+  Future<Map<String, Object?>?> fetch(String path) async => document;
 
   @override
   Future<void> set(String path, Map<String, Object?> data) async {}
