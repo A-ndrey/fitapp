@@ -14,19 +14,24 @@ import 'remote_snapshot.dart';
 
 typedef LocalSnapshotLoader = Future<PersistedAppState?> Function();
 typedef RemoteSnapshotApplier = Future<void> Function(PersistedAppState state);
+typedef PersistedStateObserverBinder =
+    void Function(void Function(PersistedAppState state) observer);
 
 class AppStoreSyncCoordinator extends ChangeNotifier {
   AppStoreSyncCoordinator({
     InstallationIdStore? installationIdStore,
     SharedPreferencesSyncMetadataStore? metadataStore,
     FirebaseAppStoreSyncService? syncService,
+    PersistedStateObserverBinder? bindPersistedStateObserver,
     required LocalSnapshotLoader loadLocalSnapshot,
     required RemoteSnapshotApplier applyRemoteSnapshot,
   }) : _installationIdStore = installationIdStore ?? InstallationIdStore(),
        _metadataStore = metadataStore ?? SharedPreferencesSyncMetadataStore(),
        _syncService = syncService ?? FirebaseAppStoreSyncService(),
        _loadLocalSnapshot = loadLocalSnapshot,
-       _applyRemoteSnapshot = applyRemoteSnapshot;
+       _applyRemoteSnapshot = applyRemoteSnapshot {
+    bindPersistedStateObserver?.call(persistedStateObserver);
+  }
 
   final InstallationIdStore _installationIdStore;
   final SharedPreferencesSyncMetadataStore _metadataStore;

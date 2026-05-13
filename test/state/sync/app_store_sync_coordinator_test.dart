@@ -236,6 +236,44 @@ void main() {
     },
   );
 
+  test(
+    'coordinator subscribes itself through the persisted-state binder',
+    () async {
+      final initialSnapshot = _stateWithFood('tomato');
+      final updatedSnapshot = _stateWithFood('cucumber');
+      void Function(PersistedAppState)? harnessBoundObserver;
+      var binderCallCount = 0;
+      final harness = _CoordinatorHarness(
+        localSnapshot: initialSnapshot,
+        remoteSnapshot: RemoteSnapshot(
+          state: initialSnapshot,
+          updatedAt: DateTime.utc(2026, 5, 13, 9),
+          snapshotHash: _snapshotHash(initialSnapshot),
+        ),
+        initialMetadata: SyncMetadata(
+          installationId: 'installation-1',
+          lastKnownRemoteUpdatedAt: DateTime.utc(2026, 5, 13, 9),
+          lastSyncedSnapshotHash: _snapshotHash(initialSnapshot),
+        ),
+        bindPersistedStateObserver: (observer) {
+          harnessBoundObserver = observer;
+          binderCallCount += 1;
+        },
+      );
+
+      expect(binderCallCount, 1);
+      expect(harnessBoundObserver, isNotNull);
+
+      await harness.coordinator.start();
+
+      harnessBoundObserver!(updatedSnapshot);
+      await _pumpEventQueue();
+
+      expect(harness.pushCalls, hasLength(1));
+      expect(harness.pushCalls.single.state.userFoods.single.id, 'cucumber');
+    },
+  );
+
   test('manual retry triggers a sync from the latest local snapshot', () async {
     final syncedSnapshot = _stateWithFood('tomato');
     final failedSnapshot = _stateWithFood('onion');
@@ -341,6 +379,8 @@ class _CoordinatorHarness {
     SyncMetadata? initialMetadata,
     Object? fetchError,
     FirebaseAppStoreSyncService? syncService,
+    void Function(void Function(PersistedAppState) observer)?
+    bindPersistedStateObserver,
     Future<RemoteSnapshot> Function(
       String installationId,
       PersistedAppState state,
@@ -364,6 +404,7 @@ class _CoordinatorHarness {
       installationIdStore: installationIdStore,
       metadataStore: metadataStore,
       syncService: this.syncService,
+      bindPersistedStateObserver: bindPersistedStateObserver,
       loadLocalSnapshot: () async => _currentLocalSnapshot,
       applyRemoteSnapshot: (state) async {
         appliedRemoteSnapshots.add(state);
