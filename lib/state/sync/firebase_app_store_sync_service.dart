@@ -47,6 +47,12 @@ class FirebaseAppStoreSyncService {
     if (remoteSnapshot == null) {
       throw StateError('Remote snapshot was missing after push.');
     }
+    if (remoteSnapshot.snapshotHash != snapshotHash) {
+      throw StateError(
+        'Remote snapshot hash mismatch after push: expected '
+        '"$snapshotHash", got "${remoteSnapshot.snapshotHash}".',
+      );
+    }
 
     return remoteSnapshot;
   }

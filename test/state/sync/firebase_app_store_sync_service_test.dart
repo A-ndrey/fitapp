@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitapp/state/persistence/persisted_app_state.dart';
 import 'package:fitapp/state/persistence/persisted_app_state_codec.dart';
@@ -29,6 +31,29 @@ void main() {
       expect(first, isNotEmpty);
       expect(first.length, greaterThanOrEqualTo(32));
       expect(reloaded, first);
+    },
+  );
+
+  test(
+    'InstallationIdStore returns one ID for concurrent first-use callers',
+    () async {
+      final preferences = _DelayedInstallationIdPreferences();
+      final generatedIds = <String>['generated-id-1', 'generated-id-2'];
+      final installationIdStore = InstallationIdStore(
+        preferencesLoader: () async => preferences,
+        idGenerator: () => generatedIds.removeAt(0),
+      );
+      final firstFuture = installationIdStore.loadOrCreate();
+      final secondFuture = installationIdStore.loadOrCreate();
+
+      await preferences.waitForSetCallCount(1);
+      preferences.completePendingWrites();
+
+      final ids = await Future.wait([firstFuture, secondFuture]);
+
+      expect(ids[0], ids[1]);
+      expect(ids[0], 'generated-id-1');
+      expect(preferences.setStringCallCount, 1);
     },
   );
 
@@ -67,6 +92,34 @@ void main() {
       );
       expect(snapshot.updatedAt, updatedAt);
       expect(snapshot.snapshotHash, 'hash-123');
+    },
+  );
+
+  test(
+    'FirebaseAppStoreSyncService.push fails when fetched snapshot hash differs',
+    () async {
+      final backend = _FakeRemoteSnapshotStore(
+        fetchResult: _remoteDocument(
+          updatedAt: DateTime.utc(2026, 5, 13, 12, 30, 45),
+          snapshotHash: 'other-hash',
+          payload: PersistedAppStateCodec.encode(
+            const PersistedAppState.empty(),
+          ),
+        ),
+      );
+      final service = FirebaseAppStoreSyncService(
+        backend: backend,
+        knownExerciseIds: const {},
+      );
+
+      expect(
+        () => service.push(
+          'installation-1',
+          const PersistedAppState.empty(),
+          'expected-hash',
+        ),
+        throwsA(isA<StateError>()),
+      );
     },
   );
 
@@ -216,5 +269,48 @@ class _FakeRemoteSnapshotStore implements RemoteSnapshotStore {
   Future<void> set(String path, Map<String, Object?> data) async {
     lastSetPath = path;
     lastSetData = Map<String, Object?>.from(data);
+  }
+}
+
+class _DelayedInstallationIdPreferences implements InstallationIdPreferences {
+  final Map<String, String> _values = <String, String>{};
+  final List<Completer<bool>> _pendingSetCompleters = <Completer<bool>>[];
+  final Completer<void> _firstSetCallCompleter = Completer<void>();
+  int setStringCallCount = 0;
+
+  Future<void> waitForSetCallCount(int count) async {
+    if (setStringCallCount >= count) {
+      return;
+    }
+
+    await _firstSetCallCompleter.future;
+  }
+
+  void completePendingWrites() {
+    for (final completer in _pendingSetCompleters) {
+      if (!completer.isCompleted) {
+        completer.complete(true);
+      }
+    }
+  }
+
+  @override
+  String? getString(String key) => _values[key];
+
+  @override
+  Future<bool> setString(String key, String value) {
+    setStringCallCount += 1;
+    if (!_firstSetCallCompleter.isCompleted) {
+      _firstSetCallCompleter.complete();
+    }
+
+    final completer = Completer<bool>();
+    _pendingSetCompleters.add(completer);
+    completer.future.then((didSave) {
+      if (didSave) {
+        _values[key] = value;
+      }
+    });
+    return completer.future;
   }
 }
