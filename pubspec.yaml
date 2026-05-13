@@ -32,6 +32,8 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  firebase_core: any
+  cloud_firestore: any
   intl: any
   shared_preferences: ^2.5.3
 
