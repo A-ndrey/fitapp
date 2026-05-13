@@ -59,10 +59,48 @@ void main() {
   );
 
   test(
+    'SharedPreferencesSyncMetadataStore throws when persisted value is an empty string',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        SharedPreferencesSyncMetadataStore.storageKey: '',
+      });
+      final store = SharedPreferencesSyncMetadataStore();
+
+      expect(store.load, throwsFormatException);
+    },
+  );
+
+  test(
     'SharedPreferencesSyncMetadataStore throws when persisted value is not a JSON object',
     () async {
       SharedPreferences.setMockInitialValues({
         SharedPreferencesSyncMetadataStore.storageKey: '[]',
+      });
+      final store = SharedPreferencesSyncMetadataStore();
+
+      expect(store.load, throwsFormatException);
+    },
+  );
+
+  test(
+    'SharedPreferencesSyncMetadataStore throws when installationId is invalid',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        SharedPreferencesSyncMetadataStore.storageKey:
+            '{"installationId":1,"lastKnownRemoteUpdatedAt":null,"lastSyncedSnapshotHash":null,"lastSyncError":null}',
+      });
+      final store = SharedPreferencesSyncMetadataStore();
+
+      expect(store.load, throwsFormatException);
+    },
+  );
+
+  test(
+    'SharedPreferencesSyncMetadataStore throws when lastKnownRemoteUpdatedAt is invalid',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        SharedPreferencesSyncMetadataStore.storageKey:
+            '{"installationId":"installation-123","lastKnownRemoteUpdatedAt":"not-a-date","lastSyncedSnapshotHash":null,"lastSyncError":null}',
       });
       final store = SharedPreferencesSyncMetadataStore();
 
