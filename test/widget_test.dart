@@ -1523,9 +1523,7 @@ void main() {
         name: 'Custom salad',
         description: 'Uses a custom carrot ingredient',
         servingSizeGrams: 100,
-        components: [
-          DishComponent(itemId: 'custom-carrot', grams: 100),
-        ],
+        components: [DishComponent(itemId: 'custom-carrot', grams: 100)],
       ),
     );
     await tester.pumpWidget(FitApp(store: store));
@@ -1704,5 +1702,17 @@ void main() {
       updated.nutritionPerServing(store.catalog).calories,
       closeTo(33.33, 0.0001),
     );
+  });
+
+  testWidgets('fit app accepts injected sync access', (tester) async {
+    final store = AppStore.empty();
+    final syncAccess = FitAppSyncAccess();
+    addTearDown(store.dispose);
+    addTearDown(syncAccess.dispose);
+
+    await tester.pumpWidget(FitApp(store: store, syncAccess: syncAccess));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
