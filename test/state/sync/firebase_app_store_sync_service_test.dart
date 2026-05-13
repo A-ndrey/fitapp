@@ -58,6 +58,35 @@ void main() {
   );
 
   test(
+    'InstallationIdStore serializes concurrent first-use callers across instances',
+    () async {
+      final preferences = _DelayedInstallationIdPreferences();
+      final generatedIds = <String>['generated-id-1', 'generated-id-2'];
+      final firstStore = InstallationIdStore(
+        preferencesLoader: () async => preferences,
+        idGenerator: () => generatedIds.removeAt(0),
+      );
+      final secondStore = InstallationIdStore(
+        preferencesLoader: () async => preferences,
+        idGenerator: () => generatedIds.removeAt(0),
+      );
+
+      final firstFuture = firstStore.loadOrCreate();
+      final secondFuture = secondStore.loadOrCreate();
+
+      await preferences.waitForSetCallCount(1);
+      await Future<void>.delayed(Duration.zero);
+      preferences.completePendingWrites();
+
+      final ids = await Future.wait([firstFuture, secondFuture]);
+
+      expect(ids[0], ids[1]);
+      expect(ids[0], 'generated-id-1');
+      expect(preferences.setStringCallCount, 1);
+    },
+  );
+
+  test(
     'FirebaseAppStoreSyncService.push encodes and writes Firestore payload',
     () async {
       final updatedAt = DateTime.utc(2026, 5, 13, 12, 30, 45);

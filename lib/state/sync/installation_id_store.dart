@@ -13,14 +13,14 @@ class InstallationIdStore {
        _idGenerator = idGenerator ?? _generateInstallationId;
 
   static const storageKey = 'app_store_installation_id_v1';
+  static Future<String>? _sharedInFlightLoadOrCreate;
 
   final Future<InstallationIdPreferences> Function() _preferencesLoader;
   final String Function() _idGenerator;
-  Future<String>? _inFlightLoadOrCreate;
 
   Future<String> loadOrCreate() async {
-    return _inFlightLoadOrCreate ??= _loadOrCreate().whenComplete(() {
-      _inFlightLoadOrCreate = null;
+    return _sharedInFlightLoadOrCreate ??= _loadOrCreate().whenComplete(() {
+      _sharedInFlightLoadOrCreate = null;
     });
   }
 
