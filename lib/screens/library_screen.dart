@@ -20,16 +20,27 @@ class LibraryScreen extends StatefulWidget {
   final AppStore store;
 
   @override
-  State<LibraryScreen> createState() => _LibraryScreenState();
+  State<LibraryScreen> createState() => LibraryScreenState();
 }
 
-class _LibraryScreenState extends State<LibraryScreen> {
+class LibraryScreenState extends State<LibraryScreen> {
   LibrarySection? _selectedSection;
   TrainingLibraryTab? _selectedTrainingTab;
   FoodLibraryTab? _selectedFoodTab;
 
   bool get _inDetail =>
       _selectedTrainingTab != null || _selectedFoodTab != null;
+
+  void resetToRoot() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _selectedSection = null;
+      _selectedTrainingTab = null;
+      _selectedFoodTab = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

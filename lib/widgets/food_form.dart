@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../models/food_item.dart';
 import '../models/nutrition.dart';
 import '../state/app_store.dart';
+import '../ui/core/input/numeric_input_formatters.dart';
 import '../ui/core/widgets/form_shell.dart';
 
 class FoodForm extends StatefulWidget {
@@ -116,6 +117,7 @@ class _FoodFormState extends State<FoodForm> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              inputFormatters: positiveDecimalInputFormatters,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText:
@@ -160,6 +162,7 @@ class _FoodFormState extends State<FoodForm> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  inputFormatters: positiveDecimalInputFormatters,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: l10n?.nutritionCalories ?? 'Calories',
@@ -170,6 +173,7 @@ class _FoodFormState extends State<FoodForm> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  inputFormatters: positiveDecimalInputFormatters,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: l10n?.nutritionProtein ?? 'Protein',
@@ -180,6 +184,7 @@ class _FoodFormState extends State<FoodForm> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  inputFormatters: positiveDecimalInputFormatters,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: l10n?.nutritionFat ?? 'Fat',
@@ -190,6 +195,7 @@ class _FoodFormState extends State<FoodForm> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  inputFormatters: positiveDecimalInputFormatters,
                   decoration: InputDecoration(
                     labelText: l10n?.nutritionCarbs ?? 'Carbs',
                   ),

@@ -4,8 +4,10 @@ import '../l10n/app_localizations.dart';
 import '../models/catalog_item.dart';
 import '../models/dish_item.dart';
 import '../state/app_store.dart';
+import '../ui/core/input/numeric_input_formatters.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/form_shell.dart';
+import '../ui/nutrition/catalog_item_search_sheet.dart';
 
 class DishForm extends StatefulWidget {
   const DishForm({
@@ -27,7 +29,7 @@ class _DishFormState extends State<DishForm> {
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _servingSizeController;
-  final List<DishComponent> _components = <DishComponent>[];
+  final List<_DishComponentDraft> _componentDrafts = <_DishComponentDraft>[];
   String? _errorText;
   bool get _isEditing => widget.initialDish != null;
 
@@ -43,7 +45,14 @@ class _DishFormState extends State<DishForm> {
       text: dish == null ? '' : _formatInput(dish.servingSizeGrams),
     );
     if (dish != null) {
-      _components.addAll(dish.components);
+      _componentDrafts.addAll(
+        dish.components.map(
+          (component) => _DishComponentDraft(
+            itemId: component.itemId,
+            gramsText: _formatInput(component.grams),
+          ),
+        ),
+      );
     }
   }
 
@@ -52,6 +61,9 @@ class _DishFormState extends State<DishForm> {
     _nameController.dispose();
     _descriptionController.dispose();
     _servingSizeController.dispose();
+    for (final draft in _componentDrafts) {
+      draft.dispose();
+    }
     super.dispose();
   }
 
@@ -120,6 +132,7 @@ class _DishFormState extends State<DishForm> {
           TextField(
             controller: _servingSizeController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: positiveDecimalInputFormatters,
             decoration: InputDecoration(
               labelText:
                   l10n?.dishServingSizeGramsFieldLabel ??
@@ -145,13 +158,13 @@ class _DishFormState extends State<DishForm> {
           Align(
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
-              onPressed: _openComponentDialog,
+              onPressed: _openAddIngredientSheet,
               icon: const Icon(Icons.add),
               label: Text(l10n?.dishAddComponentAction ?? 'Add ingredient'),
             ),
           ),
           const SizedBox(height: 12),
-          if (_components.isEmpty)
+          if (_componentDrafts.isEmpty)
             AppEmptyState(
               icon: Icons.restaurant_menu_outlined,
               title: l10n?.dishNoComponentsTitle ?? 'No ingredients yet',
@@ -160,68 +173,117 @@ class _DishFormState extends State<DishForm> {
                   'Add foods to calculate this recipe.',
             )
           else
-            ..._components.indexed.map((entry) {
+            ..._componentDrafts.indexed.map((entry) {
               final index = entry.$1;
-              final component = entry.$2;
-              final item = widget.store.itemById(component.itemId);
-              final itemName = item?.name ?? component.itemId;
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  title: Text(itemName),
-                  subtitle: Text('${_format(component.grams)} g'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        tooltip:
-                            l10n?.dishEditComponentTooltip(itemName) ??
-                            'Edit $itemName ingredient',
-                        icon: const Icon(Icons.edit_outlined),
-                        onPressed: () => _openComponentDialog(index: index),
-                      ),
-                      IconButton(
-                        tooltip:
-                            l10n?.dishRemoveComponentTooltip(itemName) ??
-                            'Remove $itemName ingredient',
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: () {
-                          setState(() {
-                            _components.removeAt(index);
-                            _errorText = null;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              );
+              final draft = entry.$2;
+              final item = widget.store.itemById(draft.itemId);
+              return _buildComponentRow(index: index, draft: draft, item: item);
             }),
         ],
       ),
     );
   }
 
-  Future<void> _openComponentDialog({int? index}) async {
-    final initialComponent = index == null ? null : _components[index];
-    final component = await showDialog<DishComponent>(
-      context: context,
-      builder: (context) {
-        return _DishComponentDialog(
-          items: widget.store.items,
-          initialComponent: initialComponent,
-        );
-      },
+  Widget _buildComponentRow({
+    required int index,
+    required _DishComponentDraft draft,
+    required CatalogItem? item,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    final itemName = item?.name ?? draft.itemId;
+    final itemKind = item == null
+        ? null
+        : item.isFood
+        ? l10n?.catalogSubtypeFood ?? 'food'
+        : l10n?.catalogSubtypeDish ?? 'recipe';
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(itemName, style: Theme.of(context).textTheme.titleSmall),
+                  if (itemKind != null) ...[
+                    const SizedBox(height: 4),
+                    Text(itemKind, style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 128,
+              child: TextField(
+                controller: draft.gramsController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: positiveDecimalInputFormatters,
+                decoration: InputDecoration(
+                  labelText:
+                      l10n?.dishComponentGramsFieldLabel ?? 'Ingredient grams',
+                  suffixText: 'g',
+                ),
+                onChanged: (_) {
+                  if (_errorText == null) {
+                    return;
+                  }
+                  setState(() {
+                    _errorText = null;
+                  });
+                },
+              ),
+            ),
+            IconButton(
+              tooltip:
+                  l10n?.dishRemoveComponentTooltip(itemName) ??
+                  'Remove $itemName ingredient',
+              icon: const Icon(Icons.remove_circle_outline),
+              onPressed: () {
+                setState(() {
+                  _componentDrafts.removeAt(index).dispose();
+                  _errorText = null;
+                });
+              },
+            ),
+          ],
+        ),
+      ),
     );
-    if (!mounted || component == null) {
+  }
+
+  Future<void> _openAddIngredientSheet() async {
+    final l10n = AppLocalizations.of(context);
+    final recentItems = _recentComponentItems();
+    final frequentItems = widget.store.items.take(4).toList(growable: false);
+    final result = await showCatalogItemSearchSheet(
+      context: context,
+      store: widget.store,
+      title: l10n?.dishComponentAddTitle ?? 'Add ingredient',
+      subtitle:
+          'Search saved foods and recipes, then set the ingredient grams in the recipe list.',
+      searchFieldLabel:
+          l10n?.mealSearchFieldLabel ?? 'Search ingredients',
+      recentItems: recentItems,
+      recentLabel: l10n?.dishComponentsSectionTitle ?? 'Ingredients',
+      frequentItems: frequentItems,
+      frequentLabel: 'Frequent foods',
+    );
+    if (!mounted || result?.item == null) {
       return;
     }
     setState(() {
-      if (index == null) {
-        _components.add(component);
-      } else {
-        _components[index] = component;
-      }
+      _componentDrafts.add(
+        _DishComponentDraft(
+          itemId: result!.item!.id,
+          gramsText: _formatInput(result.item!.servingSizeGrams),
+        ),
+      );
       _errorText = null;
     });
   }
@@ -229,9 +291,18 @@ class _DishFormState extends State<DishForm> {
   void _saveDish() {
     final name = _nameController.text.trim();
     final description = _descriptionController.text.trim();
+    final components = _parseComponents();
+    if (components == null) {
+      setState(() {
+        _errorText =
+            AppLocalizations.of(context)?.dishComponentValidation ??
+            'Choose an item and enter valid ingredient grams.';
+      });
+      return;
+    }
     final servingSizeInput = _servingSizeController.text.trim();
     final servingSize = servingSizeInput.isEmpty
-        ? _components.fold<double>(
+        ? components.fold<double>(
             0,
             (total, component) => total + component.grams,
           )
@@ -240,7 +311,7 @@ class _DishFormState extends State<DishForm> {
         servingSize == null ||
         !servingSize.isFinite ||
         servingSize <= 0 ||
-        _components.isEmpty) {
+        components.isEmpty) {
       setState(() {
         _errorText =
             AppLocalizations.of(context)?.dishValidation ??
@@ -254,7 +325,7 @@ class _DishFormState extends State<DishForm> {
       name: name,
       description: description,
       servingSizeGrams: servingSize,
-      components: List<DishComponent>.of(_components),
+      components: components,
     );
     try {
       if (_isEditing) {
@@ -278,156 +349,35 @@ class _DishFormState extends State<DishForm> {
     Navigator.of(context).pop(true);
   }
 
-  String _formatInput(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    return value.toString();
-  }
-
-  String _format(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    return value.toStringAsFixed(1);
-  }
-}
-
-class _DishComponentDialog extends StatefulWidget {
-  const _DishComponentDialog({required this.items, this.initialComponent});
-
-  final List<CatalogItem> items;
-  final DishComponent? initialComponent;
-
-  @override
-  State<_DishComponentDialog> createState() => _DishComponentDialogState();
-}
-
-class _DishComponentDialogState extends State<_DishComponentDialog> {
-  final TextEditingController _gramsController = TextEditingController();
-  CatalogItem? _selectedItem;
-  String? _errorText;
-
-  @override
-  void dispose() {
-    _gramsController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    final component = widget.initialComponent;
-    if (component != null) {
-      for (final item in widget.items) {
-        if (item.id == component.itemId) {
-          _selectedItem = item;
-          break;
-        }
+  List<CatalogItem> _recentComponentItems() {
+    final recentItems = <CatalogItem>[];
+    final seenIds = <String>{};
+    for (final draft in _componentDrafts.reversed) {
+      if (!seenIds.add(draft.itemId)) {
+        continue;
       }
-      _gramsController.text = _formatInput(component.grams);
+      final item = widget.store.itemById(draft.itemId);
+      if (item == null) {
+        continue;
+      }
+      recentItems.add(item);
+      if (recentItems.length == 4) {
+        break;
+      }
     }
+    return recentItems;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(
-        widget.initialComponent == null
-            ? l10n?.dishComponentAddTitle ?? 'Add ingredient'
-            : l10n?.dishComponentEditTitle ?? 'Edit ingredient',
-      ),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              FormSectionCard(
-                title: l10n?.dishComponentAmountTitle ?? 'Ingredient amount',
-                child: Semantics(
-                  label:
-                      l10n?.dishComponentGramsFieldLabel ?? 'Ingredient grams',
-                  textField: true,
-                  child: TextField(
-                    controller: _gramsController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText:
-                          l10n?.dishComponentGramsFieldLabel ??
-                          'Ingredient grams',
-                    ),
-                  ),
-                ),
-              ),
-              FormSectionCard(
-                title: l10n?.dishCatalogItemSectionTitle ?? 'Catalog item',
-                child: SizedBox(
-                  height: 160,
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: widget.items.length,
-                    itemBuilder: (context, index) {
-                      final item = widget.items[index];
-                      final selected = _selectedItem?.id == item.id;
-                      return ListTile(
-                        title: Text(item.name),
-                        subtitle: Text(
-                          item.isFood
-                              ? l10n?.catalogSubtypeFood ?? 'food'
-                              : l10n?.catalogSubtypeDish ?? 'recipe',
-                        ),
-                        trailing: selected ? const Icon(Icons.check) : null,
-                        selected: selected,
-                        onTap: () {
-                          setState(() {
-                            _selectedItem = item;
-                            _errorText = null;
-                          });
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-              if (_errorText != null) InlineErrorBanner(message: _errorText!),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n?.commonCancel ?? 'Cancel'),
-        ),
-        FilledButton(
-          onPressed: _saveComponent,
-          child: Text(l10n?.dishSaveComponentAction ?? 'Save ingredient'),
-        ),
-      ],
-    );
-  }
-
-  void _saveComponent() {
-    final grams = double.tryParse(_gramsController.text.trim());
-    if (_selectedItem == null ||
-        grams == null ||
-        !grams.isFinite ||
-        grams <= 0) {
-      setState(() {
-        _errorText =
-            AppLocalizations.of(context)?.dishComponentValidation ??
-            'Choose an item and enter valid grams.';
-      });
-      return;
+  List<DishComponent>? _parseComponents() {
+    final components = <DishComponent>[];
+    for (final draft in _componentDrafts) {
+      final grams = double.tryParse(draft.gramsController.text.trim());
+      if (grams == null || !grams.isFinite || grams <= 0) {
+        return null;
+      }
+      components.add(DishComponent(itemId: draft.itemId, grams: grams));
     }
-    Navigator.of(
-      context,
-    ).pop(DishComponent(itemId: _selectedItem!.id, grams: grams));
+    return components;
   }
 
   String _formatInput(double value) {
@@ -435,5 +385,17 @@ class _DishComponentDialogState extends State<_DishComponentDialog> {
       return value.toStringAsFixed(0);
     }
     return value.toString();
+  }
+}
+
+class _DishComponentDraft {
+  _DishComponentDraft({required this.itemId, required String gramsText})
+    : gramsController = TextEditingController(text: gramsText);
+
+  final String itemId;
+  final TextEditingController gramsController;
+
+  void dispose() {
+    gramsController.dispose();
   }
 }

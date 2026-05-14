@@ -861,7 +861,13 @@ void main() {
     String label,
     String value,
   ) async {
-    final finder = find.bySemanticsLabel(label);
+    var finder = find.bySemanticsLabel(label);
+    if (!tester.any(finder)) {
+      finder = find.byWidgetPredicate(
+        (widget) => widget is TextField && widget.decoration?.labelText == label,
+        description: 'TextField("$label")',
+      );
+    }
     await tester.ensureVisible(finder);
     await tester.enterText(finder, value);
     await tester.pumpAndSettle();
@@ -919,11 +925,14 @@ void main() {
     await enterLabeledText(tester, 'Recipe serving size grams', '100');
     await tester.tap(find.text('Add ingredient'));
     await tester.pumpAndSettle();
+    await tester.enterText(
+      find.bySemanticsLabel('Search foods and recipes'),
+      'Carrot',
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Carrot').last);
     await tester.pumpAndSettle();
     await enterLabeledText(tester, 'Ingredient grams', '100');
-    await tester.tap(find.text('Save ingredient'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
   }
@@ -1290,11 +1299,14 @@ void main() {
     await enterLabeledText(tester, 'Recipe serving size grams', '150');
     await tester.tap(find.text('Add ingredient'));
     await tester.pumpAndSettle();
+    await tester.enterText(
+      find.bySemanticsLabel('Search foods and recipes'),
+      'Carrot',
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Carrot').last);
     await tester.pumpAndSettle();
     await enterLabeledText(tester, 'Ingredient grams', '100');
-    await tester.tap(find.text('Save ingredient'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
 
@@ -1316,11 +1328,14 @@ void main() {
       await enterLabeledText(tester, 'Recipe description', 'Carrot only');
       await tester.tap(find.text('Add ingredient'));
       await tester.pumpAndSettle();
+      await tester.enterText(
+        find.bySemanticsLabel('Search foods and recipes'),
+        'Carrot',
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Carrot').last);
       await tester.pumpAndSettle();
       await enterLabeledText(tester, 'Ingredient grams', '125');
-      await tester.tap(find.text('Save ingredient'));
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Save recipe'));
       await tester.pumpAndSettle();
 
@@ -1703,11 +1718,14 @@ void main() {
     await enterLabeledText(tester, 'Recipe serving size grams', '150');
     await tester.tap(find.text('Add ingredient'));
     await tester.pumpAndSettle();
+    await tester.enterText(
+      find.bySemanticsLabel('Search foods and recipes'),
+      'Carrot',
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Carrot').last);
     await tester.pumpAndSettle();
     await enterLabeledText(tester, 'Ingredient grams', '100');
-    await tester.tap(find.text('Save ingredient'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
 
@@ -1741,11 +1759,7 @@ void main() {
       'Edit Simple salad',
       Icons.edit_outlined,
     );
-    await tester.tap(find.byTooltip('Edit Carrot ingredient'));
-    await tester.pumpAndSettle();
     await enterLabeledText(tester, 'Ingredient grams', '50');
-    await tester.tap(find.text('Save ingredient'));
-    await tester.pumpAndSettle();
     await enterLabeledText(tester, 'Recipe name', 'Half carrot salad');
     await tester.tap(find.text('Save recipe'));
     await tester.pumpAndSettle();
@@ -1785,11 +1799,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byTooltip('Edit Carrot ingredient'));
-    await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, '33.33'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Save ingredient'));
-    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Save recipe'));
     await tester.pumpAndSettle();
 

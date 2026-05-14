@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fitapp/main.dart';
 import 'package:fitapp/ui/core/layout/app_breakpoints.dart';
+import 'package:fitapp/ui/core/widgets/action_card.dart';
 
 void main() {
   const rootDestinationLabels = [
@@ -31,25 +32,61 @@ void main() {
   }
 
   Future<void> tapRootDestination(WidgetTester tester, String label) async {
-    if (tester.any(find.byType(NavigationBar))) {
-      await tester.tap(
-        find
-            .descendant(
-              of: find.byType(NavigationBar),
-              matching: find.text(label),
-            )
-            .last,
-      );
-      await tester.pumpAndSettle();
-      return;
-    }
-
     final index = rootDestinationLabels.indexOf(label);
     if (index == -1) {
       throw ArgumentError.value(label, 'label', 'Unknown root destination');
     }
+
+    if (tester.any(find.byType(NavigationBar))) {
+      final destinationLabel = find
+          .descendant(
+            of: find.byType(NavigationBar),
+            matching: find.text(label),
+          )
+          .last;
+      await tester.tapAt(tester.getCenter(destinationLabel));
+      await tester.pumpAndSettle();
+      return;
+    }
+
     final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
     rail.onDestinationSelected?.call(index);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> selectRootDestination(WidgetTester tester, String label) async {
+    final index = rootDestinationLabels.indexOf(label);
+    if (index == -1) {
+      throw ArgumentError.value(label, 'label', 'Unknown root destination');
+    }
+
+    if (tester.any(find.byType(NavigationBar))) {
+      final navigationBar = tester.widget<NavigationBar>(
+        find.byType(NavigationBar),
+      );
+      navigationBar.onDestinationSelected?.call(index);
+      await tester.pumpAndSettle();
+      return;
+    }
+    final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
+    rail.onDestinationSelected?.call(index);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> openActiveWorkoutSession(WidgetTester tester) async {
+    await selectRootDestination(tester, 'Train');
+    await tester.ensureVisible(find.text('Start workout'));
+    await tester.tap(find.text('Start workout'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chest day'));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> openLibraryRecipes(WidgetTester tester) async {
+    await selectRootDestination(tester, 'Library');
+    await tester.tap(find.widgetWithText(ActionCard, 'Food library'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Recipes'));
     await tester.pumpAndSettle();
   }
 
@@ -118,4 +155,41 @@ void main() {
       }
     }
   });
+
+  testWidgets(
+    're-tapping Train after navigating into workout session returns to workout root',
+    (tester) async {
+      await pumpFitAppAtSize(tester, const Size(390, 844));
+      await openActiveWorkoutSession(tester);
+
+      expect(find.text('Workout session'), findsOneWidget);
+      expect(find.text('Finish workout'), findsOneWidget);
+
+      await tapRootDestination(tester, 'Train');
+
+      expect(find.text('Workout'), findsOneWidget);
+      expect(find.text('Start workout'), findsNothing);
+      expect(find.text('Workout session'), findsNothing);
+      expect(find.text('Exercise queue'), findsNothing);
+      expect(find.text('Finish workout'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    're-tapping Library after drilling into Food library recipes returns to library root',
+    (tester) async {
+      await pumpFitAppAtSize(tester, const Size(390, 844));
+      await openLibraryRecipes(tester);
+
+      expect(find.text('Recipes'), findsWidgets);
+      expect(find.text('Food library'), findsWidgets);
+
+      await tapRootDestination(tester, 'Library');
+
+      expect(find.widgetWithText(ActionCard, 'Training library'), findsOneWidget);
+      expect(find.widgetWithText(ActionCard, 'Food library'), findsOneWidget);
+      expect(find.text('Recipes'), findsNothing);
+      expect(find.text('Choose which catalog you want to manage.'), findsNothing);
+    },
+  );
 }
