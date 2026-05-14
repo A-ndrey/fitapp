@@ -5,6 +5,7 @@ import '../firebase_options.dart';
 
 typedef FirebaseOptionsInitializer =
     Future<void> Function(FirebaseOptions options);
+typedef FirebaseOptionsProvider = FirebaseOptions Function();
 
 abstract interface class FirebaseInitializer {
   Future<bool> initialize();
@@ -14,12 +15,16 @@ class DefaultFirebaseInitializer implements FirebaseInitializer {
   DefaultFirebaseInitializer({
     bool isWeb = kIsWeb,
     FirebaseOptionsInitializer? initializeWithOptions,
+    FirebaseOptionsProvider? optionsProvider,
   }) : _isWeb = isWeb,
+       _optionsProvider =
+           optionsProvider ?? (() => DefaultFirebaseOptions.currentPlatform),
        _initializeWithOptions =
            initializeWithOptions ??
            ((options) => Firebase.initializeApp(options: options));
 
   final bool _isWeb;
+  final FirebaseOptionsProvider _optionsProvider;
   final FirebaseOptionsInitializer _initializeWithOptions;
 
   @override
@@ -28,7 +33,7 @@ class DefaultFirebaseInitializer implements FirebaseInitializer {
       return false;
     }
 
-    await _initializeWithOptions(DefaultFirebaseOptions.currentPlatform);
+    await _initializeWithOptions(_optionsProvider());
     return true;
   }
 }

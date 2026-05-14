@@ -11,7 +11,9 @@ class DefaultFirebaseOptions {
       return web;
     }
 
-    return web;
+    throw UnsupportedError(
+      'DefaultFirebaseOptions are only configured for web in this app.',
+    );
   }
 
   static const FirebaseOptions web = FirebaseOptions(

@@ -9,6 +9,7 @@ import 'package:fitapp/state/persistence/persisted_app_state.dart';
 import 'package:fitapp/state/persistence/shared_preferences_sync_metadata_store.dart';
 import 'package:fitapp/state/persistence/sync_metadata.dart';
 import 'package:fitapp/state/sync/app_store_sync_coordinator.dart';
+import 'package:fitapp/state/sync/app_store_sync_status.dart';
 import 'package:fitapp/state/sync/firebase_app_store_sync_service.dart';
 import 'package:fitapp/state/sync/installation_id_store.dart';
 import 'package:fitapp/state/sync/remote_snapshot.dart';
@@ -23,6 +24,7 @@ void main() {
       FirebaseOptions? receivedOptions;
       final initializer = DefaultFirebaseInitializer(
         isWeb: true,
+        optionsProvider: () => DefaultFirebaseOptions.web,
         initializeWithOptions: (options) async {
           receivedOptions = options;
         },
@@ -59,6 +61,13 @@ void main() {
       expect(initializeCallCount, 0);
     },
   );
+
+  test('placeholder firebase options reject unsupported platforms', () {
+    expect(
+      () => DefaultFirebaseOptions.currentPlatform,
+      throwsA(isA<UnsupportedError>()),
+    );
+  });
 
   testWidgets(
     'app startup creates the coordinator and triggers reconcile after runApp without blocking the first frame',
@@ -137,6 +146,63 @@ void main() {
       expect(syncAccess.coordinator, isNotNull);
     },
   );
+
+  testWidgets(
+    'sync retry re-attempts background startup after Firebase initialization failure',
+    (tester) async {
+      final events = <String>[];
+      final persistence = _InMemoryAppStorePersistence();
+      final metadataStore = _FakeSyncMetadataStore();
+      final syncAccess = FitAppSyncAccess();
+      addTearDown(syncAccess.dispose);
+
+      final startup = await prepareFitAppStartup(
+        firebaseInitializer: _FailingOnceFirebaseInitializer(events),
+        appStorePersistenceFactory: (_) => persistence,
+        appStoreHydrator:
+            ({required persistence, required onPersistedStateSaved}) async {
+              return AppStore(
+                persistence: persistence,
+                onPersistedStateSaved: onPersistedStateSaved,
+              );
+            },
+        syncMetadataStoreFactory: () => metadataStore,
+        installationIdStoreFactory: () => _FakeInstallationIdStore(),
+        syncServiceFactory: (_) => _RecordingSyncService(events),
+        syncAccess: syncAccess,
+      );
+
+      await launchFitApp(
+        startup: startup,
+        appRunner: (app) async {
+          await tester.pumpWidget(app);
+        },
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(events, ['firebase-init-1']);
+      expect(syncAccess.coordinator, isNull);
+      expect(syncAccess.status.phase, AppStoreSyncPhase.error);
+      expect(
+        syncAccess.status.lastErrorMessage,
+        contains('firebase init failed'),
+      );
+
+      await syncAccess.syncNow();
+      await tester.pump();
+      await tester.pump();
+
+      expect(events, [
+        'firebase-init-1',
+        'firebase-init-2',
+        'fetch-remote',
+        'push-remote',
+      ]);
+      expect(syncAccess.coordinator, isNotNull);
+      expect(syncAccess.status.phase, AppStoreSyncPhase.synced);
+    },
+  );
 }
 
 class _RecordingFirebaseInitializer implements FirebaseInitializer {
@@ -147,6 +213,23 @@ class _RecordingFirebaseInitializer implements FirebaseInitializer {
   @override
   Future<bool> initialize() async {
     await onInitialize();
+    return true;
+  }
+}
+
+class _FailingOnceFirebaseInitializer implements FirebaseInitializer {
+  _FailingOnceFirebaseInitializer(this.events);
+
+  final List<String> events;
+  var _attempts = 0;
+
+  @override
+  Future<bool> initialize() async {
+    _attempts += 1;
+    events.add('firebase-init-$_attempts');
+    if (_attempts == 1) {
+      throw StateError('firebase init failed');
+    }
     return true;
   }
 }

@@ -79,7 +79,7 @@ Future<FitAppStartup> prepareFitAppStartup({
     onPersistedStateSaved: persistedStateObserverRelay.call,
   );
 
-  return FitAppStartup(
+  final startup = FitAppStartup._(
     store: store,
     syncAccess: syncAccess ?? FitAppSyncAccess(),
     firebaseInitializer: firebaseInitializer ?? DefaultFirebaseInitializer(),
@@ -94,6 +94,8 @@ Future<FitAppStartup> prepareFitAppStartup({
     persistedStateObserverRelay: persistedStateObserverRelay,
     knownExerciseIds: knownExerciseIds,
   );
+  startup.syncAccess._bindStartupRetry(startup.startBackgroundSync);
+  return startup;
 }
 
 Future<void> launchFitApp({
@@ -105,7 +107,7 @@ Future<void> launchFitApp({
 }
 
 class FitAppStartup {
-  FitAppStartup({
+  FitAppStartup._({
     required this.store,
     required this.syncAccess,
     required FirebaseInitializer firebaseInitializer,
@@ -139,7 +141,13 @@ class FitAppStartup {
   Future<void>? _backgroundSyncFuture;
 
   Future<void> startBackgroundSync() {
-    return _backgroundSyncFuture ??= _runBackgroundSync();
+    if (syncAccess.coordinator != null) {
+      return Future<void>.value();
+    }
+
+    return _backgroundSyncFuture ??= _runBackgroundSync().whenComplete(() {
+      _backgroundSyncFuture = null;
+    });
   }
 
   Future<void> _runBackgroundSync() async {
@@ -165,17 +173,7 @@ class FitAppStartup {
       );
       syncAccess.bindCoordinator(coordinator);
       await coordinator.start();
-    } catch (error, stackTrace) {
-      FlutterError.reportError(
-        FlutterErrorDetails(
-          exception: error,
-          stack: stackTrace,
-          library: 'fitapp',
-          context: ErrorDescription(
-            'while starting background Firebase synchronization',
-          ),
-        ),
-      );
+    } catch (error) {
       syncAccess.reportError(error);
     }
   }
@@ -186,16 +184,21 @@ class FitAppSyncAccess extends ChangeNotifier {
   AppStoreSyncStatus get status => _status;
 
   AppStoreSyncCoordinator? _coordinator;
+  Future<void> Function()? _startupRetry;
   VoidCallback? _coordinatorListener;
   AppStoreSyncStatus _status = const AppStoreSyncStatus();
 
   Future<void> syncNow() async {
     final coordinator = _coordinator;
-    if (coordinator == null) {
+    if (coordinator != null) {
+      await coordinator.syncNow();
       return;
     }
 
-    await coordinator.syncNow();
+    final startupRetry = _startupRetry;
+    if (startupRetry != null) {
+      await startupRetry();
+    }
   }
 
   void bindCoordinator(AppStoreSyncCoordinator coordinator) {
@@ -235,6 +238,10 @@ class FitAppSyncAccess extends ChangeNotifier {
 
     _status = nextStatus;
     notifyListeners();
+  }
+
+  void _bindStartupRetry(Future<void> Function() startupRetry) {
+    _startupRetry = startupRetry;
   }
 
   void _detachCoordinator() {
