@@ -781,7 +781,7 @@ class AppStore extends ChangeNotifier {
     final snapshot = _toPersistedAppState();
     final observerGeneration = _persistedStateObserverGeneration;
     _pendingSave = _pendingSave
-        .catchError((Object _, StackTrace __) {})
+        .catchError((Object _, StackTrace _) {})
         .then((_) async {
           await persistence.save(snapshot);
           if (notifyPersistedStateObserver &&

@@ -228,7 +228,7 @@ void main() {
   );
 
   test('PersistedAppState exposes unmodifiable top-level collections', () {
-    final state = PersistedAppState.empty();
+    const state = PersistedAppState.empty();
 
     expect(
       () => state.userFoods.add(
@@ -294,7 +294,7 @@ void main() {
             name: 'Oats Bowl',
             description: 'Oats with water',
             servingSizeGrams: 250,
-            components: const [DishComponent(itemId: 'oats', grams: 40)],
+            components: [DishComponent(itemId: 'oats', grams: 40)],
           ),
         ],
         userExercises: const [
@@ -303,7 +303,7 @@ void main() {
             name: 'Burpees',
             description: 'Conditioning move',
             instruction: 'Keep pace steady.',
-            muscleGroups: const [MuscleGroup.cardio, MuscleGroup.fullBody],
+            muscleGroups: [MuscleGroup.cardio, MuscleGroup.fullBody],
           ),
         ],
         userTrainingPlans: const [
@@ -311,7 +311,7 @@ void main() {
             id: 'conditioning',
             name: 'Conditioning',
             description: 'Short conditioning block',
-            exercises: const [
+            exercises: [
               TrainingExercise(
                 exerciseId: 'burpees',
                 reps: 10,
@@ -362,7 +362,7 @@ void main() {
                 sets: 3,
                 unit: 'reps',
               ),
-              setLogs: const [WorkoutSetLog(reps: 10, weight: 0, time: 45)],
+                setLogs: [WorkoutSetLog(reps: 10, weight: 0, time: 45)],
             ),
           ],
         ),
@@ -383,7 +383,7 @@ void main() {
                   sets: 2,
                   unit: 'reps',
                 ),
-                setLogs: const [WorkoutSetLog(reps: 8, weight: 0, time: 40)],
+                setLogs: [WorkoutSetLog(reps: 8, weight: 0, time: 40)],
               ),
             ],
           ),

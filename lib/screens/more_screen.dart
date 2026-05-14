@@ -28,7 +28,7 @@ class MoreScreen extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([
         store,
-        if (syncStatusListenable != null) syncStatusListenable!,
+        syncStatusListenable,
       ]),
       builder: (context, _) {
         final preferences = store.preferences;

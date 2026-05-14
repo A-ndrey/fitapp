@@ -83,7 +83,7 @@ class PersistedAppStateCodec {
   static WorkoutSession _decodeCompletedWorkoutSession(Object? encoded) {
     final session = _decodeWorkoutSession(encoded);
     if (session == null) {
-      throw FormatException(
+      throw const FormatException(
         'Expected "completedWorkoutSessions" entries to be workout sessions.',
       );
     }

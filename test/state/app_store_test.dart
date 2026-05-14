@@ -710,7 +710,7 @@ void main() {
             startedAt: DateTime(2026, 4, 18, 9),
             finishedAt: DateTime(2026, 4, 18, 9, 45),
             results: [
-              WorkoutExerciseResult(
+              const WorkoutExerciseResult(
                 exerciseId: 'squat',
                 exerciseName: 'Squat',
                 target: TrainingExercise(
