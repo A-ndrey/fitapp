@@ -1,4 +1,6 @@
 import 'package:fitapp/screens/trainings_screen.dart';
+import 'package:fitapp/models/exercise.dart';
+import 'package:fitapp/models/training_plan.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/ui/core/layout/adaptive_page.dart';
 import 'package:fitapp/ui/core/widgets/empty_state.dart';
@@ -390,19 +392,45 @@ void main() {
     expect(find.text('Custom bridge'), findsNothing);
   });
 
-  testWidgets('blocks deleting a sample exercise used by a plan', (
+  testWidgets('blocks deleting a custom exercise used by a plan', (
     tester,
   ) async {
-    await pumpScreen(tester);
+    final store = AppStore();
+    store.createExercise(
+      const Exercise(
+        id: 'custom-pushups',
+        name: 'Custom pushups',
+        description: 'User-defined horizontal press',
+        instruction: 'Press away from the floor.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'custom-push-day',
+        name: 'Custom push day',
+        description: 'Uses a custom exercise',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'custom-pushups',
+            sets: 3,
+            reps: 12,
+            unit: 'reps',
+          ),
+        ],
+      ),
+    );
+    await pumpScreen(tester, store: store);
 
     await openExercisesView(tester);
-    await openCatalogActions(tester, 'Pushups');
-    await tester.tap(find.text('Delete Pushups').last);
+    await scrollUntilVisible(tester, find.text('Custom pushups'));
+    await openCatalogActions(tester, 'Custom pushups');
+    await tester.tap(find.text('Delete Custom pushups').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
 
     expect(find.text('Exercise is used by a training plan.'), findsOneWidget);
-    expect(find.text('Pushups'), findsOneWidget);
+    expect(find.text('Custom pushups'), findsOneWidget);
   });
 }

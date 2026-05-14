@@ -13,6 +13,9 @@ import 'package:fitapp/screens/library_screen.dart';
 import 'package:fitapp/screens/meal_screen.dart';
 import 'package:fitapp/screens/today_screen.dart';
 import 'package:fitapp/state/app_store.dart';
+import 'package:fitapp/state/sync/app_store_sync_coordinator.dart';
+import 'package:fitapp/state/sync/firebase_app_store_sync_service.dart';
+import 'package:fitapp/state/sync/app_store_sync_status.dart';
 import 'package:fitapp/ui/core/layout/adaptive_page.dart';
 import 'package:fitapp/ui/core/widgets/empty_state.dart';
 import 'package:fitapp/ui/core/theme/app_theme.dart';
@@ -154,6 +157,46 @@ Future<void> openAddRecipe(WidgetTester tester) async {
     await tester.tap(find.widgetWithText(FilledButton, 'Add recipe'));
   }
   await tester.pumpAndSettle();
+}
+
+class _TestSyncCoordinator extends AppStoreSyncCoordinator {
+  _TestSyncCoordinator({AppStoreSyncStatus status = const AppStoreSyncStatus()})
+    : _status = status,
+      super(
+        syncService: FirebaseAppStoreSyncService(
+          backend: _NoopRemoteSnapshotStore(),
+        ),
+        loadLocalSnapshot: () async => null,
+        applyRemoteSnapshot:
+            (_, {required notifyPersistedStateObserver}) async {},
+      );
+
+  AppStoreSyncStatus _status;
+
+  @override
+  AppStoreSyncStatus get status => _status;
+
+  void setStatus(AppStoreSyncStatus nextStatus) {
+    _status = nextStatus;
+    notifyListeners();
+  }
+}
+
+class _NoopRemoteSnapshotStore implements RemoteSnapshotStore {
+  @override
+  Future<Map<String, Object?>?> fetch(String path) async => null;
+
+  @override
+  Future<void> set(String path, Map<String, Object?> data) async {}
+}
+
+class _TrackingSyncAccess extends FitAppSyncAccess {
+  int syncNowCallCount = 0;
+
+  @override
+  Future<void> syncNow() async {
+    syncNowCallCount += 1;
+  }
 }
 
 void main() {
@@ -966,7 +1009,10 @@ void main() {
   });
 
   testWidgets('shows Settings tab and opens settings screen', (tester) async {
-    await tester.pumpWidget(const FitApp());
+    final syncAccess = FitAppSyncAccess();
+    addTearDown(syncAccess.dispose);
+
+    await tester.pumpWidget(FitApp(syncAccess: syncAccess));
 
     expect(find.text('Settings'), findsWidgets);
 
@@ -974,7 +1020,12 @@ void main() {
 
     expect(find.text('Sync'), findsOneWidget);
     expect(find.text('Units'), findsOneWidget);
-    expect(find.text('Login'), findsOneWidget);
+    expect(
+      find.text('Sync is ready. Tap below to check for updates.'),
+      findsOneWidget,
+    );
+    expect(find.text('Sync now'), findsOneWidget);
+    expect(find.text('Login'), findsNothing);
     expect(find.text('Logout'), findsNothing);
     await scrollToText(tester, 'Language');
     expect(find.text('Language'), findsOneWidget);
@@ -985,26 +1036,84 @@ void main() {
     expect(find.text('Dark'), findsOneWidget);
   });
 
-  testWidgets('sync buttons depend on login state', (tester) async {
-    final store = AppStore.empty();
+  testWidgets(
+    'FitApp can render with a hydrated store supplied from async bootstrap',
+    (tester) async {
+      final store = AppStore.empty();
 
-    await tester.pumpWidget(FitApp(store: store));
+      await tester.pumpWidget(FitApp(store: store));
+
+      expect(find.text('Today'), findsWidgets);
+      expect(find.text('Settings'), findsWidgets);
+    },
+  );
+
+  testWidgets('settings sync card renders error status and retries sync', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    final syncAccess = _TrackingSyncAccess()
+      ..reportError(StateError('Sync failed while reaching the server.'));
+    addTearDown(store.dispose);
+    addTearDown(syncAccess.dispose);
+
+    await tester.pumpWidget(FitApp(store: store, syncAccess: syncAccess));
     await openMoreDestination(tester);
 
-    expect(find.text('Login'), findsOneWidget);
-    expect(find.text('Logout'), findsNothing);
-
-    await tester.tap(find.text('Login'));
-    await tester.pumpAndSettle();
-
+    expect(
+      find.text(
+        'Sync error: Bad state: Sync failed while reaching the server.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Sync now'), findsOneWidget);
     expect(find.text('Login'), findsNothing);
-    expect(find.text('Logout'), findsOneWidget);
+    expect(find.text('Logout'), findsNothing);
 
-    await tester.tap(find.text('Logout'));
+    await tester.tap(find.text('Sync now'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Login'), findsOneWidget);
+    expect(syncAccess.syncNowCallCount, 1);
+  });
+
+  testWidgets('settings sync card updates from coordinator status', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    final syncAccess = FitAppSyncAccess();
+    final coordinator = _TestSyncCoordinator();
+    addTearDown(store.dispose);
+    addTearDown(syncAccess.dispose);
+    addTearDown(coordinator.dispose);
+
+    syncAccess.bindCoordinator(coordinator);
+    await tester.pumpWidget(FitApp(store: store, syncAccess: syncAccess));
+    await openMoreDestination(tester);
+
+    expect(
+      find.text('Sync is ready. Tap below to check for updates.'),
+      findsOneWidget,
+    );
+    expect(find.text('Login'), findsNothing);
     expect(find.text('Logout'), findsNothing);
+
+    coordinator.setStatus(
+      const AppStoreSyncStatus(phase: AppStoreSyncPhase.syncing),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Sync in progress. We will keep your data up to date.'),
+      findsOneWidget,
+    );
+
+    coordinator.setStatus(
+      AppStoreSyncStatus(
+        phase: AppStoreSyncPhase.synced,
+        lastSyncedAt: DateTime(2026, 5, 14, 10, 30),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Last synced on 2026-05-14 10:30.'), findsOneWidget);
   });
 
   testWidgets('more screen controls update store and theme immediately', (
@@ -1020,6 +1129,7 @@ void main() {
       ThemeMode.system,
     );
 
+    await scrollToText(tester, 'Pounds');
     await tester.tap(find.text('Pounds'));
     await tester.pumpAndSettle();
     expect(store.workoutWeightUnit, WorkoutWeightUnit.pounds);
@@ -1446,21 +1556,42 @@ void main() {
 
   testWidgets('deleting a logged item keeps meal snapshot', (tester) async {
     final store = AppStore();
+    store.createFood(
+      const FoodItem(
+        id: 'custom-rice',
+        name: 'Custom rice',
+        description: 'User-defined rice',
+        servingSizeGrams: 150,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 130,
+          protein: 2.7,
+          fat: 0.3,
+          carbs: 28,
+        ),
+      ),
+    );
     await tester.pumpWidget(FitApp(store: store));
 
-    await logRice150g(tester);
+    store.addMealByGrams(itemId: 'custom-rice', grams: 150);
+    await tester.pumpAndSettle();
     expect(store.mealEntries, hasLength(1));
     expect(find.textContaining('195 kcal'), findsOneWidget);
 
     await openLibraryFoodsSection(tester);
-    await scrollToText(tester, 'Rice');
-    expect(find.text('Rice'), findsWidgets);
-    await tapRowAction(tester, 'Rice', 'Delete Rice', Icons.delete_outline);
-    expect(find.text('Delete Rice?'), findsOneWidget);
+    await scrollToText(tester, 'Custom rice');
+    expect(find.text('Custom rice'), findsWidgets);
+    await tapRowAction(
+      tester,
+      'Custom rice',
+      'Delete Custom rice',
+      Icons.delete_outline,
+    );
+    expect(find.text('Delete Custom rice?'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
     await tester.pumpAndSettle();
 
-    expect(store.itemById('rice'), isNull);
+    expect(store.itemById('custom-rice'), isNull);
 
     await openNutritionDestination(tester);
     expect(store.mealEntries, hasLength(1));
@@ -1468,31 +1599,45 @@ void main() {
   });
 
   testWidgets('blocks deleting an item referenced by a dish', (tester) async {
-    await tester.pumpWidget(const FitApp());
-
-    await openLibraryRecipesSection(tester);
-    await openAddRecipe(tester);
-
-    await enterLabeledText(tester, 'Recipe name', 'Simple salad');
-    await enterLabeledText(tester, 'Recipe description', 'Carrot');
-    await enterLabeledText(tester, 'Recipe serving size grams', '100');
-    await tester.tap(find.text('Add ingredient'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Carrot').last);
-    await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Ingredient grams', '100');
-    await tester.tap(find.text('Save ingredient'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Save recipe'));
-    await tester.pumpAndSettle();
+    final store = AppStore();
+    store.createFood(
+      const FoodItem(
+        id: 'custom-carrot',
+        name: 'Custom carrot',
+        description: 'User-defined carrot',
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 41,
+          protein: 0.9,
+          fat: 0.2,
+          carbs: 10,
+        ),
+      ),
+    );
+    store.createDish(
+      const DishItem(
+        id: 'custom-salad',
+        name: 'Custom salad',
+        description: 'Uses a custom carrot ingredient',
+        servingSizeGrams: 100,
+        components: [DishComponent(itemId: 'custom-carrot', grams: 100)],
+      ),
+    );
+    await tester.pumpWidget(FitApp(store: store));
 
     await openLibraryFoodsSection(tester);
-    await scrollToText(tester, 'Carrot');
-    await tapRowAction(tester, 'Carrot', 'Delete Carrot', Icons.delete_outline);
+    await scrollToText(tester, 'Custom carrot');
+    await tapRowAction(
+      tester,
+      'Custom carrot',
+      'Delete Custom carrot',
+      Icons.delete_outline,
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ListTile, 'Carrot'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Custom carrot'), findsOneWidget);
     expect(find.textContaining('used by a recipe'), findsOneWidget);
   });
 
@@ -1500,17 +1645,33 @@ void main() {
     'editing a food updates catalog but not existing meal snapshots',
     (tester) async {
       final store = AppStore();
+      store.createFood(
+        const FoodItem(
+          id: 'custom-rice',
+          name: 'Custom rice',
+          description: 'User-defined rice',
+          servingSizeGrams: 150,
+          basis: NutritionBasis.per100g,
+          nutrition: NutritionValues(
+            calories: 130,
+            protein: 2.7,
+            fat: 0.3,
+            carbs: 28,
+          ),
+        ),
+      );
       await tester.pumpWidget(FitApp(store: store));
 
-      await logRice150g(tester);
+      store.addMealByGrams(itemId: 'custom-rice', grams: 150);
+      await tester.pumpAndSettle();
       expect(store.mealEntries, hasLength(1));
       expect(find.textContaining('195 kcal'), findsOneWidget);
 
       store.updateFood(
         const FoodItem(
-          id: 'rice',
-          name: 'Brown rice',
-          description: 'Cooked white rice',
+          id: 'custom-rice',
+          name: 'Updated rice',
+          description: 'Updated user-defined rice',
           servingSizeGrams: 150,
           basis: NutritionBasis.per100g,
           nutrition: NutritionValues(
@@ -1523,10 +1684,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(store.itemById('rice')?.name, 'Brown rice');
+      expect(store.itemById('custom-rice')?.name, 'Updated rice');
 
       await openNutritionDestination(tester);
-      expect(store.mealEntries.single.itemName, 'Rice');
+      expect(store.mealEntries.single.itemName, 'Custom rice');
       expect(find.textContaining('195 kcal'), findsOneWidget);
     },
   );
@@ -1639,5 +1800,17 @@ void main() {
       updated.nutritionPerServing(store.catalog).calories,
       closeTo(33.33, 0.0001),
     );
+  });
+
+  testWidgets('fit app accepts injected sync access', (tester) async {
+    final store = AppStore.empty();
+    final syncAccess = FitAppSyncAccess();
+    addTearDown(store.dispose);
+    addTearDown(syncAccess.dispose);
+
+    await tester.pumpWidget(FitApp(store: store, syncAccess: syncAccess));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

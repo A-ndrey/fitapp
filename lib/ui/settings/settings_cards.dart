@@ -6,6 +6,7 @@ class SettingsStatusCard extends StatelessWidget {
     required this.message,
     required this.actionLabel,
     required this.onPressed,
+    this.messageColor,
     super.key,
   });
 
@@ -13,6 +14,7 @@ class SettingsStatusCard extends StatelessWidget {
   final String message;
   final String actionLabel;
   final VoidCallback onPressed;
+  final Color? messageColor;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +46,7 @@ class SettingsStatusCard extends StatelessWidget {
             Text(
               message,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+                color: messageColor ?? colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),

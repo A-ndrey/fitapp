@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/app_preferences.dart';
@@ -9,29 +11,68 @@ import '../models/meal_entry.dart';
 import '../models/nutrition.dart';
 import '../models/training_plan.dart';
 import '../models/workout_session.dart';
+import 'persistence/app_store_persistence.dart';
+import 'persistence/persisted_app_state.dart';
+
+typedef PersistedAppStateObserver = void Function(PersistedAppState state);
 
 class AppStore extends ChangeNotifier {
-  AppStore() {
-    _bootstrapSampleFoods();
-    _bootstrapSampleExercises();
-    _bootstrapSampleTrainingPlans();
+  AppStore({
+    AppStorePersistence? persistence,
+    PersistedAppStateObserver? onPersistedStateSaved,
+  }) : _persistence = persistence,
+       _onPersistedStateSaved = onPersistedStateSaved {
+    _runWithoutPersistence(() {
+      _bootstrapSampleFoods();
+      _bootstrapSampleExercises();
+      _bootstrapSampleTrainingPlans();
+    });
   }
 
-  AppStore.empty() : super();
+  AppStore.empty({
+    AppStorePersistence? persistence,
+    PersistedAppStateObserver? onPersistedStateSaved,
+  }) : _persistence = persistence,
+       _onPersistedStateSaved = onPersistedStateSaved,
+       super();
+
+  static Future<AppStore> hydrated({
+    required AppStorePersistence persistence,
+    PersistedAppStateObserver? onPersistedStateSaved,
+  }) async {
+    final store = AppStore(
+      persistence: persistence,
+      onPersistedStateSaved: onPersistedStateSaved,
+    );
+    final loadedState = await persistence.load();
+    if (loadedState == null) {
+      return store;
+    }
+    store._applyPersistedState(loadedState);
+    return store;
+  }
 
   final Map<String, CatalogItem> _catalog = <String, CatalogItem>{};
   final List<MealEntry> _mealEntries = <MealEntry>[];
   final Map<String, Exercise> _exercises = <String, Exercise>{};
   final List<TrainingPlan> _trainingPlans = <TrainingPlan>[];
   final List<WorkoutSession> _completedWorkoutSessions = <WorkoutSession>[];
+  final Set<String> _builtInCatalogIds = <String>{};
+  final Set<String> _builtInExerciseIds = <String>{};
+  final Set<String> _builtInTrainingPlanIds = <String>{};
+  final AppStorePersistence? _persistence;
+  final PersistedAppStateObserver? _onPersistedStateSaved;
   AppPreferences _preferences = const AppPreferences.defaults();
   bool _isLoggedIn = false;
   WorkoutSession? _activeWorkoutSession;
   int _mealEntryCounter = 0;
   int _workoutSessionCounter = 0;
+  Future<void> _pendingSave = Future<void>.value();
+  bool _isPersistenceSuspended = false;
+  int _persistedStateObserverGeneration = 0;
 
   void _bootstrapSampleFoods() {
-    createFood(
+    _createBuiltInFood(
       const FoodItem(
         id: 'carrot',
         name: 'Carrot',
@@ -46,7 +87,7 @@ class AppStore extends ChangeNotifier {
         ),
       ),
     );
-    createFood(
+    _createBuiltInFood(
       const FoodItem(
         id: 'onion',
         name: 'Onion',
@@ -61,7 +102,7 @@ class AppStore extends ChangeNotifier {
         ),
       ),
     );
-    createFood(
+    _createBuiltInFood(
       const FoodItem(
         id: 'chicken-breast',
         name: 'Chicken breast',
@@ -76,7 +117,7 @@ class AppStore extends ChangeNotifier {
         ),
       ),
     );
-    createFood(
+    _createBuiltInFood(
       const FoodItem(
         id: 'rice',
         name: 'Rice',
@@ -91,7 +132,7 @@ class AppStore extends ChangeNotifier {
         ),
       ),
     );
-    createFood(
+    _createBuiltInFood(
       const FoodItem(
         id: 'olive-oil',
         name: 'Olive oil',
@@ -104,7 +145,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void _bootstrapSampleExercises() {
-    createExercise(
+    _createBuiltInExercise(
       const Exercise(
         id: 'pushups',
         name: 'Pushups',
@@ -117,7 +158,7 @@ class AppStore extends ChangeNotifier {
         ],
       ),
     );
-    createExercise(
+    _createBuiltInExercise(
       const Exercise(
         id: 'bench-press',
         name: 'Bench press',
@@ -130,7 +171,7 @@ class AppStore extends ChangeNotifier {
         ],
       ),
     );
-    createExercise(
+    _createBuiltInExercise(
       const Exercise(
         id: 'squat',
         name: 'Squat',
@@ -139,7 +180,7 @@ class AppStore extends ChangeNotifier {
         muscleGroups: [MuscleGroup.quads, MuscleGroup.glutes, MuscleGroup.core],
       ),
     );
-    createExercise(
+    _createBuiltInExercise(
       const Exercise(
         id: 'plank',
         name: 'Plank',
@@ -148,7 +189,7 @@ class AppStore extends ChangeNotifier {
         muscleGroups: [MuscleGroup.core],
       ),
     );
-    createExercise(
+    _createBuiltInExercise(
       const Exercise(
         id: 'running',
         name: 'Running',
@@ -160,7 +201,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void _bootstrapSampleTrainingPlans() {
-    createTrainingPlan(
+    _createBuiltInTrainingPlan(
       const TrainingPlan(
         id: 'chest-day',
         name: 'Chest day',
@@ -182,7 +223,7 @@ class AppStore extends ChangeNotifier {
         ],
       ),
     );
-    createTrainingPlan(
+    _createBuiltInTrainingPlan(
       const TrainingPlan(
         id: 'leg-day',
         name: 'Leg day',
@@ -234,32 +275,32 @@ class AppStore extends ChangeNotifier {
 
   void setAppearancePreference(AppearancePreference preference) {
     _preferences = _preferences.copyWith(appearance: preference);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void setLanguagePreference(LanguagePreference preference) {
     _preferences = _preferences.copyWith(language: preference);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void setWorkoutWeightUnit(WorkoutWeightUnit unit) {
     _preferences = _preferences.copyWith(workoutWeightUnit: unit);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void setDishWeightUnit(DishWeightUnit unit) {
     _preferences = _preferences.copyWith(dishWeightUnit: unit);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void setHeightUnit(HeightUnit unit) {
     _preferences = _preferences.copyWith(heightUnit: unit);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void setDistanceUnit(DistanceUnit unit) {
     _preferences = _preferences.copyWith(distanceUnit: unit);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void logIn() {
@@ -267,7 +308,7 @@ class AppStore extends ChangeNotifier {
       return;
     }
     _isLoggedIn = true;
-    notifyListeners();
+    _didMutateTransientState();
   }
 
   void logOut() {
@@ -275,7 +316,20 @@ class AppStore extends ChangeNotifier {
       return;
     }
     _isLoggedIn = false;
+    _didMutateTransientState();
+  }
+
+  Future<void> applyExternalPersistedState(
+    PersistedAppState state, {
+    bool notifyPersistedStateObserver = true,
+  }) async {
+    _validatePersistedState(state);
+    _persistedStateObserverGeneration += 1;
+    _applyPersistedStateUnchecked(state);
     notifyListeners();
+    await _schedulePersistenceSave(
+      notifyPersistedStateObserver: notifyPersistedStateObserver,
+    );
   }
 
   String formatWorkoutWeight(double kilograms) {
@@ -409,19 +463,21 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Duplicate exercise id: ${exercise.id}');
     }
     _exercises[exercise.id] = _freezeExercise(exercise);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void updateExercise(Exercise exercise) {
     _validateExercise(exercise);
+    _assertExerciseIsUserDefined(exercise.id);
     if (!_exercises.containsKey(exercise.id)) {
       throw ArgumentError('Missing exercise id: ${exercise.id}');
     }
     _exercises[exercise.id] = _freezeExercise(exercise);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void deleteExercise(String id) {
+    _assertExerciseCanBeDeleted(id);
     if (!_exercises.containsKey(id)) {
       throw ArgumentError('Missing exercise id: $id');
     }
@@ -429,7 +485,7 @@ class AppStore extends ChangeNotifier {
       throw StateError('Exercise is used by a training plan.');
     }
     _exercises.remove(id);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void createTrainingPlan(TrainingPlan plan) {
@@ -438,11 +494,12 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Duplicate training plan id: ${plan.id}');
     }
     _trainingPlans.add(_freezeTrainingPlan(plan));
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void updateTrainingPlan(TrainingPlan plan) {
     _validateTrainingPlan(plan);
+    _assertTrainingPlanIsUserDefined(plan.id);
     final index = _trainingPlans.indexWhere(
       (existing) => existing.id == plan.id,
     );
@@ -450,10 +507,11 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Missing training plan id: ${plan.id}');
     }
     _trainingPlans[index] = _freezeTrainingPlan(plan);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void deleteTrainingPlan(String id) {
+    _assertTrainingPlanCanBeDeleted(id);
     final index = _trainingPlans.indexWhere((plan) => plan.id == id);
     if (index == -1) {
       throw ArgumentError('Missing training plan id: $id');
@@ -462,7 +520,7 @@ class AppStore extends ChangeNotifier {
       throw StateError('Training plan is used by the active workout.');
     }
     _trainingPlans.removeAt(index);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   WorkoutSession startWorkout({
@@ -501,7 +559,7 @@ class AppStore extends ChangeNotifier {
       results: List<WorkoutExerciseResult>.unmodifiable(results),
     );
     _activeWorkoutSession = session;
-    notifyListeners();
+    _didMutatePersistedState();
     return session;
   }
 
@@ -536,7 +594,7 @@ class AppStore extends ChangeNotifier {
     _activeWorkoutSession = session.copyWith(
       results: List<WorkoutExerciseResult>.unmodifiable(updatedResults),
     );
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   WorkoutSession finishActiveWorkout({DateTime? finishedAt}) {
@@ -547,7 +605,7 @@ class AppStore extends ChangeNotifier {
     final finished = session.copyWith(finishedAt: finishedAt ?? DateTime.now());
     _activeWorkoutSession = null;
     _completedWorkoutSessions.add(finished);
-    notifyListeners();
+    _didMutatePersistedState();
     return finished;
   }
 
@@ -559,7 +617,7 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Missing completed workout session id: $sessionId');
     }
     _completedWorkoutSessions.removeAt(index);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void createFood(FoodItem food) {
@@ -568,11 +626,12 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Duplicate item id: ${food.id}');
     }
     _catalog[food.id] = CatalogItem.food(food);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void updateFood(FoodItem food) {
     _validateFood(food);
+    _assertCatalogItemIsUserDefined(food.id);
     final existing = _catalog[food.id];
     if (existing == null) {
       throw ArgumentError('Missing item id: ${food.id}');
@@ -581,7 +640,7 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Item id is not a food: ${food.id}');
     }
     _catalog[food.id] = CatalogItem.food(food);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void createDish(DishItem dish) {
@@ -590,11 +649,12 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Duplicate item id: ${dish.id}');
     }
     _catalog[dish.id] = CatalogItem.dish(_freezeDish(dish));
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void updateDish(DishItem dish) {
     _validateDish(dish);
+    _assertCatalogItemIsUserDefined(dish.id);
     final existing = _catalog[dish.id];
     if (existing == null) {
       throw ArgumentError('Missing item id: ${dish.id}');
@@ -603,10 +663,11 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Item id is not a dish: ${dish.id}');
     }
     _catalog[dish.id] = CatalogItem.dish(_freezeDish(dish));
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   void deleteItem(String id) {
+    _assertCatalogItemCanBeDeleted(id);
     if (!_catalog.containsKey(id)) {
       throw ArgumentError('Missing item id: $id');
     }
@@ -614,7 +675,7 @@ class AppStore extends ChangeNotifier {
       throw StateError('Item is used by a recipe.');
     }
     _catalog.remove(id);
-    notifyListeners();
+    _didMutatePersistedState();
   }
 
   MealEntry addMealByGrams({required String itemId, required double grams}) {
@@ -634,7 +695,7 @@ class AppStore extends ChangeNotifier {
       catalog: _catalog,
     );
     _mealEntries.add(entry);
-    notifyListeners();
+    _didMutatePersistedState();
     return entry;
   }
 
@@ -663,7 +724,7 @@ class AppStore extends ChangeNotifier {
       catalog: _catalog,
     );
     _mealEntries.add(entry);
-    notifyListeners();
+    _didMutatePersistedState();
     return entry;
   }
 
@@ -671,8 +732,246 @@ class AppStore extends ChangeNotifier {
     final before = _mealEntries.length;
     _mealEntries.removeWhere((entry) => entry.id == id);
     if (_mealEntries.length != before) {
-      notifyListeners();
+      _didMutatePersistedState();
     }
+  }
+
+  void _createBuiltInFood(FoodItem food) {
+    createFood(food);
+    _builtInCatalogIds.add(food.id);
+  }
+
+  void _createBuiltInExercise(Exercise exercise) {
+    createExercise(exercise);
+    _builtInExerciseIds.add(exercise.id);
+  }
+
+  void _createBuiltInTrainingPlan(TrainingPlan plan) {
+    createTrainingPlan(plan);
+    _builtInTrainingPlanIds.add(plan.id);
+  }
+
+  void _didMutatePersistedState() {
+    notifyListeners();
+    unawaited(_schedulePersistenceSave());
+  }
+
+  void _didMutateTransientState() {
+    notifyListeners();
+  }
+
+  void _runWithoutPersistence(void Function() action) {
+    final wasSuspended = _isPersistenceSuspended;
+    _isPersistenceSuspended = true;
+    try {
+      action();
+    } finally {
+      _isPersistenceSuspended = wasSuspended;
+    }
+  }
+
+  Future<void> _schedulePersistenceSave({
+    bool notifyPersistedStateObserver = true,
+  }) {
+    final persistence = _persistence;
+    if (persistence == null || _isPersistenceSuspended) {
+      return Future<void>.value();
+    }
+
+    final snapshot = _toPersistedAppState();
+    final observerGeneration = _persistedStateObserverGeneration;
+    _pendingSave = _pendingSave
+        .catchError((Object _, StackTrace _) {})
+        .then((_) async {
+          await persistence.save(snapshot);
+          if (notifyPersistedStateObserver &&
+              observerGeneration == _persistedStateObserverGeneration) {
+            _notifyPersistedStateSaved(snapshot);
+          }
+        })
+        .catchError((Object error, StackTrace stackTrace) {
+          FlutterError.reportError(
+            FlutterErrorDetails(
+              exception: error,
+              stack: stackTrace,
+              library: 'fitapp',
+              context: ErrorDescription('while persisting AppStore state'),
+            ),
+          );
+        });
+    return _pendingSave;
+  }
+
+  PersistedAppState _toPersistedAppState() {
+    final userFoods = <FoodItem>[];
+    final userDishes = <DishItem>[];
+
+    for (final item in _catalog.values) {
+      if (_builtInCatalogIds.contains(item.id)) {
+        continue;
+      }
+      if (item.isFood) {
+        userFoods.add(item.food!);
+      } else if (item.isDish) {
+        userDishes.add(item.dish!);
+      }
+    }
+
+    return PersistedAppState(
+      userFoods: userFoods,
+      userDishes: userDishes,
+      userExercises: _exercises.entries
+          .where((entry) => !_builtInExerciseIds.contains(entry.key))
+          .map((entry) => entry.value)
+          .toList(growable: false),
+      userTrainingPlans: _trainingPlans
+          .where((plan) => !_builtInTrainingPlanIds.contains(plan.id))
+          .toList(growable: false),
+      mealEntries: _mealEntries,
+      preferences: _preferences,
+      activeWorkoutSession: _activeWorkoutSession,
+      completedWorkoutSessions: _completedWorkoutSessions,
+      mealEntryCounter: _mealEntryCounter,
+      workoutSessionCounter: _workoutSessionCounter,
+    );
+  }
+
+  void _applyPersistedState(PersistedAppState state) {
+    _validatePersistedState(state);
+    _applyPersistedStateUnchecked(state);
+  }
+
+  void _applyPersistedStateUnchecked(PersistedAppState state) {
+    _runWithoutPersistence(() {
+      _resetRuntimeStateToBuiltIns();
+
+      for (final food in state.userFoods) {
+        if (_builtInCatalogIds.contains(food.id)) {
+          continue;
+        }
+        _catalog[food.id] = CatalogItem.food(food.copyWith());
+      }
+      for (final dish in state.userDishes) {
+        if (_builtInCatalogIds.contains(dish.id)) {
+          continue;
+        }
+        _catalog[dish.id] = CatalogItem.dish(_freezeDish(dish));
+      }
+      for (final exercise in state.userExercises) {
+        if (_builtInExerciseIds.contains(exercise.id)) {
+          continue;
+        }
+        _exercises[exercise.id] = _freezeExercise(exercise);
+      }
+
+      for (final plan in state.userTrainingPlans) {
+        if (_builtInTrainingPlanIds.contains(plan.id)) {
+          continue;
+        }
+        _trainingPlans.add(_freezeTrainingPlan(plan));
+      }
+
+      _mealEntries
+        ..clear()
+        ..addAll(state.mealEntries);
+      _preferences = state.preferences.copyWith();
+      _activeWorkoutSession = state.activeWorkoutSession;
+      _completedWorkoutSessions
+        ..clear()
+        ..addAll(state.completedWorkoutSessions);
+      _mealEntryCounter = state.mealEntryCounter;
+      _workoutSessionCounter = state.workoutSessionCounter;
+      _isLoggedIn = false;
+    });
+  }
+
+  void _validatePersistedState(PersistedAppState state) {
+    final validationStore = AppStore();
+
+    for (final food in state.userFoods) {
+      validationStore.createFood(food);
+    }
+    for (final dish in state.userDishes) {
+      validationStore.createDish(dish);
+    }
+    for (final exercise in state.userExercises) {
+      validationStore.createExercise(exercise);
+    }
+    for (final plan in state.userTrainingPlans) {
+      validationStore.createTrainingPlan(plan);
+    }
+  }
+
+  void _notifyPersistedStateSaved(PersistedAppState state) {
+    final observer = _onPersistedStateSaved;
+    if (observer == null) {
+      return;
+    }
+    try {
+      observer(state);
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'fitapp',
+          context: ErrorDescription(
+            'while notifying persisted AppStore state observers',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _assertCatalogItemIsUserDefined(String id) {
+    if (_builtInCatalogIds.contains(id)) {
+      throw ArgumentError('Built-in catalog items cannot be changed.');
+    }
+  }
+
+  void _assertExerciseIsUserDefined(String id) {
+    if (_builtInExerciseIds.contains(id)) {
+      throw ArgumentError('Built-in exercises cannot be changed.');
+    }
+  }
+
+  void _assertTrainingPlanIsUserDefined(String id) {
+    if (_builtInTrainingPlanIds.contains(id)) {
+      throw ArgumentError('Built-in training plans cannot be changed.');
+    }
+  }
+
+  void _assertCatalogItemCanBeDeleted(String id) {
+    if (_builtInCatalogIds.contains(id)) {
+      throw StateError('Built-in catalog items cannot be deleted.');
+    }
+  }
+
+  void _assertExerciseCanBeDeleted(String id) {
+    if (_builtInExerciseIds.contains(id)) {
+      throw StateError('Built-in exercises cannot be deleted.');
+    }
+  }
+
+  void _assertTrainingPlanCanBeDeleted(String id) {
+    if (_builtInTrainingPlanIds.contains(id)) {
+      throw StateError('Built-in training plans cannot be deleted.');
+    }
+  }
+
+  void _resetRuntimeStateToBuiltIns() {
+    _catalog.removeWhere((id, _) => !_builtInCatalogIds.contains(id));
+    _exercises.removeWhere((id, _) => !_builtInExerciseIds.contains(id));
+    _trainingPlans.removeWhere(
+      (plan) => !_builtInTrainingPlanIds.contains(plan.id),
+    );
+    _mealEntries.clear();
+    _completedWorkoutSessions.clear();
+    _preferences = const AppPreferences.defaults();
+    _activeWorkoutSession = null;
+    _mealEntryCounter = 0;
+    _workoutSessionCounter = 0;
+    _isLoggedIn = false;
   }
 
   String createIdFromName(String name) {

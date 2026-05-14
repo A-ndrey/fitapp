@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'firebase/firebase_initializer.dart';
 import 'l10n/app_localizations.dart';
 import 'models/app_preferences.dart';
 import 'screens/library_screen.dart';
@@ -9,17 +12,277 @@ import 'screens/more_screen.dart';
 import 'screens/today_screen.dart';
 import 'screens/workout_screen.dart';
 import 'state/app_store.dart';
+import 'state/persistence/app_store_persistence.dart';
+import 'state/persistence/persisted_app_state.dart';
+import 'state/persistence/shared_preferences_app_store_persistence.dart';
+import 'state/persistence/shared_preferences_sync_metadata_store.dart';
 import 'ui/core/layout/app_breakpoints.dart';
 import 'ui/core/theme/app_theme.dart';
+import 'state/sync/app_store_sync_coordinator.dart';
+import 'state/sync/app_store_sync_status.dart';
+import 'state/sync/firebase_app_store_sync_service.dart';
+import 'state/sync/installation_id_store.dart';
 
-void main() {
-  runApp(const FitApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final startup = await prepareFitAppStartup();
+  await launchFitApp(startup: startup);
+}
+
+typedef AppRunner = FutureOr<void> Function(Widget app);
+typedef AppStorePersistenceFactory =
+    AppStorePersistence Function(Set<String> knownExerciseIds);
+typedef AppStoreHydrator =
+    Future<AppStore> Function({
+      required AppStorePersistence persistence,
+      required PersistedAppStateObserver onPersistedStateSaved,
+    });
+typedef SyncMetadataStoreFactory =
+    SharedPreferencesSyncMetadataStore Function();
+typedef InstallationIdStoreFactory = InstallationIdStore Function();
+typedef SyncServiceFactory =
+    FirebaseAppStoreSyncService Function(Set<String> knownExerciseIds);
+typedef SyncCoordinatorFactory =
+    AppStoreSyncCoordinator Function({
+      required InstallationIdStore installationIdStore,
+      required SharedPreferencesSyncMetadataStore metadataStore,
+      required FirebaseAppStoreSyncService syncService,
+      required PersistedStateObserverBinder bindPersistedStateObserver,
+      required LocalSnapshotLoader loadLocalSnapshot,
+      required RemoteSnapshotApplier applyRemoteSnapshot,
+    });
+
+Future<FitAppStartup> prepareFitAppStartup({
+  FirebaseInitializer? firebaseInitializer,
+  AppStorePersistenceFactory? appStorePersistenceFactory,
+  AppStoreHydrator? appStoreHydrator,
+  SyncMetadataStoreFactory? syncMetadataStoreFactory,
+  InstallationIdStoreFactory? installationIdStoreFactory,
+  SyncServiceFactory? syncServiceFactory,
+  SyncCoordinatorFactory? syncCoordinatorFactory,
+  FitAppSyncAccess? syncAccess,
+}) async {
+  final bootstrapStore = AppStore();
+  final knownExerciseIds = bootstrapStore.exercises
+      .map((exercise) => exercise.id)
+      .toSet();
+  bootstrapStore.dispose();
+
+  final persistence =
+      (appStorePersistenceFactory ?? _defaultAppStorePersistenceFactory)(
+        knownExerciseIds,
+      );
+  final persistedStateObserverRelay = _PersistedStateObserverRelay();
+  final store = await (appStoreHydrator ?? _defaultAppStoreHydrator)(
+    persistence: persistence,
+    onPersistedStateSaved: persistedStateObserverRelay.call,
+  );
+
+  final startup = FitAppStartup._(
+    store: store,
+    syncAccess: syncAccess ?? FitAppSyncAccess(),
+    firebaseInitializer: firebaseInitializer ?? DefaultFirebaseInitializer(),
+    persistence: persistence,
+    metadataStore:
+        (syncMetadataStoreFactory ?? SharedPreferencesSyncMetadataStore.new)(),
+    installationIdStore:
+        (installationIdStoreFactory ?? InstallationIdStore.new)(),
+    syncServiceFactory: syncServiceFactory ?? _defaultSyncServiceFactory,
+    syncCoordinatorFactory:
+        syncCoordinatorFactory ?? _defaultSyncCoordinatorFactory,
+    persistedStateObserverRelay: persistedStateObserverRelay,
+    knownExerciseIds: knownExerciseIds,
+  );
+  startup.syncAccess._bindStartupRetry(startup.startBackgroundSync);
+  return startup;
+}
+
+Future<void> launchFitApp({
+  required FitAppStartup startup,
+  AppRunner appRunner = _runApp,
+}) async {
+  await appRunner(FitApp(store: startup.store, syncAccess: startup.syncAccess));
+  unawaited(startup.startBackgroundSync());
+}
+
+class FitAppStartup {
+  FitAppStartup._({
+    required this.store,
+    required this.syncAccess,
+    required FirebaseInitializer firebaseInitializer,
+    required AppStorePersistence persistence,
+    required SharedPreferencesSyncMetadataStore metadataStore,
+    required InstallationIdStore installationIdStore,
+    required SyncServiceFactory syncServiceFactory,
+    required SyncCoordinatorFactory syncCoordinatorFactory,
+    required _PersistedStateObserverRelay persistedStateObserverRelay,
+    required Set<String> knownExerciseIds,
+  }) : _firebaseInitializer = firebaseInitializer,
+       _persistence = persistence,
+       _metadataStore = metadataStore,
+       _installationIdStore = installationIdStore,
+       _syncServiceFactory = syncServiceFactory,
+       _syncCoordinatorFactory = syncCoordinatorFactory,
+       _persistedStateObserverRelay = persistedStateObserverRelay,
+       _knownExerciseIds = Set.unmodifiable(knownExerciseIds);
+
+  final AppStore store;
+  final FitAppSyncAccess syncAccess;
+  final FirebaseInitializer _firebaseInitializer;
+  final AppStorePersistence _persistence;
+  final SharedPreferencesSyncMetadataStore _metadataStore;
+  final InstallationIdStore _installationIdStore;
+  final SyncServiceFactory _syncServiceFactory;
+  final SyncCoordinatorFactory _syncCoordinatorFactory;
+  final _PersistedStateObserverRelay _persistedStateObserverRelay;
+  final Set<String> _knownExerciseIds;
+
+  Future<void>? _backgroundSyncFuture;
+
+  Future<void> startBackgroundSync() {
+    if (syncAccess.coordinator != null) {
+      return Future<void>.value();
+    }
+
+    return _backgroundSyncFuture ??= _runBackgroundSync().whenComplete(() {
+      _backgroundSyncFuture = null;
+    });
+  }
+
+  Future<void> _runBackgroundSync() async {
+    try {
+      final didInitialize = await _firebaseInitializer.initialize();
+      if (!didInitialize) {
+        return;
+      }
+
+      final coordinator = _syncCoordinatorFactory(
+        installationIdStore: _installationIdStore,
+        metadataStore: _metadataStore,
+        syncService: _syncServiceFactory(_knownExerciseIds),
+        bindPersistedStateObserver: _persistedStateObserverRelay.bind,
+        loadLocalSnapshot: _persistence.load,
+        applyRemoteSnapshot:
+            (state, {required notifyPersistedStateObserver}) async {
+              await store.applyExternalPersistedState(
+                state,
+                notifyPersistedStateObserver: notifyPersistedStateObserver,
+              );
+            },
+      );
+      syncAccess.bindCoordinator(coordinator);
+      await coordinator.start();
+    } catch (error) {
+      syncAccess.reportError(error);
+    }
+  }
+}
+
+class FitAppSyncAccess extends ChangeNotifier {
+  AppStoreSyncCoordinator? get coordinator => _coordinator;
+  AppStoreSyncStatus get status => _status;
+
+  AppStoreSyncCoordinator? _coordinator;
+  Future<void> Function()? _startupRetry;
+  VoidCallback? _coordinatorListener;
+  AppStoreSyncStatus _status = const AppStoreSyncStatus();
+
+  Future<void> syncNow() async {
+    final coordinator = _coordinator;
+    if (coordinator != null) {
+      await coordinator.syncNow();
+      return;
+    }
+
+    final startupRetry = _startupRetry;
+    if (startupRetry != null) {
+      await startupRetry();
+    }
+  }
+
+  void bindCoordinator(AppStoreSyncCoordinator coordinator) {
+    if (identical(_coordinator, coordinator)) {
+      return;
+    }
+
+    _detachCoordinator();
+    _coordinator = coordinator;
+    _coordinatorListener = _handleCoordinatorChanged;
+    coordinator.addListener(_coordinatorListener!);
+    _setStatus(coordinator.status);
+  }
+
+  void reportError(Object error) {
+    _setStatus(
+      AppStoreSyncStatus(
+        phase: AppStoreSyncPhase.error,
+        lastErrorMessage: error.toString(),
+      ),
+    );
+  }
+
+  void _handleCoordinatorChanged() {
+    final coordinator = _coordinator;
+    if (coordinator == null) {
+      return;
+    }
+
+    _setStatus(coordinator.status);
+  }
+
+  void _setStatus(AppStoreSyncStatus nextStatus) {
+    if (_status == nextStatus) {
+      return;
+    }
+
+    _status = nextStatus;
+    notifyListeners();
+  }
+
+  void _bindStartupRetry(Future<void> Function() startupRetry) {
+    _startupRetry = startupRetry;
+  }
+
+  void _detachCoordinator() {
+    final coordinator = _coordinator;
+    final coordinatorListener = _coordinatorListener;
+    if (coordinator != null && coordinatorListener != null) {
+      coordinator.removeListener(coordinatorListener);
+    }
+    _coordinator = null;
+    _coordinatorListener = null;
+  }
+
+  @override
+  void dispose() {
+    _detachCoordinator();
+    super.dispose();
+  }
+}
+
+class _PersistedStateObserverRelay {
+  void Function(PersistedAppState state)? _observer;
+
+  void call(PersistedAppState state) {
+    final observer = _observer;
+    if (observer == null) {
+      return;
+    }
+
+    observer(state);
+  }
+
+  void bind(void Function(PersistedAppState state) observer) {
+    _observer = observer;
+  }
 }
 
 class FitApp extends StatefulWidget {
-  const FitApp({super.key, this.store});
+  const FitApp({super.key, this.store, this.syncAccess});
 
   final AppStore? store;
+  final FitAppSyncAccess? syncAccess;
 
   @override
   State<FitApp> createState() => _FitAppState();
@@ -57,7 +320,7 @@ class _FitAppState extends State<FitApp> {
           themeMode: _themeModeFor(_store.appearancePreference),
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
-          home: FitHome(store: _store),
+          home: FitHome(store: _store, syncAccess: widget.syncAccess),
         );
       },
     );
@@ -73,9 +336,10 @@ ThemeMode _themeModeFor(AppearancePreference preference) {
 }
 
 class FitHome extends StatefulWidget {
-  const FitHome({super.key, required this.store});
+  const FitHome({super.key, required this.store, this.syncAccess});
 
   final AppStore store;
+  final FitAppSyncAccess? syncAccess;
 
   @override
   State<FitHome> createState() => _FitHomeState();
@@ -131,7 +395,12 @@ class _FitHomeState extends State<FitHome> {
         label: l10n?.destinationMore ?? 'Settings',
         icon: Icons.settings_outlined,
         selectedIcon: Icons.settings,
-        screen: MoreScreen(store: widget.store),
+        screen: MoreScreen(
+          store: widget.store,
+          syncStatusListenable: widget.syncAccess,
+          readSyncStatus: () => widget.syncAccess?.status,
+          onSyncNow: widget.syncAccess?.syncNow,
+        ),
       ),
     ];
 
@@ -242,4 +511,50 @@ class _WorkoutTabNavigator extends StatelessWidget {
       },
     );
   }
+}
+
+AppStorePersistence _defaultAppStorePersistenceFactory(
+  Set<String> knownExerciseIds,
+) {
+  return SharedPreferencesAppStorePersistence(
+    knownExerciseIds: knownExerciseIds,
+  );
+}
+
+Future<AppStore> _defaultAppStoreHydrator({
+  required AppStorePersistence persistence,
+  required PersistedAppStateObserver onPersistedStateSaved,
+}) {
+  return AppStore.hydrated(
+    persistence: persistence,
+    onPersistedStateSaved: onPersistedStateSaved,
+  );
+}
+
+FirebaseAppStoreSyncService _defaultSyncServiceFactory(
+  Set<String> knownExerciseIds,
+) {
+  return FirebaseAppStoreSyncService(knownExerciseIds: knownExerciseIds);
+}
+
+AppStoreSyncCoordinator _defaultSyncCoordinatorFactory({
+  required InstallationIdStore installationIdStore,
+  required SharedPreferencesSyncMetadataStore metadataStore,
+  required FirebaseAppStoreSyncService syncService,
+  required PersistedStateObserverBinder bindPersistedStateObserver,
+  required LocalSnapshotLoader loadLocalSnapshot,
+  required RemoteSnapshotApplier applyRemoteSnapshot,
+}) {
+  return AppStoreSyncCoordinator(
+    installationIdStore: installationIdStore,
+    metadataStore: metadataStore,
+    syncService: syncService,
+    bindPersistedStateObserver: bindPersistedStateObserver,
+    loadLocalSnapshot: loadLocalSnapshot,
+    applyRemoteSnapshot: applyRemoteSnapshot,
+  );
+}
+
+void _runApp(Widget app) {
+  runApp(app);
 }
