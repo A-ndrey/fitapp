@@ -329,11 +329,11 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
 
   static String _snapshotHash(PersistedAppState state) {
     final bytes = utf8.encode(jsonEncode(PersistedAppStateCodec.encode(state)));
-    var hash = 0xcbf29ce484222325;
+    var hash = 0x811c9dc5;
     for (final byte in bytes) {
       hash ^= byte;
-      hash = (hash * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF;
+      hash = (hash * 0x01000193) & 0xFFFFFFFF;
     }
-    return hash.toRadixString(16).padLeft(16, '0');
+    return hash.toRadixString(16).padLeft(8, '0');
   }
 }
