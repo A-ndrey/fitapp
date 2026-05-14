@@ -13,6 +13,9 @@ import 'package:fitapp/screens/library_screen.dart';
 import 'package:fitapp/screens/meal_screen.dart';
 import 'package:fitapp/screens/today_screen.dart';
 import 'package:fitapp/state/app_store.dart';
+import 'package:fitapp/state/sync/app_store_sync_coordinator.dart';
+import 'package:fitapp/state/sync/firebase_app_store_sync_service.dart';
+import 'package:fitapp/state/sync/app_store_sync_status.dart';
 import 'package:fitapp/ui/core/layout/adaptive_page.dart';
 import 'package:fitapp/ui/core/widgets/empty_state.dart';
 import 'package:fitapp/ui/core/theme/app_theme.dart';
@@ -154,6 +157,46 @@ Future<void> openAddRecipe(WidgetTester tester) async {
     await tester.tap(find.widgetWithText(FilledButton, 'Add recipe'));
   }
   await tester.pumpAndSettle();
+}
+
+class _TestSyncCoordinator extends AppStoreSyncCoordinator {
+  _TestSyncCoordinator({AppStoreSyncStatus status = const AppStoreSyncStatus()})
+    : _status = status,
+      super(
+        syncService: FirebaseAppStoreSyncService(
+          backend: _NoopRemoteSnapshotStore(),
+        ),
+        loadLocalSnapshot: () async => null,
+        applyRemoteSnapshot:
+            (_, {required notifyPersistedStateObserver}) async {},
+      );
+
+  AppStoreSyncStatus _status;
+
+  @override
+  AppStoreSyncStatus get status => _status;
+
+  void setStatus(AppStoreSyncStatus nextStatus) {
+    _status = nextStatus;
+    notifyListeners();
+  }
+}
+
+class _NoopRemoteSnapshotStore implements RemoteSnapshotStore {
+  @override
+  Future<Map<String, Object?>?> fetch(String path) async => null;
+
+  @override
+  Future<void> set(String path, Map<String, Object?> data) async {}
+}
+
+class _TrackingSyncAccess extends FitAppSyncAccess {
+  int syncNowCallCount = 0;
+
+  @override
+  Future<void> syncNow() async {
+    syncNowCallCount += 1;
+  }
 }
 
 void main() {
@@ -966,7 +1009,10 @@ void main() {
   });
 
   testWidgets('shows Settings tab and opens settings screen', (tester) async {
-    await tester.pumpWidget(const FitApp());
+    final syncAccess = FitAppSyncAccess();
+    addTearDown(syncAccess.dispose);
+
+    await tester.pumpWidget(FitApp(syncAccess: syncAccess));
 
     expect(find.text('Settings'), findsWidgets);
 
@@ -974,7 +1020,12 @@ void main() {
 
     expect(find.text('Sync'), findsOneWidget);
     expect(find.text('Units'), findsOneWidget);
-    expect(find.text('Login'), findsOneWidget);
+    expect(
+      find.text('Sync is ready. Tap below to check for updates.'),
+      findsOneWidget,
+    );
+    expect(find.text('Sync now'), findsOneWidget);
+    expect(find.text('Login'), findsNothing);
     expect(find.text('Logout'), findsNothing);
     await scrollToText(tester, 'Language');
     expect(find.text('Language'), findsOneWidget);
@@ -997,26 +1048,72 @@ void main() {
     },
   );
 
-  testWidgets('sync buttons depend on login state', (tester) async {
+  testWidgets('settings sync card renders error status and retries sync', (
+    tester,
+  ) async {
     final store = AppStore.empty();
+    final syncAccess = _TrackingSyncAccess()
+      ..reportError(StateError('Sync failed while reaching the server.'));
+    addTearDown(store.dispose);
+    addTearDown(syncAccess.dispose);
 
-    await tester.pumpWidget(FitApp(store: store));
+    await tester.pumpWidget(FitApp(store: store, syncAccess: syncAccess));
     await openMoreDestination(tester);
 
-    expect(find.text('Login'), findsOneWidget);
-    expect(find.text('Logout'), findsNothing);
-
-    await tester.tap(find.text('Login'));
-    await tester.pumpAndSettle();
-
+    expect(
+      find.text(
+        'Sync error: Bad state: Sync failed while reaching the server.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Sync now'), findsOneWidget);
     expect(find.text('Login'), findsNothing);
-    expect(find.text('Logout'), findsOneWidget);
+    expect(find.text('Logout'), findsNothing);
 
-    await tester.tap(find.text('Logout'));
+    await tester.tap(find.text('Sync now'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Login'), findsOneWidget);
+    expect(syncAccess.syncNowCallCount, 1);
+  });
+
+  testWidgets('settings sync card updates from coordinator status', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    final syncAccess = FitAppSyncAccess();
+    final coordinator = _TestSyncCoordinator();
+    addTearDown(store.dispose);
+    addTearDown(syncAccess.dispose);
+    addTearDown(coordinator.dispose);
+
+    syncAccess.bindCoordinator(coordinator);
+    await tester.pumpWidget(FitApp(store: store, syncAccess: syncAccess));
+    await openMoreDestination(tester);
+
+    expect(
+      find.text('Sync is ready. Tap below to check for updates.'),
+      findsOneWidget,
+    );
+    expect(find.text('Login'), findsNothing);
     expect(find.text('Logout'), findsNothing);
+
+    coordinator.setStatus(
+      const AppStoreSyncStatus(phase: AppStoreSyncPhase.syncing),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Sync in progress. We will keep your data up to date.'),
+      findsOneWidget,
+    );
+
+    coordinator.setStatus(
+      AppStoreSyncStatus(
+        phase: AppStoreSyncPhase.synced,
+        lastSyncedAt: DateTime(2026, 5, 14, 10, 30),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Last synced on 2026-05-14 10:30.'), findsOneWidget);
   });
 
   testWidgets('more screen controls update store and theme immediately', (
@@ -1032,6 +1129,7 @@ void main() {
       ThemeMode.system,
     );
 
+    await scrollToText(tester, 'Pounds');
     await tester.tap(find.text('Pounds'));
     await tester.pumpAndSettle();
     expect(store.workoutWeightUnit, WorkoutWeightUnit.pounds);

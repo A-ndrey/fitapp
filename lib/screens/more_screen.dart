@@ -3,23 +3,40 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/app_preferences.dart';
 import '../state/app_store.dart';
+import '../state/sync/app_store_sync_status.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/app_screen_scaffold.dart';
 import '../ui/core/widgets/section_header.dart';
 import '../ui/settings/settings_cards.dart';
 
 class MoreScreen extends StatelessWidget {
-  const MoreScreen({super.key, required this.store});
+  const MoreScreen({
+    super.key,
+    required this.store,
+    this.syncStatusListenable,
+    this.readSyncStatus,
+    this.onSyncNow,
+  });
 
   final AppStore store;
+  final Listenable? syncStatusListenable;
+  final AppStoreSyncStatus? Function()? readSyncStatus;
+  final Future<void> Function()? onSyncNow;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: store,
+      animation: Listenable.merge([
+        store,
+        if (syncStatusListenable != null) syncStatusListenable!,
+      ]),
       builder: (context, _) {
         final preferences = store.preferences;
         final l10n = AppLocalizations.of(context);
+        final syncPresentation = _syncCardPresentation(
+          readSyncStatus?.call(),
+          errorColor: Theme.of(context).colorScheme.error,
+        );
 
         return AppScreenScaffold(
           title: l10n?.destinationMore ?? 'Settings',
@@ -41,15 +58,10 @@ class MoreScreen extends StatelessWidget {
               const SizedBox(height: 12),
               SettingsStatusCard(
                 title: l10n?.moreSyncStatusTitle ?? 'Sync status',
-                message: store.isLoggedIn
-                    ? l10n?.moreSyncSignedInMessage ??
-                          'Signed in. Sync is not available yet.'
-                    : l10n?.moreSyncSignedOutMessage ??
-                          'Signed out. Sync is not available yet.',
-                actionLabel: store.isLoggedIn
-                    ? l10n?.moreLogoutAction ?? 'Logout'
-                    : l10n?.moreLoginAction ?? 'Login',
-                onPressed: store.isLoggedIn ? store.logOut : store.logIn,
+                message: syncPresentation.message,
+                messageColor: syncPresentation.messageColor,
+                actionLabel: 'Sync now',
+                onPressed: () => onSyncNow?.call(),
               ),
               const SizedBox(height: 20),
               LayoutBuilder(
@@ -200,6 +212,51 @@ class MoreScreen extends StatelessWidget {
       },
     );
   }
+}
+
+_SyncCardPresentation _syncCardPresentation(
+  AppStoreSyncStatus? status, {
+  required Color errorColor,
+}) {
+  final resolvedStatus = status ?? const AppStoreSyncStatus();
+
+  return switch (resolvedStatus.phase) {
+    AppStoreSyncPhase.idle => const _SyncCardPresentation(
+      message: 'Sync is ready. Tap below to check for updates.',
+    ),
+    AppStoreSyncPhase.syncing => const _SyncCardPresentation(
+      message: 'Sync in progress. We will keep your data up to date.',
+    ),
+    AppStoreSyncPhase.synced => _SyncCardPresentation(
+      message:
+          'Last synced on ${_formatSyncTimestamp(resolvedStatus.lastSyncedAt)}.',
+    ),
+    AppStoreSyncPhase.error => _SyncCardPresentation(
+      message:
+          'Sync error: ${resolvedStatus.lastErrorMessage ?? 'Unknown error.'}',
+      messageColor: errorColor,
+    ),
+  };
+}
+
+String _formatSyncTimestamp(DateTime? value) {
+  if (value == null) {
+    return 'an unknown time';
+  }
+
+  final localValue = value.toLocal();
+  final month = localValue.month.toString().padLeft(2, '0');
+  final day = localValue.day.toString().padLeft(2, '0');
+  final hour = localValue.hour.toString().padLeft(2, '0');
+  final minute = localValue.minute.toString().padLeft(2, '0');
+  return '${localValue.year}-$month-$day $hour:$minute';
+}
+
+class _SyncCardPresentation {
+  const _SyncCardPresentation({required this.message, this.messageColor});
+
+  final String message;
+  final Color? messageColor;
 }
 
 class _SettingsGroup extends StatelessWidget {

@@ -395,7 +395,12 @@ class _FitHomeState extends State<FitHome> {
         label: l10n?.destinationMore ?? 'Settings',
         icon: Icons.settings_outlined,
         selectedIcon: Icons.settings,
-        screen: MoreScreen(store: widget.store),
+        screen: MoreScreen(
+          store: widget.store,
+          syncStatusListenable: widget.syncAccess,
+          readSyncStatus: () => widget.syncAccess?.status,
+          onSyncNow: widget.syncAccess?.syncNow,
+        ),
       ),
     ];
 
