@@ -22,21 +22,13 @@ class PersistedAppState {
     required List<WorkoutSession> completedWorkoutSessions,
     required this.mealEntryCounter,
     required this.workoutSessionCounter,
-  }) : userFoods = List.unmodifiable(
-         userFoods.map(_cloneFoodItem),
-       ),
-       userDishes = List.unmodifiable(
-         userDishes.map(_cloneDishItem),
-       ),
-       userExercises = List.unmodifiable(
-         userExercises.map(_cloneExercise),
-       ),
+  }) : userFoods = List.unmodifiable(userFoods.map(_cloneFoodItem)),
+       userDishes = List.unmodifiable(userDishes.map(_cloneDishItem)),
+       userExercises = List.unmodifiable(userExercises.map(_cloneExercise)),
        userTrainingPlans = List.unmodifiable(
          userTrainingPlans.map(_cloneTrainingPlan),
        ),
-       mealEntries = List.unmodifiable(
-         mealEntries.map(_cloneMealEntry),
-       ),
+       mealEntries = List.unmodifiable(mealEntries.map(_cloneMealEntry)),
        preferences = _cloneAppPreferences(preferences),
        activeWorkoutSession = _cloneWorkoutSession(activeWorkoutSession),
        completedWorkoutSessions = List.unmodifiable(
@@ -74,7 +66,10 @@ class PersistedAppState {
     return item.copyWith(
       components: List.unmodifiable(
         item.components.map((component) {
-          return DishComponent(itemId: component.itemId, grams: component.grams);
+          return DishComponent(
+            itemId: component.itemId,
+            grams: component.grams,
+          );
         }),
       ),
     );

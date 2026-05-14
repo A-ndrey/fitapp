@@ -196,10 +196,9 @@ void main() {
           dishB.id: const CatalogItem.dish(dishB),
         };
 
-        final values = const CatalogItem.dish(dishA).nutritionForGrams(
-          100,
-          catalog,
-        );
+        final values = const CatalogItem.dish(
+          dishA,
+        ).nutritionForGrams(100, catalog);
 
         expect(values.calories, 131);
         expect(values.fat, 10.2);
