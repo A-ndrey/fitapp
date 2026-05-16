@@ -26,10 +26,7 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([
-        store,
-        syncStatusListenable,
-      ]),
+      animation: Listenable.merge([store, syncStatusListenable]),
       builder: (context, _) {
         final preferences = store.preferences;
         final l10n = AppLocalizations.of(context);
@@ -136,6 +133,12 @@ class MoreScreen extends StatelessWidget {
                     ),
                   ];
                   final appCards = [
+                    MacroTargetsSettingsCard(
+                      initialValue: preferences.dailyMacroTargets,
+                      subtitle:
+                          'Use these targets across Today and Nutrition cards.',
+                      onApply: store.setDailyMacroTargets,
+                    ),
                     PreferenceChipCard<LanguagePreference>(
                       title: l10n?.settingsLanguageTitle ?? 'Language',
                       subtitle:

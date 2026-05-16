@@ -300,6 +300,9 @@ class PersistedAppStateCodec {
       'dishWeightUnit': preferences.dishWeightUnit.name,
       'heightUnit': preferences.heightUnit.name,
       'distanceUnit': preferences.distanceUnit.name,
+      'dailyMacroTargets': _encodeNutritionValues(
+        preferences.dailyMacroTargets,
+      ),
     };
   }
 
@@ -336,6 +339,9 @@ class PersistedAppStateCodec {
         DistanceUnit.values,
         'AppPreferences.distanceUnit',
       ),
+      dailyMacroTargets: payload['dailyMacroTargets'] == null
+          ? AppPreferences.defaultDailyMacroTargets
+          : _decodeNutritionValues(payload['dailyMacroTargets']),
     );
   }
 

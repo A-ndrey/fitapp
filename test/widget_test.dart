@@ -299,7 +299,12 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: NutritionSummaryGrid(values: tomatoNutrition)),
+          home: Scaffold(
+            body: NutritionSummaryGrid(
+              values: tomatoNutrition,
+              targets: AppPreferences.defaultDailyMacroTargets,
+            ),
+          ),
         ),
       );
 
@@ -379,7 +384,10 @@ void main() {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    const NutritionSummaryGrid(values: tomatoNutrition),
+                    const NutritionSummaryGrid(
+                      values: tomatoNutrition,
+                      targets: AppPreferences.defaultDailyMacroTargets,
+                    ),
                     MealEntryCard(
                       store: AppStore.empty(),
                       entry: saladEntry,
@@ -871,7 +879,8 @@ void main() {
     var finder = find.bySemanticsLabel(label);
     if (!tester.any(finder)) {
       finder = find.byWidgetPredicate(
-        (widget) => widget is TextField && widget.decoration?.labelText == label,
+        (widget) =>
+            widget is TextField && widget.decoration?.labelText == label,
         description: 'TextField("$label")',
       );
     }
@@ -996,6 +1005,38 @@ void main() {
     expect(find.text('Carbs'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Log food'), findsOneWidget);
     expect(find.byTooltip('Log food'), findsOneWidget);
+  });
+
+  testWidgets('today and nutrition cards use stored daily macro targets', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    store.setDailyMacroTargets(
+      const NutritionValues(calories: 2100, protein: 140, fat: 65, carbs: 260),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TodayScreen(
+          store: store,
+          onOpenTrain: () {},
+          onOpenNutrition: () {},
+          onOpenLibrary: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('2100 kcal'), findsOneWidget);
+    expect(find.textContaining('140 g'), findsOneWidget);
+
+    await tester.pumpWidget(MaterialApp(home: MealScreen(store: store)));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('2100 kcal'), findsOneWidget);
+    expect(find.textContaining('140 g'), findsOneWidget);
+    expect(find.textContaining('65 g'), findsOneWidget);
+    expect(find.textContaining('260 g'), findsOneWidget);
   });
 
   testWidgets('Nutrition uses one primary add action per responsive mode', (

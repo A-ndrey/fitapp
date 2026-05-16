@@ -310,34 +310,32 @@ void main() {
     );
   });
 
-  test('PersistedAppState codec decodes legacy meal entries without loggedAt', () {
-    final payload = _basePersistedPayload()
-      ..['mealEntries'] = [
-        {
-          'id': 'meal-entry-legacy',
-          'sourceItemId': 'oats',
-          'itemName': 'Oats',
-          'itemType': 'food',
-          'servingSizeGrams': 40,
-          'consumedGrams': 40,
-          'mode': 'grams',
-          'enteredQuantity': 40,
-          'nutrition': {
-            'calories': 150,
-            'protein': 5,
-            'fat': 3,
-            'carbs': 27,
+  test(
+    'PersistedAppState codec decodes legacy meal entries without loggedAt',
+    () {
+      final payload = _basePersistedPayload()
+        ..['mealEntries'] = [
+          {
+            'id': 'meal-entry-legacy',
+            'sourceItemId': 'oats',
+            'itemName': 'Oats',
+            'itemType': 'food',
+            'servingSizeGrams': 40,
+            'consumedGrams': 40,
+            'mode': 'grams',
+            'enteredQuantity': 40,
+            'nutrition': {'calories': 150, 'protein': 5, 'fat': 3, 'carbs': 27},
           },
-        },
-      ];
+        ];
 
-    final decoded = PersistedAppStateCodec.decode(payload);
+      final decoded = PersistedAppStateCodec.decode(payload);
 
-    expect(
-      decoded.mealEntries.single.loggedAt,
-      DateTime.fromMillisecondsSinceEpoch(0),
-    );
-  });
+      expect(
+        decoded.mealEntries.single.loggedAt,
+        DateTime.fromMillisecondsSinceEpoch(0),
+      );
+    },
+  );
 
   test(
     'PersistedAppState codec round-trips snapshot data as JSON-safe values',
@@ -417,6 +415,12 @@ void main() {
           dishWeightUnit: DishWeightUnit.ounces,
           heightUnit: HeightUnit.inches,
           distanceUnit: DistanceUnit.miles,
+          dailyMacroTargets: NutritionValues(
+            calories: 2400,
+            protein: 160,
+            fat: 80,
+            carbs: 280,
+          ),
         ),
         activeWorkoutSession: WorkoutSession(
           id: 'workout-session-1',
@@ -433,7 +437,7 @@ void main() {
                 sets: 3,
                 unit: 'reps',
               ),
-                setLogs: [WorkoutSetLog(reps: 10, weight: 0, time: 45)],
+              setLogs: [WorkoutSetLog(reps: 10, weight: 0, time: 45)],
             ),
           ],
         ),
@@ -478,6 +482,12 @@ void main() {
         'dishWeightUnit': 'ounces',
         'heightUnit': 'inches',
         'distanceUnit': 'miles',
+        'dailyMacroTargets': <String, Object?>{
+          'calories': 2400.0,
+          'protein': 160.0,
+          'fat': 80.0,
+          'carbs': 280.0,
+        },
       });
 
       final foods = payload['userFoods']! as List<Object?>;
@@ -526,6 +536,12 @@ void main() {
           dishWeightUnit: DishWeightUnit.ounces,
           heightUnit: HeightUnit.inches,
           distanceUnit: DistanceUnit.miles,
+          dailyMacroTargets: NutritionValues(
+            calories: 2400,
+            protein: 160,
+            fat: 80,
+            carbs: 280,
+          ),
         ),
       );
       expect(decoded.activeWorkoutSession, isNotNull);

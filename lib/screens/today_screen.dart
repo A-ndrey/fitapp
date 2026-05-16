@@ -32,9 +32,6 @@ class TodayScreen extends StatefulWidget {
 }
 
 class _TodayScreenState extends State<TodayScreen> {
-  static const _calorieGoal = 3200.0;
-  static const _proteinGoal = 220.0;
-
   Timer? _timer;
 
   @override
@@ -82,6 +79,7 @@ class _TodayScreenState extends State<TodayScreen> {
         final l10n = AppLocalizations.of(context);
         final activeSession = widget.store.activeWorkoutSession;
         final dailyTotals = widget.store.dailyTotals;
+        final dailyMacroTargets = widget.store.dailyMacroTargets;
         final nextPlan = activeSession == null
             ? widget.store.trainingPlans.firstOrNull
             : widget.store.trainingPlanById(activeSession.trainingPlanId);
@@ -115,8 +113,8 @@ class _TodayScreenState extends State<TodayScreen> {
                 trailing: activeSession == null
                     ? DashboardStatChip(
                         label: _adherenceLabel(
-                          dailyTotals.calories / _calorieGoal,
-                          dailyTotals.protein / _proteinGoal,
+                          dailyTotals.calories / dailyMacroTargets.calories,
+                          dailyTotals.protein / dailyMacroTargets.protein,
                         ),
                         icon: Icons.track_changes_outlined,
                         tone: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -134,10 +132,11 @@ class _TodayScreenState extends State<TodayScreen> {
                       valueLabel:
                           '${_formatDouble(dailyTotals.calories)} ${l10n?.nutritionKilocalorieUnit ?? 'kcal'}',
                       targetLabel:
-                          '${_formatDouble(_calorieGoal)} ${l10n?.nutritionKilocalorieUnit ?? 'kcal'}',
-                      progress: dailyTotals.calories / _calorieGoal,
+                          '${_formatDouble(dailyMacroTargets.calories)} ${l10n?.nutritionKilocalorieUnit ?? 'kcal'}',
+                      progress:
+                          dailyTotals.calories / dailyMacroTargets.calories,
                       statusLabel:
-                          '${_formatDouble((_calorieGoal - dailyTotals.calories).clamp(0, _calorieGoal))} left',
+                          '${_formatDouble((dailyMacroTargets.calories - dailyTotals.calories).clamp(0, dailyMacroTargets.calories))} left',
                       leading: const Icon(
                         Icons.local_fire_department_outlined,
                         color: AppTheme.calorieAccent,
@@ -150,10 +149,10 @@ class _TodayScreenState extends State<TodayScreen> {
                       valueLabel:
                           '${_formatDouble(dailyTotals.protein)} ${l10n?.nutritionGramUnit ?? 'g'}',
                       targetLabel:
-                          '${_formatDouble(_proteinGoal)} ${l10n?.nutritionGramUnit ?? 'g'}',
-                      progress: dailyTotals.protein / _proteinGoal,
+                          '${_formatDouble(dailyMacroTargets.protein)} ${l10n?.nutritionGramUnit ?? 'g'}',
+                      progress: dailyTotals.protein / dailyMacroTargets.protein,
                       statusLabel:
-                          '${_formatDouble((_proteinGoal - dailyTotals.protein).clamp(0, _proteinGoal))} left',
+                          '${_formatDouble((dailyMacroTargets.protein - dailyTotals.protein).clamp(0, dailyMacroTargets.protein))} left',
                       leading: const Icon(
                         Icons.egg_alt_outlined,
                         color: AppTheme.proteinAccent,

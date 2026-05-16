@@ -61,7 +61,10 @@ class MealScreen extends StatelessWidget {
                           )
                         : null,
                   ),
-                  NutritionSummaryGrid(values: store.dailyTotals),
+                  NutritionSummaryGrid(
+                    values: store.dailyTotals,
+                    targets: store.dailyMacroTargets,
+                  ),
                   const SizedBox(height: 24),
                   Text(
                     l10n?.mealEntriesTitle ?? 'Logged meals',
@@ -124,8 +127,8 @@ class MealScreen extends StatelessWidget {
       frequentItems: frequentItems,
       frequentLabel: 'Frequent foods',
       allowCreate: true,
-      createActionLabelBuilder:
-          (query) => l10n?.mealCreateItem(query) ?? 'Create "$query"',
+      createActionLabelBuilder: (query) =>
+          l10n?.mealCreateItem(query) ?? 'Create "$query"',
     );
     if (!context.mounted || result == null) {
       return;

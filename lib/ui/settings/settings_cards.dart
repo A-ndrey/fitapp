@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../models/nutrition.dart';
+import '../core/input/numeric_input_formatters.dart';
+
 class SettingsStatusCard extends StatelessWidget {
   const SettingsStatusCard({
     required this.title,
@@ -141,4 +144,192 @@ class PreferenceChipOption<T> {
 
   final T value;
   final String label;
+}
+
+class MacroTargetsSettingsCard extends StatefulWidget {
+  const MacroTargetsSettingsCard({
+    required this.initialValue,
+    required this.onApply,
+    super.key,
+    this.title = 'Daily macro targets',
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final NutritionValues initialValue;
+  final ValueChanged<NutritionValues> onApply;
+
+  @override
+  State<MacroTargetsSettingsCard> createState() =>
+      _MacroTargetsSettingsCardState();
+}
+
+class _MacroTargetsSettingsCardState extends State<MacroTargetsSettingsCard> {
+  late final TextEditingController _caloriesController;
+  late final TextEditingController _proteinController;
+  late final TextEditingController _fatController;
+  late final TextEditingController _carbsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _caloriesController = TextEditingController(
+      text: _format(widget.initialValue.calories),
+    );
+    _proteinController = TextEditingController(
+      text: _format(widget.initialValue.protein),
+    );
+    _fatController = TextEditingController(
+      text: _format(widget.initialValue.fat),
+    );
+    _carbsController = TextEditingController(
+      text: _format(widget.initialValue.carbs),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant MacroTargetsSettingsCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue) {
+      _caloriesController.text = _format(widget.initialValue.calories);
+      _proteinController.text = _format(widget.initialValue.protein);
+      _fatController.text = _format(widget.initialValue.fat);
+      _carbsController.text = _format(widget.initialValue.carbs);
+    }
+  }
+
+  @override
+  void dispose() {
+    _caloriesController.dispose();
+    _proteinController.dispose();
+    _fatController.dispose();
+    _carbsController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (widget.subtitle != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                widget.subtitle!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _NumberField(
+                  controller: _caloriesController,
+                  label: 'Daily calories target',
+                  suffix: 'kcal',
+                ),
+                _NumberField(
+                  controller: _proteinController,
+                  label: 'Daily protein target',
+                  suffix: 'g',
+                ),
+                _NumberField(
+                  controller: _fatController,
+                  label: 'Daily fat target',
+                  suffix: 'g',
+                ),
+                _NumberField(
+                  controller: _carbsController,
+                  label: 'Daily carbs target',
+                  suffix: 'g',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _applyTargets,
+                child: const Text('Apply targets'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _applyTargets() {
+    final calories = _parse(_caloriesController);
+    final protein = _parse(_proteinController);
+    final fat = _parse(_fatController);
+    final carbs = _parse(_carbsController);
+    if (calories == null || protein == null || fat == null || carbs == null) {
+      return;
+    }
+    widget.onApply(
+      NutritionValues(
+        calories: calories,
+        protein: protein,
+        fat: fat,
+        carbs: carbs,
+      ),
+    );
+  }
+
+  static double? _parse(TextEditingController controller) {
+    return double.tryParse(controller.text.trim());
+  }
+
+  static String _format(double value) {
+    return value == value.roundToDouble()
+        ? value.toStringAsFixed(0)
+        : value.toString();
+  }
+}
+
+class _NumberField extends StatelessWidget {
+  const _NumberField({
+    required this.controller,
+    required this.label,
+    required this.suffix,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String suffix;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 180, maxWidth: 220),
+      child: TextField(
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: positiveDecimalInputFormatters,
+        decoration: InputDecoration(
+          labelText: label,
+          suffixText: suffix,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
 }

@@ -1881,6 +1881,12 @@ void main() {
         dishWeightUnit: DishWeightUnit.grams,
         heightUnit: HeightUnit.centimeters,
         distanceUnit: DistanceUnit.kilometers,
+        dailyMacroTargets: NutritionValues(
+          calories: 2000,
+          protein: 150,
+          fat: 70,
+          carbs: 250,
+        ),
       ),
     );
     expect(store.appearancePreference, AppearancePreference.system);
@@ -1904,6 +1910,9 @@ void main() {
     store.setDishWeightUnit(DishWeightUnit.ounces);
     store.setHeightUnit(HeightUnit.inches);
     store.setDistanceUnit(DistanceUnit.miles);
+    store.setDailyMacroTargets(
+      const NutritionValues(calories: 2400, protein: 160, fat: 80, carbs: 280),
+    );
 
     expect(
       store.preferences,
@@ -1914,9 +1923,15 @@ void main() {
         dishWeightUnit: DishWeightUnit.ounces,
         heightUnit: HeightUnit.inches,
         distanceUnit: DistanceUnit.miles,
+        dailyMacroTargets: NutritionValues(
+          calories: 2400,
+          protein: 160,
+          fat: 80,
+          carbs: 280,
+        ),
       ),
     );
-    expect(notifications, 6);
+    expect(notifications, 7);
   });
 
   test('formatting helpers convert canonical values into display units', () {

@@ -1,5 +1,6 @@
 import 'package:fitapp/main.dart';
 import 'package:fitapp/models/app_preferences.dart';
+import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/screens/more_screen.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/state/sync/app_store_sync_coordinator.dart';
@@ -89,6 +90,7 @@ void main() {
     expect(find.text('Sync status'), findsOneWidget);
     expect(find.text('Units'), findsOneWidget);
     expect(find.text('App'), findsOneWidget);
+    expect(find.text('Daily macro targets'), findsOneWidget);
     expect(find.text('Language'), findsOneWidget);
     expect(find.text('Appearance'), findsOneWidget);
     expect(
@@ -162,6 +164,35 @@ void main() {
     expect(find.text('System'), findsOneWidget);
     expect(find.text('Light'), findsOneWidget);
     expect(find.text('Dark'), findsOneWidget);
+  });
+
+  testWidgets('more screen applies daily macro targets to the store', (
+    tester,
+  ) async {
+    final store = AppStore();
+
+    await pumpScreen(tester, store, size: const Size(900, 1400));
+
+    await tester.enterText(
+      find.bySemanticsLabel('Daily calories target'),
+      '2100',
+    );
+    await tester.enterText(
+      find.bySemanticsLabel('Daily protein target'),
+      '140',
+    );
+    await tester.enterText(find.bySemanticsLabel('Daily fat target'), '65');
+    await tester.enterText(find.bySemanticsLabel('Daily carbs target'), '260');
+    await tester.ensureVisible(
+      find.widgetWithText(FilledButton, 'Apply targets'),
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Apply targets'));
+    await tester.pumpAndSettle();
+
+    expect(
+      store.preferences.dailyMacroTargets,
+      const NutritionValues(calories: 2100, protein: 140, fat: 65, carbs: 260),
+    );
   });
 
   testWidgets('selected settings chips use readable checkmark color', (

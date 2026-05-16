@@ -35,6 +35,21 @@ class NutritionValues {
       carbs: carbs + other.carbs,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is NutritionValues &&
+        other.calories == calories &&
+        other.protein == protein &&
+        other.fat == fat &&
+        other.carbs == carbs;
+  }
+
+  @override
+  int get hashCode => Object.hash(calories, protein, fat, carbs);
 }
 
 enum NutritionBasis { per100g, perServing }

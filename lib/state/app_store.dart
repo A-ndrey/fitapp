@@ -317,6 +317,8 @@ class AppStore extends ChangeNotifier {
 
   DistanceUnit get distanceUnit => _preferences.distanceUnit;
 
+  NutritionValues get dailyMacroTargets => _preferences.dailyMacroTargets;
+
   bool get isLoggedIn => _isLoggedIn;
 
   WorkoutSession? get activeWorkoutSession => _activeWorkoutSession;
@@ -348,6 +350,11 @@ class AppStore extends ChangeNotifier {
 
   void setDistanceUnit(DistanceUnit unit) {
     _preferences = _preferences.copyWith(distanceUnit: unit);
+    _didMutatePersistedState();
+  }
+
+  void setDailyMacroTargets(NutritionValues targets) {
+    _preferences = _preferences.copyWith(dailyMacroTargets: targets);
     _didMutatePersistedState();
   }
 

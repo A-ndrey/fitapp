@@ -145,6 +145,12 @@ Map<String, Object?> _persistedPayloadWithTrainingExercise(String exerciseId) {
       'dishWeightUnit': 'grams',
       'heightUnit': 'centimeters',
       'distanceUnit': 'kilometers',
+      'dailyMacroTargets': {
+        'calories': 2000.0,
+        'protein': 150.0,
+        'fat': 70.0,
+        'carbs': 250.0,
+      },
     },
     'activeWorkoutSession': null,
     'completedWorkoutSessions': const [],
