@@ -5,6 +5,8 @@ import '../../models/catalog_item.dart';
 import '../../models/exercise.dart';
 import '../../models/training_plan.dart';
 import '../../state/app_store.dart';
+import '../core/layout/app_breakpoints.dart';
+import '../core/widgets/swipe_action_card.dart';
 import 'library_formatters.dart';
 
 class FoodCatalogCard extends StatelessWidget {
@@ -24,8 +26,27 @@ class FoodCatalogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Card(
-      child: ListTile(
+    final isCompact = AppBreakpoints.isCompact(MediaQuery.sizeOf(context).width);
+    return SwipeActionCard(
+      actions: [
+        SwipeCardAction(
+          label: 'Edit',
+          icon: Icons.edit_outlined,
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          foregroundColor:
+              Theme.of(context).colorScheme.onSecondaryContainer,
+          onPressed: onEdit,
+        ),
+        SwipeCardAction(
+          label: l10n?.commonDelete ?? 'Delete',
+          icon: Icons.delete_outline,
+          backgroundColor: Theme.of(context).colorScheme.errorContainer,
+          foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+          onPressed: onDelete,
+        ),
+      ],
+      child: Card(
+        child: ListTile(
         title: _BoundedText(item.name),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,12 +72,17 @@ class FoodCatalogCard extends StatelessWidget {
           ],
         ),
         isThreeLine: true,
-        trailing: _CatalogCardActions(
-          editTooltip: l10n?.libraryEditItem(item.name) ?? 'Edit ${item.name}',
-          deleteTooltip:
-              l10n?.libraryDeleteItem(item.name) ?? 'Delete ${item.name}',
-          onEdit: onEdit,
-          onDelete: onDelete,
+          trailing: isCompact
+              ? null
+              : _CatalogCardActions(
+                  editTooltip:
+                      l10n?.libraryEditItem(item.name) ?? 'Edit ${item.name}',
+                  deleteTooltip:
+                      l10n?.libraryDeleteItem(item.name) ??
+                      'Delete ${item.name}',
+                  onEdit: onEdit,
+                  onDelete: onDelete,
+                ),
         ),
       ),
     );
@@ -78,8 +104,27 @@ class TrainingPlanCatalogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Card(
-      child: ListTile(
+    final isCompact = AppBreakpoints.isCompact(MediaQuery.sizeOf(context).width);
+    return SwipeActionCard(
+      actions: [
+        SwipeCardAction(
+          label: 'Edit',
+          icon: Icons.edit_outlined,
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          foregroundColor:
+              Theme.of(context).colorScheme.onSecondaryContainer,
+          onPressed: onEdit,
+        ),
+        SwipeCardAction(
+          label: l10n?.commonDelete ?? 'Delete',
+          icon: Icons.delete_outline,
+          backgroundColor: Theme.of(context).colorScheme.errorContainer,
+          foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+          onPressed: onDelete,
+        ),
+      ],
+      child: Card(
+        child: ListTile(
         title: _BoundedText(plan.name),
         subtitle: _BoundedText(
           formatTrainingPlanSummaryLabel(
@@ -91,12 +136,17 @@ class TrainingPlanCatalogCard extends StatelessWidget {
           maxLines: 2,
         ),
         isThreeLine: true,
-        trailing: _CatalogCardActions(
-          editTooltip: l10n?.libraryEditItem(plan.name) ?? 'Edit ${plan.name}',
-          deleteTooltip:
-              l10n?.libraryDeleteItem(plan.name) ?? 'Delete ${plan.name}',
-          onEdit: onEdit,
-          onDelete: onDelete,
+          trailing: isCompact
+              ? null
+              : _CatalogCardActions(
+                  editTooltip:
+                      l10n?.libraryEditItem(plan.name) ?? 'Edit ${plan.name}',
+                  deleteTooltip:
+                      l10n?.libraryDeleteItem(plan.name) ??
+                      'Delete ${plan.name}',
+                  onEdit: onEdit,
+                  onDelete: onDelete,
+                ),
         ),
       ),
     );
@@ -118,8 +168,27 @@ class ExerciseCatalogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Card(
-      child: ListTile(
+    final isCompact = AppBreakpoints.isCompact(MediaQuery.sizeOf(context).width);
+    return SwipeActionCard(
+      actions: [
+        SwipeCardAction(
+          label: 'Edit',
+          icon: Icons.edit_outlined,
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          foregroundColor:
+              Theme.of(context).colorScheme.onSecondaryContainer,
+          onPressed: onEdit,
+        ),
+        SwipeCardAction(
+          label: l10n?.commonDelete ?? 'Delete',
+          icon: Icons.delete_outline,
+          backgroundColor: Theme.of(context).colorScheme.errorContainer,
+          foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+          onPressed: onDelete,
+        ),
+      ],
+      child: Card(
+        child: ListTile(
         title: _BoundedText(exercise.name),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,14 +205,18 @@ class ExerciseCatalogCard extends StatelessWidget {
           ],
         ),
         isThreeLine: true,
-        trailing: _CatalogCardActions(
-          editTooltip:
-              l10n?.libraryEditItem(exercise.name) ?? 'Edit ${exercise.name}',
-          deleteTooltip:
-              l10n?.libraryDeleteItem(exercise.name) ??
-              'Delete ${exercise.name}',
-          onEdit: onEdit,
-          onDelete: onDelete,
+          trailing: isCompact
+              ? null
+              : _CatalogCardActions(
+                  editTooltip:
+                      l10n?.libraryEditItem(exercise.name) ??
+                      'Edit ${exercise.name}',
+                  deleteTooltip:
+                      l10n?.libraryDeleteItem(exercise.name) ??
+                      'Delete ${exercise.name}',
+                  onEdit: onEdit,
+                  onDelete: onDelete,
+                ),
         ),
       ),
     );

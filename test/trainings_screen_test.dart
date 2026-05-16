@@ -95,6 +95,13 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> revealRowActions(WidgetTester tester, String title) async {
+    final card = find.byType(Card).last;
+    await tester.ensureVisible(card);
+    await tester.drag(card, const Offset(-240, 0));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('lists sample training plans and exposes row actions', (
     tester,
   ) async {
@@ -193,7 +200,7 @@ void main() {
     await openCatalogActions(tester, 'Push day updated');
     await tester.tap(find.text('Delete Push day updated').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete'));
+    await tester.tap(find.text('Delete').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Push day updated'), findsNothing);
@@ -386,7 +393,7 @@ void main() {
     await openCatalogActions(tester, 'Custom bridge');
     await tester.tap(find.text('Delete Custom bridge').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete'));
+    await tester.tap(find.text('Delete').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Custom bridge'), findsNothing);
@@ -427,10 +434,45 @@ void main() {
     await openCatalogActions(tester, 'Custom pushups');
     await tester.tap(find.text('Delete Custom pushups').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete'));
+    await tester.tap(find.text('Delete').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Exercise is used by a training plan.'), findsOneWidget);
     expect(find.text('Custom pushups'), findsOneWidget);
+  });
+
+  testWidgets('plan editor exercise rows reveal swipe actions on compact layouts', (
+    tester,
+  ) async {
+    final store = AppStore();
+    await tester.binding.setSurfaceSize(const Size(390, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await pumpScreen(tester, store: store);
+
+    await tester.tap(find.byTooltip('Add training plan'));
+    await tester.pumpAndSettle();
+    await enterLabeledText(tester, 'Training name', 'Push day');
+    await enterLabeledText(tester, 'Training description', 'Upper body');
+    await tester.tap(find.text('Add exercise'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pushups').last);
+    await tester.pumpAndSettle();
+    await enterLabeledText(tester, 'Working sets', '3');
+    await enterLabeledText(tester, 'Target reps', '10');
+    await enterLabeledText(tester, 'Target load', '0');
+    await enterLabeledText(tester, 'Target duration', '0');
+    await enterLabeledText(tester, 'Load or time unit', 'reps');
+    await tester.tap(find.text('Save exercise'));
+    await tester.pumpAndSettle();
+
+    await revealRowActions(tester, 'Pushups');
+
+    expect(find.byKey(const ValueKey('swipe-action-Edit')), findsOneWidget);
+    expect(find.byKey(const ValueKey('swipe-action-Remove')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('swipe-action-Remove')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('3 sets'), findsNothing);
   });
 }

@@ -11,6 +11,7 @@ import 'package:fitapp/ui/core/widgets/empty_state.dart';
 import 'package:fitapp/ui/core/widgets/form_shell.dart';
 import 'package:fitapp/ui/core/widgets/metric_card.dart';
 import 'package:fitapp/ui/core/widgets/section_header.dart';
+import 'package:fitapp/ui/core/widgets/swipe_action_card.dart';
 import 'package:fitapp/ui/library/library_cards.dart';
 import 'package:fitapp/ui/library/library_formatters.dart';
 import 'package:flutter/material.dart';
@@ -495,6 +496,64 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('library cards reveal swipe actions on compact layouts', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    const food = CatalogItem.food(
+      FoodItem(
+        id: 'rice',
+        name: 'Rice bowl',
+        description: 'Cooked rice',
+        servingSizeGrams: 150,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 130,
+          protein: 2.7,
+          fat: 0.3,
+          carbs: 28,
+        ),
+      ),
+    );
+    var edited = false;
+    var deleted = false;
+
+    await tester.binding.setSurfaceSize(const Size(390, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [
+              FoodCatalogCard(
+                item: food,
+                store: store,
+                onEdit: () => edited = true,
+                onDelete: () => deleted = true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final card = find.ancestor(
+      of: find.text('Rice bowl'),
+      matching: find.byType(Card),
+    );
+    await tester.drag(card, const Offset(-240, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('swipe-action-Edit')), findsOneWidget);
+    expect(find.byKey(const ValueKey('swipe-action-Delete')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('swipe-action-Edit')));
+    await tester.pumpAndSettle();
+    expect(edited, isTrue);
+    expect(deleted, isFalse);
+  });
+
   testWidgets('form shell primitives render content and actions', (
     tester,
   ) async {
@@ -594,5 +653,139 @@ void main() {
       expect(find.bySemanticsLabel('Carbs'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
+  });
+
+  testWidgets('swipe action card preserves card surface edge treatment', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SwipeActionCard(
+            actions: [
+              SwipeCardAction(
+                label: 'Delete',
+                icon: Icons.delete_outline,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                onPressed: () {},
+              ),
+            ],
+            child: const Card(child: ListTile(title: Text('Border test'))),
+          ),
+        ),
+      ),
+    );
+
+    final stack = tester.widget<Stack>(
+      find.descendant(
+        of: find.byType(SwipeActionCard),
+        matching: find.byType(Stack),
+      ),
+    );
+    expect(stack.clipBehavior, Clip.none);
+
+    final card = find.byType(Card);
+    expect(
+      find.ancestor(of: card, matching: find.byType(ClipRRect)),
+      findsNothing,
+    );
+  });
+
+  testWidgets('swipe action card paints actions behind the card', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SwipeActionCard(
+            actions: [
+              SwipeCardAction(
+                label: 'Delete',
+                icon: Icons.delete_outline,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                onPressed: () {},
+              ),
+            ],
+            child: const Card(child: ListTile(title: Text('Layer test'))),
+          ),
+        ),
+      ),
+    );
+
+    await tester.drag(find.byType(Card), const Offset(-120, 0));
+    await tester.pumpAndSettle();
+
+    final stack = tester.widget<Stack>(
+      find.descendant(
+        of: find.byType(SwipeActionCard),
+        matching: find.byType(Stack),
+      ),
+    );
+
+    expect(stack.children.first, isA<Positioned>());
+    expect(stack.children.last, isA<ClipRect>());
+  });
+
+  testWidgets('swipe action card keeps full-size action content', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SwipeActionCard(
+            actions: [
+              SwipeCardAction(
+                label: 'Delete',
+                icon: Icons.delete_outline,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                onPressed: () {},
+              ),
+            ],
+            child: const Card(child: ListTile(title: Text('Sizing test'))),
+          ),
+        ),
+      ),
+    );
+
+    await tester.drag(find.byType(Card), const Offset(-120, 0));
+    await tester.pumpAndSettle();
+
+    final icon = tester.widget<Icon>(find.byIcon(Icons.delete_outline));
+    final label = tester.widget<Text>(find.text('Delete'));
+
+    expect(icon.size, isNull);
+    expect(label.style?.fontSize, isNull);
+  });
+
+  testWidgets('swipe action buttons match item height', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SwipeActionCard(
+            actions: [
+              SwipeCardAction(
+                label: 'Delete',
+                icon: Icons.delete_outline,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                onPressed: () {},
+              ),
+            ],
+            child: const Card(child: ListTile(title: Text('Height test'))),
+          ),
+        ),
+      ),
+    );
+
+    await tester.drag(find.byType(Card), const Offset(-120, 0));
+    await tester.pumpAndSettle();
+
+    final cardHeight = tester.getSize(find.byType(Card)).height;
+    final actionHeight = tester
+        .getSize(find.byKey(const ValueKey('swipe-action-Delete')))
+        .height;
+
+    expect(actionHeight, cardHeight);
   });
 }

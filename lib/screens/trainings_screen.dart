@@ -5,8 +5,10 @@ import '../models/exercise.dart';
 import '../models/training_plan.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
+import '../ui/core/layout/app_breakpoints.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/form_shell.dart';
+import '../ui/core/widgets/swipe_action_card.dart';
 import '../ui/library/library_cards.dart';
 
 enum TrainingsCatalogView { plans, exercises }
@@ -692,10 +694,39 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                 );
                 final exerciseName =
                     catalogExercise?.name ?? exercise.exerciseId;
+                final isCompact = AppBreakpoints.isCompact(
+                  MediaQuery.sizeOf(context).width,
+                );
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Card(
-                    child: ListTile(
+                  child: SwipeActionCard(
+                    actions: [
+                      SwipeCardAction(
+                        label: 'Edit',
+                        icon: Icons.edit_outlined,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondaryContainer,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onSecondaryContainer,
+                        onPressed: () => _editExercise(index),
+                      ),
+                      SwipeCardAction(
+                        label: 'Remove',
+                        icon: Icons.remove_circle_outline,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.tertiaryContainer,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onTertiaryContainer,
+                        onPressed: () {
+                          setState(() {
+                            _exercises.removeAt(index);
+                            _errorText = null;
+                          });
+                        },
+                      ),
+                    ],
+                    child: Card(
+                      child: ListTile(
                       title: Text(exerciseName),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,31 +763,36 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                         ],
                       ),
                       isThreeLine: true,
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            tooltip:
-                                l10n?.libraryEditItem(exerciseName) ??
-                                'Edit $exerciseName',
-                            icon: const Icon(Icons.edit_outlined),
-                            onPressed: () => _editExercise(index),
-                          ),
-                          IconButton(
-                            tooltip:
-                                l10n?.trainingRemoveExerciseTooltip(
-                                  exerciseName,
-                                ) ??
-                                'Remove $exerciseName',
-                            icon: const Icon(Icons.remove_circle_outline),
-                            onPressed: () {
-                              setState(() {
-                                _exercises.removeAt(index);
-                                _errorText = null;
-                              });
-                            },
-                          ),
-                        ],
+                        trailing: isCompact
+                            ? null
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    tooltip:
+                                        l10n?.libraryEditItem(exerciseName) ??
+                                        'Edit $exerciseName',
+                                    icon: const Icon(Icons.edit_outlined),
+                                    onPressed: () => _editExercise(index),
+                                  ),
+                                  IconButton(
+                                    tooltip:
+                                        l10n?.trainingRemoveExerciseTooltip(
+                                          exerciseName,
+                                        ) ??
+                                        'Remove $exerciseName',
+                                    icon: const Icon(
+                                      Icons.remove_circle_outline,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _exercises.removeAt(index);
+                                        _errorText = null;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
                       ),
                     ),
                   ),

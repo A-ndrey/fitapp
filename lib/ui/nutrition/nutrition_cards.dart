@@ -5,7 +5,9 @@ import '../../models/catalog_item.dart';
 import '../../models/meal_entry.dart';
 import '../../models/nutrition.dart';
 import '../../state/app_store.dart';
+import '../core/layout/app_breakpoints.dart';
 import '../core/theme/app_theme.dart';
+import '../core/widgets/swipe_action_card.dart';
 import '../core/widgets/dashboard_panels.dart';
 import 'nutrition_formatters.dart';
 
@@ -119,9 +121,20 @@ class MealEntryCard extends StatelessWidget {
     final subtypeLabel = entry.itemType == CatalogItemType.food
         ? l10n?.catalogSubtypeFood ?? 'food'
         : l10n?.catalogSubtypeDish ?? 'recipe';
+    final isCompact = AppBreakpoints.isCompact(MediaQuery.sizeOf(context).width);
 
-    return Card(
-      child: ListTile(
+    return SwipeActionCard(
+      actions: [
+        SwipeCardAction(
+          label: l10n?.commonDelete ?? 'Delete',
+          icon: Icons.delete_outline,
+          backgroundColor: Theme.of(context).colorScheme.errorContainer,
+          foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+          onPressed: onRemove,
+        ),
+      ],
+      child: Card(
+        child: ListTile(
         title: Text(entry.itemName),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
@@ -157,19 +170,22 @@ class MealEntryCard extends StatelessWidget {
             ],
           ),
         ),
-        trailing: PopupMenuButton<_MealEntryAction>(
-          tooltip: l10n?.mealRemoveEntryTooltip ?? 'Remove meal entry',
-          onSelected: (action) {
-            if (action == _MealEntryAction.remove) {
-              onRemove();
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: _MealEntryAction.remove,
-              child: Text(l10n?.commonDelete ?? 'Delete'),
-            ),
-          ],
+          trailing: isCompact
+              ? null
+              : PopupMenuButton<_MealEntryAction>(
+                  tooltip: l10n?.mealRemoveEntryTooltip ?? 'Remove meal entry',
+                  onSelected: (action) {
+                    if (action == _MealEntryAction.remove) {
+                      onRemove();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: _MealEntryAction.remove,
+                      child: Text(l10n?.commonDelete ?? 'Delete'),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
