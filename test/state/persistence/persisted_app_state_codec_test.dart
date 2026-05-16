@@ -269,6 +269,76 @@ void main() {
     );
   });
 
+  test('PersistedAppState codec preserves meal entry loggedAt timestamps', () {
+    final state = PersistedAppState(
+      userFoods: const [],
+      userDishes: const [],
+      userExercises: const [],
+      userTrainingPlans: const [],
+      mealEntries: [
+        MealEntry(
+          id: 'meal-entry-1',
+          sourceItemId: 'oats',
+          itemName: 'Oats',
+          itemType: CatalogItemType.food,
+          servingSizeGrams: 40,
+          consumedGrams: 40,
+          mode: MealEntryMode.grams,
+          enteredQuantity: 40,
+          loggedAt: DateTime.utc(2026, 5, 17, 7, 45),
+          nutrition: const NutritionValues(
+            calories: 150,
+            protein: 5,
+            fat: 3,
+            carbs: 27,
+          ),
+        ),
+      ],
+      preferences: const AppPreferences.defaults(),
+      activeWorkoutSession: null,
+      completedWorkoutSessions: const [],
+      mealEntryCounter: 1,
+      workoutSessionCounter: 0,
+    );
+
+    final encoded = PersistedAppStateCodec.encode(state);
+    final decoded = PersistedAppStateCodec.decode(encoded);
+
+    expect(
+      decoded.mealEntries.single.loggedAt,
+      DateTime.utc(2026, 5, 17, 7, 45),
+    );
+  });
+
+  test('PersistedAppState codec decodes legacy meal entries without loggedAt', () {
+    final payload = _basePersistedPayload()
+      ..['mealEntries'] = [
+        {
+          'id': 'meal-entry-legacy',
+          'sourceItemId': 'oats',
+          'itemName': 'Oats',
+          'itemType': 'food',
+          'servingSizeGrams': 40,
+          'consumedGrams': 40,
+          'mode': 'grams',
+          'enteredQuantity': 40,
+          'nutrition': {
+            'calories': 150,
+            'protein': 5,
+            'fat': 3,
+            'carbs': 27,
+          },
+        },
+      ];
+
+    final decoded = PersistedAppStateCodec.decode(payload);
+
+    expect(
+      decoded.mealEntries.single.loggedAt,
+      DateTime.fromMillisecondsSinceEpoch(0),
+    );
+  });
+
   test(
     'PersistedAppState codec round-trips snapshot data as JSON-safe values',
     () {
@@ -321,7 +391,7 @@ void main() {
             ],
           ),
         ],
-        mealEntries: const [
+        mealEntries: [
           MealEntry(
             id: 'meal-entry-3',
             sourceItemId: 'oats-bowl',
@@ -331,7 +401,8 @@ void main() {
             consumedGrams: 125,
             mode: MealEntryMode.grams,
             enteredQuantity: 125,
-            nutrition: NutritionValues(
+            loggedAt: DateTime.utc(2026, 5, 9, 7, 30),
+            nutrition: const NutritionValues(
               calories: 75,
               protein: 2.5,
               fat: 1.5,

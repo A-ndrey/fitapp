@@ -1,7 +1,10 @@
+import 'package:fitapp/models/food_item.dart';
+import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/screens/meal_screen.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   Future<void> pumpScreen(WidgetTester tester, {AppStore? store}) async {
@@ -101,5 +104,62 @@ void main() {
 
     expect(find.byType(BottomSheet), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('meal screen groups history by date and shows newest entries first', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    final now = DateTime.now();
+    final todayMorning = DateTime(now.year, now.month, now.day, 9);
+    final todayEvening = DateTime(now.year, now.month, now.day, 20);
+    final previousDay = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 1)).copyWith(hour: 18);
+    store.createFood(
+      const FoodItem(
+        id: 'tomato',
+        name: 'Tomato',
+        description: 'Fresh tomato',
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 18,
+          protein: 0.9,
+          fat: 0.2,
+          carbs: 3.9,
+        ),
+      ),
+    );
+
+    store.addMealByGrams(itemId: 'tomato', grams: 100, loggedAt: todayMorning);
+    store.addMealByGrams(itemId: 'tomato', grams: 200, loggedAt: previousDay);
+    store.addMealByGrams(itemId: 'tomato', grams: 150, loggedAt: todayEvening);
+
+    await pumpScreen(tester, store: store);
+
+    final locale = Localizations.localeOf(
+      tester.element(find.byType(MealScreen)),
+    ).toString();
+    final dateFormat = DateFormat.yMMMMd(locale);
+
+    expect(find.textContaining('45 kcal'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text(dateFormat.format(todayMorning)),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text(dateFormat.format(todayMorning)), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text(dateFormat.format(previousDay)),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text(dateFormat.format(previousDay)), findsOneWidget);
+    expect(find.textContaining('36 kcal'), findsOneWidget);
   });
 }

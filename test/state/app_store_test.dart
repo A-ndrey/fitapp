@@ -393,7 +393,7 @@ void main() {
             ],
           ),
         ],
-        mealEntries: const [
+        mealEntries: [
           MealEntry(
             id: 'meal-entry-8',
             sourceItemId: 'cucumber',
@@ -403,7 +403,8 @@ void main() {
             consumedGrams: 150,
             mode: MealEntryMode.grams,
             enteredQuantity: 150,
-            nutrition: NutritionValues(
+            loggedAt: DateTime.utc(2026, 4, 20, 9),
+            nutrition: const NutritionValues(
               calories: 18,
               protein: 0.9,
               fat: 0.2,
@@ -656,7 +657,7 @@ void main() {
         userDishes: const [],
         userExercises: const [],
         userTrainingPlans: const [],
-        mealEntries: const [
+        mealEntries: [
           MealEntry(
             id: 'meal-entry-2',
             sourceItemId: 'tomato',
@@ -666,7 +667,8 @@ void main() {
             consumedGrams: 100,
             mode: MealEntryMode.grams,
             enteredQuantity: 100,
-            nutrition: NutritionValues(
+            loggedAt: DateTime.utc(2026, 5, 8, 7),
+            nutrition: const NutritionValues(
               calories: 18,
               protein: 0.9,
               fat: 0.2,
@@ -1676,6 +1678,54 @@ void main() {
     expect(store.itemById('tomato'), isNull);
     expect(store.mealEntries.single.itemName, 'Tomato');
     expect(store.dailyTotals.calories, 18);
+  });
+
+  test('daily totals include only entries from the current local day', () {
+    final store = AppStore.empty();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day, 10);
+    final yesterday = today.subtract(const Duration(days: 1));
+    store.createFood(tomato());
+
+    store.addMealByGrams(itemId: 'tomato', grams: 100, loggedAt: today);
+    store.addMealByGrams(itemId: 'tomato', grams: 200, loggedAt: yesterday);
+
+    expect(store.dailyTotals.calories, 18);
+    expect(store.todayMealEntries, hasLength(1));
+    expect(store.todayMealEntries.single.loggedAt, today);
+  });
+
+  test('meal history groups are newest first with newest entries first', () {
+    final store = AppStore.empty();
+    store.createFood(tomato());
+    final todayLate = DateTime(2026, 5, 17, 20, 30);
+    final todayEarly = DateTime(2026, 5, 17, 8, 15);
+    final previousDay = DateTime(2026, 5, 16, 19);
+
+    final earlyEntry = store.addMealByGrams(
+      itemId: 'tomato',
+      grams: 100,
+      loggedAt: todayEarly,
+    );
+    final previousDayEntry = store.addMealByGrams(
+      itemId: 'tomato',
+      grams: 150,
+      loggedAt: previousDay,
+    );
+    final lateEntry = store.addMealByGrams(
+      itemId: 'tomato',
+      grams: 200,
+      loggedAt: todayLate,
+    );
+
+    final groups = store.mealHistoryGroups;
+
+    expect(groups, hasLength(2));
+    expect(groups.first.date, DateTime(2026, 5, 17));
+    expect(groups.first.entries.first.id, lateEntry.id);
+    expect(groups.first.entries.last.id, earlyEntry.id);
+    expect(groups.last.date, DateTime(2026, 5, 16));
+    expect(groups.last.entries.single.id, previousDayEntry.id);
   });
 
   test('dish cycles are rejected', () {

@@ -207,7 +207,7 @@ void main() {
     carbs: 3.9,
   );
 
-  const tomatoEntry = MealEntry(
+  final tomatoEntry = MealEntry(
     id: 'meal-tomato',
     sourceItemId: 'tomato',
     itemName: 'Tomato',
@@ -216,10 +216,11 @@ void main() {
     consumedGrams: 150,
     mode: MealEntryMode.grams,
     enteredQuantity: 150,
+    loggedAt: DateTime.utc(2026, 5, 17, 8),
     nutrition: tomatoNutrition,
   );
 
-  const saladEntry = MealEntry(
+  final saladEntry = MealEntry(
     id: 'meal-salad',
     sourceItemId: 'salad',
     itemName: 'Simple salad',
@@ -228,7 +229,8 @@ void main() {
     consumedGrams: 300,
     mode: MealEntryMode.servings,
     enteredQuantity: 1.5,
-    nutrition: NutritionValues(
+    loggedAt: DateTime.utc(2026, 5, 17, 12),
+    nutrition: const NutritionValues(
       calories: 62.5,
       protein: 4,
       fat: 1.2,

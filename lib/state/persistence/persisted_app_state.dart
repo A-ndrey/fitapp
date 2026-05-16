@@ -101,6 +101,7 @@ class PersistedAppState {
       consumedGrams: entry.consumedGrams,
       mode: entry.mode,
       enteredQuantity: entry.enteredQuantity,
+      loggedAt: entry.loggedAt,
       nutrition: NutritionValues(
         calories: entry.nutrition.calories,
         protein: entry.nutrition.protein,

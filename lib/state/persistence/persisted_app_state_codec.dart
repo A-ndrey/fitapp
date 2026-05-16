@@ -261,6 +261,7 @@ class PersistedAppStateCodec {
       'consumedGrams': entry.consumedGrams,
       'mode': entry.mode.name,
       'enteredQuantity': entry.enteredQuantity,
+      'loggedAt': entry.loggedAt.toUtc().toIso8601String(),
       'nutrition': _encodeNutritionValues(entry.nutrition),
     };
   }
@@ -284,6 +285,9 @@ class PersistedAppStateCodec {
         'MealEntry.mode',
       ),
       enteredQuantity: _readDouble(payload, 'enteredQuantity'),
+      loggedAt:
+          _readNullableDateTime(payload, 'loggedAt') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
       nutrition: _decodeNutritionValues(payload['nutrition']),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/catalog_item.dart';
@@ -30,6 +31,7 @@ class MealScreen extends StatelessWidget {
             );
             final l10n = AppLocalizations.of(context);
             final addMealLabel = l10n?.mealAddItemAction ?? 'Log food';
+            final historyGroups = store.mealHistoryGroups;
 
             return AppScreenScaffold(
               title: l10n?.mealTitle ?? 'Meal',
@@ -75,15 +77,20 @@ class MealScreen extends StatelessWidget {
                           "Use Log food to start today's nutrition log.",
                     )
                   else
-                    ...store.mealEntries.map(
-                      (entry) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: MealEntryCard(
-                          store: store,
-                          entry: entry,
-                          onRemove: () => store.removeMealEntry(entry.id),
+                    ...historyGroups.expand(
+                      (group) => <Widget>[
+                        _MealDayDivider(date: group.date),
+                        ...group.entries.map(
+                          (entry) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: MealEntryCard(
+                              store: store,
+                              entry: entry,
+                              onRemove: () => store.removeMealEntry(entry.id),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                 ],
               ),
@@ -169,6 +176,23 @@ class MealScreen extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _MealDayDivider extends StatelessWidget {
+  const _MealDayDivider({required this.date});
+
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).toString();
+    final label = DateFormat.yMMMMd(locale).format(date);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 12),
+      child: Text(label, style: Theme.of(context).textTheme.titleSmall),
     );
   }
 }

@@ -248,6 +248,54 @@ class AppStore extends ChangeNotifier {
 
   List<MealEntry> get mealEntries => List.unmodifiable(_mealEntries);
 
+  List<MealEntry> get todayMealEntries {
+    final today = _localDateOnly(DateTime.now());
+    return List.unmodifiable(
+      _mealEntries.where((entry) => _localDateOnly(entry.loggedAt) == today),
+    );
+  }
+
+  List<MealEntry> get mealEntriesNewestFirst {
+    final sorted = List<MealEntry>.of(_mealEntries)
+      ..sort((left, right) => right.loggedAt.compareTo(left.loggedAt));
+    return List.unmodifiable(sorted);
+  }
+
+  List<MealHistoryGroup> get mealHistoryGroups {
+    final groups = <MealHistoryGroup>[];
+    DateTime? currentDate;
+    var currentEntries = <MealEntry>[];
+
+    for (final entry in mealEntriesNewestFirst) {
+      final entryDate = _localDateOnly(entry.loggedAt);
+      if (currentDate == null || entryDate != currentDate) {
+        if (currentDate != null) {
+          groups.add(
+            MealHistoryGroup(
+              date: currentDate,
+              entries: List.unmodifiable(currentEntries),
+            ),
+          );
+        }
+        currentDate = entryDate;
+        currentEntries = <MealEntry>[entry];
+      } else {
+        currentEntries.add(entry);
+      }
+    }
+
+    if (currentDate != null) {
+      groups.add(
+        MealHistoryGroup(
+          date: currentDate,
+          entries: List.unmodifiable(currentEntries),
+        ),
+      );
+    }
+
+    return List.unmodifiable(groups);
+  }
+
   List<Exercise> get exercises => List.unmodifiable(_exercises.values);
 
   List<TrainingPlan> get trainingPlans => List.unmodifiable(_trainingPlans);
@@ -407,7 +455,7 @@ class AppStore extends ChangeNotifier {
 
   NutritionValues get dailyTotals {
     var total = NutritionValues.zero;
-    for (final entry in _mealEntries) {
+    for (final entry in todayMealEntries) {
       total = total + entry.nutrition;
     }
     return total;
@@ -678,7 +726,11 @@ class AppStore extends ChangeNotifier {
     _didMutatePersistedState();
   }
 
-  MealEntry addMealByGrams({required String itemId, required double grams}) {
+  MealEntry addMealByGrams({
+    required String itemId,
+    required double grams,
+    DateTime? loggedAt,
+  }) {
     if (!grams.isFinite || grams <= 0) {
       throw ArgumentError.value(grams, 'grams', 'Must be greater than zero.');
     }
@@ -692,6 +744,7 @@ class AppStore extends ChangeNotifier {
       consumedGrams: grams,
       mode: MealEntryMode.grams,
       enteredQuantity: grams,
+      loggedAt: loggedAt,
       catalog: _catalog,
     );
     _mealEntries.add(entry);
@@ -702,6 +755,7 @@ class AppStore extends ChangeNotifier {
   MealEntry addMealByServings({
     required String itemId,
     required double servings,
+    DateTime? loggedAt,
   }) {
     if (!servings.isFinite || servings <= 0) {
       throw ArgumentError.value(
@@ -721,6 +775,7 @@ class AppStore extends ChangeNotifier {
       consumedGrams: grams,
       mode: MealEntryMode.servings,
       enteredQuantity: servings,
+      loggedAt: loggedAt,
       catalog: _catalog,
     );
     _mealEntries.add(entry);
@@ -997,6 +1052,11 @@ class AppStore extends ChangeNotifier {
     return buffer.toString().replaceAll(RegExp(r'^-+|-+$'), '');
   }
 
+  static DateTime _localDateOnly(DateTime value) {
+    final localValue = value.toLocal();
+    return DateTime(localValue.year, localValue.month, localValue.day);
+  }
+
   void _validateFood(FoodItem food) {
     if (food.id.trim().isEmpty) {
       throw ArgumentError('Food id must not be empty.');
@@ -1240,6 +1300,13 @@ class AppStore extends ChangeNotifier {
     }
     return value.toStringAsFixed(1);
   }
+}
+
+class MealHistoryGroup {
+  const MealHistoryGroup({required this.date, required this.entries});
+
+  final DateTime date;
+  final List<MealEntry> entries;
 }
 
 class WorkoutExerciseHistoryGroup {
