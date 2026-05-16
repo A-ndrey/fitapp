@@ -663,7 +663,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('shows workout stats and opens the plan picker', (tester) async {
+  testWidgets(
+    'shows workout stats and uses a persistent FAB to open the plan picker',
+    (tester) async {
     await pumpWorkoutScreen(tester);
 
     expect(find.text('Training log'), findsOneWidget);
@@ -683,8 +685,16 @@ void main() {
       find.text('Start a training plan to build your workout history.'),
       findsOneWidget,
     );
+    expect(find.byType(FloatingActionButton), findsOneWidget);
     expect(find.byTooltip('Start workout'), findsOneWidget);
-    expect(find.text('Start workout'), findsOneWidget);
+    expect(
+      find.widgetWithText(FloatingActionButton, 'Start workout'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Choose a training plan and begin tracking sets.'),
+      findsNothing,
+    );
 
     await openStartWorkoutPicker(tester);
 
@@ -711,9 +721,9 @@ void main() {
     expect(find.text('Pushups'), findsOneWidget);
   });
 
-  testWidgets('active session card opens the workout session screen', (
-    tester,
-  ) async {
+  testWidgets(
+    'active session shows a persistent FAB that opens the workout session screen',
+    (tester) async {
     final store = AppStore();
     store.startWorkout(
       trainingPlanId: 'chest-day',
@@ -722,6 +732,12 @@ void main() {
 
     await pumpWorkoutScreen(tester, store: store);
 
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+    expect(find.byTooltip('Open active workout'), findsOneWidget);
+    expect(
+      find.widgetWithText(FloatingActionButton, 'Open active workout'),
+      findsOneWidget,
+    );
     expect(find.text('Active workout'), findsOneWidget);
     expect(find.text('Workout session'), findsNothing);
 

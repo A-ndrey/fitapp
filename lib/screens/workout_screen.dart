@@ -8,7 +8,6 @@ import '../models/training_plan.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
-import '../ui/core/widgets/action_card.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/section_header.dart';
 import '../ui/workout/workout_formatters.dart';
@@ -91,13 +90,33 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     return AnimatedBuilder(
       animation: widget.store,
       builder: (context, _) {
+        final mediaQuery = MediaQuery.of(context);
         final stats = widget.store.workoutStats;
         final activeSession = widget.store.activeWorkoutSession;
         final completedSessions = widget.store.completedWorkoutSessions;
         final l10n = AppLocalizations.of(context);
+        final hasActiveSession = activeSession != null;
+        final textScale = mediaQuery.textScaler.scale(1);
+        final textScaleClearance =
+            (textScale > 1 ? textScale - 1 : 0).clamp(0.0, 1.0) * 24.0;
+        final fabClearance = 56.0 + 16.0 + textScaleClearance;
+        final fabLabel = hasActiveSession
+            ? l10n?.workoutOpenActiveTooltip ?? 'Open active workout'
+            : l10n?.todayStartWorkoutAction ?? 'Start workout';
         return Scaffold(
           appBar: AppBar(title: Text(l10n?.workoutTitle ?? 'Workout')),
-          floatingActionButton: null,
+          floatingActionButton: FloatingActionButton.extended(
+            tooltip: fabLabel,
+            onPressed: () => hasActiveSession
+                ? _openActiveWorkout(context)
+                : _openStartWorkoutPicker(context),
+            icon: Icon(
+              hasActiveSession
+                  ? Icons.fitness_center_outlined
+                  : Icons.play_arrow,
+            ),
+            label: Text(fabLabel),
+          ),
           body: AdaptivePage(
             children: [
               SectionHeader(
@@ -107,20 +126,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     'Start sessions, log sets, and review progress.',
               ),
               if (activeSession != null)
-                ActiveWorkoutCard(
-                  session: activeSession,
-                  l10n: l10n,
-                  onOpen: () => _openActiveWorkout(context),
-                )
-              else
-                ActionCard(
-                  title: l10n?.todayStartWorkoutAction ?? 'Start workout',
-                  subtitle:
-                      l10n?.workoutStartWorkoutSubtitle ??
-                      'Choose a training plan and begin tracking sets.',
-                  icon: Icons.play_arrow,
-                  tooltip: l10n?.todayStartWorkoutAction ?? 'Start workout',
-                  onTap: () => _openStartWorkoutPicker(context),
+                TooltipVisibility(
+                  visible: false,
+                  child: ActiveWorkoutCard(
+                    session: activeSession,
+                    l10n: l10n,
+                    onOpen: () => _openActiveWorkout(context),
+                  ),
                 ),
               const SizedBox(height: 24),
               SectionHeader(
@@ -166,6 +178,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     ),
                   ),
                 ),
+              SizedBox(height: fabClearance),
             ],
           ),
         );
