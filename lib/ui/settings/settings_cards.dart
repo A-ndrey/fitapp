@@ -120,6 +120,7 @@ class PreferenceChipCard<T> extends StatelessWidget {
                           ? colorScheme.onPrimaryContainer
                           : colorScheme.onSurfaceVariant,
                     ),
+                    checkmarkColor: colorScheme.onPrimaryContainer,
                     backgroundColor: colorScheme.surfaceContainerLow,
                     selectedColor: colorScheme.primaryContainer,
                     side: BorderSide(color: colorScheme.outlineVariant),

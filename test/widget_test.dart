@@ -468,6 +468,7 @@ void main() {
 
     expect(app.theme?.colorScheme.surface, const Color(0xFFF9F9F9));
     expect(app.theme?.colorScheme.primaryContainer, const Color(0xFFCCFF00));
+    expect(app.theme?.colorScheme.onPrimaryContainer, const Color(0xFF1A1A1A));
     expect(app.theme?.colorScheme.surfaceContainerLow, const Color(0xFFF3F3F3));
     expect(app.theme?.colorScheme.onSurface, const Color(0xFF1A1C1C));
     expect(
@@ -490,6 +491,10 @@ void main() {
     expect(
       app.darkTheme?.colorScheme.onSurfaceVariant,
       const Color(0xFFC4C9AC),
+    );
+    expect(
+      app.darkTheme?.colorScheme.onPrimaryContainer,
+      const Color(0xFF1A1A1A),
     );
     expect(app.darkTheme?.scaffoldBackgroundColor, const Color(0xFF121414));
     expect(

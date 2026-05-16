@@ -45,7 +45,7 @@ class ActiveWorkoutCard extends StatelessWidget {
                 Text(
                   l10n?.workoutActiveLabel ?? 'Active workout',
                   style: textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
+                    color: colorScheme.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

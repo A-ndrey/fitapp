@@ -164,6 +164,24 @@ void main() {
     expect(find.text('Dark'), findsOneWidget);
   });
 
+  testWidgets('selected settings chips use readable checkmark color', (
+    tester,
+  ) async {
+    final store = AppStore();
+
+    await pumpScreen(tester, store);
+
+    final systemChip = find.widgetWithText(ChoiceChip, 'System');
+    final chip = tester.widget<ChoiceChip>(systemChip);
+    final context = tester.element(systemChip);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    expect(chip.selected, isTrue);
+    expect(chip.selectedColor, colorScheme.primaryContainer);
+    expect(chip.checkmarkColor, colorScheme.onPrimaryContainer);
+    expect(chip.labelStyle?.color, colorScheme.onPrimaryContainer);
+  });
+
   testWidgets('more screen stacks preference cards below medium layout', (
     tester,
   ) async {

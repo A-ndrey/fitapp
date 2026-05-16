@@ -483,9 +483,22 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
               runSpacing: 8,
               children: MuscleGroup.values
                   .map((muscleGroup) {
+                    final isSelected = _selectedMuscleGroups.contains(
+                      muscleGroup,
+                    );
                     return FilterChip(
                       label: Text(muscleGroup.label),
-                      selected: _selectedMuscleGroups.contains(muscleGroup),
+                      labelStyle: Theme.of(context).textTheme.labelLarge
+                          ?.copyWith(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.onPrimaryContainer
+                                : Theme.of(context).colorScheme.onSurface,
+                          ),
+                      checkmarkColor:
+                          Theme.of(context).colorScheme.onPrimaryContainer,
+                      selectedColor:
+                          Theme.of(context).colorScheme.primaryContainer,
+                      selected: isSelected,
                       onSelected: (selected) {
                         setState(() {
                           if (selected) {

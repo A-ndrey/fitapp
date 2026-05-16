@@ -253,6 +253,29 @@ void main() {
     expect(find.widgetWithText(FilterChip, 'Core'), findsOneWidget);
   });
 
+  testWidgets('selected muscle group chips use readable foreground color', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await openExercisesView(tester);
+    await openExerciseForm(tester);
+
+    final coreChip = find.widgetWithText(FilterChip, 'Core');
+    await scrollUntilVisible(tester, coreChip);
+    await tester.tap(coreChip);
+    await tester.pumpAndSettle();
+
+    final chip = tester.widget<FilterChip>(coreChip);
+    final context = tester.element(coreChip);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    expect(chip.selected, isTrue);
+    expect(chip.selectedColor, colorScheme.primaryContainer);
+    expect(chip.checkmarkColor, colorScheme.onPrimaryContainer);
+    expect(chip.labelStyle?.color, colorScheme.onPrimaryContainer);
+  });
+
   testWidgets('exercise and training forms use polished sections', (
     tester,
   ) async {
