@@ -34,7 +34,7 @@ class _TestFitHomeState extends State<TestFitHome> {
     final isCompact = AppBreakpoints.isCompact(
       MediaQuery.sizeOf(context).width,
     );
-    final destinations = const [
+    const destinations = [
       NavigationDestination(icon: Icon(Icons.today_outlined), label: 'Today'),
       NavigationDestination(
         icon: Icon(Icons.fitness_center_outlined),
@@ -689,6 +689,7 @@ void main() {
     expect(find.text('Chest day'), findsOneWidget);
     expect(find.text('Bench press'), findsOneWidget);
     expect(find.text('Target: 3 sets • 8 reps • 60 kg'), findsOneWidget);
+    expect(find.text('Logged sets 0'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Open Bench press'));
     await tester.pumpAndSettle();
@@ -1067,6 +1068,7 @@ void main() {
 
     expect(find.text('Target: 3 sets • 1 min 30 sec'), findsOneWidget);
     expect(find.text('Target: 4 sets • 45 kg • 40 sec'), findsOneWidget);
+    expect(find.text('Logged sets 0'), findsOneWidget);
 
     await openExercise(tester, 'Plank');
     expect(find.text('Reps'), findsNothing);
@@ -1438,6 +1440,27 @@ void main() {
     expect(fields[0].controller?.text, '8');
     expect(fields, hasLength(1));
   });
+
+  testWidgets(
+    'repeated exercise summary reuses the matching previous occurrence only',
+    (tester) async {
+      final store = AppStore.empty();
+      createRepeatPushupsPlan(store);
+      finishRepeatPushupsWorkout(store);
+      store.startWorkout(
+        trainingPlanId: 'repeat-pushups',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
+
+      await pumpWorkoutScreen(tester, store: store);
+      await openActiveWorkout(tester);
+      await tester.tap(find.byTooltip('Open Pushups entry 2'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Previous set 8 reps'), findsOneWidget);
+      expect(find.text('Previous set 10 reps'), findsNothing);
+    },
+  );
 
   testWidgets('keeps workout tab visible on session and exercise screens', (
     tester,

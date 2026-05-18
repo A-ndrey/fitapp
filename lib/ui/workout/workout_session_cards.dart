@@ -26,14 +26,10 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
       hourUnit: l10n?.workoutHourUnit ?? 'h',
       minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
     );
-    final totalVolume = session.results.fold<double>(0, (total, result) {
-      final resultVolume = result.setLogs.fold<double>(
-        0,
-        (setTotal, setLog) =>
-            setTotal + ((setLog.weightGrams ?? 0) / 1000) * (setLog.reps ?? 0),
-      );
-      return total + resultVolume;
-    });
+    final loggedSetCount = session.results.fold<int>(
+      0,
+      (total, result) => total + result.setLogs.length,
+    );
     final completedExercises = session.results
         .where((result) => result.setLogs.isNotEmpty)
         .length;
@@ -73,10 +69,7 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
                       l10n?.workoutExerciseCount(session.results.length) ??
                       '${session.results.length} ${session.results.length == 1 ? 'exercise' : 'exercises'}',
                 ),
-                WorkoutInfoPill(
-                  label:
-                      'Total volume ${totalVolume <= 0 ? '0 kg' : store.formatWorkoutWeight(totalVolume)}',
-                ),
+                WorkoutInfoPill(label: 'Logged sets $loggedSetCount'),
                 WorkoutInfoPill(
                   label:
                       '$completedExercises/${session.results.length} completed',

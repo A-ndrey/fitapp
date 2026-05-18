@@ -66,18 +66,21 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
         }
         final result = session.results[widget.resultIndex];
         final measurementType = _measurementTypeForResult(result);
+        final exerciseOccurrenceIndex = _exerciseOccurrenceIndex(
+          session.results,
+          widget.resultIndex,
+          result.exerciseId,
+        );
         final history = widget.store.completedWorkoutHistoryForExercise(
           result.exerciseId,
         );
         final lastLoggedSet = result.setLogs.isEmpty
             ? null
             : result.setLogs.last;
-        final previousCompletedSet = history.isEmpty
-            ? null
-            : history.first.results
-                  .where((entry) => entry.setLogs.isNotEmpty)
-                  .map((entry) => entry.setLogs.last)
-                  .firstOrNull;
+        final previousCompletedSet = _previousCompletedSetForOccurrence(
+          history,
+          exerciseOccurrenceIndex,
+        );
         final progressionHint = _progressionHint(
           result,
           measurementType,
@@ -301,6 +304,36 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
   ) {
     return widget.store.exerciseById(result.exerciseId)?.measurementType ??
         ExerciseMeasurementType.strength;
+  }
+
+  int _exerciseOccurrenceIndex(
+    List<WorkoutExerciseResult> results,
+    int resultIndex,
+    String exerciseId,
+  ) {
+    var occurrenceIndex = 0;
+    for (var index = 0; index < resultIndex; index++) {
+      if (results[index].exerciseId == exerciseId) {
+        occurrenceIndex++;
+      }
+    }
+    return occurrenceIndex;
+  }
+
+  WorkoutSetLog? _previousCompletedSetForOccurrence(
+    List<WorkoutExerciseHistoryGroup> history,
+    int exerciseOccurrenceIndex,
+  ) {
+    for (final group in history) {
+      if (exerciseOccurrenceIndex >= group.results.length) {
+        continue;
+      }
+      final matchingResult = group.results[exerciseOccurrenceIndex];
+      if (matchingResult.setLogs.isNotEmpty) {
+        return matchingResult.setLogs.last;
+      }
+    }
+    return null;
   }
 
   void _startRestTimer() {
