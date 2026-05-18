@@ -19,7 +19,14 @@ enum MuscleGroup {
   final String label;
 }
 
-enum ExerciseMeasurementType { reps, weight, duration, distance, assistance }
+enum ExerciseMeasurementType {
+  strength,
+  bodyweight,
+  duration,
+  weightedDuration,
+  cardio,
+  assisted,
+}
 
 class Exercise {
   const Exercise({

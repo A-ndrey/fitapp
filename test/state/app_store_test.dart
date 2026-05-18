@@ -324,7 +324,7 @@ void main() {
           description: 'Updated built-in exercise',
           instruction: 'Updated built-in instruction.',
           muscleGroups: [MuscleGroup.chest],
-          measurementType: ExerciseMeasurementType.reps,
+          measurementType: ExerciseMeasurementType.bodyweight,
         ),
       ),
       throwsArgumentError,
@@ -757,7 +757,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -783,7 +783,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -794,7 +794,7 @@ void main() {
         description: 'Updated push exercise',
         instruction: 'Use a bench and keep a rigid plank.',
         muscleGroups: [MuscleGroup.chest],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -811,7 +811,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -823,7 +823,7 @@ void main() {
           description: 'Broken',
           instruction: 'Broken',
           muscleGroups: [MuscleGroup.chest],
-          measurementType: ExerciseMeasurementType.reps,
+          measurementType: ExerciseMeasurementType.bodyweight,
         ),
       ),
       throwsArgumentError,
@@ -836,7 +836,7 @@ void main() {
           description: 'Missing',
           instruction: 'Missing',
           muscleGroups: [MuscleGroup.chest],
-          measurementType: ExerciseMeasurementType.reps,
+          measurementType: ExerciseMeasurementType.bodyweight,
         ),
       ),
       throwsArgumentError,
@@ -853,7 +853,7 @@ void main() {
         description: '',
         instruction: 'Do the movement.',
         muscleGroups: [MuscleGroup.core],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
       const Exercise(
         id: 'missing-instruction',
@@ -861,7 +861,7 @@ void main() {
         description: 'Core work',
         instruction: '',
         muscleGroups: [MuscleGroup.core],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
       const Exercise(
         id: 'missing-muscles',
@@ -869,7 +869,7 @@ void main() {
         description: 'Core work',
         instruction: 'Do the movement.',
         muscleGroups: [],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     ]) {
       expect(() => store.createExercise(exercise), throwsArgumentError);
@@ -885,7 +885,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -905,7 +905,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     store.createTrainingPlan(
@@ -929,7 +929,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     store.createTrainingPlan(
@@ -954,7 +954,7 @@ void main() {
         description: 'Updated push exercise',
         instruction: 'Use a bench and keep a rigid plank.',
         muscleGroups: [MuscleGroup.chest],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -976,7 +976,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     store.createTrainingPlan(
@@ -1013,7 +1013,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     store.createTrainingPlan(
@@ -1051,7 +1051,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     const validPlan = TrainingPlan(
@@ -1126,7 +1126,7 @@ void main() {
         description: 'Barbell chest press',
         instruction: 'Keep shoulder blades set and press the bar vertically.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-        measurementType: ExerciseMeasurementType.weight,
+        measurementType: ExerciseMeasurementType.strength,
       ),
     );
     store.createTrainingPlan(
@@ -1360,7 +1360,7 @@ void main() {
           description: 'Bodyweight push exercise',
           instruction: 'Keep a straight line from shoulders to heels.',
           muscleGroups: [MuscleGroup.chest],
-          measurementType: ExerciseMeasurementType.reps,
+          measurementType: ExerciseMeasurementType.bodyweight,
         ),
       );
       store.createTrainingPlan(
@@ -1447,7 +1447,7 @@ void main() {
           description: 'Barbell chest press',
           instruction: 'Keep shoulder blades set and press the bar vertically.',
           muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-          measurementType: ExerciseMeasurementType.weight,
+          measurementType: ExerciseMeasurementType.strength,
         ),
       );
       store.createTrainingPlan(

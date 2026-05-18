@@ -293,7 +293,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest],
-        measurementType: ExerciseMeasurementType.reps,
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     store.createTrainingPlan(
