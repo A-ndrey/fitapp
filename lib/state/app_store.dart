@@ -380,6 +380,7 @@ class AppStore extends ChangeNotifier {
     PersistedAppState state, {
     bool notifyPersistedStateObserver = true,
   }) async {
+    _validateExternalPersistedStateCompatibility(state);
     _validatePersistedState(state);
     _persistedStateObserverGeneration += 1;
     _applyPersistedStateUnchecked(state);
@@ -974,6 +975,21 @@ class AppStore extends ChangeNotifier {
     }
     for (final session in state.completedWorkoutSessions) {
       validationStore._validateWorkoutSession(session);
+    }
+  }
+
+  void _validateExternalPersistedStateCompatibility(PersistedAppState state) {
+    for (final exercise in state.userExercises) {
+      final existing = _exercises[exercise.id];
+      if (existing == null) {
+        continue;
+      }
+      if (existing.measurementType != exercise.measurementType &&
+          _hasWorkoutHistoryForExercise(exercise.id)) {
+        throw ArgumentError(
+          'Exercise measurement type cannot change after workout history exists.',
+        );
+      }
     }
   }
 

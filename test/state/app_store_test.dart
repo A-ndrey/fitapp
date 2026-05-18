@@ -661,6 +661,85 @@ void main() {
     },
   );
 
+  test(
+    'applying an external snapshot rejects measurement type changes for exercises with history',
+    () async {
+      final persistence = FakePersistence();
+      final observedStates = <PersistedAppState>[];
+      final store = AppStore.empty(
+        persistence: persistence,
+        onPersistedStateSaved: observedStates.add,
+      );
+
+      store.createExercise(
+        const Exercise(
+          id: 'custom-pushups',
+          name: 'Custom pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a straight line from shoulders to heels.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'home-chest',
+          name: 'Home chest',
+          description: 'Bodyweight chest work',
+          exercises: [
+            TrainingExercise(exerciseId: 'custom-pushups', sets: 3, reps: 12),
+          ],
+        ),
+      );
+      store.startWorkout(
+        trainingPlanId: 'home-chest',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
+      store.addActiveWorkoutSet(
+        resultIndex: 0,
+        setLog: const WorkoutSetLog(reps: 12),
+      );
+      store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
+      await flushPersistenceQueue();
+
+      observedStates.clear();
+
+      final invalidSnapshot = PersistedAppState(
+        userFoods: const [],
+        userDishes: const [],
+        userExercises: const [
+          Exercise(
+            id: 'custom-pushups',
+            name: 'Custom pushups',
+            description: 'Now assisted.',
+            instruction: 'Use assistance.',
+            muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+            measurementType: ExerciseMeasurementType.assisted,
+          ),
+        ],
+        userTrainingPlans: const [],
+        mealEntries: const [],
+        preferences: const AppPreferences.defaults(),
+        activeWorkoutSession: null,
+        completedWorkoutSessions: const [],
+        mealEntryCounter: 0,
+        workoutSessionCounter: 0,
+      );
+
+      await expectLater(
+        store.applyExternalPersistedState(invalidSnapshot),
+        throwsArgumentError,
+      );
+
+      expect(store.exerciseById('custom-pushups')!.measurementType,
+          ExerciseMeasurementType.bodyweight);
+      expect(store.completedWorkoutSessions, hasLength(1));
+      expect(observedStates, isEmpty);
+      expect(persistence.savedState!.userExercises.single.measurementType,
+          ExerciseMeasurementType.bodyweight);
+    },
+  );
+
   test('AppStore.hydrated restores counters and runtime state', () async {
     final persistence = FakePersistence(
       loadedState: PersistedAppState(
