@@ -57,22 +57,43 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Finder muscleGroupChip(String label) {
+    return find.byWidgetPredicate(
+      (widget) =>
+          widget is FilterChip &&
+          widget.label is Text &&
+          (widget.label as Text).data == label,
+      description: 'FilterChip("$label")',
+    );
+  }
+
   Future<void> fillExerciseForm(
     WidgetTester tester, {
     required String name,
     required String description,
     required String instruction,
     required String muscleGroups,
+    String? measurementType,
   }) async {
     await enterLabeledText(tester, 'Exercise name', name);
     await enterLabeledText(tester, 'Exercise description', description);
     await enterLabeledText(tester, 'Exercise instruction', instruction);
+    if (measurementType != null) {
+      final field = find.byKey(
+        const ValueKey('exercise-measurement-type-field'),
+      );
+      await tester.ensureVisible(field);
+      await tester.tap(field);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(measurementType).last);
+      await tester.pumpAndSettle();
+    }
     for (final group in muscleGroups.split(',')) {
       final label = group.trim();
       if (label.isEmpty) {
         continue;
       }
-      final chip = find.widgetWithText(FilterChip, label);
+      final chip = muscleGroupChip(label);
       await tester.ensureVisible(chip);
       if (!tester.widget<FilterChip>(chip).selected) {
         await tester.tap(chip);
@@ -140,9 +161,6 @@ void main() {
 
     await enterLabeledText(tester, 'Working sets', '4');
     await enterLabeledText(tester, 'Target reps', '12');
-    await enterLabeledText(tester, 'Target load', '0');
-    await enterLabeledText(tester, 'Target duration', '0');
-    await enterLabeledText(tester, 'Load or time unit', 'reps');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
@@ -178,9 +196,6 @@ void main() {
     await tester.pumpAndSettle();
     await enterLabeledText(tester, 'Working sets', '3');
     await enterLabeledText(tester, 'Target reps', '10');
-    await enterLabeledText(tester, 'Target load', '0');
-    await enterLabeledText(tester, 'Target duration', '0');
-    await enterLabeledText(tester, 'Load or time unit', 'reps');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save training'));
@@ -245,12 +260,39 @@ void main() {
 
     await openExercisesView(tester);
     await openExerciseForm(tester);
+    await scrollUntilVisible(tester, find.text('Select muscle groups'));
 
     expect(find.bySemanticsLabel('Muscle groups'), findsNothing);
-    expect(find.widgetWithText(FilterChip, 'Full body'), findsOneWidget);
-    expect(find.widgetWithText(FilterChip, 'Cardio'), findsOneWidget);
-    expect(find.widgetWithText(FilterChip, 'Legs'), findsOneWidget);
-    expect(find.widgetWithText(FilterChip, 'Core'), findsOneWidget);
+    expect(find.byType(FilterChip), findsWidgets);
+    expect(muscleGroupChip('Cardio'), findsOneWidget);
+    expect(muscleGroupChip('Legs'), findsOneWidget);
+    expect(muscleGroupChip('Core'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('exercise-measurement-type-field')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('exercise form requires a measurement type selection', (
+    tester,
+  ) async {
+    await pumpScreen(tester, store: AppStore.empty());
+
+    await openExercisesView(tester);
+    await openExerciseForm(tester);
+    await fillExerciseForm(
+      tester,
+      name: 'Custom burpee',
+      description: 'Full-body conditioning',
+      instruction: 'Drop, jump back, return, and stand tall.',
+      muscleGroups: 'Full body, Cardio',
+      measurementType: 'Cardio',
+    );
+    await tester.tap(find.text('Save exercise'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Custom burpee'), findsOneWidget);
+    expect(find.text('Cardio'), findsWidgets);
   });
 
   testWidgets('selected muscle group chips use readable foreground color', (
@@ -260,8 +302,9 @@ void main() {
 
     await openExercisesView(tester);
     await openExerciseForm(tester);
+    await scrollUntilVisible(tester, find.text('Select muscle groups'));
 
-    final coreChip = find.widgetWithText(FilterChip, 'Core');
+    final coreChip = muscleGroupChip('Core');
     await scrollUntilVisible(tester, coreChip);
     await tester.tap(coreChip);
     await tester.pumpAndSettle();
@@ -283,9 +326,10 @@ void main() {
 
     await openExercisesView(tester);
     await openExerciseForm(tester);
+    await scrollUntilVisible(tester, find.text('Select muscle groups'));
 
     expect(find.text('Exercise profile'), findsOneWidget);
-    expect(find.text('Muscle focus'), findsOneWidget);
+    expect(find.byType(FilterChip), findsWidgets);
 
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
@@ -305,6 +349,49 @@ void main() {
     expect(find.text('Set targets'), findsOneWidget);
   });
 
+  testWidgets('bodyweight plan entry hides load and duration fields', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip('Add training plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add exercise'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pushups').last);
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('Working sets'), findsOneWidget);
+    expect(find.bySemanticsLabel('Target reps'), findsOneWidget);
+    expect(find.bySemanticsLabel('Target load'), findsNothing);
+    expect(find.bySemanticsLabel('Target duration'), findsNothing);
+    expect(find.bySemanticsLabel('Target distance'), findsNothing);
+  });
+
+  testWidgets('cardio plan entry shows duration and distance only', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip('Add training plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add exercise'));
+    await tester.pumpAndSettle();
+    await scrollUntilVisible(
+      tester,
+      find.text('Running'),
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('Running'));
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('Working sets'), findsNothing);
+    expect(find.bySemanticsLabel('Target reps'), findsNothing);
+    expect(find.bySemanticsLabel('Target load'), findsNothing);
+    expect(find.bySemanticsLabel('Target duration'), findsOneWidget);
+    expect(find.bySemanticsLabel('Target distance'), findsOneWidget);
+  });
+
   testWidgets('creates a custom exercise and shows it in the plan picker', (
     tester,
   ) async {
@@ -319,6 +406,7 @@ void main() {
       description: 'Full-body conditioning',
       instruction: 'Drop, jump back, return, and stand tall.',
       muscleGroups: 'Full body, Cardio',
+      measurementType: 'Cardio',
     );
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
@@ -354,6 +442,7 @@ void main() {
       description: 'Invalid generated id',
       instruction: 'This should stay open.',
       muscleGroups: 'Core',
+      measurementType: 'Duration',
     );
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
@@ -374,6 +463,7 @@ void main() {
       description: 'Static core hold',
       instruction: 'Brace and hold a straight line.',
       muscleGroups: 'Core',
+      measurementType: 'Duration',
     );
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
@@ -388,6 +478,7 @@ void main() {
       description: 'Updated core hold',
       instruction: 'Keep ribs down and hips level.',
       muscleGroups: 'Core, Glutes',
+      measurementType: 'Duration',
     );
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
@@ -408,6 +499,7 @@ void main() {
       description: 'Posterior chain work',
       instruction: 'Drive hips up and squeeze glutes.',
       muscleGroups: 'Glutes, Hamstrings',
+      measurementType: 'Bodyweight',
     );
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
@@ -433,6 +525,7 @@ void main() {
         description: 'User-defined horizontal press',
         instruction: 'Press away from the floor.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     store.createTrainingPlan(
@@ -441,12 +534,7 @@ void main() {
         name: 'Custom push day',
         description: 'Uses a custom exercise',
         exercises: [
-          TrainingExercise(
-            exerciseId: 'custom-pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
+          TrainingExercise(exerciseId: 'custom-pushups', sets: 3, reps: 12),
         ],
       ),
     );
@@ -464,38 +552,86 @@ void main() {
     expect(find.text('Custom pushups'), findsOneWidget);
   });
 
-  testWidgets('plan editor exercise rows reveal swipe actions on compact layouts', (
-    tester,
-  ) async {
-    final store = AppStore();
-    await tester.binding.setSurfaceSize(const Size(390, 800));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await pumpScreen(tester, store: store);
+  testWidgets(
+    'plan editor exercise rows reveal swipe actions on compact layouts',
+    (tester) async {
+      final store = AppStore();
+      await tester.binding.setSurfaceSize(const Size(390, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await pumpScreen(tester, store: store);
 
-    await tester.tap(find.byTooltip('Add training plan'));
-    await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Training name', 'Push day');
-    await enterLabeledText(tester, 'Training description', 'Upper body');
-    await tester.tap(find.text('Add exercise'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Pushups').last);
-    await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Working sets', '3');
-    await enterLabeledText(tester, 'Target reps', '10');
-    await enterLabeledText(tester, 'Target load', '0');
-    await enterLabeledText(tester, 'Target duration', '0');
-    await enterLabeledText(tester, 'Load or time unit', 'reps');
-    await tester.tap(find.text('Save exercise'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Add training plan'));
+      await tester.pumpAndSettle();
+      await enterLabeledText(tester, 'Training name', 'Push day');
+      await enterLabeledText(tester, 'Training description', 'Upper body');
+      await tester.tap(find.text('Add exercise'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pushups').last);
+      await tester.pumpAndSettle();
+      await enterLabeledText(tester, 'Working sets', '3');
+      await enterLabeledText(tester, 'Target reps', '10');
+      await tester.tap(find.text('Save exercise'));
+      await tester.pumpAndSettle();
 
-    await revealRowActions(tester, 'Pushups');
+      await revealRowActions(tester, 'Pushups');
 
-    expect(find.byKey(const ValueKey('swipe-action-Edit')), findsOneWidget);
-    expect(find.byKey(const ValueKey('swipe-action-Remove')), findsOneWidget);
+      expect(find.byKey(const ValueKey('swipe-action-Edit')), findsOneWidget);
+      expect(find.byKey(const ValueKey('swipe-action-Remove')), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('swipe-action-Remove')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('swipe-action-Remove')));
+      await tester.pumpAndSettle();
 
-    expect(find.text('3 sets'), findsNothing);
-  });
+      expect(find.text('3 sets'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'exercise measurement type is locked after workout history exists',
+    (tester) async {
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'custom-pushups',
+          name: 'Custom pushups',
+          description: 'User-defined horizontal press',
+          instruction: 'Press away from the floor.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'custom-push-day',
+          name: 'Custom push day',
+          description: 'Uses a custom exercise',
+          exercises: [
+            TrainingExercise(exerciseId: 'custom-pushups', sets: 3, reps: 12),
+          ],
+        ),
+      );
+      store.startWorkout(trainingPlanId: 'custom-push-day');
+      store.finishActiveWorkout();
+
+      await pumpScreen(tester, store: store);
+
+      await openExercisesView(tester);
+      await scrollUntilVisible(tester, find.text('Custom pushups'));
+      await openCatalogActions(tester, 'Custom pushups');
+      await tester.tap(find.text('Edit Custom pushups').last);
+      await tester.pumpAndSettle();
+
+      final field = tester
+          .widget<DropdownButtonFormField<ExerciseMeasurementType>>(
+            find.byType(DropdownButtonFormField<ExerciseMeasurementType>),
+          );
+
+      expect(field.onChanged, isNull);
+      expect(
+        find.text(
+          'Measurement type can no longer change because workout history exists.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 }

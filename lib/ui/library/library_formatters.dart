@@ -63,9 +63,127 @@ String formatExerciseMuscleGroupSummaryLabel(
   return muscleGroups.map((group) => group.label).join(', ');
 }
 
+String formatExerciseMeasurementTypeLabel(
+  ExerciseMeasurementType measurementType,
+) {
+  switch (measurementType) {
+    case ExerciseMeasurementType.strength:
+      return 'Strength';
+    case ExerciseMeasurementType.bodyweight:
+      return 'Bodyweight';
+    case ExerciseMeasurementType.duration:
+      return 'Duration';
+    case ExerciseMeasurementType.weightedDuration:
+      return 'Weighted duration';
+    case ExerciseMeasurementType.cardio:
+      return 'Cardio';
+    case ExerciseMeasurementType.assisted:
+      return 'Assisted';
+  }
+}
+
+List<String> formatTrainingExerciseDetailLines(
+  TrainingExercise exercise,
+  ExerciseMeasurementType measurementType,
+  AppStore store, {
+  String setsLabel = 'sets',
+  String repsLabel = 'reps',
+  String durationUnit = 'sec',
+  String assistanceLabel = 'assistance',
+}) {
+  final details = <String>[];
+  switch (measurementType) {
+    case ExerciseMeasurementType.strength:
+      _addIfPresent(details, _formatCountDetail(exercise.sets, setsLabel));
+      _addIfPresent(details, _formatCountDetail(exercise.reps, repsLabel));
+      _addIfPresent(details, _formatWeightDetail(exercise.weightGrams, store));
+      break;
+    case ExerciseMeasurementType.bodyweight:
+      _addIfPresent(details, _formatCountDetail(exercise.sets, setsLabel));
+      _addIfPresent(details, _formatCountDetail(exercise.reps, repsLabel));
+      break;
+    case ExerciseMeasurementType.duration:
+      _addIfPresent(details, _formatCountDetail(exercise.sets, setsLabel));
+      _addIfPresent(
+        details,
+        _formatDurationDetail(exercise.durationSeconds, durationUnit),
+      );
+      break;
+    case ExerciseMeasurementType.weightedDuration:
+      _addIfPresent(details, _formatCountDetail(exercise.sets, setsLabel));
+      _addIfPresent(details, _formatWeightDetail(exercise.weightGrams, store));
+      _addIfPresent(
+        details,
+        _formatDurationDetail(exercise.durationSeconds, durationUnit),
+      );
+      break;
+    case ExerciseMeasurementType.cardio:
+      _addIfPresent(
+        details,
+        _formatDurationDetail(exercise.durationSeconds, durationUnit),
+      );
+      _addIfPresent(
+        details,
+        _formatDistanceDetail(exercise.distanceMeters, store),
+      );
+      break;
+    case ExerciseMeasurementType.assisted:
+      _addIfPresent(details, _formatCountDetail(exercise.sets, setsLabel));
+      _addIfPresent(details, _formatCountDetail(exercise.reps, repsLabel));
+      _addIfPresent(
+        details,
+        _formatWeightDetail(
+          exercise.assistanceWeightGrams,
+          store,
+          suffix: assistanceLabel,
+        ),
+      );
+      break;
+  }
+  return details;
+}
+
 String formatLibraryCountLabel(int count, String singular, [String? plural]) {
   final label = count == 1 ? singular : plural ?? '${singular}s';
   return '$count $label';
+}
+
+String? _formatCountDetail(double? value, String label) {
+  if (value == null) {
+    return null;
+  }
+  return '${_formatCompactNumber(value)} $label';
+}
+
+String? _formatWeightDetail(double? grams, AppStore store, {String? suffix}) {
+  if (grams == null) {
+    return null;
+  }
+  final weight = store.formatWorkoutWeight(grams / 1000);
+  if (suffix == null) {
+    return weight;
+  }
+  return '$weight $suffix';
+}
+
+String? _formatDurationDetail(double? seconds, String durationUnit) {
+  if (seconds == null) {
+    return null;
+  }
+  return '${_formatCompactNumber(seconds)} $durationUnit';
+}
+
+String? _formatDistanceDetail(double? meters, AppStore store) {
+  if (meters == null) {
+    return null;
+  }
+  return store.formatDistance(meters / 1000);
+}
+
+void _addIfPresent(List<String> details, String? value) {
+  if (value != null) {
+    details.add(value);
+  }
 }
 
 String _formatCompactNumber(double value) {

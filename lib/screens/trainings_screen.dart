@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/app_preferences.dart';
 import '../models/exercise.dart';
 import '../models/training_plan.dart';
 import '../state/app_store.dart';
@@ -10,6 +11,7 @@ import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/form_shell.dart';
 import '../ui/core/widgets/swipe_action_card.dart';
 import '../ui/library/library_cards.dart';
+import '../ui/library/library_formatters.dart';
 
 enum TrainingsCatalogView { plans, exercises }
 
@@ -389,6 +391,7 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
   late final TextEditingController _descriptionController;
   late final TextEditingController _instructionController;
   final Set<MuscleGroup> _selectedMuscleGroups = <MuscleGroup>{};
+  ExerciseMeasurementType? _selectedMeasurementType;
   String? _errorText;
 
   bool get _isEditing => widget.initialExercise != null;
@@ -405,6 +408,7 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
       text: exercise?.instruction ?? '',
     );
     _selectedMuscleGroups.addAll(exercise?.muscleGroups ?? const []);
+    _selectedMeasurementType = exercise?.measurementType;
   }
 
   @override
@@ -418,6 +422,7 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final measurementTypeLocked = _measurementTypeEditingLocked;
     final title = _isEditing
         ? l10n?.exerciseDialogEditTitle ?? 'Edit exercise'
         : l10n?.exerciseDialogAddTitle ?? 'Add exercise';
@@ -462,6 +467,45 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
                     'Exercise instruction',
               ),
             ),
+            const SizedBox(height: 12),
+            Semantics(
+              label: 'Measurement type',
+              child: DropdownButtonFormField<ExerciseMeasurementType>(
+                key: const ValueKey('exercise-measurement-type-field'),
+                initialValue: _selectedMeasurementType,
+                decoration: const InputDecoration(
+                  labelText: 'Measurement type',
+                ),
+                items: ExerciseMeasurementType.values
+                    .map(
+                      (measurementType) =>
+                          DropdownMenuItem<ExerciseMeasurementType>(
+                            value: measurementType,
+                            child: Text(
+                              formatExerciseMeasurementTypeLabel(
+                                measurementType,
+                              ),
+                            ),
+                          ),
+                    )
+                    .toList(growable: false),
+                onChanged: measurementTypeLocked
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _selectedMeasurementType = value;
+                          _errorText = null;
+                        });
+                      },
+              ),
+            ),
+            if (measurementTypeLocked) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Measurement type can no longer change because workout history exists.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
           ],
         ),
       ),
@@ -491,13 +535,17 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
                       labelStyle: Theme.of(context).textTheme.labelLarge
                           ?.copyWith(
                             color: isSelected
-                                ? Theme.of(context).colorScheme.onPrimaryContainer
+                                ? Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer
                                 : Theme.of(context).colorScheme.onSurface,
                           ),
-                      checkmarkColor:
-                          Theme.of(context).colorScheme.onPrimaryContainer,
-                      selectedColor:
-                          Theme.of(context).colorScheme.primaryContainer,
+                      checkmarkColor: Theme.of(
+                        context,
+                      ).colorScheme.onPrimaryContainer,
+                      selectedColor: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer,
                       selected: isSelected,
                       onSelected: (selected) {
                         setState(() {
@@ -542,14 +590,15 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
     final description = _descriptionController.text.trim();
     final instruction = _instructionController.text.trim();
     final muscleGroups = _selectedMuscleGroups.toList(growable: false);
+    final measurementType = _selectedMeasurementType;
     if (name.isEmpty ||
         description.isEmpty ||
         instruction.isEmpty ||
-        muscleGroups.isEmpty) {
+        muscleGroups.isEmpty ||
+        measurementType == null) {
       setState(() {
         _errorText =
-            AppLocalizations.of(context)?.exerciseDetailsValidation ??
-            'Enter a name, description, instruction, and muscle groups.';
+            'Enter a name, description, instruction, muscle groups, and measurement type.';
       });
       return;
     }
@@ -570,6 +619,7 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
       description: description,
       instruction: instruction,
       muscleGroups: muscleGroups,
+      measurementType: measurementType,
     );
 
     try {
@@ -592,6 +642,25 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
       return;
     }
     Navigator.of(context).pop();
+  }
+
+  bool get _measurementTypeEditingLocked {
+    final exerciseId = widget.initialExercise?.id;
+    if (exerciseId == null) {
+      return false;
+    }
+    if (widget.store
+        .completedWorkoutHistoryForExercise(exerciseId)
+        .isNotEmpty) {
+      return true;
+    }
+    final activeWorkout = widget.store.activeWorkoutSession;
+    if (activeWorkout == null) {
+      return false;
+    }
+    return activeWorkout.results.any(
+      (result) => result.exerciseId == exerciseId,
+    );
   }
 }
 
@@ -707,6 +776,13 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                 );
                 final exerciseName =
                     catalogExercise?.name ?? exercise.exerciseId;
+                final detailLines = catalogExercise == null
+                    ? const <String>[]
+                    : formatTrainingExerciseDetailLines(
+                        exercise,
+                        catalogExercise.measurementType,
+                        widget.store,
+                      );
                 final isCompact = AppBreakpoints.isCompact(
                   MediaQuery.sizeOf(context).width,
                 );
@@ -717,19 +793,23 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                       SwipeCardAction(
                         label: 'Edit',
                         icon: Icons.edit_outlined,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.secondaryContainer,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onSecondaryContainer,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondaryContainer,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSecondaryContainer,
                         onPressed: () => _editExercise(index),
                       ),
                       SwipeCardAction(
                         label: 'Remove',
                         icon: Icons.remove_circle_outline,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.tertiaryContainer,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onTertiaryContainer,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.tertiaryContainer,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onTertiaryContainer,
                         onPressed: () {
                           setState(() {
                             _exercises.removeAt(index);
@@ -740,42 +820,15 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                     ],
                     child: Card(
                       child: ListTile(
-                      title: Text(exerciseName),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _formatTarget(
-                              exercise.sets,
-                              l10n?.trainingSetsSummaryLabel ?? 'sets',
-                            ),
-                          ),
-                          Text(
-                            _formatTarget(
-                              exercise.reps,
-                              l10n?.trainingRepsSummaryLabel ?? 'reps',
-                            ),
-                          ),
-                          Text(
-                            _formatTarget(
-                              exercise.weight,
-                              l10n?.trainingWeightSummaryLabel ?? 'weight',
-                            ),
-                          ),
-                          Text(
-                            _formatTarget(
-                              exercise.time,
-                              l10n?.trainingTimeSummaryLabel ?? 'time',
-                            ),
-                          ),
-                          Text(
-                            l10n?.trainingTargetUnitLabel(exercise.unit) ??
-                                'Unit: ${exercise.unit}',
-                          ),
-                        ],
-                      ),
-                      isThreeLine: true,
+                        title: Text(exerciseName),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: detailLines
+                              .map((detail) => Text(detail))
+                              .toList(growable: false),
+                        ),
+                        isThreeLine: true,
                         trailing: isCompact
                             ? null
                             : Row(
@@ -865,6 +918,7 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
         fullscreenDialog: true,
         builder: (context) {
           return _TrainingExerciseDialog(
+            store: widget.store,
             exercise: exercise,
             initialExercise: null,
             fullScreen: true,
@@ -892,6 +946,7 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
         fullscreenDialog: true,
         builder: (context) {
           return _TrainingExerciseDialog(
+            store: widget.store,
             exercise: exercise,
             initialExercise: current,
             fullScreen: true,
@@ -948,35 +1003,17 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
     }
     Navigator.of(context).pop();
   }
-
-  String _formatTarget(double? value, String label) {
-    if (value == null) {
-      return '$label: -';
-    }
-    if (label == 'weight') {
-      return '${widget.store.formatWorkoutWeight(value)} $label';
-    }
-    return '${_formatNumber(value)} $label';
-  }
-
-  String _formatNumber(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    return value
-        .toStringAsFixed(2)
-        .replaceFirst(RegExp(r'0+$'), '')
-        .replaceFirst(RegExp(r'\.$'), '');
-  }
 }
 
 class _TrainingExerciseDialog extends StatefulWidget {
   const _TrainingExerciseDialog({
+    required this.store,
     required this.exercise,
     required this.initialExercise,
     this.fullScreen = false,
   });
 
+  final AppStore store;
   final Exercise exercise;
   final TrainingExercise? initialExercise;
   final bool fullScreen;
@@ -990,27 +1027,29 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
   late final TextEditingController _setsController;
   late final TextEditingController _repsController;
   late final TextEditingController _weightController;
-  late final TextEditingController _timeController;
-  late final TextEditingController _unitController;
+  late final TextEditingController _durationController;
+  late final TextEditingController _distanceController;
+  late final TextEditingController _assistanceController;
   String? _errorText;
 
   @override
   void initState() {
     super.initState();
     final initial = widget.initialExercise;
-    _setsController = TextEditingController(
-      text: initial?.sets == null ? '' : _formatInput(initial!.sets!),
-    );
-    _repsController = TextEditingController(
-      text: initial?.reps == null ? '' : _formatInput(initial!.reps!),
-    );
+    _setsController = TextEditingController(text: _formatInput(initial?.sets));
+    _repsController = TextEditingController(text: _formatInput(initial?.reps));
     _weightController = TextEditingController(
-      text: initial?.weight == null ? '' : _formatInput(initial!.weight!),
+      text: _formatInput(_displayWeight(initial?.weightGrams)),
     );
-    _timeController = TextEditingController(
-      text: initial?.time == null ? '' : _formatInput(initial!.time!),
+    _durationController = TextEditingController(
+      text: _formatInput(initial?.durationSeconds),
     );
-    _unitController = TextEditingController(text: initial?.unit ?? '');
+    _distanceController = TextEditingController(
+      text: _formatInput(_displayDistance(initial?.distanceMeters)),
+    );
+    _assistanceController = TextEditingController(
+      text: _formatInput(_displayWeight(initial?.assistanceWeightGrams)),
+    );
   }
 
   @override
@@ -1018,8 +1057,9 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
     _setsController.dispose();
     _repsController.dispose();
     _weightController.dispose();
-    _timeController.dispose();
-    _unitController.dispose();
+    _durationController.dispose();
+    _distanceController.dispose();
+    _assistanceController.dispose();
     super.dispose();
   }
 
@@ -1032,69 +1072,11 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
     final children = [
       FormSectionCard(
         title: l10n?.trainingTargetSectionTitle ?? 'Set targets',
-        subtitle:
-            l10n?.trainingTargetSectionSubtitle ??
-            'Set working volume, load, duration, and unit.',
+        subtitle: _targetSectionSubtitle(),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _setsController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText:
-                    l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _repsController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText:
-                    l10n?.trainingExpectedRepsFieldLabel ?? 'Target reps',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _weightController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText:
-                    l10n?.trainingExpectedWeightFieldLabel ?? 'Target load',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _timeController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText:
-                    l10n?.trainingExpectedTimeFieldLabel ?? 'Target duration',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _unitController,
-              textInputAction: TextInputAction.done,
-              decoration: InputDecoration(
-                labelText: l10n?.trainingUnitFieldLabel ?? 'Load or time unit',
-              ),
-            ),
-          ],
+          children: _buildFields(context),
         ),
       ),
       if (_errorText != null) InlineErrorBanner(message: _errorText!),
@@ -1120,32 +1102,216 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
   void _saveExercise() {
     final sets = _parseOptional(_setsController.text);
     final reps = _parseOptional(_repsController.text);
-    final weight = _parseOptional(_weightController.text);
-    final time = _parseOptional(_timeController.text);
-    final unit = _unitController.text.trim();
+    final weightInput = _parseOptional(_weightController.text);
+    final duration = _parseOptional(_durationController.text);
+    final distanceInput = _parseOptional(_distanceController.text);
+    final assistanceInput = _parseOptional(_assistanceController.text);
     if ((sets == null && _setsController.text.trim().isNotEmpty) ||
         (reps == null && _repsController.text.trim().isNotEmpty) ||
-        (weight == null && _weightController.text.trim().isNotEmpty) ||
-        (time == null && _timeController.text.trim().isNotEmpty) ||
-        unit.isEmpty) {
+        (weightInput == null && _weightController.text.trim().isNotEmpty) ||
+        (duration == null && _durationController.text.trim().isNotEmpty) ||
+        (distanceInput == null && _distanceController.text.trim().isNotEmpty) ||
+        (assistanceInput == null &&
+            _assistanceController.text.trim().isNotEmpty)) {
       setState(() {
-        _errorText =
-            AppLocalizations.of(context)?.trainingTargetValidation ??
-            'Enter valid exercise targets and a unit.';
+        _errorText = _validationMessage;
       });
       return;
     }
 
-    Navigator.of(context).pop(
-      TrainingExercise(
-        exerciseId: widget.exercise.id,
-        sets: sets,
-        reps: reps,
-        weight: weight,
-        time: time,
-        unit: unit,
-      ),
+    final exercise = switch (widget.exercise.measurementType) {
+      ExerciseMeasurementType.strength
+          when sets != null && reps != null && weightInput != null =>
+        TrainingExercise(
+          exerciseId: widget.exercise.id,
+          sets: sets,
+          reps: reps,
+          weightGrams: _normalizeWeight(weightInput),
+        ),
+      ExerciseMeasurementType.bodyweight when sets != null && reps != null =>
+        TrainingExercise(
+          exerciseId: widget.exercise.id,
+          sets: sets,
+          reps: reps,
+        ),
+      ExerciseMeasurementType.duration when sets != null && duration != null =>
+        TrainingExercise(
+          exerciseId: widget.exercise.id,
+          sets: sets,
+          durationSeconds: duration,
+        ),
+      ExerciseMeasurementType.weightedDuration
+          when sets != null && weightInput != null && duration != null =>
+        TrainingExercise(
+          exerciseId: widget.exercise.id,
+          sets: sets,
+          weightGrams: _normalizeWeight(weightInput),
+          durationSeconds: duration,
+        ),
+      ExerciseMeasurementType.cardio
+          when duration != null && distanceInput != null =>
+        TrainingExercise(
+          exerciseId: widget.exercise.id,
+          durationSeconds: duration,
+          distanceMeters: _normalizeDistance(distanceInput),
+        ),
+      ExerciseMeasurementType.assisted
+          when sets != null && reps != null && assistanceInput != null =>
+        TrainingExercise(
+          exerciseId: widget.exercise.id,
+          sets: sets,
+          reps: reps,
+          assistanceWeightGrams: _normalizeWeight(assistanceInput),
+        ),
+      _ => null,
+    };
+    if (exercise == null) {
+      setState(() {
+        _errorText = _validationMessage;
+      });
+      return;
+    }
+
+    Navigator.of(context).pop(exercise);
+  }
+
+  List<Widget> _buildFields(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final fields = <Widget>[];
+    switch (widget.exercise.measurementType) {
+      case ExerciseMeasurementType.strength:
+        fields.addAll([
+          _numberField(
+            controller: _setsController,
+            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+          ),
+          const SizedBox(height: 12),
+          _numberField(
+            controller: _repsController,
+            label: l10n?.trainingExpectedRepsFieldLabel ?? 'Target reps',
+          ),
+          const SizedBox(height: 12),
+          _numberField(
+            controller: _weightController,
+            label: l10n?.trainingExpectedWeightFieldLabel ?? 'Target load',
+          ),
+        ]);
+        break;
+      case ExerciseMeasurementType.bodyweight:
+        fields.addAll([
+          _numberField(
+            controller: _setsController,
+            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+          ),
+          const SizedBox(height: 12),
+          _numberField(
+            controller: _repsController,
+            label: l10n?.trainingExpectedRepsFieldLabel ?? 'Target reps',
+          ),
+        ]);
+        break;
+      case ExerciseMeasurementType.duration:
+        fields.addAll([
+          _numberField(
+            controller: _setsController,
+            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+          ),
+          const SizedBox(height: 12),
+          _numberField(
+            controller: _durationController,
+            label: l10n?.trainingExpectedTimeFieldLabel ?? 'Target duration',
+          ),
+        ]);
+        break;
+      case ExerciseMeasurementType.weightedDuration:
+        fields.addAll([
+          _numberField(
+            controller: _setsController,
+            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+          ),
+          const SizedBox(height: 12),
+          _numberField(
+            controller: _weightController,
+            label: l10n?.trainingExpectedWeightFieldLabel ?? 'Target load',
+          ),
+          const SizedBox(height: 12),
+          _numberField(
+            controller: _durationController,
+            label: l10n?.trainingExpectedTimeFieldLabel ?? 'Target duration',
+          ),
+        ]);
+        break;
+      case ExerciseMeasurementType.cardio:
+        fields.addAll([
+          _numberField(
+            controller: _durationController,
+            label: l10n?.trainingExpectedTimeFieldLabel ?? 'Target duration',
+          ),
+          const SizedBox(height: 12),
+          _numberField(
+            controller: _distanceController,
+            label: 'Target distance',
+          ),
+        ]);
+        break;
+      case ExerciseMeasurementType.assisted:
+        fields.addAll([
+          _numberField(
+            controller: _setsController,
+            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+          ),
+          const SizedBox(height: 12),
+          _numberField(
+            controller: _repsController,
+            label: l10n?.trainingExpectedRepsFieldLabel ?? 'Target reps',
+          ),
+          const SizedBox(height: 12),
+          _numberField(
+            controller: _assistanceController,
+            label: 'Assistance weight',
+          ),
+        ]);
+        break;
+    }
+    return fields;
+  }
+
+  Widget _numberField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      textInputAction: TextInputAction.next,
+      decoration: InputDecoration(labelText: label),
     );
+  }
+
+  String _targetSectionSubtitle() {
+    return switch (widget.exercise.measurementType) {
+      ExerciseMeasurementType.strength => 'Set working sets, reps, and load.',
+      ExerciseMeasurementType.bodyweight => 'Set working sets and reps.',
+      ExerciseMeasurementType.duration => 'Set working sets and duration.',
+      ExerciseMeasurementType.weightedDuration =>
+        'Set working sets, load, and duration.',
+      ExerciseMeasurementType.cardio => 'Set duration and distance.',
+      ExerciseMeasurementType.assisted =>
+        'Set working sets, reps, and assistance weight.',
+    };
+  }
+
+  String get _validationMessage {
+    return switch (widget.exercise.measurementType) {
+      ExerciseMeasurementType.strength => 'Enter valid sets, reps, and load.',
+      ExerciseMeasurementType.bodyweight => 'Enter valid sets and reps.',
+      ExerciseMeasurementType.duration => 'Enter valid sets and duration.',
+      ExerciseMeasurementType.weightedDuration =>
+        'Enter valid sets, load, and duration.',
+      ExerciseMeasurementType.cardio => 'Enter valid duration and distance.',
+      ExerciseMeasurementType.assisted =>
+        'Enter valid sets, reps, and assistance weight.',
+    };
   }
 
   double? _parseOptional(String value) {
@@ -1160,7 +1326,44 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
     return parsed;
   }
 
-  String _formatInput(double value) {
+  double? _displayWeight(double? grams) {
+    if (grams == null) {
+      return null;
+    }
+    final kilograms = grams / 1000;
+    return widget.store.workoutWeightUnit == WorkoutWeightUnit.pounds
+        ? kilograms * 2.2046226218
+        : kilograms;
+  }
+
+  double? _displayDistance(double? meters) {
+    if (meters == null) {
+      return null;
+    }
+    final kilometers = meters / 1000;
+    return widget.store.distanceUnit == DistanceUnit.miles
+        ? kilometers / 1.609344
+        : kilometers;
+  }
+
+  double _normalizeWeight(double value) {
+    final kilograms = widget.store.workoutWeightUnit == WorkoutWeightUnit.pounds
+        ? value / 2.2046226218
+        : value;
+    return kilograms * 1000;
+  }
+
+  double _normalizeDistance(double value) {
+    final kilometers = widget.store.distanceUnit == DistanceUnit.miles
+        ? value * 1.609344
+        : value;
+    return kilometers * 1000;
+  }
+
+  String _formatInput(double? value) {
+    if (value == null) {
+      return '';
+    }
     if (value == value.roundToDouble()) {
       return value.toStringAsFixed(0);
     }

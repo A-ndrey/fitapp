@@ -26,15 +26,16 @@ class FoodCatalogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final isCompact = AppBreakpoints.isCompact(MediaQuery.sizeOf(context).width);
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
     return SwipeActionCard(
       actions: [
         SwipeCardAction(
           label: 'Edit',
           icon: Icons.edit_outlined,
           backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-          foregroundColor:
-              Theme.of(context).colorScheme.onSecondaryContainer,
+          foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
           onPressed: onEdit,
         ),
         SwipeCardAction(
@@ -47,31 +48,31 @@ class FoodCatalogCard extends StatelessWidget {
       ],
       child: Card(
         child: ListTile(
-        title: _BoundedText(item.name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _BoundedText(
-              formatCatalogItemTypeLabel(
-                item,
-                foodLabel: l10n?.catalogSubtypeFood ?? 'food',
-                dishLabel: l10n?.catalogSubtypeDish ?? 'recipe',
+          title: _BoundedText(item.name),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _BoundedText(
+                formatCatalogItemTypeLabel(
+                  item,
+                  foodLabel: l10n?.catalogSubtypeFood ?? 'food',
+                  dishLabel: l10n?.catalogSubtypeDish ?? 'recipe',
+                ),
               ),
-            ),
-            _BoundedText(
-              formatCatalogServingNutritionLabel(
-                item,
-                store,
-                servingLabel: l10n?.libraryServingSuffix ?? 'serving',
-                caloriesPerServing: (calories) =>
-                    l10n?.libraryCaloriesPerServingLabel(calories) ??
-                    '$calories kcal per serving',
+              _BoundedText(
+                formatCatalogServingNutritionLabel(
+                  item,
+                  store,
+                  servingLabel: l10n?.libraryServingSuffix ?? 'serving',
+                  caloriesPerServing: (calories) =>
+                      l10n?.libraryCaloriesPerServingLabel(calories) ??
+                      '$calories kcal per serving',
+                ),
               ),
-            ),
-          ],
-        ),
-        isThreeLine: true,
+            ],
+          ),
+          isThreeLine: true,
           trailing: isCompact
               ? null
               : _CatalogCardActions(
@@ -104,15 +105,16 @@ class TrainingPlanCatalogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final isCompact = AppBreakpoints.isCompact(MediaQuery.sizeOf(context).width);
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
     return SwipeActionCard(
       actions: [
         SwipeCardAction(
           label: 'Edit',
           icon: Icons.edit_outlined,
           backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-          foregroundColor:
-              Theme.of(context).colorScheme.onSecondaryContainer,
+          foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
           onPressed: onEdit,
         ),
         SwipeCardAction(
@@ -125,17 +127,17 @@ class TrainingPlanCatalogCard extends StatelessWidget {
       ],
       child: Card(
         child: ListTile(
-        title: _BoundedText(plan.name),
-        subtitle: _BoundedText(
-          formatTrainingPlanSummaryLabel(
-            plan,
-            exerciseCountLabel: (count) =>
-                l10n?.libraryExerciseCount(count) ??
-                formatLibraryCountLabel(count, 'exercise'),
+          title: _BoundedText(plan.name),
+          subtitle: _BoundedText(
+            formatTrainingPlanSummaryLabel(
+              plan,
+              exerciseCountLabel: (count) =>
+                  l10n?.libraryExerciseCount(count) ??
+                  formatLibraryCountLabel(count, 'exercise'),
+            ),
+            maxLines: 2,
           ),
-          maxLines: 2,
-        ),
-        isThreeLine: true,
+          isThreeLine: true,
           trailing: isCompact
               ? null
               : _CatalogCardActions(
@@ -168,15 +170,16 @@ class ExerciseCatalogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final isCompact = AppBreakpoints.isCompact(MediaQuery.sizeOf(context).width);
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
     return SwipeActionCard(
       actions: [
         SwipeCardAction(
           label: 'Edit',
           icon: Icons.edit_outlined,
           backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-          foregroundColor:
-              Theme.of(context).colorScheme.onSecondaryContainer,
+          foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
           onPressed: onEdit,
         ),
         SwipeCardAction(
@@ -189,22 +192,25 @@ class ExerciseCatalogCard extends StatelessWidget {
       ],
       child: Card(
         child: ListTile(
-        title: _BoundedText(exercise.name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _BoundedText(exercise.description),
-            _BoundedText(exercise.instruction),
-            _BoundedText(
-              formatExerciseMuscleGroupSummaryLabel(
-                exercise.muscleGroups,
-                emptyLabel: l10n?.libraryMusclesEmpty ?? 'Muscles: -',
+          title: _BoundedText(exercise.name),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _BoundedText(exercise.description),
+              _BoundedText(exercise.instruction),
+              _BoundedText(
+                formatExerciseMeasurementTypeLabel(exercise.measurementType),
               ),
-            ),
-          ],
-        ),
-        isThreeLine: true,
+              _BoundedText(
+                formatExerciseMuscleGroupSummaryLabel(
+                  exercise.muscleGroups,
+                  emptyLabel: l10n?.libraryMusclesEmpty ?? 'Muscles: -',
+                ),
+              ),
+            ],
+          ),
+          isThreeLine: true,
           trailing: isCompact
               ? null
               : _CatalogCardActions(

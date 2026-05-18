@@ -286,8 +286,13 @@ void main() {
       name: 'Upper',
       description: 'Strength focus',
       exercises: [
-        TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
-        TrainingExercise(exerciseId: 'rows', reps: 10, unit: 'reps'),
+        TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+        TrainingExercise(
+          exerciseId: 'rows',
+          sets: 4,
+          reps: 10,
+          weightGrams: 30000,
+        ),
       ],
     );
 
@@ -307,7 +312,7 @@ void main() {
         plan.copyWith(
           description: '',
           exercises: const [
-            TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
+            TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
           ],
         ),
       ),
@@ -349,9 +354,7 @@ void main() {
       id: 'upper',
       name: 'Upper body',
       description: 'Strength focus',
-      exercises: [
-        TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
-      ],
+      exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
     );
     const exercise = Exercise(
       id: 'pushups',
@@ -359,6 +362,7 @@ void main() {
       description: 'Bodyweight push exercise',
       instruction: 'Keep your core tight.',
       muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+      measurementType: ExerciseMeasurementType.bodyweight,
     );
 
     await tester.pumpWidget(
@@ -445,8 +449,13 @@ void main() {
       name: 'A very long training plan name that should stay bounded',
       description: 'A long description that remains inside the card bounds',
       exercises: [
-        TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
-        TrainingExercise(exerciseId: 'rows', reps: 10, unit: 'reps'),
+        TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+        TrainingExercise(
+          exerciseId: 'rows',
+          sets: 4,
+          reps: 10,
+          weightGrams: 30000,
+        ),
       ],
     );
     const exercise = Exercise(
@@ -459,6 +468,7 @@ void main() {
         MuscleGroup.shoulders,
         MuscleGroup.triceps,
       ],
+      measurementType: ExerciseMeasurementType.strength,
     );
 
     await tester.pumpWidget(
@@ -692,7 +702,9 @@ void main() {
     );
   });
 
-  testWidgets('swipe action card paints actions behind the card', (tester) async {
+  testWidgets('swipe action card paints actions behind the card', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
