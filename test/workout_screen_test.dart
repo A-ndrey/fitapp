@@ -44,8 +44,7 @@ void main() {
       exerciseId: 'bench-press',
       sets: 3,
       reps: 8,
-      weight: 60,
-      unit: 'kg',
+      weightGrams: 60000,
     );
     final store = AppStore();
 
@@ -59,16 +58,13 @@ void main() {
     expect(formatWorkoutTarget(weightedTarget, store), contains('132.3 lbs'));
     expect(
       formatWorkoutTarget(
-        const TrainingExercise(exerciseId: 'running', time: 15, unit: 'min'),
+        const TrainingExercise(exerciseId: 'running', durationSeconds: 900),
         store,
       ),
       'Target: 15 min',
     );
     expect(
-      formatWorkoutTarget(
-        const TrainingExercise(exerciseId: 'pushups', unit: 'reps'),
-        store,
-      ),
+      formatWorkoutTarget(const TrainingExercise(exerciseId: 'pushups'), store),
       'Target: reps',
     );
   });
@@ -78,15 +74,14 @@ void main() {
       exerciseId: 'bench-press',
       sets: 3,
       reps: 8,
-      weight: 60,
-      unit: 'kg',
+      weightGrams: 60000,
     );
     final store = AppStore();
 
     expect(
       formatWorkoutSetLog(
         target,
-        const WorkoutSetLog(reps: 8, weight: 62.5),
+        const WorkoutSetLog(reps: 8, weightGrams: 62500),
         store,
       ),
       '8 reps • 62.5 kg',
@@ -97,7 +92,7 @@ void main() {
     expect(
       formatWorkoutSetLog(
         target,
-        const WorkoutSetLog(reps: 8, weight: 62.5),
+        const WorkoutSetLog(reps: 8, weightGrams: 62500),
         store,
       ),
       '8 reps • 137.8 lbs',
@@ -112,8 +107,7 @@ void main() {
       exerciseId: 'bench-press',
       sets: 3,
       reps: 8,
-      weight: 60,
-      unit: 'kg',
+      weightGrams: 60000,
     );
     final store = AppStore();
 
@@ -137,7 +131,7 @@ void main() {
     expect(
       formatWorkoutSetLog(
         target,
-        const WorkoutSetLog(reps: 8, weight: 62.5),
+        const WorkoutSetLog(reps: 8, weightGrams: 62500),
         store,
         repsLabel: 'localized-reps',
       ),
@@ -278,12 +272,15 @@ void main() {
     required DateTime startedAt,
     required DateTime finishedAt,
     double reps = 8,
-    double weight = 62.5,
+    double weightKg = 62.5,
   }) {
     store.startWorkout(trainingPlanId: 'chest-day', startedAt: startedAt);
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: WorkoutSetLog(reps: reps, weight: weight),
+      setLog: WorkoutSetLog(
+        reps: reps,
+        weightGrams: (weightKg * 1000).roundToDouble(),
+      ),
     );
     store.finishActiveWorkout(finishedAt: finishedAt);
   }
@@ -296,6 +293,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
     store.createTrainingPlan(
@@ -304,8 +302,8 @@ void main() {
         name: 'Repeat pushups',
         description: 'Same exercise twice',
         exercises: [
-          TrainingExercise(exerciseId: 'pushups', reps: 10, unit: 'reps'),
-          TrainingExercise(exerciseId: 'pushups', reps: 8, unit: 'reps'),
+          TrainingExercise(exerciseId: 'pushups', reps: 10),
+          TrainingExercise(exerciseId: 'pushups', reps: 8),
         ],
       ),
     );
@@ -438,7 +436,7 @@ void main() {
       startedAt: DateTime(2026, 4, 25, 10),
     );
     final result = session.results.first.copyWith(
-      setLogs: const [WorkoutSetLog(reps: 8, weight: 62.5)],
+      setLogs: const [WorkoutSetLog(reps: 8, weightGrams: 62500)],
     );
     final repsController = TextEditingController();
     final weightController = TextEditingController();
@@ -490,7 +488,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(logged, isTrue);
-    expect(filledSet?.weight, 62.5);
+    expect(filledSet?.weightGrams, 62500);
   });
 
   testWidgets('workout set input card wraps fields at narrow widths', (
@@ -515,8 +513,7 @@ void main() {
               timeController: timeController,
               target: const TrainingExercise(
                 exerciseId: 'bench-press',
-                weight: 60,
-                unit: 'kg',
+                weightGrams: 60000,
               ),
               onLogSet: () {},
             ),
@@ -666,42 +663,43 @@ void main() {
   testWidgets(
     'shows workout stats and uses a persistent FAB to open the plan picker',
     (tester) async {
-    await pumpWorkoutScreen(tester);
+      await pumpWorkoutScreen(tester);
 
-    expect(find.text('Training log'), findsOneWidget);
-    expect(
-      find.text('Start sessions, log sets, and review progress.'),
-      findsOneWidget,
-    );
-    expect(find.text('Workout stats'), findsOneWidget);
-    expect(find.text('No completed sessions yet.'), findsOneWidget);
-    expect(find.text('Completed'), findsOneWidget);
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('Total time'), findsOneWidget);
-    expect(find.text('0 min'), findsOneWidget);
-    expect(find.text('Workout history'), findsOneWidget);
-    expect(find.text('No completed workouts yet'), findsOneWidget);
-    expect(
-      find.text('Start a training plan to build your workout history.'),
-      findsOneWidget,
-    );
-    expect(find.byType(FloatingActionButton), findsOneWidget);
-    expect(find.byTooltip('Start workout'), findsOneWidget);
-    expect(
-      find.widgetWithText(FloatingActionButton, 'Start workout'),
-      findsOneWidget,
-    );
-    expect(
-      find.text('Choose a training plan and begin tracking sets.'),
-      findsNothing,
-    );
+      expect(find.text('Training log'), findsOneWidget);
+      expect(
+        find.text('Start sessions, log sets, and review progress.'),
+        findsOneWidget,
+      );
+      expect(find.text('Workout stats'), findsOneWidget);
+      expect(find.text('No completed sessions yet.'), findsOneWidget);
+      expect(find.text('Completed'), findsOneWidget);
+      expect(find.text('0'), findsOneWidget);
+      expect(find.text('Total time'), findsOneWidget);
+      expect(find.text('0 min'), findsOneWidget);
+      expect(find.text('Workout history'), findsOneWidget);
+      expect(find.text('No completed workouts yet'), findsOneWidget);
+      expect(
+        find.text('Start a training plan to build your workout history.'),
+        findsOneWidget,
+      );
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(find.byTooltip('Start workout'), findsOneWidget);
+      expect(
+        find.widgetWithText(FloatingActionButton, 'Start workout'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Choose a training plan and begin tracking sets.'),
+        findsNothing,
+      );
 
-    await openStartWorkoutPicker(tester);
+      await openStartWorkoutPicker(tester);
 
-    expect(find.text('Start workout'), findsWidgets);
-    expect(find.text('Chest day'), findsOneWidget);
-    expect(find.text('Leg day'), findsOneWidget);
-  });
+      expect(find.text('Start workout'), findsWidgets);
+      expect(find.text('Chest day'), findsOneWidget);
+      expect(find.text('Leg day'), findsOneWidget);
+    },
+  );
 
   testWidgets('opens workout session immediately after starting a workout', (
     tester,
@@ -724,32 +722,33 @@ void main() {
   testWidgets(
     'active session shows a persistent FAB that opens the workout session screen',
     (tester) async {
-    final store = AppStore();
-    store.startWorkout(
-      trainingPlanId: 'chest-day',
-      startedAt: DateTime(2026, 4, 19, 10),
-    );
+      final store = AppStore();
+      store.startWorkout(
+        trainingPlanId: 'chest-day',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
 
-    await pumpWorkoutScreen(tester, store: store);
+      await pumpWorkoutScreen(tester, store: store);
 
-    expect(find.byType(FloatingActionButton), findsOneWidget);
-    expect(find.byTooltip('Open active workout'), findsOneWidget);
-    expect(
-      find.widgetWithText(FloatingActionButton, 'Open active workout'),
-      findsOneWidget,
-    );
-    expect(find.text('Active workout'), findsOneWidget);
-    expect(find.text('Workout session'), findsNothing);
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(find.byTooltip('Open active workout'), findsOneWidget);
+      expect(
+        find.widgetWithText(FloatingActionButton, 'Open active workout'),
+        findsOneWidget,
+      );
+      expect(find.text('Active workout'), findsOneWidget);
+      expect(find.text('Workout session'), findsNothing);
 
-    await openActiveWorkout(tester);
+      await openActiveWorkout(tester);
 
-    expect(find.text('Workout session'), findsOneWidget);
-    expect(find.text('Active session'), findsOneWidget);
-    expect(find.text('Exercise queue'), findsOneWidget);
-    expect(find.text('Chest day'), findsOneWidget);
-    expect(find.text('Bench press'), findsOneWidget);
-    expect(find.text('Pushups'), findsOneWidget);
-  });
+      expect(find.text('Workout session'), findsOneWidget);
+      expect(find.text('Active session'), findsOneWidget);
+      expect(find.text('Exercise queue'), findsOneWidget);
+      expect(find.text('Chest day'), findsOneWidget);
+      expect(find.text('Bench press'), findsOneWidget);
+      expect(find.text('Pushups'), findsOneWidget);
+    },
+  );
 
   testWidgets('exercise rows open the workout exercise screen', (tester) async {
     final store = AppStore();
@@ -858,8 +857,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      store.activeWorkoutSession!.results.first.setLogs.single.weight,
-      62.5,
+      store.activeWorkoutSession!.results.first.setLogs.single.weightGrams,
+      62500,
     );
 
     final fields = tester
@@ -1054,7 +1053,7 @@ void main() {
 
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+      setLog: const WorkoutSetLog(reps: 8, weightGrams: 62500),
     );
     await tester.pumpAndSettle();
 

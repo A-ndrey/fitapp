@@ -19,6 +19,8 @@ enum MuscleGroup {
   final String label;
 }
 
+enum ExerciseMeasurementType { reps, weight, duration, distance, assistance }
+
 class Exercise {
   const Exercise({
     required this.id,
@@ -26,6 +28,7 @@ class Exercise {
     required this.description,
     required this.instruction,
     required this.muscleGroups,
+    required this.measurementType,
   });
 
   final String id;
@@ -33,6 +36,7 @@ class Exercise {
   final String description;
   final String instruction;
   final List<MuscleGroup> muscleGroups;
+  final ExerciseMeasurementType measurementType;
 
   Exercise copyWith({
     String? id,
@@ -40,6 +44,7 @@ class Exercise {
     String? description,
     String? instruction,
     List<MuscleGroup>? muscleGroups,
+    ExerciseMeasurementType? measurementType,
   }) {
     return Exercise(
       id: id ?? this.id,
@@ -47,6 +52,7 @@ class Exercise {
       description: description ?? this.description,
       instruction: instruction ?? this.instruction,
       muscleGroups: muscleGroups ?? this.muscleGroups,
+      measurementType: measurementType ?? this.measurementType,
     );
   }
 }

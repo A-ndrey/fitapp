@@ -182,9 +182,7 @@ void main() {
             id: 'builtin-pushups-plan',
             name: 'Builtin pushups plan',
             description: 'References a built-in exercise.',
-            exercises: [
-              TrainingExercise(exerciseId: 'pushups', reps: 15, unit: 'reps'),
-            ],
+            exercises: [TrainingExercise(exerciseId: 'pushups', reps: 15)],
           ),
         ],
         mealEntries: const [],
@@ -326,6 +324,7 @@ void main() {
           description: 'Updated built-in exercise',
           instruction: 'Updated built-in instruction.',
           muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.reps,
         ),
       ),
       throwsArgumentError,
@@ -342,8 +341,7 @@ void main() {
               exerciseId: 'bench-press',
               sets: 3,
               reps: 8,
-              weight: 60,
-              unit: 'kg',
+              weightGrams: 60000,
             ),
           ],
         ),
@@ -384,12 +382,7 @@ void main() {
             name: 'Remote plan',
             description: 'References a built-in exercise.',
             exercises: [
-              TrainingExercise(
-                exerciseId: 'pushups',
-                sets: 4,
-                reps: 10,
-                unit: 'reps',
-              ),
+              TrainingExercise(exerciseId: 'pushups', sets: 4, reps: 10),
             ],
           ),
         ],
@@ -433,10 +426,9 @@ void main() {
                 exerciseId: 'bench-press',
                 sets: 3,
                 reps: 8,
-                weight: 60,
-                unit: 'kg',
+                weightGrams: 60000,
               ),
-              setLogs: [WorkoutSetLog(reps: 8, weight: 60)],
+              setLogs: [WorkoutSetLog(reps: 8, weightGrams: 60000)],
             ),
           ],
         ),
@@ -624,7 +616,6 @@ void main() {
                 exerciseId: 'missing-exercise',
                 sets: 3,
                 reps: 8,
-                unit: 'reps',
               ),
             ],
           ),
@@ -697,10 +688,9 @@ void main() {
                 exerciseId: 'bench-press',
                 sets: 3,
                 reps: 8,
-                weight: 60,
-                unit: 'kg',
+                weightGrams: 60000,
               ),
-              setLogs: [WorkoutSetLog(reps: 8, weight: 60)],
+              setLogs: [WorkoutSetLog(reps: 8, weightGrams: 60000)],
             ),
           ],
         ),
@@ -719,10 +709,9 @@ void main() {
                   exerciseId: 'squat',
                   sets: 4,
                   reps: 6,
-                  weight: 80,
-                  unit: 'kg',
+                  weightGrams: 80000,
                 ),
-                setLogs: [WorkoutSetLog(reps: 6, weight: 80)],
+                setLogs: [WorkoutSetLog(reps: 6, weightGrams: 80000)],
               ),
             ],
           ),
@@ -768,6 +757,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
 
@@ -776,14 +766,7 @@ void main() {
         id: 'home-chest',
         name: 'Home chest',
         description: 'Bodyweight chest work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
       ),
     );
 
@@ -800,6 +783,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
 
@@ -810,6 +794,7 @@ void main() {
         description: 'Updated push exercise',
         instruction: 'Use a bench and keep a rigid plank.',
         muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
 
@@ -826,6 +811,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
 
@@ -837,6 +823,7 @@ void main() {
           description: 'Broken',
           instruction: 'Broken',
           muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.reps,
         ),
       ),
       throwsArgumentError,
@@ -849,6 +836,7 @@ void main() {
           description: 'Missing',
           instruction: 'Missing',
           muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.reps,
         ),
       ),
       throwsArgumentError,
@@ -865,6 +853,7 @@ void main() {
         description: '',
         instruction: 'Do the movement.',
         muscleGroups: [MuscleGroup.core],
+        measurementType: ExerciseMeasurementType.reps,
       ),
       const Exercise(
         id: 'missing-instruction',
@@ -872,6 +861,7 @@ void main() {
         description: 'Core work',
         instruction: '',
         muscleGroups: [MuscleGroup.core],
+        measurementType: ExerciseMeasurementType.reps,
       ),
       const Exercise(
         id: 'missing-muscles',
@@ -879,6 +869,7 @@ void main() {
         description: 'Core work',
         instruction: 'Do the movement.',
         muscleGroups: [],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     ]) {
       expect(() => store.createExercise(exercise), throwsArgumentError);
@@ -894,6 +885,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
 
@@ -913,6 +905,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
     store.createTrainingPlan(
@@ -920,14 +913,7 @@ void main() {
         id: 'home-chest',
         name: 'Home chest',
         description: 'Bodyweight chest work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
       ),
     );
 
@@ -943,6 +929,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
     store.createTrainingPlan(
@@ -950,14 +937,7 @@ void main() {
         id: 'home-chest',
         name: 'Home chest',
         description: 'Bodyweight chest work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
       ),
     );
 
@@ -974,6 +954,7 @@ void main() {
         description: 'Updated push exercise',
         instruction: 'Use a bench and keep a rigid plank.',
         muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
 
@@ -995,6 +976,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
     store.createTrainingPlan(
@@ -1002,14 +984,7 @@ void main() {
         id: 'home-chest',
         name: 'Home chest',
         description: 'Bodyweight chest work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
       ),
     );
 
@@ -1038,6 +1013,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
     store.createTrainingPlan(
@@ -1045,14 +1021,7 @@ void main() {
         id: 'home-chest',
         name: 'Home chest',
         description: 'Bodyweight chest work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
       ),
     );
 
@@ -1061,14 +1030,7 @@ void main() {
         id: 'home-chest',
         name: 'Push day',
         description: 'Updated',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 4,
-            reps: 10,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 4, reps: 10)],
       ),
     );
 
@@ -1089,20 +1051,14 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.reps,
       ),
     );
     const validPlan = TrainingPlan(
       id: 'home-chest',
       name: 'Home chest',
       description: 'Bodyweight chest work',
-      exercises: [
-        TrainingExercise(
-          exerciseId: 'pushups',
-          sets: 3,
-          reps: 12,
-          unit: 'reps',
-        ),
-      ],
+      exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
     );
     store.createTrainingPlan(validPlan);
 
@@ -1129,13 +1085,7 @@ void main() {
       () => store.createTrainingPlan(
         validPlan.copyWith(
           id: 'missing-exercise',
-          exercises: [
-            const TrainingExercise(
-              exerciseId: 'missing',
-              reps: 10,
-              unit: 'reps',
-            ),
-          ],
+          exercises: [const TrainingExercise(exerciseId: 'missing', reps: 10)],
         ),
       ),
       throwsArgumentError,
@@ -1145,11 +1095,7 @@ void main() {
         validPlan.copyWith(
           id: 'bad-number',
           exercises: [
-            const TrainingExercise(
-              exerciseId: 'pushups',
-              reps: double.nan,
-              unit: 'reps',
-            ),
+            const TrainingExercise(exerciseId: 'pushups', reps: double.nan),
           ],
         ),
       ),
@@ -1159,24 +1105,7 @@ void main() {
       () => store.createTrainingPlan(
         validPlan.copyWith(
           id: 'negative',
-          exercises: [
-            const TrainingExercise(
-              exerciseId: 'pushups',
-              reps: -1,
-              unit: 'reps',
-            ),
-          ],
-        ),
-      ),
-      throwsArgumentError,
-    );
-    expect(
-      () => store.createTrainingPlan(
-        validPlan.copyWith(
-          id: 'blank-unit',
-          exercises: [
-            const TrainingExercise(exerciseId: 'pushups', reps: 10, unit: ''),
-          ],
+          exercises: [const TrainingExercise(exerciseId: 'pushups', reps: -1)],
         ),
       ),
       throwsArgumentError,
@@ -1197,6 +1126,7 @@ void main() {
         description: 'Barbell chest press',
         instruction: 'Keep shoulder blades set and press the bar vertically.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.weight,
       ),
     );
     store.createTrainingPlan(
@@ -1209,8 +1139,7 @@ void main() {
             exerciseId: 'bench-press',
             sets: 3,
             reps: 8,
-            weight: 60,
-            unit: 'kg',
+            weightGrams: 60000,
           ),
         ],
       ),
@@ -1226,7 +1155,7 @@ void main() {
 
     expect(session.trainingPlanName, 'Push day');
     expect(session.results.first.exerciseName, 'Bench press');
-    expect(session.results.first.target.weight, 60);
+    expect(session.results.first.target.weightGrams, 60000);
     expect(session.results.first.setLogs, isEmpty);
     expect(store.activeWorkoutSession!.trainingPlanName, 'Push day');
     expect(
@@ -1248,21 +1177,24 @@ void main() {
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+      setLog: const WorkoutSetLog(reps: 8, weightGrams: 62500),
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 6, weight: 65),
+      setLog: const WorkoutSetLog(reps: 6, weightGrams: 65000),
     );
 
     expect(store.activeWorkoutSession!.results.first.setLogs, hasLength(2));
     expect(store.activeWorkoutSession!.results.first.setLogs.first.reps, 8);
     expect(
-      store.activeWorkoutSession!.results.first.setLogs.first.weight,
-      62.5,
+      store.activeWorkoutSession!.results.first.setLogs.first.weightGrams,
+      62500,
     );
     expect(store.activeWorkoutSession!.results.first.setLogs.last.reps, 6);
-    expect(store.activeWorkoutSession!.results.first.setLogs.last.weight, 65);
+    expect(
+      store.activeWorkoutSession!.results.first.setLogs.last.weightGrams,
+      65000,
+    );
   });
 
   test('rejects invalid workout set logs', () {
@@ -1290,14 +1222,14 @@ void main() {
     expect(
       () => store.addActiveWorkoutSet(
         resultIndex: 0,
-        setLog: const WorkoutSetLog(weight: -1),
+        setLog: const WorkoutSetLog(weightGrams: -1),
       ),
       throwsArgumentError,
     );
     expect(
       () => store.addActiveWorkoutSet(
         resultIndex: 0,
-        setLog: const WorkoutSetLog(time: double.nan),
+        setLog: const WorkoutSetLog(durationSeconds: double.nan),
       ),
       throwsArgumentError,
     );
@@ -1312,11 +1244,11 @@ void main() {
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+      setLog: const WorkoutSetLog(reps: 8, weightGrams: 62500),
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 6, weight: 65),
+      setLog: const WorkoutSetLog(reps: 6, weightGrams: 65000),
     );
 
     final finished = store.finishActiveWorkout(
@@ -1334,8 +1266,15 @@ void main() {
       8,
     );
     expect(
-      store.completedWorkoutSessions.single.results.first.setLogs.last.weight,
-      65,
+      store
+          .completedWorkoutSessions
+          .single
+          .results
+          .first
+          .setLogs
+          .last
+          .weightGrams,
+      65000,
     );
     expect(finished.finishedAt, DateTime(2026, 4, 19, 10, 45));
     expect(store.workoutStats.completedCount, 1);
@@ -1392,11 +1331,11 @@ void main() {
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+      setLog: const WorkoutSetLog(reps: 8, weightGrams: 62500),
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 6, weight: 65),
+      setLog: const WorkoutSetLog(reps: 6, weightGrams: 65000),
     );
     store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 45));
 
@@ -1405,9 +1344,9 @@ void main() {
     expect(history, hasLength(1));
     expect(history.single.session.results.first.setLogs, hasLength(2));
     expect(history.single.result.setLogs.first.reps, 8);
-    expect(history.single.result.setLogs.first.weight, 62.5);
+    expect(history.single.result.setLogs.first.weightGrams, 62500);
     expect(history.single.result.setLogs.last.reps, 6);
-    expect(history.single.result.setLogs.last.weight, 65);
+    expect(history.single.result.setLogs.last.weightGrams, 65000);
   });
 
   test(
@@ -1421,6 +1360,7 @@ void main() {
           description: 'Bodyweight push exercise',
           instruction: 'Keep a straight line from shoulders to heels.',
           muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.reps,
         ),
       );
       store.createTrainingPlan(
@@ -1429,8 +1369,8 @@ void main() {
           name: 'Repeat pushups',
           description: 'Same exercise twice',
           exercises: [
-            TrainingExercise(exerciseId: 'pushups', reps: 10, unit: 'reps'),
-            TrainingExercise(exerciseId: 'pushups', reps: 8, unit: 'reps'),
+            TrainingExercise(exerciseId: 'pushups', reps: 10),
+            TrainingExercise(exerciseId: 'pushups', reps: 8),
           ],
         ),
       );
@@ -1467,7 +1407,7 @@ void main() {
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+      setLog: const WorkoutSetLog(reps: 8, weightGrams: 62500),
     );
     final first = store.finishActiveWorkout(
       finishedAt: DateTime(2026, 4, 18, 9, 45),
@@ -1507,6 +1447,7 @@ void main() {
           description: 'Barbell chest press',
           instruction: 'Keep shoulder blades set and press the bar vertically.',
           muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.weight,
         ),
       );
       store.createTrainingPlan(
@@ -1519,8 +1460,7 @@ void main() {
               exerciseId: 'bench-press',
               sets: 3,
               reps: 8,
-              weight: 60,
-              unit: 'kg',
+              weightGrams: 60000,
             ),
           ],
         ),

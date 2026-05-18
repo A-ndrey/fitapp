@@ -3,33 +3,38 @@ class TrainingExercise {
     required this.exerciseId,
     this.sets,
     this.reps,
-    this.weight,
-    this.time,
-    required this.unit,
+    this.weightGrams,
+    this.durationSeconds,
+    this.distanceMeters,
+    this.assistanceWeightGrams,
   });
 
   final String exerciseId;
   final double? sets;
   final double? reps;
-  final double? weight;
-  final double? time;
-  final String unit;
+  final double? weightGrams;
+  final double? durationSeconds;
+  final double? distanceMeters;
+  final double? assistanceWeightGrams;
 
   TrainingExercise copyWith({
     String? exerciseId,
     double? sets,
     double? reps,
-    double? weight,
-    double? time,
-    String? unit,
+    double? weightGrams,
+    double? durationSeconds,
+    double? distanceMeters,
+    double? assistanceWeightGrams,
   }) {
     return TrainingExercise(
       exerciseId: exerciseId ?? this.exerciseId,
       sets: sets ?? this.sets,
       reps: reps ?? this.reps,
-      weight: weight ?? this.weight,
-      time: time ?? this.time,
-      unit: unit ?? this.unit,
+      weightGrams: weightGrams ?? this.weightGrams,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      distanceMeters: distanceMeters ?? this.distanceMeters,
+      assistanceWeightGrams:
+          assistanceWeightGrams ?? this.assistanceWeightGrams,
     );
   }
 }
