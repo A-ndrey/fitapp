@@ -1,7 +1,5 @@
 import 'training_plan.dart';
 
-const Object _workoutSetLogCopyWithSentinel = Object();
-
 class WorkoutSetLog {
   const WorkoutSetLog({
     this.reps,
@@ -19,27 +17,28 @@ class WorkoutSetLog {
 
   WorkoutSetLog copyWith({
     double? reps,
-    Object? weightGrams = _workoutSetLogCopyWithSentinel,
-    Object? durationSeconds = _workoutSetLogCopyWithSentinel,
-    Object? distanceMeters = _workoutSetLogCopyWithSentinel,
-    Object? assistanceWeightGrams = _workoutSetLogCopyWithSentinel,
+    bool clearReps = false,
+    double? weightGrams,
+    bool clearWeightGrams = false,
+    double? durationSeconds,
+    bool clearDurationSeconds = false,
+    double? distanceMeters,
+    bool clearDistanceMeters = false,
+    double? assistanceWeightGrams,
+    bool clearAssistanceWeightGrams = false,
   }) {
     return WorkoutSetLog(
-      reps: reps ?? this.reps,
-      weightGrams: identical(weightGrams, _workoutSetLogCopyWithSentinel)
-          ? this.weightGrams
-          : weightGrams as double?,
-      durationSeconds:
-          identical(durationSeconds, _workoutSetLogCopyWithSentinel)
-          ? this.durationSeconds
-          : durationSeconds as double?,
-      distanceMeters: identical(distanceMeters, _workoutSetLogCopyWithSentinel)
-          ? this.distanceMeters
-          : distanceMeters as double?,
-      assistanceWeightGrams:
-          identical(assistanceWeightGrams, _workoutSetLogCopyWithSentinel)
-          ? this.assistanceWeightGrams
-          : assistanceWeightGrams as double?,
+      reps: clearReps ? null : (reps ?? this.reps),
+      weightGrams: clearWeightGrams ? null : (weightGrams ?? this.weightGrams),
+      durationSeconds: clearDurationSeconds
+          ? null
+          : (durationSeconds ?? this.durationSeconds),
+      distanceMeters: clearDistanceMeters
+          ? null
+          : (distanceMeters ?? this.distanceMeters),
+      assistanceWeightGrams: clearAssistanceWeightGrams
+          ? null
+          : (assistanceWeightGrams ?? this.assistanceWeightGrams),
     );
   }
 }

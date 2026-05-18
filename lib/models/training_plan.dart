@@ -1,5 +1,3 @@
-const Object _trainingExerciseCopyWithSentinel = Object();
-
 class TrainingExercise {
   const TrainingExercise({
     required this.exerciseId,
@@ -22,31 +20,32 @@ class TrainingExercise {
   TrainingExercise copyWith({
     String? exerciseId,
     double? sets,
+    bool clearSets = false,
     double? reps,
-    Object? weightGrams = _trainingExerciseCopyWithSentinel,
-    Object? durationSeconds = _trainingExerciseCopyWithSentinel,
-    Object? distanceMeters = _trainingExerciseCopyWithSentinel,
-    Object? assistanceWeightGrams = _trainingExerciseCopyWithSentinel,
+    bool clearReps = false,
+    double? weightGrams,
+    bool clearWeightGrams = false,
+    double? durationSeconds,
+    bool clearDurationSeconds = false,
+    double? distanceMeters,
+    bool clearDistanceMeters = false,
+    double? assistanceWeightGrams,
+    bool clearAssistanceWeightGrams = false,
   }) {
     return TrainingExercise(
       exerciseId: exerciseId ?? this.exerciseId,
-      sets: sets ?? this.sets,
-      reps: reps ?? this.reps,
-      weightGrams: identical(weightGrams, _trainingExerciseCopyWithSentinel)
-          ? this.weightGrams
-          : weightGrams as double?,
-      durationSeconds:
-          identical(durationSeconds, _trainingExerciseCopyWithSentinel)
-          ? this.durationSeconds
-          : durationSeconds as double?,
-      distanceMeters:
-          identical(distanceMeters, _trainingExerciseCopyWithSentinel)
-          ? this.distanceMeters
-          : distanceMeters as double?,
-      assistanceWeightGrams:
-          identical(assistanceWeightGrams, _trainingExerciseCopyWithSentinel)
-          ? this.assistanceWeightGrams
-          : assistanceWeightGrams as double?,
+      sets: clearSets ? null : (sets ?? this.sets),
+      reps: clearReps ? null : (reps ?? this.reps),
+      weightGrams: clearWeightGrams ? null : (weightGrams ?? this.weightGrams),
+      durationSeconds: clearDurationSeconds
+          ? null
+          : (durationSeconds ?? this.durationSeconds),
+      distanceMeters: clearDistanceMeters
+          ? null
+          : (distanceMeters ?? this.distanceMeters),
+      assistanceWeightGrams: clearAssistanceWeightGrams
+          ? null
+          : (assistanceWeightGrams ?? this.assistanceWeightGrams),
     );
   }
 }
