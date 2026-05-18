@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../state/app_store.dart';
 import '../../models/workout_session.dart';
 import 'workout_formatters.dart';
 
 class WorkoutSessionHeaderCard extends StatelessWidget {
-  const WorkoutSessionHeaderCard({required this.session, super.key, this.l10n});
+  const WorkoutSessionHeaderCard({
+    required this.session,
+    required this.store,
+    super.key,
+    this.l10n,
+  });
 
   final WorkoutSession session;
+  final AppStore store;
   final AppLocalizations? l10n;
 
   @override
@@ -23,7 +30,7 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
       final resultVolume = result.setLogs.fold<double>(
         0,
         (setTotal, setLog) =>
-            setTotal + (setLog.weight ?? 0) * (setLog.reps ?? 0),
+            setTotal + ((setLog.weightGrams ?? 0) / 1000) * (setLog.reps ?? 0),
       );
       return total + resultVolume;
     });
@@ -68,7 +75,7 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
                 ),
                 WorkoutInfoPill(
                   label:
-                      'Total volume ${totalVolume <= 0 ? '0 kg' : '${totalVolume.toStringAsFixed(totalVolume >= 1000 ? 0 : 1)} kg'}',
+                      'Total volume ${totalVolume <= 0 ? '0 kg' : store.formatWorkoutWeight(totalVolume)}',
                 ),
                 WorkoutInfoPill(
                   label:

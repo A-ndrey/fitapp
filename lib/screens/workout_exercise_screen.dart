@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/exercise.dart';
+import '../models/training_plan.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
@@ -27,7 +29,10 @@ class WorkoutExerciseScreen extends StatefulWidget {
 class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
   final TextEditingController _repsController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
-  final TextEditingController _timeController = TextEditingController();
+  final TextEditingController _durationController = TextEditingController();
+  final TextEditingController _distanceController = TextEditingController();
+  final TextEditingController _assistanceWeightController =
+      TextEditingController();
   DateTime? _restUntil;
   Timer? _restTimer;
 
@@ -36,7 +41,9 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
     _restTimer?.cancel();
     _repsController.dispose();
     _weightController.dispose();
-    _timeController.dispose();
+    _durationController.dispose();
+    _distanceController.dispose();
+    _assistanceWeightController.dispose();
     super.dispose();
   }
 
@@ -58,6 +65,7 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
           );
         }
         final result = session.results[widget.resultIndex];
+        final measurementType = _measurementTypeForResult(result);
         final history = widget.store.completedWorkoutHistoryForExercise(
           result.exerciseId,
         );
@@ -72,6 +80,7 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
                   .firstOrNull;
         final progressionHint = _progressionHint(
           result,
+          measurementType,
           lastLoggedSet ?? previousCompletedSet,
         );
         return Scaffold(
@@ -101,25 +110,28 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
               WorkoutSetInputCard(
                 repsController: _repsController,
                 weightController: _weightController,
-                timeController: _timeController,
-                target: result.target,
+                durationController: _durationController,
+                distanceController: _distanceController,
+                assistanceWeightController: _assistanceWeightController,
+                measurementType: measurementType,
+                store: widget.store,
                 previousSetLabel: _previousSetLabel(
-                  context,
                   result,
+                  measurementType,
                   lastLoggedSet ?? previousCompletedSet,
                 ),
                 progressionHint: progressionHint,
                 quickFillChips: _quickFillChips(
-                  context,
                   result,
+                  measurementType,
                   lastLoggedSet,
                   previousCompletedSet,
                 ),
-                onLogSet: () => _logSet(context),
+                onLogSet: () => _logSet(context, measurementType),
               ),
               const SizedBox(height: 16),
               WorkoutLoggedSetsCard(
-                target: result.target,
+                measurementType: measurementType,
                 setLogs: result.setLogs,
                 store: widget.store,
                 onFillSet: _fillSetLog,
@@ -137,18 +149,40 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
     );
   }
 
-  void _logSet(BuildContext context) {
-    final reps = _parseNumber(_repsController.text);
-    final weight = _parseNumber(_weightController.text);
-    final time = _parseNumber(_timeController.text);
+  void _logSet(BuildContext context, ExerciseMeasurementType measurementType) {
+    final setLog = WorkoutSetLog(
+      reps: parseWorkoutInputValue(
+        _repsController.text,
+        WorkoutLogField.reps,
+        widget.store,
+      ),
+      weightGrams: parseWorkoutInputValue(
+        _weightController.text,
+        WorkoutLogField.weight,
+        widget.store,
+      ),
+      durationSeconds: parseWorkoutInputValue(
+        _durationController.text,
+        WorkoutLogField.duration,
+        widget.store,
+      ),
+      distanceMeters: parseWorkoutInputValue(
+        _distanceController.text,
+        WorkoutLogField.distance,
+        widget.store,
+      ),
+      assistanceWeightGrams: parseWorkoutInputValue(
+        _assistanceWeightController.text,
+        WorkoutLogField.assistanceWeight,
+        widget.store,
+      ),
+    );
     try {
       widget.store.addActiveWorkoutSet(
         resultIndex: widget.resultIndex,
-        setLog: WorkoutSetLog(reps: reps, weight: weight, time: time),
+        setLog: setLog,
       );
-      _repsController.text = reps == null ? '' : reps.toStringAsFixed(0);
-      _weightController.text = weight == null ? '' : _formatNumber(weight);
-      _timeController.text = time == null ? '' : _formatNumber(time);
+      _fillSetLog(setLog);
       _startRestTimer();
     } on Object catch (error) {
       ScaffoldMessenger.of(
@@ -158,89 +192,115 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
   }
 
   void _fillSetLog(WorkoutSetLog setLog) {
-    _repsController.text = formatWorkoutInputNumber(setLog.reps);
-    _weightController.text = formatWorkoutInputNumber(setLog.weight);
-    _timeController.text = formatWorkoutInputNumber(setLog.time);
+    _repsController.text = formatWorkoutInputValue(
+      WorkoutLogField.reps,
+      setLog.reps,
+      widget.store,
+    );
+    _weightController.text = formatWorkoutInputValue(
+      WorkoutLogField.weight,
+      setLog.weightGrams,
+      widget.store,
+    );
+    _durationController.text = formatWorkoutInputValue(
+      WorkoutLogField.duration,
+      setLog.durationSeconds,
+      widget.store,
+    );
+    _distanceController.text = formatWorkoutInputValue(
+      WorkoutLogField.distance,
+      setLog.distanceMeters,
+      widget.store,
+    );
+    _assistanceWeightController.text = formatWorkoutInputValue(
+      WorkoutLogField.assistanceWeight,
+      setLog.assistanceWeightGrams,
+      widget.store,
+    );
   }
 
   List<Widget> _quickFillChips(
-    BuildContext context,
     WorkoutExerciseResult result,
+    ExerciseMeasurementType measurementType,
     WorkoutSetLog? lastLoggedSet,
     WorkoutSetLog? previousCompletedSet,
   ) {
-    final candidates =
-        <WorkoutSetLog>{
-          ...?lastLoggedSet == null ? null : [lastLoggedSet],
-          ...?previousCompletedSet == null ? null : [previousCompletedSet],
-          WorkoutSetLog(
-            reps: result.target.reps,
-            weight: result.target.weight,
-            time: result.target.time,
-          ),
-        }.where(
-          (setLog) =>
-              setLog.reps != null ||
-              setLog.weight != null ||
-              setLog.time != null,
-        );
+    final candidates = <WorkoutSetLog>{
+      ...?lastLoggedSet == null ? null : [lastLoggedSet],
+      ...?previousCompletedSet == null ? null : [previousCompletedSet],
+      _targetSetLog(result.target),
+    }.where(_hasAnySetValue);
 
     return [
       for (final setLog in candidates)
         ActionChip(
-          label: Text(_chipLabel(result, setLog)),
+          label: Text(
+            formatWorkoutSetLog(setLog, measurementType, widget.store),
+          ),
           onPressed: () => _fillSetLog(setLog),
         ),
     ];
   }
 
   String? _previousSetLabel(
-    BuildContext context,
     WorkoutExerciseResult result,
+    ExerciseMeasurementType measurementType,
     WorkoutSetLog? setLog,
   ) {
     if (setLog == null) {
       return null;
     }
-    return 'Previous set ${_chipLabel(result, setLog)}';
+    return 'Previous set '
+        '${formatWorkoutSetLog(setLog, measurementType, widget.store)}';
   }
 
   String? _progressionHint(
     WorkoutExerciseResult result,
+    ExerciseMeasurementType measurementType,
     WorkoutSetLog? referenceSet,
   ) {
     if (referenceSet == null) {
       return null;
     }
-    if (result.target.weight != null &&
-        (referenceSet.reps ?? 0) >= (result.target.reps ?? 0)) {
-      return 'Try +2.5 kg next set if technique stays clean.';
+    switch (measurementType) {
+      case ExerciseMeasurementType.strength:
+        if ((referenceSet.reps ?? 0) >= (result.target.reps ?? 0)) {
+          return 'Try +2.5 kg next set if technique stays clean.';
+        }
+        return 'Repeat the load and push until you hit the target reps.';
+      case ExerciseMeasurementType.bodyweight:
+      case ExerciseMeasurementType.assisted:
+        return 'Repeat the set and aim to match the target reps cleanly.';
+      case ExerciseMeasurementType.duration:
+      case ExerciseMeasurementType.weightedDuration:
+      case ExerciseMeasurementType.cardio:
+        return 'Match the previous work set before increasing demand.';
     }
-    if (result.target.reps != null) {
-      return 'Repeat the load and push until you hit the target reps.';
-    }
-    return 'Match the previous work set before increasing demand.';
   }
 
-  String _chipLabel(WorkoutExerciseResult result, WorkoutSetLog setLog) {
-    return _formatWorkoutSetInline(result, setLog);
+  WorkoutSetLog _targetSetLog(TrainingExercise target) {
+    return WorkoutSetLog(
+      reps: target.reps,
+      weightGrams: target.weightGrams,
+      durationSeconds: target.durationSeconds,
+      distanceMeters: target.distanceMeters,
+      assistanceWeightGrams: target.assistanceWeightGrams,
+    );
   }
 
-  String _formatWorkoutSetInline(
+  bool _hasAnySetValue(WorkoutSetLog setLog) {
+    return setLog.reps != null ||
+        setLog.weightGrams != null ||
+        setLog.durationSeconds != null ||
+        setLog.distanceMeters != null ||
+        setLog.assistanceWeightGrams != null;
+  }
+
+  ExerciseMeasurementType _measurementTypeForResult(
     WorkoutExerciseResult result,
-    WorkoutSetLog setLog,
   ) {
-    final parts = <String>[];
-    if (setLog.weight != null) {
-      parts.add('${_formatNumber(setLog.weight!)} ${result.target.unit}');
-    }
-    if (setLog.reps != null) {
-      parts.add('${_formatNumber(setLog.reps!)} reps');
-    }
-    if (setLog.time != null) {
-      parts.add('${_formatNumber(setLog.time!)} ${result.target.unit}');
-    }
-    return parts.join(' x ');
+    return widget.store.exerciseById(result.exerciseId)?.measurementType ??
+        ExerciseMeasurementType.strength;
   }
 
   void _startRestTimer() {
@@ -272,20 +332,5 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
     final minutes = remaining.inMinutes;
     final seconds = remaining.inSeconds.remainder(60);
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
-  double? _parseNumber(String text) {
-    final normalized = text.trim();
-    if (normalized.isEmpty) {
-      return null;
-    }
-    return double.tryParse(normalized) ?? double.nan;
-  }
-
-  String _formatNumber(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    return value.toStringAsFixed(1);
   }
 }

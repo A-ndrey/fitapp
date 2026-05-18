@@ -1,9 +1,9 @@
-import 'package:fitapp/main.dart';
 import 'package:fitapp/models/app_preferences.dart';
 import 'package:fitapp/models/exercise.dart';
 import 'package:fitapp/models/training_plan.dart';
 import 'package:fitapp/models/workout_session.dart';
 import 'package:fitapp/screens/workout_screen.dart';
+import 'package:fitapp/ui/core/layout/app_breakpoints.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/ui/core/layout/adaptive_page.dart';
 import 'package:fitapp/ui/workout/workout_detail_cards.dart';
@@ -12,6 +12,121 @@ import 'package:fitapp/ui/workout/workout_overview_cards.dart';
 import 'package:fitapp/ui/workout/workout_session_cards.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class TestFitHome extends StatefulWidget {
+  const TestFitHome({super.key, required this.store});
+
+  final AppStore store;
+
+  @override
+  State<TestFitHome> createState() => _TestFitHomeState();
+}
+
+class _TestFitHomeState extends State<TestFitHome> {
+  int _selectedIndex = 0;
+  final List<GlobalKey<NavigatorState>> _navigatorKeys = List.generate(
+    5,
+    (_) => GlobalKey<NavigatorState>(),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
+    final destinations = const [
+      NavigationDestination(icon: Icon(Icons.today_outlined), label: 'Today'),
+      NavigationDestination(
+        icon: Icon(Icons.fitness_center_outlined),
+        label: 'Train',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.restaurant_menu_outlined),
+        label: 'Nutrition',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.menu_book_outlined),
+        label: 'Library',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.settings_outlined),
+        label: 'Settings',
+      ),
+    ];
+    final pages = [
+      _tabNavigator(0, const _PlaceholderScreen(title: 'Today')),
+      _tabNavigator(
+        1,
+        WorkoutScreen(store: widget.store, isCurrentTab: _selectedIndex == 1),
+      ),
+      _tabNavigator(2, const _PlaceholderScreen(title: 'Nutrition')),
+      _tabNavigator(3, const _PlaceholderScreen(title: 'Training library')),
+      _tabNavigator(4, const _PlaceholderScreen(title: 'Settings')),
+    ];
+
+    if (isCompact) {
+      return Scaffold(
+        body: pages[_selectedIndex],
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _selectedIndex,
+          destinations: destinations,
+          onDestinationSelected: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+        ),
+      );
+    }
+
+    return Scaffold(
+      body: Row(
+        children: [
+          NavigationRail(
+            selectedIndex: _selectedIndex,
+            destinations: destinations
+                .map(
+                  (destination) => NavigationRailDestination(
+                    icon: destination.icon,
+                    label: Text(destination.label),
+                  ),
+                )
+                .toList(),
+            onDestinationSelected: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+          ),
+          Expanded(child: pages[_selectedIndex]),
+        ],
+      ),
+    );
+  }
+
+  Widget _tabNavigator(int index, Widget child) {
+    return Navigator(
+      key: _navigatorKeys[index],
+      onGenerateRoute: (_) {
+        return MaterialPageRoute<void>(builder: (_) => child);
+      },
+    );
+  }
+}
+
+class _PlaceholderScreen extends StatelessWidget {
+  const _PlaceholderScreen({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: const SizedBox.shrink(),
+    );
+  }
+}
 
 void main() {
   test('workout formatters render compact duration and date labels', () {
@@ -49,53 +164,112 @@ void main() {
     final store = AppStore();
 
     expect(
-      formatWorkoutTarget(weightedTarget, store),
+      formatWorkoutTarget(
+        weightedTarget,
+        ExerciseMeasurementType.strength,
+        store,
+      ),
       'Target: 3 sets • 8 reps • 60 kg',
     );
 
     store.setWorkoutWeightUnit(WorkoutWeightUnit.pounds);
 
-    expect(formatWorkoutTarget(weightedTarget, store), contains('132.3 lbs'));
+    expect(
+      formatWorkoutTarget(
+        weightedTarget,
+        ExerciseMeasurementType.strength,
+        store,
+      ),
+      contains('132.3 lbs'),
+    );
     expect(
       formatWorkoutTarget(
         const TrainingExercise(exerciseId: 'running', durationSeconds: 900),
+        ExerciseMeasurementType.duration,
         store,
       ),
       'Target: 15 min',
     );
     expect(
-      formatWorkoutTarget(const TrainingExercise(exerciseId: 'pushups'), store),
-      'Target: reps',
+      formatWorkoutTarget(
+        const TrainingExercise(
+          exerciseId: 'rowing',
+          durationSeconds: 1200,
+          distanceMeters: 5000,
+        ),
+        ExerciseMeasurementType.cardio,
+        store,
+      ),
+      'Target: 20 min • 5 km',
+    );
+    expect(
+      formatWorkoutTarget(
+        const TrainingExercise(
+          exerciseId: 'assisted-pullup',
+          sets: 3,
+          reps: 10,
+          assistanceWeightGrams: 25000,
+        ),
+        ExerciseMeasurementType.assisted,
+        store,
+      ),
+      'Target: 3 sets • 10 reps • 55.1 lbs assistance',
+    );
+    expect(
+      formatWorkoutTarget(
+        const TrainingExercise(exerciseId: 'pushups', reps: 12),
+        ExerciseMeasurementType.bodyweight,
+        store,
+      ),
+      'Target: 12 reps',
     );
   });
 
   test('workout formatters render set logs and input numbers', () {
-    const target = TrainingExercise(
-      exerciseId: 'bench-press',
-      sets: 3,
-      reps: 8,
-      weightGrams: 60000,
-    );
     final store = AppStore();
 
     expect(
       formatWorkoutSetLog(
-        target,
         const WorkoutSetLog(reps: 8, weightGrams: 62500),
+        ExerciseMeasurementType.strength,
         store,
       ),
       '8 reps • 62.5 kg',
+    );
+    expect(
+      formatWorkoutSetLog(
+        const WorkoutSetLog(durationSeconds: 95),
+        ExerciseMeasurementType.duration,
+        store,
+      ),
+      '1 min 35 sec',
+    );
+    expect(
+      formatWorkoutSetLog(
+        const WorkoutSetLog(durationSeconds: 600, distanceMeters: 1609.344),
+        ExerciseMeasurementType.cardio,
+        store,
+      ),
+      '10 min • 1.6 km',
     );
 
     store.setWorkoutWeightUnit(WorkoutWeightUnit.pounds);
 
     expect(
       formatWorkoutSetLog(
-        target,
         const WorkoutSetLog(reps: 8, weightGrams: 62500),
+        ExerciseMeasurementType.strength,
         store,
       ),
       '8 reps • 137.8 lbs',
+    );
+    expect(
+      formatWorkoutSetLog(
+        const WorkoutSetLog(reps: 6, assistanceWeightGrams: 20000),
+        ExerciseMeasurementType.assisted,
+        store,
+      ),
+      '6 reps • 44.1 lbs assistance',
     );
     expect(formatWorkoutInputNumber(null), '');
     expect(formatWorkoutInputNumber(8), '8');
@@ -121,6 +295,7 @@ void main() {
     expect(
       formatWorkoutTarget(
         target,
+        ExerciseMeasurementType.strength,
         store,
         targetPrefix: 'Localized target:',
         setsLabel: 'localized-sets',
@@ -130,8 +305,8 @@ void main() {
     );
     expect(
       formatWorkoutSetLog(
-        target,
         const WorkoutSetLog(reps: 8, weightGrams: 62500),
+        ExerciseMeasurementType.strength,
         store,
         repsLabel: 'localized-reps',
       ),
@@ -242,7 +417,10 @@ void main() {
   }
 
   Future<void> openExercise(WidgetTester tester, String exerciseName) async {
-    await tester.tap(find.byTooltip('Open $exerciseName'));
+    final tooltip = find.byTooltip('Open $exerciseName');
+    await tester.ensureVisible(tooltip);
+    await tester.pumpAndSettle();
+    await tester.tap(tooltip);
     await tester.pumpAndSettle();
   }
 
@@ -256,13 +434,30 @@ void main() {
 
   Future<void> enterWorkoutSet(
     WidgetTester tester, {
-    required String reps,
-    required String weight,
-    required String time,
+    String? reps,
+    String? weight,
+    String? duration,
+    String? distance,
+    String? assistanceWeight,
   }) async {
-    await tester.enterText(find.bySemanticsLabel('Reps'), reps);
-    await tester.enterText(find.bySemanticsLabel('Weight'), weight);
-    await tester.enterText(find.bySemanticsLabel('Time'), time);
+    if (reps != null) {
+      await tester.enterText(find.bySemanticsLabel('Reps'), reps);
+    }
+    if (weight != null) {
+      await tester.enterText(find.bySemanticsLabel('Weight'), weight);
+    }
+    if (duration != null) {
+      await tester.enterText(find.bySemanticsLabel('Duration'), duration);
+    }
+    if (distance != null) {
+      await tester.enterText(find.bySemanticsLabel('Distance'), distance);
+    }
+    if (assistanceWeight != null) {
+      await tester.enterText(
+        find.bySemanticsLabel('Assistance weight'),
+        assistanceWeight,
+      );
+    }
     await tester.ensureVisible(find.text('Log set'));
     await tester.pumpAndSettle();
   }
@@ -304,6 +499,76 @@ void main() {
         exercises: [
           TrainingExercise(exerciseId: 'pushups', reps: 10),
           TrainingExercise(exerciseId: 'pushups', reps: 8),
+        ],
+      ),
+    );
+  }
+
+  void createWorkoutTypePlans(AppStore store) {
+    store.createExercise(
+      const Exercise(
+        id: 'plank',
+        name: 'Plank',
+        description: 'Hold a straight plank.',
+        instruction: 'Brace and hold.',
+        muscleGroups: [MuscleGroup.core],
+        measurementType: ExerciseMeasurementType.duration,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'sled-push',
+        name: 'Sled push',
+        description: 'Push the sled.',
+        instruction: 'Drive forward under control.',
+        muscleGroups: [MuscleGroup.legs],
+        measurementType: ExerciseMeasurementType.weightedDuration,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'run',
+        name: 'Run',
+        description: 'Steady run.',
+        instruction: 'Maintain pace.',
+        muscleGroups: [MuscleGroup.cardio],
+        measurementType: ExerciseMeasurementType.cardio,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'assisted-pullup',
+        name: 'Assisted pull-up',
+        description: 'Band-assisted pull-up.',
+        instruction: 'Pull to the bar.',
+        muscleGroups: [MuscleGroup.back],
+        measurementType: ExerciseMeasurementType.assisted,
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'typed-workout',
+        name: 'Typed workout',
+        description: 'Mixed measurement types',
+        exercises: [
+          TrainingExercise(exerciseId: 'plank', sets: 3, durationSeconds: 90),
+          TrainingExercise(
+            exerciseId: 'sled-push',
+            sets: 4,
+            weightGrams: 45000,
+            durationSeconds: 40,
+          ),
+          TrainingExercise(
+            exerciseId: 'run',
+            durationSeconds: 1200,
+            distanceMeters: 5000,
+          ),
+          TrainingExercise(
+            exerciseId: 'assisted-pullup',
+            sets: 3,
+            reps: 8,
+            assistanceWeightGrams: 25000,
+          ),
         ],
       ),
     );
@@ -402,10 +667,14 @@ void main() {
         home: Scaffold(
           body: ListView(
             children: [
-              WorkoutSessionHeaderCard(session: session),
+              WorkoutSessionHeaderCard(session: session, store: store),
               WorkoutExerciseProgressCard(
                 exerciseLabel: result.exerciseName,
-                targetLabel: formatWorkoutTarget(result.target, store),
+                targetLabel: formatWorkoutTarget(
+                  result.target,
+                  ExerciseMeasurementType.strength,
+                  store,
+                ),
                 setCountLabel: formatWorkoutSetCount(result.setLogs.length),
                 tooltip: 'Open Bench press',
                 onOpen: () => openedExercise = true,
@@ -440,13 +709,17 @@ void main() {
     );
     final repsController = TextEditingController();
     final weightController = TextEditingController();
-    final timeController = TextEditingController();
+    final durationController = TextEditingController();
+    final distanceController = TextEditingController();
+    final assistanceWeightController = TextEditingController();
     var logged = false;
     WorkoutSetLog? filledSet;
 
     addTearDown(repsController.dispose);
     addTearDown(weightController.dispose);
-    addTearDown(timeController.dispose);
+    addTearDown(durationController.dispose);
+    addTearDown(distanceController.dispose);
+    addTearDown(assistanceWeightController.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -457,12 +730,15 @@ void main() {
               WorkoutSetInputCard(
                 repsController: repsController,
                 weightController: weightController,
-                timeController: timeController,
-                target: result.target,
+                durationController: durationController,
+                distanceController: distanceController,
+                assistanceWeightController: assistanceWeightController,
+                measurementType: ExerciseMeasurementType.strength,
+                store: store,
                 onLogSet: () => logged = true,
               ),
               WorkoutLoggedSetsCard(
-                target: result.target,
+                measurementType: ExerciseMeasurementType.strength,
                 setLogs: result.setLogs,
                 store: store,
                 onFillSet: (setLog) => filledSet = setLog,
@@ -477,7 +753,7 @@ void main() {
     expect(find.text('Target: 3 sets • 8 reps • 60 kg'), findsOneWidget);
     expect(find.text('Reps'), findsOneWidget);
     expect(find.text('Weight'), findsOneWidget);
-    expect(find.text('Time'), findsOneWidget);
+    expect(find.text('Time'), findsNothing);
     expect(find.text('Logged sets'), findsOneWidget);
     expect(find.text('Set 1'), findsOneWidget);
     expect(find.text('8 reps • 62.5 kg'), findsOneWidget);
@@ -496,11 +772,15 @@ void main() {
   ) async {
     final repsController = TextEditingController();
     final weightController = TextEditingController();
-    final timeController = TextEditingController();
+    final durationController = TextEditingController();
+    final distanceController = TextEditingController();
+    final assistanceWeightController = TextEditingController();
 
     addTearDown(repsController.dispose);
     addTearDown(weightController.dispose);
-    addTearDown(timeController.dispose);
+    addTearDown(durationController.dispose);
+    addTearDown(distanceController.dispose);
+    addTearDown(assistanceWeightController.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -510,11 +790,11 @@ void main() {
             child: WorkoutSetInputCard(
               repsController: repsController,
               weightController: weightController,
-              timeController: timeController,
-              target: const TrainingExercise(
-                exerciseId: 'bench-press',
-                weightGrams: 60000,
-              ),
+              durationController: durationController,
+              distanceController: distanceController,
+              assistanceWeightController: assistanceWeightController,
+              measurementType: ExerciseMeasurementType.strength,
+              store: AppStore(),
               onLogSet: () {},
             ),
           ),
@@ -757,7 +1037,7 @@ void main() {
       startedAt: DateTime(2026, 4, 19, 10),
     );
 
-    await tester.pumpWidget(MaterialApp(home: FitHome(store: store)));
+    await tester.pumpWidget(MaterialApp(home: TestFitHome(store: store)));
     await tester.pumpAndSettle();
     await openTrainDestination(tester);
     await openActiveWorkout(tester);
@@ -768,8 +1048,64 @@ void main() {
     expect(find.text('Bench press'), findsOneWidget);
     expect(find.text('Reps'), findsOneWidget);
     expect(find.text('Weight'), findsOneWidget);
-    expect(find.text('Time'), findsOneWidget);
+    expect(find.text('Time'), findsNothing);
     expect(find.text('Log set'), findsOneWidget);
+  });
+
+  testWidgets('exercise logging fields are typed by measurement', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    createWorkoutTypePlans(store);
+    store.startWorkout(
+      trainingPlanId: 'typed-workout',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await pumpWorkoutScreen(tester, store: store);
+    await openActiveWorkout(tester);
+
+    expect(find.text('Target: 3 sets • 1 min 30 sec'), findsOneWidget);
+    expect(find.text('Target: 4 sets • 45 kg • 40 sec'), findsOneWidget);
+
+    await openExercise(tester, 'Plank');
+    expect(find.text('Reps'), findsNothing);
+    expect(find.text('Weight'), findsNothing);
+    expect(find.text('Duration'), findsOneWidget);
+    expect(find.text('Distance'), findsNothing);
+    expect(find.text('Assistance weight'), findsNothing);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await openExercise(tester, 'Sled push');
+    expect(find.text('Reps'), findsNothing);
+    expect(find.text('Weight'), findsOneWidget);
+    expect(find.text('Duration'), findsOneWidget);
+    expect(find.text('Distance'), findsNothing);
+    expect(find.text('Assistance weight'), findsNothing);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await openExercise(tester, 'Run');
+    expect(find.text('Target: 20 min • 5 km'), findsOneWidget);
+    expect(find.text('Reps'), findsNothing);
+    expect(find.text('Weight'), findsNothing);
+    expect(find.text('Duration'), findsOneWidget);
+    expect(find.text('Distance'), findsOneWidget);
+    expect(find.text('Assistance weight'), findsNothing);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await openExercise(tester, 'Assisted pull-up');
+    expect(
+      find.text('Target: 3 sets • 8 reps • 25 kg assistance'),
+      findsOneWidget,
+    );
+    expect(find.text('Reps'), findsOneWidget);
+    expect(find.text('Weight'), findsNothing);
+    expect(find.text('Duration'), findsNothing);
+    expect(find.text('Distance'), findsNothing);
+    expect(find.text('Assistance weight'), findsOneWidget);
   });
 
   testWidgets('logging a set clears fields and shows the logged set', (
@@ -785,7 +1121,7 @@ void main() {
     await openActiveWorkout(tester);
     await openExercise(tester, 'Bench press');
 
-    await enterWorkoutSet(tester, reps: '8', weight: '65', time: '');
+    await enterWorkoutSet(tester, reps: '8', weight: '65');
     await tester.tap(find.text('Log set'));
     await tester.pumpAndSettle();
 
@@ -798,18 +1134,14 @@ void main() {
         .toList();
     final repsField = fields[0];
     final weightField = fields[1];
-    final timeField = fields[2];
-
     expect(repsField.controller?.text, '8');
     expect(weightField.controller?.text, '65');
-    expect(timeField.controller?.text, isEmpty);
 
     await tester.tap(find.byTooltip('Use Set 1'));
     await tester.pumpAndSettle();
 
     expect(repsField.controller?.text, '8');
     expect(weightField.controller?.text, '65');
-    expect(timeField.controller?.text, isEmpty);
   });
 
   testWidgets('multiple set logs accumulate', (tester) async {
@@ -823,11 +1155,11 @@ void main() {
     await openActiveWorkout(tester);
     await openExercise(tester, 'Bench press');
 
-    await enterWorkoutSet(tester, reps: '8', weight: '65', time: '');
+    await enterWorkoutSet(tester, reps: '8', weight: '65');
     await tester.tap(find.text('Log set'));
     await tester.pumpAndSettle();
 
-    await enterWorkoutSet(tester, reps: '6', weight: '67.5', time: '');
+    await enterWorkoutSet(tester, reps: '6', weight: '67.5');
     await tester.tap(find.text('Log set'));
     await tester.pumpAndSettle();
 
@@ -852,19 +1184,19 @@ void main() {
     await openExercise(tester, 'Bench press');
     expect(find.text('Target: 3 sets • 8 reps • 132.3 lbs'), findsOneWidget);
 
-    await enterWorkoutSet(tester, reps: '8', weight: '62.5', time: '');
+    await enterWorkoutSet(tester, reps: '8', weight: '137.8');
     await tester.tap(find.text('Log set'));
     await tester.pumpAndSettle();
 
     expect(
       store.activeWorkoutSession!.results.first.setLogs.single.weightGrams,
-      62500,
+      closeTo(62500, 50),
     );
 
     final fields = tester
         .widgetList<TextField>(find.byType(TextField))
         .toList();
-    expect(fields[1].controller?.text, '62.5');
+    expect(fields[1].controller?.text, '137.8');
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -908,7 +1240,7 @@ void main() {
       startedAt: DateTime(2026, 4, 19, 10),
     );
 
-    await tester.pumpWidget(MaterialApp(home: FitHome(store: store)));
+    await tester.pumpWidget(MaterialApp(home: TestFitHome(store: store)));
     await tester.pumpAndSettle();
     await openTrainDestination(tester);
 
@@ -946,7 +1278,7 @@ void main() {
         finishedAt: DateTime(2026, 4, 18, 9, 45),
       );
 
-      await tester.pumpWidget(MaterialApp(home: FitHome(store: store)));
+      await tester.pumpWidget(MaterialApp(home: TestFitHome(store: store)));
       await tester.pumpAndSettle();
       await openTrainDestination(tester);
 
@@ -1036,7 +1368,7 @@ void main() {
 
     expect(find.text('Previous results'), findsOneWidget);
     expect(find.text('Chest day • 2026-04-18 • 45 min'), findsOneWidget);
-    expect(find.text('8 reps • 62.5 kg'), findsOneWidget);
+    expect(find.text('8 reps • 62.5 kg'), findsWidgets);
 
     await tester.tap(find.byTooltip('Use previous Set 1 from Chest day'));
     await tester.pumpAndSettle();
@@ -1049,8 +1381,6 @@ void main() {
         .toList();
     expect(fields[0].controller?.text, '8');
     expect(fields[1].controller?.text, '62.5');
-    expect(fields[2].controller?.text, isEmpty);
-
     store.addActiveWorkoutSet(
       resultIndex: 0,
       setLog: const WorkoutSetLog(reps: 8, weightGrams: 62500),
@@ -1106,7 +1436,7 @@ void main() {
         .widgetList<TextField>(find.byType(TextField))
         .toList();
     expect(fields[0].controller?.text, '8');
-    expect(fields[1].controller?.text, isEmpty);
+    expect(fields, hasLength(1));
   });
 
   testWidgets('keeps workout tab visible on session and exercise screens', (
@@ -1118,7 +1448,7 @@ void main() {
       startedAt: DateTime(2026, 4, 19, 10),
     );
 
-    await tester.pumpWidget(MaterialApp(home: FitHome(store: store)));
+    await tester.pumpWidget(MaterialApp(home: TestFitHome(store: store)));
     await tester.pumpAndSettle();
     await openTrainDestination(tester);
 
@@ -1141,7 +1471,8 @@ void main() {
 
     await openTrainDestination(tester);
 
-    expect(find.text('Workout exercise'), findsWidgets);
+    expect(find.text('Active workout'), findsOneWidget);
+    await openActiveWorkout(tester);
     expect(find.text('Bench press'), findsOneWidget);
   });
 }
