@@ -85,7 +85,7 @@ class PersistedAppState {
     return plan.copyWith(
       exercises: List.unmodifiable(
         plan.exercises.map((exercise) {
-          return exercise.copyWith();
+          return _cloneTrainingExercise(exercise);
         }),
       ),
     );
@@ -126,12 +126,20 @@ class PersistedAppState {
             target: result.target.copyWith(),
             setLogs: List.unmodifiable(
               result.setLogs.map((setLog) {
-                return setLog.copyWith();
+                return _cloneWorkoutSetLog(setLog);
               }),
             ),
           );
         }),
       ),
     );
+  }
+
+  static TrainingExercise _cloneTrainingExercise(TrainingExercise exercise) {
+    return exercise.copyWith();
+  }
+
+  static WorkoutSetLog _cloneWorkoutSetLog(WorkoutSetLog setLog) {
+    return setLog.copyWith();
   }
 }

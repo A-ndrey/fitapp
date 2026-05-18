@@ -42,12 +42,7 @@ void main() {
       ];
       final sourceMuscleGroups = <MuscleGroup>[MuscleGroup.cardio];
       final sourceTrainingExercises = <TrainingExercise>[
-        const TrainingExercise(
-          exerciseId: 'burpees',
-          reps: 10,
-          sets: 3,
-          unit: 'reps',
-        ),
+        const TrainingExercise(exerciseId: 'burpees', reps: 10, sets: 3),
       ];
       final sourceSetLogs = <WorkoutSetLog>[const WorkoutSetLog(reps: 10)];
       final sourceResults = <WorkoutExerciseResult>[
@@ -89,6 +84,7 @@ void main() {
           description: 'Conditioning move',
           instruction: 'Keep pace steady.',
           muscleGroups: sourceMuscleGroups,
+          measurementType: ExerciseMeasurementType.weightedDuration,
         ),
       ];
       final sourcePlans = <TrainingPlan>[
@@ -142,24 +138,14 @@ void main() {
       );
       sourceMuscleGroups.add(MuscleGroup.fullBody);
       sourceTrainingExercises.add(
-        const TrainingExercise(
-          exerciseId: 'push-ups',
-          reps: 12,
-          sets: 3,
-          unit: 'reps',
-        ),
+        const TrainingExercise(exerciseId: 'push-ups', reps: 12, sets: 3),
       );
       sourceSetLogs.add(const WorkoutSetLog(reps: 12));
       sourceResults.add(
         const WorkoutExerciseResult(
           exerciseId: 'push-ups',
           exerciseName: 'Push-ups',
-          target: TrainingExercise(
-            exerciseId: 'push-ups',
-            reps: 12,
-            sets: 3,
-            unit: 'reps',
-          ),
+          target: TrainingExercise(exerciseId: 'push-ups', reps: 12, sets: 3),
           setLogs: [WorkoutSetLog(reps: 12)],
         ),
       );
@@ -193,12 +179,7 @@ void main() {
       );
       expect(
         () => state.userTrainingPlans.single.exercises.add(
-          const TrainingExercise(
-            exerciseId: 'push-ups',
-            reps: 12,
-            sets: 3,
-            unit: 'reps',
-          ),
+          const TrainingExercise(exerciseId: 'push-ups', reps: 12, sets: 3),
         ),
         throwsUnsupportedError,
       );
@@ -207,12 +188,7 @@ void main() {
           const WorkoutExerciseResult(
             exerciseId: 'push-ups',
             exerciseName: 'Push-ups',
-            target: TrainingExercise(
-              exerciseId: 'push-ups',
-              reps: 12,
-              sets: 3,
-              unit: 'reps',
-            ),
+            target: TrainingExercise(exerciseId: 'push-ups', reps: 12, sets: 3),
             setLogs: [WorkoutSetLog(reps: 12)],
           ),
         ),
@@ -372,6 +348,7 @@ void main() {
             description: 'Conditioning move',
             instruction: 'Keep pace steady.',
             muscleGroups: [MuscleGroup.cardio, MuscleGroup.fullBody],
+            measurementType: ExerciseMeasurementType.weightedDuration,
           ),
         ],
         userTrainingPlans: const [
@@ -384,7 +361,7 @@ void main() {
                 exerciseId: 'burpees',
                 reps: 10,
                 sets: 3,
-                unit: 'reps',
+                durationSeconds: 45,
               ),
             ],
           ),
@@ -435,9 +412,9 @@ void main() {
                 exerciseId: 'burpees',
                 reps: 10,
                 sets: 3,
-                unit: 'reps',
+                durationSeconds: 45,
               ),
-              setLogs: [WorkoutSetLog(reps: 10, weight: 0, time: 45)],
+              setLogs: [WorkoutSetLog(reps: 10, durationSeconds: 45)],
             ),
           ],
         ),
@@ -456,9 +433,9 @@ void main() {
                   exerciseId: 'burpees',
                   reps: 8,
                   sets: 2,
-                  unit: 'reps',
+                  durationSeconds: 40,
                 ),
-                setLogs: [WorkoutSetLog(reps: 8, weight: 0, time: 40)],
+                setLogs: [WorkoutSetLog(reps: 8, durationSeconds: 40)],
               ),
             ],
           ),
@@ -504,6 +481,15 @@ void main() {
           'carbs': 27.0,
         },
       });
+      final exercises = payload['userExercises']! as List<Object?>;
+      expect(exercises.single, <String, Object?>{
+        'id': 'burpees',
+        'name': 'Burpees',
+        'description': 'Conditioning move',
+        'instruction': 'Keep pace steady.',
+        'muscleGroups': ['cardio', 'fullBody'],
+        'measurementType': 'weightedDuration',
+      });
 
       final activeSession =
           payload['activeWorkoutSession']! as Map<String, Object?>;
@@ -521,6 +507,10 @@ void main() {
         MuscleGroup.cardio,
         MuscleGroup.fullBody,
       ]);
+      expect(
+        decoded.userExercises.single.measurementType,
+        ExerciseMeasurementType.weightedDuration,
+      );
       expect(
         decoded.userTrainingPlans.single.exercises.single.exerciseId,
         'burpees',
@@ -551,7 +541,13 @@ void main() {
       );
       expect(decoded.activeWorkoutSession!.finishedAt, isNull);
       expect(
-        decoded.activeWorkoutSession!.results.single.setLogs.single.time,
+        decoded
+            .activeWorkoutSession!
+            .results
+            .single
+            .setLogs
+            .single
+            .durationSeconds,
         45,
       );
       expect(decoded.completedWorkoutSessions, hasLength(1));
@@ -572,7 +568,7 @@ void main() {
           'name': 'Broken plan',
           'description': 'Broken',
           'exercises': [
-            {'exerciseId': 'ghost', 'sets': 3.0, 'reps': 8.0, 'unit': 'reps'},
+            {'exerciseId': 'ghost', 'sets': 3.0, 'reps': 8.0},
           ],
         },
       ];
@@ -590,12 +586,7 @@ void main() {
             'name': 'Built-in plan',
             'description': 'Uses bootstrapped exercises',
             'exercises': [
-              {
-                'exerciseId': 'pushups',
-                'sets': 4.0,
-                'reps': 10.0,
-                'unit': 'reps',
-              },
+              {'exerciseId': 'pushups', 'sets': 4.0, 'reps': 10.0},
             ],
           },
         ];
