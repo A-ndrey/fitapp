@@ -1,3 +1,5 @@
+const Object _trainingExerciseCopyWithSentinel = Object();
+
 class TrainingExercise {
   const TrainingExercise({
     required this.exerciseId,
@@ -21,20 +23,30 @@ class TrainingExercise {
     String? exerciseId,
     double? sets,
     double? reps,
-    double? weightGrams,
-    double? durationSeconds,
-    double? distanceMeters,
-    double? assistanceWeightGrams,
+    Object? weightGrams = _trainingExerciseCopyWithSentinel,
+    Object? durationSeconds = _trainingExerciseCopyWithSentinel,
+    Object? distanceMeters = _trainingExerciseCopyWithSentinel,
+    Object? assistanceWeightGrams = _trainingExerciseCopyWithSentinel,
   }) {
     return TrainingExercise(
       exerciseId: exerciseId ?? this.exerciseId,
       sets: sets ?? this.sets,
       reps: reps ?? this.reps,
-      weightGrams: weightGrams ?? this.weightGrams,
-      durationSeconds: durationSeconds ?? this.durationSeconds,
-      distanceMeters: distanceMeters ?? this.distanceMeters,
+      weightGrams: identical(weightGrams, _trainingExerciseCopyWithSentinel)
+          ? this.weightGrams
+          : weightGrams as double?,
+      durationSeconds:
+          identical(durationSeconds, _trainingExerciseCopyWithSentinel)
+          ? this.durationSeconds
+          : durationSeconds as double?,
+      distanceMeters:
+          identical(distanceMeters, _trainingExerciseCopyWithSentinel)
+          ? this.distanceMeters
+          : distanceMeters as double?,
       assistanceWeightGrams:
-          assistanceWeightGrams ?? this.assistanceWeightGrams,
+          identical(assistanceWeightGrams, _trainingExerciseCopyWithSentinel)
+          ? this.assistanceWeightGrams
+          : assistanceWeightGrams as double?,
     );
   }
 }

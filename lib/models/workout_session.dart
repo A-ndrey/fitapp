@@ -1,5 +1,7 @@
 import 'training_plan.dart';
 
+const Object _workoutSetLogCopyWithSentinel = Object();
+
 class WorkoutSetLog {
   const WorkoutSetLog({
     this.reps,
@@ -17,18 +19,27 @@ class WorkoutSetLog {
 
   WorkoutSetLog copyWith({
     double? reps,
-    double? weightGrams,
-    double? durationSeconds,
-    double? distanceMeters,
-    double? assistanceWeightGrams,
+    Object? weightGrams = _workoutSetLogCopyWithSentinel,
+    Object? durationSeconds = _workoutSetLogCopyWithSentinel,
+    Object? distanceMeters = _workoutSetLogCopyWithSentinel,
+    Object? assistanceWeightGrams = _workoutSetLogCopyWithSentinel,
   }) {
     return WorkoutSetLog(
       reps: reps ?? this.reps,
-      weightGrams: weightGrams ?? this.weightGrams,
-      durationSeconds: durationSeconds ?? this.durationSeconds,
-      distanceMeters: distanceMeters ?? this.distanceMeters,
+      weightGrams: identical(weightGrams, _workoutSetLogCopyWithSentinel)
+          ? this.weightGrams
+          : weightGrams as double?,
+      durationSeconds:
+          identical(durationSeconds, _workoutSetLogCopyWithSentinel)
+          ? this.durationSeconds
+          : durationSeconds as double?,
+      distanceMeters: identical(distanceMeters, _workoutSetLogCopyWithSentinel)
+          ? this.distanceMeters
+          : distanceMeters as double?,
       assistanceWeightGrams:
-          assistanceWeightGrams ?? this.assistanceWeightGrams,
+          identical(assistanceWeightGrams, _workoutSetLogCopyWithSentinel)
+          ? this.assistanceWeightGrams
+          : assistanceWeightGrams as double?,
     );
   }
 }
