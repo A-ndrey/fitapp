@@ -13,13 +13,6 @@ enum HeightUnit { centimeters, inches }
 enum DistanceUnit { kilometers, miles }
 
 class AppPreferences {
-  static const defaultDailyMacroTargets = NutritionValues(
-    calories: 2000,
-    protein: 150,
-    fat: 70,
-    carbs: 250,
-  );
-
   const AppPreferences({
     required this.appearance,
     required this.language,
@@ -38,6 +31,13 @@ class AppPreferences {
       heightUnit = HeightUnit.centimeters,
       distanceUnit = DistanceUnit.kilometers,
       dailyMacroTargets = defaultDailyMacroTargets;
+
+  static const defaultDailyMacroTargets = NutritionValues(
+    calories: 2000,
+    protein: 150,
+    fat: 70,
+    carbs: 250,
+  );
 
   final AppearancePreference appearance;
   final LanguagePreference language;

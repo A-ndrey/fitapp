@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/exercise.dart';
-import '../../models/training_plan.dart';
 import '../../models/workout_session.dart';
 import '../../state/app_store.dart';
 import 'workout_formatters.dart';

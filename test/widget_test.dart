@@ -1434,7 +1434,7 @@ void main() {
     await tester.tap(find.text('Edit Chest day'));
     await tester.pumpAndSettle();
 
-    expect(find.text('132.3 lbs weight'), findsOneWidget);
+    expect(find.text('132.3 lbs'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Weight'), findsNothing);
   });
 

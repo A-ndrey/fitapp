@@ -270,7 +270,7 @@ class _TodayScreenState extends State<TodayScreen> {
         (result) => result.setLogs.length < (result.target.sets?.toInt() ?? 1),
         orElse: () => activeSession.results.first,
       );
-      final suggestion = currentExercise.target.weight == null
+      final suggestion = currentExercise.target.weightGrams == null
           ? 'Match the target reps before adding load.'
           : 'If bar speed is solid, try +2.5 kg on the final work set.';
       return _PerformanceInsight(
@@ -337,7 +337,7 @@ class _TodayScreenState extends State<TodayScreen> {
     var total = 0.0;
     for (final result in session.results) {
       for (final set in result.setLogs) {
-        total += (set.weight ?? 0) * (set.reps ?? 0);
+        total += ((set.weightGrams ?? 0) / 1000) * (set.reps ?? 0);
       }
     }
     return total;
