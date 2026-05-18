@@ -94,11 +94,13 @@ class TrainingPlanCatalogCard extends StatelessWidget {
   const TrainingPlanCatalogCard({
     super.key,
     required this.plan,
+    required this.store,
     required this.onEdit,
     required this.onDelete,
   });
 
   final TrainingPlan plan;
+  final AppStore store;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -131,6 +133,7 @@ class TrainingPlanCatalogCard extends StatelessWidget {
           subtitle: _BoundedText(
             formatTrainingPlanSummaryLabel(
               plan,
+              store: store,
               exerciseCountLabel: (count) =>
                   l10n?.libraryExerciseCount(count) ??
                   formatLibraryCountLabel(count, 'exercise'),

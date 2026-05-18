@@ -266,6 +266,26 @@ void main() {
     tester,
   ) async {
     final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep your core tight.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'rows',
+        name: 'Rows',
+        description: 'Row variation',
+        instruction: 'Pull to your torso.',
+        muscleGroups: [MuscleGroup.back],
+        measurementType: ExerciseMeasurementType.strength,
+      ),
+    );
     const food = CatalogItem.food(
       FoodItem(
         id: 'rice',
@@ -306,7 +326,10 @@ void main() {
       formatCatalogServingNutritionLabel(food, store),
       '150 g serving • 195 kcal per serving',
     );
-    expect(formatTrainingPlanSummaryLabel(plan), '2 exercises\nStrength focus');
+    expect(
+      formatTrainingPlanSummaryLabel(plan, store: store),
+      '2 exercises • 3 sets • 12 reps\nStrength focus',
+    );
     expect(
       formatTrainingPlanSummaryLabel(
         plan.copyWith(
@@ -315,8 +338,9 @@ void main() {
             TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
           ],
         ),
+        store: store,
       ),
-      '1 exercise',
+      '1 exercise • 3 sets • 12 reps',
     );
     expect(formatExerciseMuscleGroupSummaryLabel(const []), 'Muscles: -');
     expect(
@@ -327,6 +351,25 @@ void main() {
       'Chest, Triceps',
     );
     expect(formatLibraryCountLabel(2, 'exercise'), '2 exercises');
+    expect(
+      formatTrainingPlanSummaryLabel(
+        const TrainingPlan(
+          id: 'run-day',
+          name: 'Run day',
+          description: '',
+          exercises: [
+            TrainingExercise(
+              exerciseId: 'rows',
+              sets: 4,
+              reps: 10,
+              weightGrams: 30000,
+            ),
+          ],
+        ),
+        store: store,
+      ),
+      '1 exercise • 4 sets • 10 reps • 30 kg',
+    );
   });
 
   testWidgets('library cards render labels and invoke action callbacks', (
@@ -335,6 +378,16 @@ void main() {
     final edited = <String>[];
     final deleted = <String>[];
     final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep your core tight.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
+      ),
+    );
     const food = CatalogItem.food(
       FoodItem(
         id: 'rice',
@@ -378,6 +431,7 @@ void main() {
               ),
               TrainingPlanCatalogCard(
                 plan: plan,
+                store: store,
                 onEdit: () => edited.add(plan.id),
                 onDelete: () => deleted.add(plan.id),
               ),
@@ -396,7 +450,7 @@ void main() {
     expect(find.text('food'), findsOneWidget);
     expect(find.text('150 g serving • 195 kcal per serving'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Upper body'), findsOneWidget);
-    expect(find.text('1 exercise\nStrength focus'), findsOneWidget);
+    expect(find.text('1 exercise • 3 sets • 12 reps\nStrength focus'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Pushups'), findsOneWidget);
     expect(find.text('Bodyweight push exercise'), findsOneWidget);
     expect(find.text('Keep your core tight.'), findsOneWidget);
@@ -429,6 +483,26 @@ void main() {
     tester,
   ) async {
     final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep your core tight.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'rows',
+        name: 'Rows',
+        description: 'Row variation',
+        instruction: 'Pull to your torso.',
+        muscleGroups: [MuscleGroup.back],
+        measurementType: ExerciseMeasurementType.strength,
+      ),
+    );
     const food = CatalogItem.food(
       FoodItem(
         id: 'very-long-food',
@@ -487,6 +561,7 @@ void main() {
                   ),
                   TrainingPlanCatalogCard(
                     plan: plan,
+                    store: store,
                     onEdit: () {},
                     onDelete: () {},
                   ),

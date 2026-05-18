@@ -41,16 +41,26 @@ String formatCatalogServingNutritionLabel(
 
 String formatTrainingPlanSummaryLabel(
   TrainingPlan plan, {
+  AppStore? store,
   String Function(int count)? exerciseCountLabel,
 }) {
   final exerciseLabel =
       exerciseCountLabel?.call(plan.exercises.length) ??
       formatLibraryCountLabel(plan.exercises.length, 'exercise');
+  final targetPreview = store == null || plan.exercises.isEmpty
+      ? null
+      : _formatTrainingExercisePreview(plan.exercises.first, store);
   final description = plan.description.trim();
-  if (description.isEmpty) {
+  if (targetPreview == null && description.isEmpty) {
     return exerciseLabel;
   }
-  return '$exerciseLabel\n$description';
+  final firstLine = targetPreview == null
+      ? exerciseLabel
+      : '$exerciseLabel • $targetPreview';
+  if (description.isEmpty) {
+    return firstLine;
+  }
+  return '$firstLine\n$description';
 }
 
 String formatExerciseMuscleGroupSummaryLabel(
@@ -184,6 +194,22 @@ void _addIfPresent(List<String> details, String? value) {
   if (value != null) {
     details.add(value);
   }
+}
+
+String? _formatTrainingExercisePreview(TrainingExercise exercise, AppStore store) {
+  final measurementType = store.exerciseById(exercise.exerciseId)?.measurementType;
+  if (measurementType == null) {
+    return null;
+  }
+  final details = formatTrainingExerciseDetailLines(
+    exercise,
+    measurementType,
+    store,
+  );
+  if (details.isEmpty) {
+    return null;
+  }
+  return details.join(' • ');
 }
 
 String _formatCompactNumber(double value) {

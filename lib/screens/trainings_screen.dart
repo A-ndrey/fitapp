@@ -180,6 +180,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
             padding: const EdgeInsets.only(bottom: 12),
             child: TrainingPlanCatalogCard(
               plan: plan,
+              store: store,
               onEdit: () => _openPlanDialog(context, initialPlan: plan),
               onDelete: () => _confirmDeletePlan(context, plan),
             ),
@@ -1100,12 +1101,12 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
   }
 
   void _saveExercise() {
-    final sets = _parseOptional(_setsController.text);
-    final reps = _parseOptional(_repsController.text);
-    final weightInput = _parseOptional(_weightController.text);
-    final duration = _parseOptional(_durationController.text);
-    final distanceInput = _parseOptional(_distanceController.text);
-    final assistanceInput = _parseOptional(_assistanceController.text);
+    final sets = _parsePositiveIntegerOptional(_setsController.text);
+    final reps = _parsePositiveIntegerOptional(_repsController.text);
+    final weightInput = _parsePositiveOptional(_weightController.text);
+    final duration = _parsePositiveOptional(_durationController.text);
+    final distanceInput = _parsePositiveOptional(_distanceController.text);
+    final assistanceInput = _parsePositiveOptional(_assistanceController.text);
     if ((sets == null && _setsController.text.trim().isNotEmpty) ||
         (reps == null && _repsController.text.trim().isNotEmpty) ||
         (weightInput == null && _weightController.text.trim().isNotEmpty) ||
@@ -1149,11 +1150,13 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
           durationSeconds: duration,
         ),
       ExerciseMeasurementType.cardio
-          when duration != null && distanceInput != null =>
+          when duration != null || distanceInput != null =>
         TrainingExercise(
           exerciseId: widget.exercise.id,
           durationSeconds: duration,
-          distanceMeters: _normalizeDistance(distanceInput),
+          distanceMeters: distanceInput == null
+              ? null
+              : _normalizeDistance(distanceInput),
         ),
       ExerciseMeasurementType.assisted
           when sets != null && reps != null && assistanceInput != null =>
@@ -1295,7 +1298,8 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
       ExerciseMeasurementType.duration => 'Set working sets and duration.',
       ExerciseMeasurementType.weightedDuration =>
         'Set working sets, load, and duration.',
-      ExerciseMeasurementType.cardio => 'Set duration and distance.',
+      ExerciseMeasurementType.cardio =>
+        'Set duration, distance, or both for the cardio target.',
       ExerciseMeasurementType.assisted =>
         'Set working sets, reps, and assistance weight.',
     };
@@ -1308,19 +1312,28 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
       ExerciseMeasurementType.duration => 'Enter valid sets and duration.',
       ExerciseMeasurementType.weightedDuration =>
         'Enter valid sets, load, and duration.',
-      ExerciseMeasurementType.cardio => 'Enter valid duration and distance.',
+      ExerciseMeasurementType.cardio =>
+        'Enter a valid duration, distance, or both.',
       ExerciseMeasurementType.assisted =>
         'Enter valid sets, reps, and assistance weight.',
     };
   }
 
-  double? _parseOptional(String value) {
+  double? _parsePositiveOptional(String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty) {
       return null;
     }
     final parsed = double.tryParse(trimmed);
-    if (parsed == null || !parsed.isFinite || parsed < 0) {
+    if (parsed == null || !parsed.isFinite || parsed <= 0) {
+      return null;
+    }
+    return parsed;
+  }
+
+  double? _parsePositiveIntegerOptional(String value) {
+    final parsed = _parsePositiveOptional(value);
+    if (parsed == null || parsed != parsed.roundToDouble()) {
       return null;
     }
     return parsed;
