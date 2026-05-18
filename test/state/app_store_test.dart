@@ -1161,42 +1161,47 @@ void main() {
     expect(secondSession.results.first.exerciseName, 'Incline pushups');
   });
 
-  test('deleting exercises after workout history is retained is allowed', () {
-    final store = AppStore.empty();
-    store.createExercise(
-      const Exercise(
-        id: 'pushups',
-        name: 'Pushups',
-        description: 'Bodyweight push exercise',
-        instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-        measurementType: ExerciseMeasurementType.bodyweight,
-      ),
-    );
-    store.createTrainingPlan(
-      const TrainingPlan(
-        id: 'home-chest',
-        name: 'Home chest',
-        description: 'Bodyweight chest work',
-        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
-      ),
-    );
+  test(
+    'rejects deleting exercises referenced by completed workout history',
+    () {
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a straight line from shoulders to heels.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'home-chest',
+          name: 'Home chest',
+          description: 'Bodyweight chest work',
+          exercises: [
+            TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+          ],
+        ),
+      );
 
-    final session = store.startWorkout(
-      trainingPlanId: 'home-chest',
-      startedAt: DateTime(2026, 4, 19, 10),
-    );
-    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
-    store.deleteTrainingPlan('home-chest');
-    store.deleteExercise('pushups');
+      final session = store.startWorkout(
+        trainingPlanId: 'home-chest',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
+      store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
+      store.deleteTrainingPlan('home-chest');
 
-    expect(store.exerciseById('pushups'), isNull);
-    expect(session.results.first.exerciseName, 'Pushups');
-    expect(
-      store.completedWorkoutSessions.single.results.first.exerciseName,
-      'Pushups',
-    );
-  });
+      expect(() => store.deleteExercise('pushups'), throwsStateError);
+      expect(store.exerciseById('pushups'), isNotNull);
+      expect(session.results.first.exerciseName, 'Pushups');
+      expect(
+        store.completedWorkoutSessions.single.results.first.exerciseName,
+        'Pushups',
+      );
+    },
+  );
 
   test('updates and deletes training plans', () {
     final store = AppStore.empty();

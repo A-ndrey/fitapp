@@ -556,6 +556,12 @@ class AppStore extends ChangeNotifier {
     if (_isReferencedByAnyTrainingPlan(id)) {
       throw StateError('Exercise is used by a training plan.');
     }
+    if (_isReferencedByActiveWorkout(id)) {
+      throw StateError('Exercise is used by the active workout.');
+    }
+    if (_isReferencedByCompletedWorkoutHistory(id)) {
+      throw StateError('Exercise is used by completed workout history.');
+    }
     _exercises.remove(id);
     _didMutatePersistedState();
   }
@@ -1381,6 +1387,13 @@ class AppStore extends ChangeNotifier {
     }
     return activeSession.results.any(
       (result) => result.exerciseId == exerciseId,
+    );
+  }
+
+  bool _isReferencedByCompletedWorkoutHistory(String exerciseId) {
+    return _completedWorkoutSessions.any(
+      (session) =>
+          session.results.any((result) => result.exerciseId == exerciseId),
     );
   }
 

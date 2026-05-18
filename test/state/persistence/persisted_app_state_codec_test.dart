@@ -42,9 +42,16 @@ void main() {
       ];
       final sourceMuscleGroups = <MuscleGroup>[MuscleGroup.cardio];
       final sourceTrainingExercises = <TrainingExercise>[
-        const TrainingExercise(exerciseId: 'burpees', reps: 10, sets: 3),
+        const TrainingExercise(
+          exerciseId: 'burpees',
+          sets: 3,
+          weightGrams: 10000,
+          durationSeconds: 45,
+        ),
       ];
-      final sourceSetLogs = <WorkoutSetLog>[const WorkoutSetLog(reps: 10)];
+      final sourceSetLogs = <WorkoutSetLog>[
+        const WorkoutSetLog(weightGrams: 10000, durationSeconds: 45),
+      ];
       final sourceResults = <WorkoutExerciseResult>[
         WorkoutExerciseResult(
           exerciseId: 'burpees',
@@ -359,8 +366,8 @@ void main() {
             exercises: [
               TrainingExercise(
                 exerciseId: 'burpees',
-                reps: 10,
                 sets: 3,
+                weightGrams: 10000,
                 durationSeconds: 45,
               ),
             ],
@@ -410,11 +417,11 @@ void main() {
               exerciseName: 'Burpees',
               target: TrainingExercise(
                 exerciseId: 'burpees',
-                reps: 10,
                 sets: 3,
+                weightGrams: 10000,
                 durationSeconds: 45,
               ),
-              setLogs: [WorkoutSetLog(reps: 10, durationSeconds: 45)],
+              setLogs: [WorkoutSetLog(weightGrams: 10000, durationSeconds: 45)],
             ),
           ],
         ),
@@ -431,11 +438,13 @@ void main() {
                 exerciseName: 'Burpees',
                 target: TrainingExercise(
                   exerciseId: 'burpees',
-                  reps: 8,
                   sets: 2,
+                  weightGrams: 8000,
                   durationSeconds: 40,
                 ),
-                setLogs: [WorkoutSetLog(reps: 8, durationSeconds: 40)],
+                setLogs: [
+                  WorkoutSetLog(weightGrams: 8000, durationSeconds: 40),
+                ],
               ),
             ],
           ),
