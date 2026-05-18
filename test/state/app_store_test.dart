@@ -731,12 +731,16 @@ void main() {
         throwsArgumentError,
       );
 
-      expect(store.exerciseById('custom-pushups')!.measurementType,
-          ExerciseMeasurementType.bodyweight);
+      expect(
+        store.exerciseById('custom-pushups')!.measurementType,
+        ExerciseMeasurementType.bodyweight,
+      );
       expect(store.completedWorkoutSessions, hasLength(1));
       expect(observedStates, isEmpty);
-      expect(persistence.savedState!.userExercises.single.measurementType,
-          ExerciseMeasurementType.bodyweight);
+      expect(
+        persistence.savedState!.userExercises.single.measurementType,
+        ExerciseMeasurementType.bodyweight,
+      );
     },
   );
 
@@ -934,6 +938,47 @@ void main() {
         setLog: const WorkoutSetLog(reps: 12),
       );
       store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
+
+      expect(
+        () => store.updateExercise(
+          const Exercise(
+            id: 'pushups',
+            name: 'Pushups',
+            description: 'Bodyweight push exercise',
+            instruction: 'Keep a straight line from shoulders to heels.',
+            muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+            measurementType: ExerciseMeasurementType.assisted,
+          ),
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  test(
+    'rejects exercise measurement type changes while referenced by a training plan',
+    () {
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a straight line from shoulders to heels.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'home-chest',
+          name: 'Home chest',
+          description: 'Bodyweight chest work',
+          exercises: [
+            TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+          ],
+        ),
+      );
 
       expect(
         () => store.updateExercise(

@@ -531,11 +531,18 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Missing exercise id: ${exercise.id}');
     }
     final existing = _exercises[exercise.id]!;
-    if (existing.measurementType != exercise.measurementType &&
-        _hasWorkoutHistoryForExercise(exercise.id)) {
-      throw ArgumentError(
-        'Exercise measurement type cannot change after workout history exists.',
-      );
+    if (existing.measurementType != exercise.measurementType) {
+      if (_hasWorkoutHistoryForExercise(exercise.id)) {
+        throw ArgumentError(
+          'Exercise measurement type cannot change after workout history exists.',
+        );
+      }
+      if (_isReferencedByAnyTrainingPlan(exercise.id) ||
+          _isReferencedByActiveWorkout(exercise.id)) {
+        throw ArgumentError(
+          'Exercise measurement type cannot change while referenced by a training plan or active workout.',
+        );
+      }
     }
     _exercises[exercise.id] = _freezeExercise(exercise);
     _didMutatePersistedState();
@@ -1365,6 +1372,16 @@ class AppStore extends ChangeNotifier {
       }
     }
     return false;
+  }
+
+  bool _isReferencedByActiveWorkout(String exerciseId) {
+    final activeSession = _activeWorkoutSession;
+    if (activeSession == null) {
+      return false;
+    }
+    return activeSession.results.any(
+      (result) => result.exerciseId == exerciseId,
+    );
   }
 
   bool _hasWorkoutHistoryForExercise(String exerciseId) {
