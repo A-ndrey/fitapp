@@ -1121,36 +1121,33 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
     }
 
     final exercise = switch (widget.exercise.measurementType) {
-      ExerciseMeasurementType.strength
-          when sets != null && reps != null && weightInput != null =>
+      ExerciseMeasurementType.strength =>
         TrainingExercise(
           exerciseId: widget.exercise.id,
           sets: sets,
           reps: reps,
-          weightGrams: _normalizeWeight(weightInput),
+          weightGrams: weightInput == null ? null : _normalizeWeight(weightInput),
         ),
-      ExerciseMeasurementType.bodyweight when sets != null && reps != null =>
+      ExerciseMeasurementType.bodyweight =>
         TrainingExercise(
           exerciseId: widget.exercise.id,
           sets: sets,
           reps: reps,
         ),
-      ExerciseMeasurementType.duration when sets != null && duration != null =>
+      ExerciseMeasurementType.duration =>
         TrainingExercise(
           exerciseId: widget.exercise.id,
           sets: sets,
           durationSeconds: duration,
         ),
-      ExerciseMeasurementType.weightedDuration
-          when sets != null && weightInput != null && duration != null =>
+      ExerciseMeasurementType.weightedDuration =>
         TrainingExercise(
           exerciseId: widget.exercise.id,
           sets: sets,
-          weightGrams: _normalizeWeight(weightInput),
+          weightGrams: weightInput == null ? null : _normalizeWeight(weightInput),
           durationSeconds: duration,
         ),
-      ExerciseMeasurementType.cardio
-          when duration != null || distanceInput != null =>
+      ExerciseMeasurementType.cardio =>
         TrainingExercise(
           exerciseId: widget.exercise.id,
           durationSeconds: duration,
@@ -1158,22 +1155,16 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
               ? null
               : _normalizeDistance(distanceInput),
         ),
-      ExerciseMeasurementType.assisted
-          when sets != null && reps != null && assistanceInput != null =>
+      ExerciseMeasurementType.assisted =>
         TrainingExercise(
           exerciseId: widget.exercise.id,
           sets: sets,
           reps: reps,
-          assistanceWeightGrams: _normalizeWeight(assistanceInput),
+          assistanceWeightGrams: assistanceInput == null
+              ? null
+              : _normalizeWeight(assistanceInput),
         ),
-      _ => null,
     };
-    if (exercise == null) {
-      setState(() {
-        _errorText = _validationMessage;
-      });
-      return;
-    }
 
     Navigator.of(context).pop(exercise);
   }
@@ -1186,17 +1177,17 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
         fields.addAll([
           _numberField(
             controller: _setsController,
-            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Sets',
           ),
           const SizedBox(height: 12),
           _numberField(
             controller: _repsController,
-            label: l10n?.trainingExpectedRepsFieldLabel ?? 'Target reps',
+            label: l10n?.trainingExpectedRepsFieldLabel ?? 'Reps',
           ),
           const SizedBox(height: 12),
           _numberField(
             controller: _weightController,
-            label: l10n?.trainingExpectedWeightFieldLabel ?? 'Target load',
+            label: l10n?.trainingExpectedWeightFieldLabel ?? 'Weight',
           ),
         ]);
         break;
@@ -1204,12 +1195,12 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
         fields.addAll([
           _numberField(
             controller: _setsController,
-            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Sets',
           ),
           const SizedBox(height: 12),
           _numberField(
             controller: _repsController,
-            label: l10n?.trainingExpectedRepsFieldLabel ?? 'Target reps',
+            label: l10n?.trainingExpectedRepsFieldLabel ?? 'Reps',
           ),
         ]);
         break;
@@ -1217,12 +1208,12 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
         fields.addAll([
           _numberField(
             controller: _setsController,
-            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Sets',
           ),
           const SizedBox(height: 12),
           _numberField(
             controller: _durationController,
-            label: l10n?.trainingExpectedTimeFieldLabel ?? 'Target duration',
+            label: l10n?.trainingExpectedTimeFieldLabel ?? 'Duration',
           ),
         ]);
         break;
@@ -1230,17 +1221,17 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
         fields.addAll([
           _numberField(
             controller: _setsController,
-            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Sets',
           ),
           const SizedBox(height: 12),
           _numberField(
             controller: _weightController,
-            label: l10n?.trainingExpectedWeightFieldLabel ?? 'Target load',
+            label: l10n?.trainingExpectedWeightFieldLabel ?? 'Weight',
           ),
           const SizedBox(height: 12),
           _numberField(
             controller: _durationController,
-            label: l10n?.trainingExpectedTimeFieldLabel ?? 'Target duration',
+            label: l10n?.trainingExpectedTimeFieldLabel ?? 'Duration',
           ),
         ]);
         break;
@@ -1248,12 +1239,12 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
         fields.addAll([
           _numberField(
             controller: _durationController,
-            label: l10n?.trainingExpectedTimeFieldLabel ?? 'Target duration',
+            label: l10n?.trainingExpectedTimeFieldLabel ?? 'Duration',
           ),
           const SizedBox(height: 12),
           _numberField(
             controller: _distanceController,
-            label: 'Target distance',
+            label: 'Distance',
           ),
         ]);
         break;
@@ -1261,12 +1252,12 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
         fields.addAll([
           _numberField(
             controller: _setsController,
-            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Working sets',
+            label: l10n?.trainingExpectedSetsFieldLabel ?? 'Sets',
           ),
           const SizedBox(height: 12),
           _numberField(
             controller: _repsController,
-            label: l10n?.trainingExpectedRepsFieldLabel ?? 'Target reps',
+            label: l10n?.trainingExpectedRepsFieldLabel ?? 'Reps',
           ),
           const SizedBox(height: 12),
           _numberField(
@@ -1307,15 +1298,18 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
 
   String get _validationMessage {
     return switch (widget.exercise.measurementType) {
-      ExerciseMeasurementType.strength => 'Enter valid sets, reps, and load.',
-      ExerciseMeasurementType.bodyweight => 'Enter valid sets and reps.',
-      ExerciseMeasurementType.duration => 'Enter valid sets and duration.',
+      ExerciseMeasurementType.strength =>
+        'Use positive values for any filled sets, reps, or weight fields.',
+      ExerciseMeasurementType.bodyweight =>
+        'Use positive values for any filled sets or reps fields.',
+      ExerciseMeasurementType.duration =>
+        'Use positive values for any filled sets or duration fields.',
       ExerciseMeasurementType.weightedDuration =>
-        'Enter valid sets, load, and duration.',
+        'Use positive values for any filled sets, weight, or duration fields.',
       ExerciseMeasurementType.cardio =>
-        'Enter a valid duration, distance, or both.',
+        'Use positive values for any filled duration or distance fields.',
       ExerciseMeasurementType.assisted =>
-        'Enter valid sets, reps, and assistance weight.',
+        'Use positive values for any filled sets, reps, or assistance fields.',
     };
   }
 

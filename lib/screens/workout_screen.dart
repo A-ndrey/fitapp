@@ -119,12 +119,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           ),
           body: AdaptivePage(
             children: [
-              SectionHeader(
-                title: l10n?.workoutTrainingCockpitTitle ?? 'Training log',
-                subtitle:
-                    l10n?.workoutTrainingCockpitSubtitle ??
-                    'Start sessions, log sets, and review progress.',
-              ),
               if (activeSession != null)
                 TooltipVisibility(
                   visible: false,

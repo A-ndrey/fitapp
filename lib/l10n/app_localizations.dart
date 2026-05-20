@@ -1367,25 +1367,25 @@ abstract class AppLocalizations {
   /// Working sets field label.
   ///
   /// In en, this message translates to:
-  /// **'Working sets'**
+  /// **'Sets'**
   String get trainingExpectedSetsFieldLabel;
 
   /// Target reps field label.
   ///
   /// In en, this message translates to:
-  /// **'Target reps'**
+  /// **'Reps'**
   String get trainingExpectedRepsFieldLabel;
 
   /// Target load field label.
   ///
   /// In en, this message translates to:
-  /// **'Target load'**
+  /// **'Weight'**
   String get trainingExpectedWeightFieldLabel;
 
   /// Target duration field label.
   ///
   /// In en, this message translates to:
-  /// **'Target duration'**
+  /// **'Duration'**
   String get trainingExpectedTimeFieldLabel;
 
   /// Training target unit field label.

@@ -167,8 +167,8 @@ void main() {
     await tester.tap(find.text('Pushups').last);
     await tester.pumpAndSettle();
 
-    await enterLabeledText(tester, 'Working sets', '4');
-    await enterLabeledText(tester, 'Target reps', '12');
+    await enterLabeledText(tester, 'Sets', '4');
+    await enterLabeledText(tester, 'Reps', '12');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
@@ -202,8 +202,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Pushups').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Working sets', '3');
-    await enterLabeledText(tester, 'Target reps', '10');
+    await enterLabeledText(tester, 'Sets', '3');
+    await enterLabeledText(tester, 'Reps', '10');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save training'));
@@ -373,11 +373,11 @@ void main() {
     await tester.tap(find.text('Pushups').last);
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('Working sets'), findsOneWidget);
-    expect(find.bySemanticsLabel('Target reps'), findsOneWidget);
-    expect(find.bySemanticsLabel('Target load'), findsNothing);
-    expect(find.bySemanticsLabel('Target duration'), findsNothing);
-    expect(find.bySemanticsLabel('Target distance'), findsNothing);
+    expect(find.bySemanticsLabel('Sets'), findsOneWidget);
+    expect(find.bySemanticsLabel('Reps'), findsOneWidget);
+    expect(find.bySemanticsLabel('Weight'), findsNothing);
+    expect(find.bySemanticsLabel('Duration'), findsNothing);
+    expect(find.bySemanticsLabel('Distance'), findsNothing);
   });
 
   testWidgets('cardio plan entry shows duration and distance only', (
@@ -397,11 +397,11 @@ void main() {
     await tester.tap(find.text('Running'));
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('Working sets'), findsNothing);
-    expect(find.bySemanticsLabel('Target reps'), findsNothing);
-    expect(find.bySemanticsLabel('Target load'), findsNothing);
-    expect(find.bySemanticsLabel('Target duration'), findsOneWidget);
-    expect(find.bySemanticsLabel('Target distance'), findsOneWidget);
+    expect(find.bySemanticsLabel('Sets'), findsNothing);
+    expect(find.bySemanticsLabel('Reps'), findsNothing);
+    expect(find.bySemanticsLabel('Weight'), findsNothing);
+    expect(find.bySemanticsLabel('Duration'), findsOneWidget);
+    expect(find.bySemanticsLabel('Distance'), findsOneWidget);
   });
 
   testWidgets('plan entry normalizes weight and distance inputs', (
@@ -440,9 +440,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Weighted plank').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Working sets', '3');
-    await enterLabeledText(tester, 'Target load', '10');
-    await enterLabeledText(tester, 'Target duration', '45');
+    await enterLabeledText(tester, 'Sets', '3');
+    await enterLabeledText(tester, 'Weight', '10');
+    await enterLabeledText(tester, 'Duration', '45');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
@@ -450,8 +450,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Custom run').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Target duration', '600');
-    await enterLabeledText(tester, 'Target distance', '3');
+    await enterLabeledText(tester, 'Duration', '600');
+    await enterLabeledText(tester, 'Distance', '3');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
@@ -492,7 +492,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Custom run').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Target duration', '900');
+    await enterLabeledText(tester, 'Duration', '900');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
@@ -500,7 +500,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Custom run').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Target distance', '2');
+    await enterLabeledText(tester, 'Distance', '2');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
@@ -538,12 +538,15 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Custom pushups').last);
     await tester.pumpAndSettle();
-    await enterLabeledText(tester, 'Working sets', '0.5');
-    await enterLabeledText(tester, 'Target reps', '0');
+    await enterLabeledText(tester, 'Sets', '0.5');
+    await enterLabeledText(tester, 'Reps', '0');
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Enter valid sets and reps.'), findsOneWidget);
+    expect(
+      find.text('Use positive values for any filled sets or reps fields.'),
+      findsOneWidget,
+    );
     expect(find.text('Set targets'), findsOneWidget);
   });
 
@@ -723,8 +726,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Pushups').last);
       await tester.pumpAndSettle();
-      await enterLabeledText(tester, 'Working sets', '3');
-      await enterLabeledText(tester, 'Target reps', '10');
+      await enterLabeledText(tester, 'Sets', '3');
+      await enterLabeledText(tester, 'Reps', '10');
       await tester.tap(find.text('Save exercise'));
       await tester.pumpAndSettle();
 

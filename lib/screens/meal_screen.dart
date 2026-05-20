@@ -47,9 +47,6 @@ class MealScreen extends StatelessWidget {
                 children: [
                   SectionHeader(
                     title: l10n?.mealCockpitTitle ?? 'Nutrition log',
-                    subtitle:
-                        l10n?.mealCockpitSubtitle ??
-                        'Log food fast, review macro targets, and keep the remaining work obvious.',
                     trailing: showInlineAdd
                         ? Tooltip(
                             message: addMealLabel,

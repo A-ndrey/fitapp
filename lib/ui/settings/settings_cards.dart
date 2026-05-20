@@ -146,6 +146,93 @@ class PreferenceChipOption<T> {
   final String label;
 }
 
+class UnitsSettingsCard extends StatelessWidget {
+  const UnitsSettingsCard({
+    super.key,
+    required this.workoutWeightUnit,
+    required this.dishWeightUnit,
+    required this.heightUnit,
+    required this.distanceUnit,
+    required this.workoutWeightOptions,
+    required this.dishWeightOptions,
+    required this.heightOptions,
+    required this.distanceOptions,
+    required this.onWorkoutWeightChanged,
+    required this.onDishWeightChanged,
+    required this.onHeightChanged,
+    required this.onDistanceChanged,
+    this.title,
+  });
+
+  final String? title;
+  final dynamic workoutWeightUnit;
+  final dynamic dishWeightUnit;
+  final dynamic heightUnit;
+  final dynamic distanceUnit;
+  final List<PreferenceChipOption<dynamic>> workoutWeightOptions;
+  final List<PreferenceChipOption<dynamic>> dishWeightOptions;
+  final List<PreferenceChipOption<dynamic>> heightOptions;
+  final List<PreferenceChipOption<dynamic>> distanceOptions;
+  final ValueChanged<dynamic> onWorkoutWeightChanged;
+  final ValueChanged<dynamic> onDishWeightChanged;
+  final ValueChanged<dynamic> onHeightChanged;
+  final ValueChanged<dynamic> onDistanceChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (title != null) ...[
+              Text(
+                title!,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            _PreferenceChipRow<dynamic>(
+              title: 'Workout weight',
+              value: workoutWeightUnit,
+              options: workoutWeightOptions,
+              onChanged: onWorkoutWeightChanged,
+            ),
+            const SizedBox(height: 16),
+            _PreferenceChipRow<dynamic>(
+              title: 'Dish weight',
+              value: dishWeightUnit,
+              options: dishWeightOptions,
+              onChanged: onDishWeightChanged,
+            ),
+            const SizedBox(height: 16),
+            _PreferenceChipRow<dynamic>(
+              title: 'Height',
+              value: heightUnit,
+              options: heightOptions,
+              onChanged: onHeightChanged,
+            ),
+            const SizedBox(height: 16),
+            _PreferenceChipRow<dynamic>(
+              title: 'Distance',
+              value: distanceUnit,
+              options: distanceOptions,
+              onChanged: onDistanceChanged,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class MacroTargetsSettingsCard extends StatefulWidget {
   const MacroTargetsSettingsCard({
     required this.initialValue,
@@ -330,6 +417,61 @@ class _NumberField extends StatelessWidget {
           border: const OutlineInputBorder(),
         ),
       ),
+    );
+  }
+}
+
+class _PreferenceChipRow<T> extends StatelessWidget {
+  const _PreferenceChipRow({
+    required this.title,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String title;
+  final T value;
+  final List<PreferenceChipOption<T>> options;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final option in options)
+              ChoiceChip(
+                label: Text(option.label),
+                labelStyle: theme.textTheme.labelLarge?.copyWith(
+                  color: value == option.value
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSurfaceVariant,
+                ),
+                checkmarkColor: colorScheme.onPrimaryContainer,
+                backgroundColor: colorScheme.surfaceContainerLow,
+                selectedColor: colorScheme.primaryContainer,
+                side: BorderSide(color: colorScheme.outlineVariant),
+                selected: value == option.value,
+                onSelected: (_) => onChanged(option.value),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

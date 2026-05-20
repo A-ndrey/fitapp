@@ -16,9 +16,9 @@ void main() {
 
   const destinationBodyText = {
     'Today': 'Daily progress',
-    'Train': 'Training log',
+    'Train': 'Workout stats',
     'Nutrition': 'Nutrition log',
-    'Library': 'Training library',
+    'Library': 'Training',
     'Settings': 'Sync',
   };
 
@@ -84,8 +84,6 @@ void main() {
 
   Future<void> openLibraryRecipes(WidgetTester tester) async {
     await selectRootDestination(tester, 'Library');
-    await tester.tap(find.widgetWithText(ActionCard, 'Food library'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Recipes'));
     await tester.pumpAndSettle();
   }
@@ -176,20 +174,23 @@ void main() {
   );
 
   testWidgets(
-    're-tapping Library after drilling into Food library recipes returns to library root',
+    're-tapping Library after drilling into recipes returns to library root',
     (tester) async {
       await pumpFitAppAtSize(tester, const Size(390, 844));
       await openLibraryRecipes(tester);
 
       expect(find.text('Recipes'), findsWidgets);
-      expect(find.text('Food library'), findsWidgets);
+      expect(find.byTooltip('Back'), findsOneWidget);
 
       await tapRootDestination(tester, 'Library');
 
-      expect(find.widgetWithText(ActionCard, 'Training library'), findsOneWidget);
-      expect(find.widgetWithText(ActionCard, 'Food library'), findsOneWidget);
-      expect(find.text('Recipes'), findsNothing);
-      expect(find.text('Choose which catalog you want to manage.'), findsNothing);
+      expect(find.widgetWithText(ActionCard, 'Plans'), findsOneWidget);
+      expect(find.widgetWithText(ActionCard, 'Exercises'), findsOneWidget);
+      expect(find.widgetWithText(ActionCard, 'Foods'), findsOneWidget);
+      expect(find.widgetWithText(ActionCard, 'Recipes'), findsOneWidget);
+      expect(find.byTooltip('Back'), findsNothing);
+      expect(find.text('Training'), findsOneWidget);
+      expect(find.text('Food'), findsOneWidget);
     },
   );
 }

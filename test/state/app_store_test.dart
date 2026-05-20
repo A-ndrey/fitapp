@@ -1331,6 +1331,90 @@ void main() {
     expect(() => store.deleteTrainingPlan('missing'), throwsArgumentError);
   });
 
+  test(
+    'allows partial training exercise targets for matching measurement types',
+    () {
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'bench-press',
+          name: 'Bench press',
+          description: 'Barbell chest press',
+          instruction: 'Press with control.',
+          muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.strength,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a rigid plank.',
+          muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'plank',
+          name: 'Plank',
+          description: 'Static hold',
+          instruction: 'Brace and hold.',
+          muscleGroups: [MuscleGroup.core],
+          measurementType: ExerciseMeasurementType.duration,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'sled-push',
+          name: 'Sled push',
+          description: 'Weighted push',
+          instruction: 'Drive through the floor.',
+          muscleGroups: [MuscleGroup.legs],
+          measurementType: ExerciseMeasurementType.weightedDuration,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'run',
+          name: 'Run',
+          description: 'Cardio run',
+          instruction: 'Keep a steady pace.',
+          muscleGroups: [MuscleGroup.cardio],
+          measurementType: ExerciseMeasurementType.cardio,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'assisted-pull-up',
+          name: 'Assisted pull-up',
+          description: 'Band-assisted pull-up',
+          instruction: 'Pull to the bar.',
+          muscleGroups: [MuscleGroup.back],
+          measurementType: ExerciseMeasurementType.assisted,
+        ),
+      );
+
+      const plan = TrainingPlan(
+        id: 'partial-targets',
+        name: 'Partial targets',
+        description: 'Targets can be incomplete',
+        exercises: [
+          TrainingExercise(exerciseId: 'bench-press', sets: 3),
+          TrainingExercise(exerciseId: 'pushups'),
+          TrainingExercise(exerciseId: 'plank', sets: 2),
+          TrainingExercise(exerciseId: 'sled-push', durationSeconds: 40),
+          TrainingExercise(exerciseId: 'run'),
+          TrainingExercise(exerciseId: 'assisted-pull-up', reps: 8),
+        ],
+      );
+
+      expect(() => store.createTrainingPlan(plan), returnsNormally);
+      expect(store.trainingPlanById('partial-targets'), isNotNull);
+    },
+  );
+
   test('starts one active workout and snapshots plan data', () {
     final store = AppStore.empty();
     store.createExercise(

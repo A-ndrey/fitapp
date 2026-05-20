@@ -8,6 +8,7 @@ import '../ui/core/input/numeric_input_formatters.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/form_shell.dart';
 import '../ui/nutrition/catalog_item_search_sheet.dart';
+import 'catalog_form_shared.dart';
 
 class DishForm extends StatefulWidget {
   const DishForm({
@@ -83,64 +84,31 @@ class _DishFormState extends State<DishForm> {
       if (_errorText != null) InlineErrorBanner(message: _errorText!),
     ];
 
-    if (widget.fullScreen) {
-      return FormShellPage(
-        title: title,
-        subtitle: subtitle,
-        primaryActionLabel: primaryActionLabel,
-        onPrimaryAction: _saveDish,
-        children: children,
-      );
-    }
-    return FormShellDialog(
+    return CatalogFormShell(
       title: title,
       subtitle: subtitle,
       primaryActionLabel: primaryActionLabel,
       onPrimaryAction: _saveDish,
-      maxWidth: 640,
+      fullScreen: widget.fullScreen,
+      maxDialogWidth: 640,
       children: children,
     );
   }
 
   Widget _buildBasicsSection() {
     final l10n = AppLocalizations.of(context);
-    return FormSectionCard(
-      title: l10n?.dishBasicsSectionTitle ?? 'Recipe basics',
-      subtitle:
+    return CatalogBasicsSection(
+      sectionTitle: l10n?.dishBasicsSectionTitle ?? 'Recipe basics',
+      sectionSubtitle:
           l10n?.dishBasicsSectionSubtitle ??
           'Name this recipe and define one serving.',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _nameController,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              labelText: l10n?.dishNameFieldLabel ?? 'Recipe name',
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _descriptionController,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              labelText:
-                  l10n?.dishDescriptionFieldLabel ?? 'Recipe description',
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _servingSizeController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: positiveDecimalInputFormatters,
-            decoration: InputDecoration(
-              labelText:
-                  l10n?.dishServingSizeGramsFieldLabel ??
-                  'Recipe serving size grams',
-            ),
-          ),
-        ],
-      ),
+      nameLabel: l10n?.dishNameFieldLabel ?? 'Recipe name',
+      descriptionLabel: l10n?.dishDescriptionFieldLabel ?? 'Recipe description',
+      servingSizeLabel:
+          l10n?.dishServingSizeGramsFieldLabel ?? 'Recipe serving size grams',
+      nameController: _nameController,
+      descriptionController: _descriptionController,
+      servingSizeController: _servingSizeController,
     );
   }
 
@@ -210,7 +178,10 @@ class _DishFormState extends State<DishForm> {
                   Text(itemName, style: Theme.of(context).textTheme.titleSmall),
                   if (itemKind != null) ...[
                     const SizedBox(height: 4),
-                    Text(itemKind, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      itemKind,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ],
               ),
@@ -267,8 +238,7 @@ class _DishFormState extends State<DishForm> {
       title: l10n?.dishComponentAddTitle ?? 'Add ingredient',
       subtitle:
           'Search saved foods and recipes, then set the ingredient grams in the recipe list.',
-      searchFieldLabel:
-          l10n?.mealSearchFieldLabel ?? 'Search ingredients',
+      searchFieldLabel: l10n?.mealSearchFieldLabel ?? 'Search ingredients',
       recentItems: recentItems,
       recentLabel: l10n?.dishComponentsSectionTitle ?? 'Ingredients',
       frequentItems: frequentItems,

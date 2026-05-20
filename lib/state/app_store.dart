@@ -672,6 +672,36 @@ class AppStore extends ChangeNotifier {
     _didMutatePersistedState();
   }
 
+  void removeActiveWorkoutSet({
+    required int resultIndex,
+    required int setIndex,
+  }) {
+    final session = _activeWorkoutSession;
+    if (session == null) {
+      throw StateError('No active workout.');
+    }
+    if (resultIndex < 0 || resultIndex >= session.results.length) {
+      throw RangeError.index(resultIndex, session.results, 'resultIndex');
+    }
+    final current = session.results[resultIndex];
+    if (setIndex < 0 || setIndex >= current.setLogs.length) {
+      throw RangeError.index(setIndex, current.setLogs, 'setIndex');
+    }
+    final updatedSetLogs = List<WorkoutSetLog>.of(current.setLogs)
+      ..removeAt(setIndex);
+    final updatedResults = List<WorkoutExerciseResult>.of(session.results);
+    updatedResults[resultIndex] = WorkoutExerciseResult(
+      exerciseId: current.exerciseId,
+      exerciseName: current.exerciseName,
+      target: current.target,
+      setLogs: List<WorkoutSetLog>.unmodifiable(updatedSetLogs),
+    );
+    _activeWorkoutSession = session.copyWith(
+      results: List<WorkoutExerciseResult>.unmodifiable(updatedResults),
+    );
+    _didMutatePersistedState();
+  }
+
   WorkoutSession finishActiveWorkout({DateTime? finishedAt}) {
     final session = _activeWorkoutSession;
     if (session == null) {
@@ -1171,48 +1201,33 @@ class AppStore extends ChangeNotifier {
 
     switch (measurementType) {
       case ExerciseMeasurementType.strength:
-        _requirePresent(exercise.reps, 'reps');
-        _requirePresent(exercise.weightGrams, 'weightGrams');
         _requireAbsent(exercise.durationSeconds, 'durationSeconds');
         _requireAbsent(exercise.distanceMeters, 'distanceMeters');
         _requireAbsent(exercise.assistanceWeightGrams, 'assistanceWeightGrams');
         break;
       case ExerciseMeasurementType.bodyweight:
-        _requirePresent(exercise.reps, 'reps');
         _requireAbsent(exercise.weightGrams, 'weightGrams');
         _requireAbsent(exercise.durationSeconds, 'durationSeconds');
         _requireAbsent(exercise.distanceMeters, 'distanceMeters');
         _requireAbsent(exercise.assistanceWeightGrams, 'assistanceWeightGrams');
         break;
       case ExerciseMeasurementType.duration:
-        _requirePresent(exercise.durationSeconds, 'durationSeconds');
         _requireAbsent(exercise.reps, 'reps');
         _requireAbsent(exercise.weightGrams, 'weightGrams');
         _requireAbsent(exercise.distanceMeters, 'distanceMeters');
         _requireAbsent(exercise.assistanceWeightGrams, 'assistanceWeightGrams');
         break;
       case ExerciseMeasurementType.weightedDuration:
-        _requirePresent(exercise.durationSeconds, 'durationSeconds');
-        _requirePresent(exercise.weightGrams, 'weightGrams');
         _requireAbsent(exercise.reps, 'reps');
         _requireAbsent(exercise.distanceMeters, 'distanceMeters');
         _requireAbsent(exercise.assistanceWeightGrams, 'assistanceWeightGrams');
         break;
       case ExerciseMeasurementType.cardio:
-        _requireAnyPresent([
-          exercise.durationSeconds,
-          exercise.distanceMeters,
-        ], 'durationSeconds or distanceMeters');
         _requireAbsent(exercise.reps, 'reps');
         _requireAbsent(exercise.weightGrams, 'weightGrams');
         _requireAbsent(exercise.assistanceWeightGrams, 'assistanceWeightGrams');
         break;
       case ExerciseMeasurementType.assisted:
-        _requirePresent(exercise.reps, 'reps');
-        _requirePresent(
-          exercise.assistanceWeightGrams,
-          'assistanceWeightGrams',
-        );
         _requireAbsent(exercise.weightGrams, 'weightGrams');
         _requireAbsent(exercise.durationSeconds, 'durationSeconds');
         _requireAbsent(exercise.distanceMeters, 'distanceMeters');

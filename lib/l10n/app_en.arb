@@ -1056,19 +1056,19 @@
   "@trainingTargetSectionSubtitle": {
     "description": "Training exercise target prescription section subtitle."
   },
-  "trainingExpectedSetsFieldLabel": "Working sets",
+  "trainingExpectedSetsFieldLabel": "Sets",
   "@trainingExpectedSetsFieldLabel": {
     "description": "Working sets field label."
   },
-  "trainingExpectedRepsFieldLabel": "Target reps",
+  "trainingExpectedRepsFieldLabel": "Reps",
   "@trainingExpectedRepsFieldLabel": {
     "description": "Target reps field label."
   },
-  "trainingExpectedWeightFieldLabel": "Target load",
+  "trainingExpectedWeightFieldLabel": "Weight",
   "@trainingExpectedWeightFieldLabel": {
     "description": "Target load field label."
   },
-  "trainingExpectedTimeFieldLabel": "Target duration",
+  "trainingExpectedTimeFieldLabel": "Duration",
   "@trainingExpectedTimeFieldLabel": {
     "description": "Target duration field label."
   },

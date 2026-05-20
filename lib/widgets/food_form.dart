@@ -6,6 +6,7 @@ import '../models/nutrition.dart';
 import '../state/app_store.dart';
 import '../ui/core/input/numeric_input_formatters.dart';
 import '../ui/core/widgets/form_shell.dart';
+import 'catalog_form_shared.dart';
 
 class FoodForm extends StatefulWidget {
   const FoodForm({
@@ -88,45 +89,18 @@ class _FoodFormState extends State<FoodForm> {
         'Define reusable food data for faster meal logging.';
     final primaryActionLabel = l10n?.foodSaveAction ?? 'Save food';
     final children = [
-      FormSectionCard(
-        title: l10n?.foodBasicsSectionTitle ?? 'Food basics',
-        subtitle:
+      CatalogBasicsSection(
+        sectionTitle: l10n?.foodBasicsSectionTitle ?? 'Food basics',
+        sectionSubtitle:
             l10n?.foodBasicsSectionSubtitle ??
             'Name this item and define the serving anchor.',
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _nameController,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: l10n?.foodNameFieldLabel ?? 'Name',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _descriptionController,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: l10n?.foodDescriptionFieldLabel ?? 'Description',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _servingSizeController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: positiveDecimalInputFormatters,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText:
-                    l10n?.foodServingSizeGramsFieldLabel ??
-                    'Serving size grams',
-              ),
-            ),
-          ],
-        ),
+        nameLabel: l10n?.foodNameFieldLabel ?? 'Name',
+        descriptionLabel: l10n?.foodDescriptionFieldLabel ?? 'Description',
+        servingSizeLabel:
+            l10n?.foodServingSizeGramsFieldLabel ?? 'Serving size grams',
+        nameController: _nameController,
+        descriptionController: _descriptionController,
+        servingSizeController: _servingSizeController,
       ),
       FormSectionCard(
         title: l10n?.foodNutritionFactsTitle ?? 'Nutrition facts',
@@ -208,21 +182,14 @@ class _FoodFormState extends State<FoodForm> {
       if (_errorText != null) InlineErrorBanner(message: _errorText!),
     ];
 
-    if (widget.fullScreen) {
-      return FormShellPage(
-        title: title,
-        subtitle: subtitle,
-        primaryActionLabel: primaryActionLabel,
-        onPrimaryAction: _saveFood,
-        children: children,
-      );
-    }
-    return FormShellDialog(
+    return CatalogFormShell(
       title: title,
       subtitle: subtitle,
       primaryActionLabel: primaryActionLabel,
       onPrimaryAction: _saveFood,
+      fullScreen: widget.fullScreen,
       children: children,
+      maxDialogWidth: 560,
     );
   }
 

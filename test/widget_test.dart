@@ -5,9 +5,11 @@ import 'package:fitapp/main.dart';
 import 'package:fitapp/models/app_preferences.dart';
 import 'package:fitapp/models/catalog_item.dart';
 import 'package:fitapp/models/dish_item.dart';
+import 'package:fitapp/models/exercise.dart';
 import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/meal_entry.dart';
 import 'package:fitapp/models/nutrition.dart';
+import 'package:fitapp/models/training_plan.dart';
 import 'package:fitapp/screens/food_screen.dart';
 import 'package:fitapp/screens/library_screen.dart';
 import 'package:fitapp/screens/meal_screen.dart';
@@ -73,16 +75,18 @@ Future<void> openLibraryFoodsSection(WidgetTester tester) async {
     await tapRootDestination(tester, 'Library');
     await tester.pumpAndSettle();
   }
-  while (!tester.any(find.widgetWithText(ActionCard, 'Food library')) &&
+  while (!tester.any(find.widgetWithText(ActionCard, 'Foods')) &&
       tester.any(find.byIcon(Icons.arrow_back))) {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
   }
-  if (tester.any(find.widgetWithText(ActionCard, 'Food library'))) {
-    await tester.tap(find.widgetWithText(ActionCard, 'Food library'));
-    await tester.pumpAndSettle();
-  }
-  await tester.tap(find.text('Foods'));
+  final foodsCard = find.widgetWithText(ActionCard, 'Foods');
+  await tester.scrollUntilVisible(
+    foodsCard,
+    200,
+    scrollable: find.byType(Scrollable).last,
+  );
+  await tester.tap(foodsCard);
   await tester.pumpAndSettle();
 }
 
@@ -92,16 +96,18 @@ Future<void> openLibraryRecipesSection(WidgetTester tester) async {
     await tapRootDestination(tester, 'Library');
     await tester.pumpAndSettle();
   }
-  while (!tester.any(find.widgetWithText(ActionCard, 'Food library')) &&
+  while (!tester.any(find.widgetWithText(ActionCard, 'Recipes')) &&
       tester.any(find.byIcon(Icons.arrow_back))) {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
   }
-  if (tester.any(find.widgetWithText(ActionCard, 'Food library'))) {
-    await tester.tap(find.widgetWithText(ActionCard, 'Food library'));
-    await tester.pumpAndSettle();
-  }
-  await tester.tap(find.text('Recipes'));
+  final recipesCard = find.widgetWithText(ActionCard, 'Recipes');
+  await tester.scrollUntilVisible(
+    recipesCard,
+    200,
+    scrollable: find.byType(Scrollable).last,
+  );
+  await tester.tap(recipesCard);
   await tester.pumpAndSettle();
 }
 
@@ -111,16 +117,18 @@ Future<void> openLibraryTrainingPlansSection(WidgetTester tester) async {
     await tapRootDestination(tester, 'Library');
     await tester.pumpAndSettle();
   }
-  while (!tester.any(find.widgetWithText(ActionCard, 'Training library')) &&
+  while (!tester.any(find.widgetWithText(ActionCard, 'Plans')) &&
       tester.any(find.byIcon(Icons.arrow_back))) {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
   }
-  if (tester.any(find.widgetWithText(ActionCard, 'Training library'))) {
-    await tester.tap(find.widgetWithText(ActionCard, 'Training library'));
-    await tester.pumpAndSettle();
-  }
-  await tester.tap(find.text('Plans'));
+  final plansCard = find.widgetWithText(ActionCard, 'Plans');
+  await tester.scrollUntilVisible(
+    plansCard,
+    200,
+    scrollable: find.byType(Scrollable).last,
+  );
+  await tester.tap(plansCard);
   await tester.pumpAndSettle();
 }
 
@@ -598,63 +606,31 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
-    var trainTapCount = 0;
-    var nutritionTapCount = 0;
-    var libraryTapCount = 0;
-
     await tester.pumpWidget(
       MaterialApp(
         home: TodayScreen(
           store: store,
-          onOpenTrain: () => trainTapCount++,
-          onOpenNutrition: () => nutritionTapCount++,
-          onOpenLibrary: () => libraryTapCount++,
+          onOpenTrain: () {},
+          onOpenNutrition: () {},
+          onOpenLibrary: () {},
         ),
       ),
     );
 
     expect(find.text('Today'), findsWidgets);
     expect(find.text('Daily progress'), findsWidgets);
-    expect(find.text('NEXT WORKOUT'), findsOneWidget);
-    expect(find.text('PERFORMANCE INSIGHT'), findsOneWidget);
     expect(find.text('Calories'), findsOneWidget);
     expect(find.text('Protein'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Quick actions'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Quick actions'), findsOneWidget);
-    expect(find.text('Start workout'), findsOneWidget);
-    await tester.ensureVisible(find.text('Start workout'));
-    await tester.pump();
-
-    await tester.tap(find.text('Start workout'));
-    await tester.pump();
-    expect(trainTapCount, 1);
-
-    await tester.scrollUntilVisible(
-      find.text('Log meal'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Log meal'), findsOneWidget);
-    await tester.tap(find.text('Log meal'));
-    await tester.pump();
-    expect(nutritionTapCount, 1);
-
-    await tester.scrollUntilVisible(
-      find.text('Manage library'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.text('Manage library'));
-    await tester.pump();
-    expect(libraryTapCount, 1);
+    expect(find.text('PERFORMANCE INSIGHT'), findsNothing);
+    expect(find.text('Quick actions'), findsNothing);
+    expect(find.text('Start workout'), findsNothing);
+    expect(find.text('Log meal'), findsNothing);
+    expect(find.text('Manage library'), findsNothing);
+    expect(find.text('Open train tab'), findsNothing);
+    expect(find.text('Chest day'), findsOneWidget);
   });
 
   testWidgets('Today dashboard shows active session state', (tester) async {
-    var trainTapCount = 0;
     final store = AppStore()
       ..startWorkout(
         trainingPlanId: 'chest-day',
@@ -665,7 +641,7 @@ void main() {
       MaterialApp(
         home: TodayScreen(
           store: store,
-          onOpenTrain: () => trainTapCount++,
+          onOpenTrain: () {},
           onOpenNutrition: () {},
           onOpenLibrary: () {},
         ),
@@ -675,18 +651,10 @@ void main() {
     expect(find.text('Today'), findsWidgets);
     expect(find.text('Active workout'), findsWidgets);
     expect(find.text('Chest day'), findsWidgets);
-    expect(find.text('Total volume'), findsOneWidget);
-
-    await tester.scrollUntilVisible(
-      find.text('Open train tab'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.ensureVisible(find.text('Open train tab'));
-    await tester.pump();
-    await tester.tap(find.text('Open train tab'));
-    await tester.pump();
-    expect(trainTapCount, 1);
+    expect(find.textContaining('Total volume'), findsOneWidget);
+    expect(find.text('PERFORMANCE INSIGHT'), findsNothing);
+    expect(find.text('Quick actions'), findsNothing);
+    expect(find.text('Open train tab'), findsNothing);
   });
 
   testWidgets('Today dashboard stays stable across widths', (tester) async {
@@ -705,8 +673,8 @@ void main() {
       );
 
       expect(find.text('Daily progress'), findsWidgets);
-      expect(find.text('NEXT WORKOUT'), findsOneWidget);
-      expect(find.text('PERFORMANCE INSIGHT'), findsOneWidget);
+      expect(find.text('PERFORMANCE INSIGHT'), findsNothing);
+      expect(find.text('Quick actions'), findsNothing);
       expect(tester.takeException(), isNull);
     }
   });
@@ -718,14 +686,14 @@ void main() {
       MaterialApp(home: LibraryScreen(store: AppStore())),
     );
 
-    expect(find.text('Library'), findsNWidgets(2));
-    expect(
-      find.text('Manage plans, exercises, foods, and recipes.'),
-      findsOneWidget,
-    );
-    expect(find.byType(SectionHeader), findsOneWidget);
-    expect(find.text('Training library'), findsOneWidget);
-    expect(find.text('Food library'), findsOneWidget);
+    expect(find.text('Library'), findsOneWidget);
+    expect(find.text('Plans, exercises, foods, and recipes.'), findsNothing);
+    expect(find.text('Training'), findsOneWidget);
+    expect(find.text('Food'), findsOneWidget);
+    expect(find.text('Plans'), findsOneWidget);
+    expect(find.text('Exercises'), findsOneWidget);
+    expect(find.text('Foods'), findsOneWidget);
+    expect(find.text('Recipes'), findsOneWidget);
     expect(find.byType(Scaffold), findsOneWidget);
     expect(find.byType(AppBar), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
@@ -733,17 +701,35 @@ void main() {
     expect(find.text('Training plans'), findsNothing);
     expect(find.text('Chest day'), findsNothing);
 
-    await tester.tap(find.text('Food library'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Food library'), findsWidgets);
-    expect(find.text('Foods'), findsOneWidget);
-    expect(find.text('Recipes'), findsOneWidget);
-    expect(find.byType(FloatingActionButton), findsNothing);
     await tester.tap(find.text('Foods'));
     await tester.pumpAndSettle();
+
+    expect(find.text('Foods'), findsOneWidget);
+    expect(find.byType(AdaptivePage), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
     await scrollToText(tester, 'Chicken breast');
     expect(find.text('Chicken breast'), findsOneWidget);
+  });
+
+  testWidgets('LibraryScreen detail routes keep a single page scroll shell', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: LibraryScreen(store: AppStore())),
+    );
+
+    await tester.tap(find.text('Plans'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdaptivePage), findsOneWidget);
+    expect(find.text('Chest day'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Recipes'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdaptivePage), findsOneWidget);
+    expect(find.text('No recipes yet'), findsOneWidget);
   });
 
   test('library formatters accept localized labels', () {
@@ -820,7 +806,7 @@ void main() {
       );
 
       expect(find.text('Daily progress'), findsWidgets);
-      expect(find.text('NEXT WORKOUT'), findsOneWidget);
+      expect(find.text('Chest day'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await pumpAtSurfaceSize(
@@ -839,8 +825,8 @@ void main() {
         MaterialApp(home: LibraryScreen(store: AppStore())),
       );
 
-      expect(find.text('Library'), findsNWidgets(2));
-      expect(find.text('Training library'), findsOneWidget);
+      expect(find.text('Library'), findsOneWidget);
+      expect(find.text('Training'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await openLibraryFoodsSection(tester);
@@ -968,8 +954,8 @@ void main() {
 
       await openLibraryDestination(tester);
 
-      expect(find.text('Training library'), findsOneWidget);
-      expect(find.text('Food library'), findsOneWidget);
+      expect(find.text('Training'), findsOneWidget);
+      expect(find.text('Food'), findsOneWidget);
 
       await openLibraryTrainingPlansSection(tester);
 
@@ -1071,16 +1057,13 @@ void main() {
 
     await tester.pumpWidget(FitApp(syncAccess: syncAccess));
 
-    expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Settings'), findsOneWidget);
 
     await openMoreDestination(tester);
 
     expect(find.text('Sync'), findsOneWidget);
     expect(find.text('Units'), findsOneWidget);
-    expect(
-      find.text('Sync is ready. Tap below to check for updates.'),
-      findsOneWidget,
-    );
+    expect(find.text('Ready to sync.'), findsOneWidget);
     expect(find.text('Sync now'), findsOneWidget);
     expect(find.text('Login'), findsNothing);
     expect(find.text('Logout'), findsNothing);
@@ -1147,10 +1130,7 @@ void main() {
     await tester.pumpWidget(FitApp(store: store, syncAccess: syncAccess));
     await openMoreDestination(tester);
 
-    expect(
-      find.text('Sync is ready. Tap below to check for updates.'),
-      findsOneWidget,
-    );
+    expect(find.text('Ready to sync.'), findsOneWidget);
     expect(find.text('Login'), findsNothing);
     expect(find.text('Logout'), findsNothing);
 
@@ -1158,10 +1138,7 @@ void main() {
       const AppStoreSyncStatus(phase: AppStoreSyncPhase.syncing),
     );
     await tester.pumpAndSettle();
-    expect(
-      find.text('Sync in progress. We will keep your data up to date.'),
-      findsOneWidget,
-    );
+    expect(find.text('Syncing...'), findsOneWidget);
 
     coordinator.setStatus(
       AppStoreSyncStatus(
@@ -1326,7 +1303,7 @@ void main() {
     expect(find.text('Food library'), findsOneWidget);
     expect(find.text('No foods or recipes yet'), findsOneWidget);
     expect(
-      find.text('Use Add food or recipe to build your reusable catalog.'),
+      find.text('Add food or recipe to build your catalog.'),
       findsOneWidget,
     );
     expect(
@@ -1436,6 +1413,86 @@ void main() {
 
     expect(find.text('132.3 lbs'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Weight'), findsNothing);
+  });
+
+  testWidgets('plan exercise form saves with blank optional target fields', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Stay rigid.',
+        muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.bodyweight,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'running',
+        name: 'Running',
+        description: 'Steady cardio work',
+        instruction: 'Settle into a pace.',
+        muscleGroups: [MuscleGroup.cardio],
+        measurementType: ExerciseMeasurementType.cardio,
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'starter-plan',
+        name: 'Starter plan',
+        description: 'Simple test plan',
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
+      ),
+    );
+
+    await tester.pumpWidget(FitApp(store: store));
+    await openLibraryTrainingPlansSection(tester);
+
+    final starterPlanCard = find.ancestor(
+      of: find.text('Starter plan'),
+      matching: find.byType(Card),
+    );
+    await tester.tap(
+      find.descendant(
+        of: starterPlanCard,
+        matching: find.byTooltip('More actions'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit Starter plan'));
+    await tester.pumpAndSettle();
+
+    final addExerciseButton = find.widgetWithText(
+      OutlinedButton,
+      'Add exercise',
+    );
+    await tester.ensureVisible(addExerciseButton);
+    tester.widget<OutlinedButton>(addExerciseButton).onPressed!.call();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Running').last);
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(TextField, 'Duration'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Distance'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Target duration'), findsNothing);
+    expect(find.widgetWithText(TextField, 'Target distance'), findsNothing);
+
+    await tester.tap(find.text('Save exercise'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Running'), findsOneWidget);
+
+    await tester.tap(find.text('Save training'));
+    await tester.pumpAndSettle();
+
+    final savedPlan = store.trainingPlanById('starter-plan');
+    expect(savedPlan, isNotNull);
+    expect(savedPlan!.exercises.last.exerciseId, 'running');
+    expect(savedPlan.exercises.last.durationSeconds, isNull);
+    expect(savedPlan.exercises.last.distanceMeters, isNull);
   });
 
   testWidgets('creates a missing item from Meal search and logs it', (

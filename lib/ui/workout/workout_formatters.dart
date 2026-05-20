@@ -38,6 +38,12 @@ String formatWorkoutDate(DateTime value) {
   return '${value.year}-$month-$day';
 }
 
+String formatWorkoutTimestamp(DateTime value) {
+  final hour = value.hour.toString().padLeft(2, '0');
+  final minute = value.minute.toString().padLeft(2, '0');
+  return '${formatWorkoutDate(value)} $hour:$minute';
+}
+
 String formatWorkoutNumber(double value) {
   if (value == value.roundToDouble()) {
     return value.toStringAsFixed(0);
@@ -62,7 +68,7 @@ String formatWorkoutTarget(
   TrainingExercise target,
   ExerciseMeasurementType measurementType,
   AppStore store, {
-  String targetPrefix = 'Target:',
+  String? targetPrefix = 'Target:',
   String setsLabel = 'sets',
   String repsLabel = 'reps',
   String assistanceLabel = 'assistance',
@@ -75,7 +81,11 @@ String formatWorkoutTarget(
     repsLabel: repsLabel,
     assistanceLabel: assistanceLabel,
   );
-  return '$targetPrefix ${parts.join(' • ')}';
+  final label = parts.join(' • ');
+  if (targetPrefix == null || targetPrefix.isEmpty) {
+    return label;
+  }
+  return '$targetPrefix $label';
 }
 
 String formatWorkoutSetLog(

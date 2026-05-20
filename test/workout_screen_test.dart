@@ -798,62 +798,63 @@ void main() {
     expect(filledSet?.weightGrams, 62500);
   });
 
-  testWidgets('workout set input card renders target above fields without card', (
-    tester,
-  ) async {
-    final store = AppStore();
-    final repsController = TextEditingController();
-    final weightController = TextEditingController();
-    final durationController = TextEditingController();
-    final distanceController = TextEditingController();
-    final assistanceWeightController = TextEditingController();
+  testWidgets(
+    'workout set input card renders target above fields without card',
+    (tester) async {
+      final store = AppStore();
+      final repsController = TextEditingController();
+      final weightController = TextEditingController();
+      final durationController = TextEditingController();
+      final distanceController = TextEditingController();
+      final assistanceWeightController = TextEditingController();
 
-    addTearDown(repsController.dispose);
-    addTearDown(weightController.dispose);
-    addTearDown(durationController.dispose);
-    addTearDown(distanceController.dispose);
-    addTearDown(assistanceWeightController.dispose);
+      addTearDown(repsController.dispose);
+      addTearDown(weightController.dispose);
+      addTearDown(durationController.dispose);
+      addTearDown(distanceController.dispose);
+      addTearDown(assistanceWeightController.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: WorkoutSetInputCard(
-            target: const TrainingExercise(
-              exerciseId: 'bench-press',
-              sets: 3,
-              reps: 8,
-              weightGrams: 60000,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: WorkoutSetInputCard(
+              target: const TrainingExercise(
+                exerciseId: 'bench-press',
+                sets: 3,
+                reps: 8,
+                weightGrams: 60000,
+              ),
+              repsController: repsController,
+              weightController: weightController,
+              durationController: durationController,
+              distanceController: distanceController,
+              assistanceWeightController: assistanceWeightController,
+              measurementType: ExerciseMeasurementType.strength,
+              store: store,
+              onLogSet: () {},
             ),
-            repsController: repsController,
-            weightController: weightController,
-            durationController: durationController,
-            distanceController: distanceController,
-            assistanceWeightController: assistanceWeightController,
-            measurementType: ExerciseMeasurementType.strength,
-            store: store,
-            onLogSet: () {},
           ),
         ),
-      ),
-    );
+      );
 
-    final targetText = find.text('3 sets • 8 reps • 60 kg');
-    final repsField = find.bySemanticsLabel('Reps');
+      final targetText = find.text('3 sets • 8 reps • 60 kg');
+      final repsField = find.bySemanticsLabel('Reps');
 
-    expect(targetText, findsOneWidget);
-    expect(repsField, findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byType(WorkoutSetInputCard),
-        matching: find.byType(Card),
-      ),
-      findsNothing,
-    );
-    expect(
-      tester.getTopLeft(targetText).dy,
-      lessThan(tester.getTopLeft(repsField).dy),
-    );
-  });
+      expect(targetText, findsOneWidget);
+      expect(repsField, findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(WorkoutSetInputCard),
+          matching: find.byType(Card),
+        ),
+        findsNothing,
+      );
+      expect(
+        tester.getTopLeft(targetText).dy,
+        lessThan(tester.getTopLeft(repsField).dy),
+      );
+    },
+  );
 
   testWidgets('workout set input card wraps fields at narrow widths', (
     tester,
@@ -905,80 +906,81 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('workout exercise screen expands and collapses long instruction', (
-    tester,
-  ) async {
-    final store = AppStore.empty();
-    const instruction =
-        'Set your shoulders, plant the feet, lower the bar with control, '
-        'pause briefly on the chest, press vertically, and keep the wrists '
-        'stacked over the forearms for the full rep.';
-    store.createExercise(
-      const Exercise(
-        id: 'long-bench',
-        name: 'Long bench',
-        description: 'Short description',
-        instruction: instruction,
-        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-        measurementType: ExerciseMeasurementType.strength,
-      ),
-    );
-    store.createTrainingPlan(
-      const TrainingPlan(
-        id: 'long-bench-plan',
-        name: 'Long bench plan',
-        description: 'Bench work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'long-bench',
-            sets: 3,
-            reps: 8,
-            weightGrams: 60000,
-          ),
-        ],
-      ),
-    );
-    store.startWorkout(
-      trainingPlanId: 'long-bench-plan',
-      startedAt: DateTime(2026, 4, 19, 10),
-    );
+  testWidgets(
+    'workout exercise screen expands and collapses long instruction',
+    (tester) async {
+      final store = AppStore.empty();
+      const instruction =
+          'Set your shoulders, plant the feet, lower the bar with control, '
+          'pause briefly on the chest, press vertically, and keep the wrists '
+          'stacked over the forearms for the full rep.';
+      store.createExercise(
+        const Exercise(
+          id: 'long-bench',
+          name: 'Long bench',
+          description: 'Short description',
+          instruction: instruction,
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.strength,
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'long-bench-plan',
+          name: 'Long bench plan',
+          description: 'Bench work',
+          exercises: [
+            TrainingExercise(
+              exerciseId: 'long-bench',
+              sets: 3,
+              reps: 8,
+              weightGrams: 60000,
+            ),
+          ],
+        ),
+      );
+      store.startWorkout(
+        trainingPlanId: 'long-bench-plan',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
 
-    await pumpWorkoutScreen(tester, store: store);
-    await openActiveWorkout(tester);
-    await openExercise(tester, 'Long bench');
+      await pumpWorkoutScreen(tester, store: store);
+      await openActiveWorkout(tester);
+      await openExercise(tester, 'Long bench');
 
-    expect(find.text('Short description'), findsOneWidget);
-    expect(find.text('Show more'), findsOneWidget);
-    expect(find.text('Show less'), findsNothing);
-    expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is Text &&
-            widget.data == instruction &&
-            widget.maxLines == 3,
-      ),
-      findsOneWidget,
-    );
+      expect(find.text('Short description'), findsOneWidget);
+      expect(find.text('Show more'), findsOneWidget);
+      expect(find.text('Show less'), findsNothing);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              widget.data == instruction &&
+              widget.maxLines == 3,
+        ),
+        findsOneWidget,
+      );
 
-    await tester.tap(find.text('Show more'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Show more'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Show less'), findsOneWidget);
-    expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is Text &&
-            widget.data == instruction &&
-            widget.maxLines == null,
-      ),
-      findsOneWidget,
-    );
+      expect(find.text('Show less'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              widget.data == instruction &&
+              widget.maxLines == null,
+        ),
+        findsOneWidget,
+      );
 
-    await tester.tap(find.text('Show less'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Show less'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Show more'), findsOneWidget);
-  });
+      expect(find.text('Show more'), findsOneWidget);
+    },
+  );
 
   testWidgets('workout detail cards render history and completed groups', (
     tester,
@@ -1117,10 +1119,10 @@ void main() {
     (tester) async {
       await pumpWorkoutScreen(tester);
 
-      expect(find.text('Training log'), findsOneWidget);
+      expect(find.text('Training log'), findsNothing);
       expect(
         find.text('Start sessions, log sets, and review progress.'),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.text('Workout stats'), findsOneWidget);
       expect(find.text('No completed sessions yet.'), findsOneWidget);
@@ -1435,7 +1437,7 @@ void main() {
     expect(store.activeWorkoutSession, isNull);
     expect(find.text('Workout session'), findsNothing);
     expect(find.text('Active workout'), findsNothing);
-    expect(find.text('Training log'), findsOneWidget);
+    expect(find.text('Training log'), findsNothing);
     expect(find.text('Workout stats'), findsOneWidget);
     expect(find.text('Latest: Chest day'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
@@ -1471,7 +1473,7 @@ void main() {
     expect(store.activeWorkoutSession, isNull);
     expect(store.completedWorkoutSessions, hasLength(1));
     expect(find.text('Workout session'), findsNothing);
-    expect(find.text('Training log'), findsOneWidget);
+    expect(find.text('Training log'), findsNothing);
     expect(find.text('Workout stats'), findsOneWidget);
     expect(find.text('Latest: Chest day'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
