@@ -6,6 +6,7 @@ import 'package:fitapp/screens/workout_screen.dart';
 import 'package:fitapp/ui/core/layout/app_breakpoints.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/ui/core/layout/adaptive_page.dart';
+import 'package:fitapp/ui/core/widgets/swipe_action_card.dart';
 import 'package:fitapp/ui/workout/workout_detail_cards.dart';
 import 'package:fitapp/ui/workout/workout_formatters.dart';
 import 'package:fitapp/ui/workout/workout_overview_cards.dart';
@@ -145,6 +146,10 @@ void main() {
       '1 hr-local 5 min-local',
     );
     expect(formatWorkoutDate(DateTime(2026, 4, 25)), '2026-04-25');
+    expect(
+      formatWorkoutTimestamp(DateTime(2026, 4, 25, 9, 5)),
+      '2026-04-25 09:05',
+    );
   });
 
   test('workout formatters render numbers and pluralized set counts', () {
@@ -432,6 +437,19 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> revealHistoryRowActions(
+    WidgetTester tester,
+    String title,
+  ) async {
+    final tile = find.widgetWithText(ListTile, title).last;
+    final card = find
+        .ancestor(of: tile, matching: find.byType(SwipeActionCard))
+        .last;
+    await tester.ensureVisible(card);
+    await tester.drag(card, const Offset(-240, 0));
+    await tester.pumpAndSettle();
+  }
+
   Future<void> enterWorkoutSet(
     WidgetTester tester, {
     String? reps,
@@ -444,17 +462,26 @@ void main() {
       await tester.enterText(find.bySemanticsLabel('Reps'), reps);
     }
     if (weight != null) {
-      await tester.enterText(find.bySemanticsLabel('Weight'), weight);
+      await tester.enterText(
+        find.bySemanticsLabel(RegExp(r'^Weight,')),
+        weight,
+      );
     }
     if (duration != null) {
-      await tester.enterText(find.bySemanticsLabel('Duration'), duration);
+      await tester.enterText(
+        find.bySemanticsLabel(RegExp(r'^Duration,')),
+        duration,
+      );
     }
     if (distance != null) {
-      await tester.enterText(find.bySemanticsLabel('Distance'), distance);
+      await tester.enterText(
+        find.bySemanticsLabel(RegExp(r'^Distance,')),
+        distance,
+      );
     }
     if (assistanceWeight != null) {
       await tester.enterText(
-        find.bySemanticsLabel('Assistance weight'),
+        find.bySemanticsLabel(RegExp(r'^Assistance weight,')),
         assistanceWeight,
       );
     }
@@ -729,6 +756,7 @@ void main() {
             children: [
               WorkoutActiveExerciseSummaryCard(result: result, store: store),
               WorkoutSetInputCard(
+                target: result.target,
                 repsController: repsController,
                 weightController: weightController,
                 durationController: durationController,
@@ -738,9 +766,11 @@ void main() {
                 store: store,
                 onLogSet: () => logged = true,
               ),
-              WorkoutLoggedSetsCard(
+              WorkoutExerciseHistoryCard(
                 measurementType: ExerciseMeasurementType.strength,
-                setLogs: result.setLogs,
+                currentSession: session,
+                currentResult: result,
+                history: const [],
                 store: store,
                 onFillSet: (setLog) => filledSet = setLog,
               ),
@@ -753,19 +783,76 @@ void main() {
     expect(find.text('Bench press'), findsOneWidget);
     expect(find.text('Target: 3 sets • 8 reps • 60 kg'), findsOneWidget);
     expect(find.text('Reps'), findsOneWidget);
-    expect(find.text('Weight'), findsOneWidget);
+    expect(find.text('Weight, kg'), findsOneWidget);
     expect(find.text('Time'), findsNothing);
-    expect(find.text('Logged sets'), findsOneWidget);
-    expect(find.text('Set 1'), findsOneWidget);
-    expect(find.text('8 reps • 62.5 kg'), findsOneWidget);
+    expect(find.text('Fast set logging'), findsNothing);
+    expect(find.text('History'), findsOneWidget);
+    expect(find.text('#1 • 8 reps • 62.5 kg'), findsOneWidget);
 
     await tester.tap(find.text('Log set'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Use Set 1'));
+    await tester.tap(find.text('#1 • 8 reps • 62.5 kg'));
     await tester.pumpAndSettle();
 
     expect(logged, isTrue);
     expect(filledSet?.weightGrams, 62500);
+  });
+
+  testWidgets('workout set input card renders target above fields without card', (
+    tester,
+  ) async {
+    final store = AppStore();
+    final repsController = TextEditingController();
+    final weightController = TextEditingController();
+    final durationController = TextEditingController();
+    final distanceController = TextEditingController();
+    final assistanceWeightController = TextEditingController();
+
+    addTearDown(repsController.dispose);
+    addTearDown(weightController.dispose);
+    addTearDown(durationController.dispose);
+    addTearDown(distanceController.dispose);
+    addTearDown(assistanceWeightController.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: WorkoutSetInputCard(
+            target: const TrainingExercise(
+              exerciseId: 'bench-press',
+              sets: 3,
+              reps: 8,
+              weightGrams: 60000,
+            ),
+            repsController: repsController,
+            weightController: weightController,
+            durationController: durationController,
+            distanceController: distanceController,
+            assistanceWeightController: assistanceWeightController,
+            measurementType: ExerciseMeasurementType.strength,
+            store: store,
+            onLogSet: () {},
+          ),
+        ),
+      ),
+    );
+
+    final targetText = find.text('3 sets • 8 reps • 60 kg');
+    final repsField = find.bySemanticsLabel('Reps');
+
+    expect(targetText, findsOneWidget);
+    expect(repsField, findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(WorkoutSetInputCard),
+        matching: find.byType(Card),
+      ),
+      findsNothing,
+    );
+    expect(
+      tester.getTopLeft(targetText).dy,
+      lessThan(tester.getTopLeft(repsField).dy),
+    );
   });
 
   testWidgets('workout set input card wraps fields at narrow widths', (
@@ -789,6 +876,12 @@ void main() {
           body: SizedBox(
             width: 240,
             child: WorkoutSetInputCard(
+              target: const TrainingExercise(
+                exerciseId: 'bench-press',
+                sets: 3,
+                reps: 8,
+                weightGrams: 60000,
+              ),
               repsController: repsController,
               weightController: weightController,
               durationController: durationController,
@@ -808,11 +901,86 @@ void main() {
         .map((box) => box.size.width)
         .toList();
 
-    expect(fieldSizes, everyElement(200));
+    expect(fieldSizes, everyElement(240));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('workout detail cards render previous and completed groups', (
+  testWidgets('workout exercise screen expands and collapses long instruction', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    const instruction =
+        'Set your shoulders, plant the feet, lower the bar with control, '
+        'pause briefly on the chest, press vertically, and keep the wrists '
+        'stacked over the forearms for the full rep.';
+    store.createExercise(
+      const Exercise(
+        id: 'long-bench',
+        name: 'Long bench',
+        description: 'Short description',
+        instruction: instruction,
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.strength,
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'long-bench-plan',
+        name: 'Long bench plan',
+        description: 'Bench work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'long-bench',
+            sets: 3,
+            reps: 8,
+            weightGrams: 60000,
+          ),
+        ],
+      ),
+    );
+    store.startWorkout(
+      trainingPlanId: 'long-bench-plan',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await pumpWorkoutScreen(tester, store: store);
+    await openActiveWorkout(tester);
+    await openExercise(tester, 'Long bench');
+
+    expect(find.text('Short description'), findsOneWidget);
+    expect(find.text('Show more'), findsOneWidget);
+    expect(find.text('Show less'), findsNothing);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.data == instruction &&
+            widget.maxLines == 3,
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Show more'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Show less'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.data == instruction &&
+            widget.maxLines == null,
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Show less'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Show more'), findsOneWidget);
+  });
+
+  testWidgets('workout detail cards render history and completed groups', (
     tester,
   ) async {
     final store = AppStore.empty();
@@ -827,7 +995,10 @@ void main() {
         home: Scaffold(
           body: ListView(
             children: [
-              WorkoutPreviousResultsCard(
+              WorkoutExerciseHistoryCard(
+                measurementType: ExerciseMeasurementType.bodyweight,
+                currentSession: session,
+                currentResult: session.results.first,
                 history: history,
                 store: store,
                 onFillSet: (setLog) => filledSet = setLog,
@@ -844,18 +1015,18 @@ void main() {
       ),
     );
 
-    expect(find.text('Previous results'), findsOneWidget);
-    expect(find.text('Repeat pushups • 2026-04-18 • 30 min'), findsOneWidget);
+    expect(find.text('History'), findsOneWidget);
+    expect(find.text('Repeat pushups • 2026-04-18 09:00'), findsNWidgets(2));
     expect(find.text('Completed workout'), findsOneWidget);
     expect(find.text('Date: 2026-04-18'), findsOneWidget);
     expect(find.text('Duration: 30 min'), findsOneWidget);
     expect(find.text('Pushups'), findsOneWidget);
     expect(find.text('Entry 1'), findsOneWidget);
     expect(find.text('Entry 2'), findsOneWidget);
+    expect(find.text('#1 • 8 reps'), findsWidgets);
+    expect(find.text('#1 • 10 reps'), findsWidgets);
 
-    await tester.tap(
-      find.byTooltip('Use previous Entry 2 Set 1 from Repeat pushups'),
-    );
+    await tester.tap(find.text('#1 • 8 reps').first);
     await tester.pumpAndSettle();
 
     expect(filledSet?.reps, 8);
@@ -1044,13 +1215,14 @@ void main() {
     await openActiveWorkout(tester);
     await openExercise(tester, 'Bench press');
 
-    expect(find.text('Workout exercise'), findsWidgets);
-    expect(find.text('Log sets and reuse recent performance.'), findsOneWidget);
+    expect(find.text('Workout exercise'), findsOneWidget);
     expect(find.text('Bench press'), findsOneWidget);
+    expect(find.text('3 sets • 8 reps • 60 kg'), findsOneWidget);
     expect(find.text('Reps'), findsOneWidget);
-    expect(find.text('Weight'), findsOneWidget);
+    expect(find.text('Weight, kg'), findsOneWidget);
     expect(find.text('Time'), findsNothing);
     expect(find.text('Log set'), findsOneWidget);
+    expect(find.text('Fast set logging'), findsNothing);
   });
 
   testWidgets('exercise logging fields are typed by measurement', (
@@ -1072,8 +1244,8 @@ void main() {
 
     await openExercise(tester, 'Plank');
     expect(find.text('Reps'), findsNothing);
-    expect(find.text('Weight'), findsNothing);
-    expect(find.text('Duration'), findsOneWidget);
+    expect(find.text('Weight, kg'), findsNothing);
+    expect(find.text('Duration, sec'), findsOneWidget);
     expect(find.text('Distance'), findsNothing);
     expect(find.text('Assistance weight'), findsNothing);
     await tester.pageBack();
@@ -1081,33 +1253,30 @@ void main() {
 
     await openExercise(tester, 'Sled push');
     expect(find.text('Reps'), findsNothing);
-    expect(find.text('Weight'), findsOneWidget);
-    expect(find.text('Duration'), findsOneWidget);
+    expect(find.text('Weight, kg'), findsOneWidget);
+    expect(find.text('Duration, sec'), findsOneWidget);
     expect(find.text('Distance'), findsNothing);
     expect(find.text('Assistance weight'), findsNothing);
     await tester.pageBack();
     await tester.pumpAndSettle();
 
     await openExercise(tester, 'Run');
-    expect(find.text('Target: 20 min • 5 km'), findsOneWidget);
+    expect(find.text('20 min • 5 km'), findsOneWidget);
     expect(find.text('Reps'), findsNothing);
-    expect(find.text('Weight'), findsNothing);
-    expect(find.text('Duration'), findsOneWidget);
-    expect(find.text('Distance'), findsOneWidget);
+    expect(find.text('Weight, kg'), findsNothing);
+    expect(find.text('Duration, sec'), findsOneWidget);
+    expect(find.text('Distance, km'), findsOneWidget);
     expect(find.text('Assistance weight'), findsNothing);
     await tester.pageBack();
     await tester.pumpAndSettle();
 
     await openExercise(tester, 'Assisted pull-up');
-    expect(
-      find.text('Target: 3 sets • 8 reps • 25 kg assistance'),
-      findsOneWidget,
-    );
+    expect(find.text('3 sets • 8 reps • 25 kg assistance'), findsOneWidget);
     expect(find.text('Reps'), findsOneWidget);
-    expect(find.text('Weight'), findsNothing);
-    expect(find.text('Duration'), findsNothing);
-    expect(find.text('Distance'), findsNothing);
-    expect(find.text('Assistance weight'), findsOneWidget);
+    expect(find.text('Weight, kg'), findsNothing);
+    expect(find.text('Duration, sec'), findsNothing);
+    expect(find.text('Distance, km'), findsNothing);
+    expect(find.text('Assistance weight, kg'), findsOneWidget);
   });
 
   testWidgets('logging a set clears fields and shows the logged set', (
@@ -1136,10 +1305,10 @@ void main() {
         .toList();
     final repsField = fields[0];
     final weightField = fields[1];
-    expect(repsField.controller?.text, '8');
-    expect(weightField.controller?.text, '65');
+    expect(repsField.controller?.text, isEmpty);
+    expect(weightField.controller?.text, isEmpty);
 
-    await tester.tap(find.byTooltip('Use Set 1'));
+    await tester.tap(find.text('#1 • 8 reps • 65 kg'));
     await tester.pumpAndSettle();
 
     expect(repsField.controller?.text, '8');
@@ -1168,6 +1337,45 @@ void main() {
     expect(store.activeWorkoutSession!.results.first.setLogs, hasLength(2));
   });
 
+  testWidgets('current session history rows can be deleted', (tester) async {
+    final store = AppStore();
+    finishChestWorkoutWithBenchSet(
+      store,
+      startedAt: DateTime(2026, 4, 18, 9),
+      finishedAt: DateTime(2026, 4, 18, 9, 45),
+    );
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 19, 10),
+    );
+
+    await pumpWorkoutScreen(tester, store: store);
+    await openActiveWorkout(tester);
+    await openExercise(tester, 'Bench press');
+
+    await enterWorkoutSet(tester, reps: '8', weight: '65');
+    await tester.tap(find.text('Log set'));
+    await tester.pumpAndSettle();
+    await enterWorkoutSet(tester, reps: '6', weight: '67.5');
+    await tester.tap(find.text('Log set'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('#2 • 6 reps • 67.5 kg'), findsOneWidget);
+    expect(store.activeWorkoutSession!.results.first.setLogs, hasLength(2));
+
+    await revealHistoryRowActions(tester, '#2 • 6 reps • 67.5 kg');
+    await tester.tap(find.byKey(const ValueKey('swipe-action-Delete')).last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('#2 • 6 reps • 67.5 kg'), findsNothing);
+    expect(find.text('#1 • 8 reps • 65 kg'), findsOneWidget);
+    expect(store.activeWorkoutSession!.results.first.setLogs, hasLength(1));
+    expect(
+      store.completedWorkoutSessions.single.results.first.setLogs,
+      hasLength(1),
+    );
+  });
+
   testWidgets('workout displays render pounds when weight unit is pounds', (
     tester,
   ) async {
@@ -1184,7 +1392,7 @@ void main() {
     expect(find.text('Target: 3 sets • 8 reps • 132.3 lbs'), findsOneWidget);
 
     await openExercise(tester, 'Bench press');
-    expect(find.text('Target: 3 sets • 8 reps • 132.3 lbs'), findsOneWidget);
+    expect(find.text('3 sets • 8 reps • 132.3 lbs'), findsOneWidget);
 
     await enterWorkoutSet(tester, reps: '8', weight: '137.8');
     await tester.tap(find.text('Log set'));
@@ -1198,7 +1406,7 @@ void main() {
     final fields = tester
         .widgetList<TextField>(find.byType(TextField))
         .toList();
-    expect(fields[1].controller?.text, '137.8');
+    expect(fields[1].controller?.text, isEmpty);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -1368,11 +1576,11 @@ void main() {
     await tester.drag(find.byType(Scrollable).last, const Offset(0, -560));
     await tester.pumpAndSettle();
 
-    expect(find.text('Previous results'), findsOneWidget);
-    expect(find.text('Chest day • 2026-04-18 • 45 min'), findsOneWidget);
-    expect(find.text('8 reps • 62.5 kg'), findsWidgets);
+    expect(find.text('History'), findsOneWidget);
+    expect(find.text('Chest day • 2026-04-18 09:00'), findsOneWidget);
+    expect(find.text('#1 • 8 reps • 62.5 kg'), findsWidgets);
 
-    await tester.tap(find.byTooltip('Use previous Set 1 from Chest day'));
+    await tester.tap(find.text('#1 • 8 reps • 62.5 kg').first);
     await tester.pumpAndSettle();
 
     await tester.drag(find.byType(Scrollable).last, const Offset(0, 560));
@@ -1420,15 +1628,13 @@ void main() {
     await tester.drag(find.byType(Scrollable).last, const Offset(0, -560));
     await tester.pumpAndSettle();
 
-    expect(find.text('Entry 1 • Set 1'), findsOneWidget);
-    expect(find.text('Entry 2 • Set 1'), findsOneWidget);
+    expect(find.text('#1 • 8 reps'), findsOneWidget);
+    expect(find.text('#1 • 10 reps'), findsOneWidget);
 
-    final secondPreviousSet = find.byTooltip(
-      'Use previous Entry 2 Set 1 from Repeat pushups',
-    );
-    await tester.ensureVisible(secondPreviousSet);
+    final olderPreviousSet = find.text('#1 • 10 reps');
+    await tester.ensureVisible(olderPreviousSet);
     await tester.pumpAndSettle();
-    await tester.tap(secondPreviousSet);
+    await tester.tap(olderPreviousSet);
     await tester.pumpAndSettle();
 
     await tester.drag(find.byType(Scrollable).last, const Offset(0, 560));
@@ -1437,7 +1643,7 @@ void main() {
     final fields = tester
         .widgetList<TextField>(find.byType(TextField))
         .toList();
-    expect(fields[0].controller?.text, '8');
+    expect(fields[0].controller?.text, '10');
     expect(fields, hasLength(1));
   });
 
@@ -1457,8 +1663,9 @@ void main() {
       await tester.tap(find.byTooltip('Open Pushups entry 2'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Previous set 8 reps'), findsOneWidget);
-      expect(find.text('Previous set 10 reps'), findsNothing);
+      expect(find.text('History'), findsOneWidget);
+      expect(find.text('#1 • 8 reps'), findsOneWidget);
+      expect(find.text('#1 • 10 reps'), findsOneWidget);
     },
   );
 
