@@ -26,11 +26,24 @@ void main() {
     await tester.pumpWidget(const FitApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Today'), findsWidgets);
-    expect(find.text('Train'), findsOneWidget);
-    expect(find.text('Nutrition'), findsOneWidget);
-    expect(find.text('Library'), findsOneWidget);
-    expect(find.text('Settings'), findsOneWidget);
+    final navigation = tester.any(find.byType(NavigationBar))
+        ? find.byType(NavigationBar)
+        : find.byType(NavigationRail);
+
+    expect(navigation, findsOneWidget);
+
+    for (final label in const [
+      'Today',
+      'Train',
+      'Nutrition',
+      'Library',
+      'Settings',
+    ]) {
+      expect(
+        find.descendant(of: navigation, matching: find.text(label)),
+        findsOneWidget,
+      );
+    }
   });
 
   testWidgets('core redesigned surfaces expose localized strings', (
