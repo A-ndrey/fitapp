@@ -12,6 +12,8 @@ import 'screens/more_screen.dart';
 import 'screens/today_screen.dart';
 import 'screens/workout_screen.dart';
 import 'state/app_store.dart';
+import 'state/auth/app_auth_service.dart';
+import 'state/auth/firebase_app_auth_service.dart';
 import 'state/persistence/app_store_persistence.dart';
 import 'state/persistence/persisted_app_state.dart';
 import 'state/persistence/shared_preferences_app_store_persistence.dart';
@@ -21,7 +23,6 @@ import 'ui/core/theme/app_theme.dart';
 import 'state/sync/app_store_sync_coordinator.dart';
 import 'state/sync/app_store_sync_status.dart';
 import 'state/sync/firebase_app_store_sync_service.dart';
-import 'state/sync/installation_id_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,14 +41,15 @@ typedef AppStoreHydrator =
     });
 typedef SyncMetadataStoreFactory =
     SharedPreferencesSyncMetadataStore Function();
-typedef InstallationIdStoreFactory = InstallationIdStore Function();
 typedef SyncServiceFactory =
     FirebaseAppStoreSyncService Function(Set<String> knownExerciseIds);
+typedef AuthServiceFactory =
+    AppAuthService Function(FirebaseInitializer firebaseInitializer);
 typedef SyncCoordinatorFactory =
     AppStoreSyncCoordinator Function({
-      required InstallationIdStore installationIdStore,
       required SharedPreferencesSyncMetadataStore metadataStore,
       required FirebaseAppStoreSyncService syncService,
+      required UserIdProvider userIdProvider,
       required PersistedStateObserverBinder bindPersistedStateObserver,
       required LocalSnapshotLoader loadLocalSnapshot,
       required RemoteSnapshotApplier applyRemoteSnapshot,
@@ -58,11 +60,13 @@ Future<FitAppStartup> prepareFitAppStartup({
   AppStorePersistenceFactory? appStorePersistenceFactory,
   AppStoreHydrator? appStoreHydrator,
   SyncMetadataStoreFactory? syncMetadataStoreFactory,
-  InstallationIdStoreFactory? installationIdStoreFactory,
   SyncServiceFactory? syncServiceFactory,
+  AuthServiceFactory? authServiceFactory,
   SyncCoordinatorFactory? syncCoordinatorFactory,
   FitAppSyncAccess? syncAccess,
 }) async {
+  final resolvedFirebaseInitializer =
+      firebaseInitializer ?? DefaultFirebaseInitializer();
   final bootstrapStore = AppStore();
   final knownExerciseIds = bootstrapStore.exercises
       .map((exercise) => exercise.id)
@@ -79,15 +83,17 @@ Future<FitAppStartup> prepareFitAppStartup({
     onPersistedStateSaved: persistedStateObserverRelay.call,
   );
 
+  final authService = (authServiceFactory ?? _defaultAuthServiceFactory)(
+    resolvedFirebaseInitializer,
+  );
   final startup = FitAppStartup._(
     store: store,
+    authService: authService,
     syncAccess: syncAccess ?? FitAppSyncAccess(),
-    firebaseInitializer: firebaseInitializer ?? DefaultFirebaseInitializer(),
+    firebaseInitializer: resolvedFirebaseInitializer,
     persistence: persistence,
     metadataStore:
         (syncMetadataStoreFactory ?? SharedPreferencesSyncMetadataStore.new)(),
-    installationIdStore:
-        (installationIdStoreFactory ?? InstallationIdStore.new)(),
     syncServiceFactory: syncServiceFactory ?? _defaultSyncServiceFactory,
     syncCoordinatorFactory:
         syncCoordinatorFactory ?? _defaultSyncCoordinatorFactory,
@@ -95,6 +101,7 @@ Future<FitAppStartup> prepareFitAppStartup({
     knownExerciseIds: knownExerciseIds,
   );
   startup.syncAccess._bindStartupRetry(startup.startBackgroundSync);
+  authService.addListener(startup.handleAuthStateChanged);
   return startup;
 }
 
@@ -102,18 +109,24 @@ Future<void> launchFitApp({
   required FitAppStartup startup,
   AppRunner appRunner = _runApp,
 }) async {
-  await appRunner(FitApp(store: startup.store, syncAccess: startup.syncAccess));
+  await appRunner(
+    FitApp(
+      store: startup.store,
+      syncAccess: startup.syncAccess,
+      authService: startup.authService,
+    ),
+  );
   unawaited(startup.startBackgroundSync());
 }
 
 class FitAppStartup {
   FitAppStartup._({
     required this.store,
+    required this.authService,
     required this.syncAccess,
     required FirebaseInitializer firebaseInitializer,
     required AppStorePersistence persistence,
     required SharedPreferencesSyncMetadataStore metadataStore,
-    required InstallationIdStore installationIdStore,
     required SyncServiceFactory syncServiceFactory,
     required SyncCoordinatorFactory syncCoordinatorFactory,
     required _PersistedStateObserverRelay persistedStateObserverRelay,
@@ -121,18 +134,17 @@ class FitAppStartup {
   }) : _firebaseInitializer = firebaseInitializer,
        _persistence = persistence,
        _metadataStore = metadataStore,
-       _installationIdStore = installationIdStore,
        _syncServiceFactory = syncServiceFactory,
        _syncCoordinatorFactory = syncCoordinatorFactory,
        _persistedStateObserverRelay = persistedStateObserverRelay,
        _knownExerciseIds = Set.unmodifiable(knownExerciseIds);
 
   final AppStore store;
+  final AppAuthService authService;
   final FitAppSyncAccess syncAccess;
   final FirebaseInitializer _firebaseInitializer;
   final AppStorePersistence _persistence;
   final SharedPreferencesSyncMetadataStore _metadataStore;
-  final InstallationIdStore _installationIdStore;
   final SyncServiceFactory _syncServiceFactory;
   final SyncCoordinatorFactory _syncCoordinatorFactory;
   final _PersistedStateObserverRelay _persistedStateObserverRelay;
@@ -153,14 +165,14 @@ class FitAppStartup {
   Future<void> _runBackgroundSync() async {
     try {
       final didInitialize = await _firebaseInitializer.initialize();
-      if (!didInitialize) {
+      if (!didInitialize || !authService.state.isSignedIn) {
         return;
       }
 
       final coordinator = _syncCoordinatorFactory(
-        installationIdStore: _installationIdStore,
         metadataStore: _metadataStore,
         syncService: _syncServiceFactory(_knownExerciseIds),
+        userIdProvider: () async => authService.state.uid,
         bindPersistedStateObserver: _persistedStateObserverRelay.bind,
         loadLocalSnapshot: _persistence.load,
         applyRemoteSnapshot:
@@ -175,6 +187,14 @@ class FitAppStartup {
       await coordinator.start();
     } catch (error) {
       syncAccess.reportError(error);
+    }
+  }
+
+  void handleAuthStateChanged() {
+    if (authService.state.isSignedIn) {
+      unawaited(startBackgroundSync());
+    } else {
+      syncAccess.clearCoordinator();
     }
   }
 }
@@ -211,6 +231,11 @@ class FitAppSyncAccess extends ChangeNotifier {
     _coordinatorListener = _handleCoordinatorChanged;
     coordinator.addListener(_coordinatorListener!);
     _setStatus(coordinator.status);
+  }
+
+  void clearCoordinator() {
+    _detachCoordinator();
+    _setStatus(const AppStoreSyncStatus());
   }
 
   void reportError(Object error) {
@@ -279,10 +304,11 @@ class _PersistedStateObserverRelay {
 }
 
 class FitApp extends StatefulWidget {
-  const FitApp({super.key, this.store, this.syncAccess});
+  const FitApp({super.key, this.store, this.syncAccess, this.authService});
 
   final AppStore? store;
   final FitAppSyncAccess? syncAccess;
+  final AppAuthService? authService;
 
   @override
   State<FitApp> createState() => _FitAppState();
@@ -290,19 +316,29 @@ class FitApp extends StatefulWidget {
 
 class _FitAppState extends State<FitApp> {
   late final AppStore _store;
+  late final AppAuthService _authService;
   late final bool _ownsStore;
+  late final bool _ownsAuthService;
 
   @override
   void initState() {
     super.initState();
     _ownsStore = widget.store == null;
     _store = widget.store ?? AppStore();
+    _ownsAuthService = widget.authService == null;
+    _authService = widget.authService ?? FirebaseAppAuthService();
   }
 
   @override
   void dispose() {
     if (_ownsStore) {
       _store.dispose();
+    }
+    if (_ownsAuthService) {
+      final authService = _authService;
+      if (authService is ChangeNotifier) {
+        (authService as ChangeNotifier).dispose();
+      }
     }
     super.dispose();
   }
@@ -320,7 +356,11 @@ class _FitAppState extends State<FitApp> {
           themeMode: _themeModeFor(_store.appearancePreference),
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
-          home: FitHome(store: _store, syncAccess: widget.syncAccess),
+          home: FitHome(
+            store: _store,
+            syncAccess: widget.syncAccess,
+            authService: _authService,
+          ),
         );
       },
     );
@@ -336,9 +376,15 @@ ThemeMode _themeModeFor(AppearancePreference preference) {
 }
 
 class FitHome extends StatefulWidget {
-  const FitHome({super.key, required this.store, this.syncAccess});
+  const FitHome({
+    super.key,
+    required this.store,
+    required this.authService,
+    this.syncAccess,
+  });
 
   final AppStore store;
+  final AppAuthService authService;
   final FitAppSyncAccess? syncAccess;
 
   @override
@@ -404,7 +450,11 @@ class _FitHomeState extends State<FitHome> {
           store: widget.store,
           syncStatusListenable: widget.syncAccess,
           readSyncStatus: () => widget.syncAccess?.status,
-          onSyncNow: widget.syncAccess?.syncNow,
+          authListenable: widget.authService,
+          readAuthState: () => widget.authService.state,
+          onSignIn: widget.authService.signIn,
+          onSignUp: widget.authService.signUp,
+          onSignOut: widget.authService.signOut,
         ),
       ),
     ];
@@ -553,18 +603,24 @@ FirebaseAppStoreSyncService _defaultSyncServiceFactory(
   return FirebaseAppStoreSyncService(knownExerciseIds: knownExerciseIds);
 }
 
+AppAuthService _defaultAuthServiceFactory(
+  FirebaseInitializer firebaseInitializer,
+) {
+  return FirebaseAppAuthService(firebaseInitializer: firebaseInitializer);
+}
+
 AppStoreSyncCoordinator _defaultSyncCoordinatorFactory({
-  required InstallationIdStore installationIdStore,
   required SharedPreferencesSyncMetadataStore metadataStore,
   required FirebaseAppStoreSyncService syncService,
+  required UserIdProvider userIdProvider,
   required PersistedStateObserverBinder bindPersistedStateObserver,
   required LocalSnapshotLoader loadLocalSnapshot,
   required RemoteSnapshotApplier applyRemoteSnapshot,
 }) {
   return AppStoreSyncCoordinator(
-    installationIdStore: installationIdStore,
     metadataStore: metadataStore,
     syncService: syncService,
+    userIdProvider: userIdProvider,
     bindPersistedStateObserver: bindPersistedStateObserver,
     loadLocalSnapshot: loadLocalSnapshot,
     applyRemoteSnapshot: applyRemoteSnapshot,

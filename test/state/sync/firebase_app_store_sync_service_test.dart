@@ -105,12 +105,12 @@ void main() {
       );
 
       final snapshot = await service.push(
-        'installation-1',
+        'user-1',
         const PersistedAppState.empty(),
         'hash-123',
       );
 
-      expect(backend.lastSetPath, 'installations/installation-1/state/current');
+      expect(backend.lastSetPath, 'users/user-1/state/current');
       expect(backend.lastSetData, isNotNull);
       expect(backend.lastSetData!['schemaVersion'], 1);
       expect(backend.lastSetData!['updatedAt'], isA<FieldValue>());
@@ -143,7 +143,7 @@ void main() {
 
       expect(
         () => service.push(
-          'installation-1',
+          'user-1',
           const PersistedAppState.empty(),
           'expected-hash',
         ),
@@ -168,13 +168,10 @@ void main() {
         knownExerciseIds: const {'builtin-burpee'},
       );
 
-      final snapshot = await service.fetch('installation-77');
+      final snapshot = await service.fetch('user-77');
 
       expect(snapshot, isA<RemoteSnapshot>());
-      expect(
-        backend.lastFetchPath,
-        'installations/installation-77/state/current',
-      );
+      expect(backend.lastFetchPath, 'users/user-77/state/current');
       expect(snapshot!.updatedAt, updatedAt);
       expect(snapshot.snapshotHash, 'hash-remote');
       expect(
@@ -223,7 +220,7 @@ void main() {
           knownExerciseIds: const {},
         );
 
-        expect(() => service.fetch('installation-bad'), throwsFormatException);
+        expect(() => service.fetch('user-bad'), throwsFormatException);
       }
     },
   );

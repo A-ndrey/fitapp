@@ -43,6 +43,54 @@ void main() {
     },
   );
 
+  test('startup and manual sync are no-ops while signed out', () async {
+    final harness = _CoordinatorHarness(
+      localSnapshot: _stateWithFood('tomato'),
+      userIdProvider: () async => null,
+    );
+
+    await harness.coordinator.start();
+    harness.coordinator.persistedStateObserver(_stateWithFood('cucumber'));
+    await _pumpEventQueue();
+    await harness.coordinator.syncNow();
+
+    expect(harness.pushCalls, isEmpty);
+    expect(harness.appliedRemoteSnapshots, isEmpty);
+    expect(harness.coordinator.status.phase, AppStoreSyncPhase.idle);
+  });
+
+  test('authenticated sync uses current user id as remote identity', () async {
+    final harness = _CoordinatorHarness(
+      localSnapshot: _stateWithFood('tomato'),
+      remoteSnapshot: null,
+      userIdProvider: () async => 'user-1',
+    );
+
+    await harness.coordinator.start();
+
+    expect(harness.pushCalls, hasLength(1));
+    expect(harness.pushCalls.single.installationId, 'user-1');
+  });
+
+  test('manual sync after sign in uses latest local snapshot', () async {
+    var userId = null as String?;
+    final harness = _CoordinatorHarness(
+      localSnapshot: _stateWithFood('tomato'),
+      remoteSnapshot: null,
+      userIdProvider: () async => userId,
+    );
+
+    await harness.coordinator.start();
+    expect(harness.pushCalls, isEmpty);
+
+    userId = 'user-1';
+    harness.currentLocalSnapshot = _stateWithFood('cucumber');
+    await harness.coordinator.syncNow();
+
+    expect(harness.pushCalls, hasLength(1));
+    expect(harness.pushCalls.single.state.userFoods.single.id, 'cucumber');
+  });
+
   test(
     'startup reconcile applies remote state when remote timestamp is newer than the accepted remote timestamp',
     () async {
@@ -434,6 +482,7 @@ class _CoordinatorHarness {
     Object? fetchError,
     FirebaseAppStoreSyncService? syncService,
     InstallationIdStore? installationIdStore,
+    UserIdProvider? userIdProvider,
     void Function(void Function(PersistedAppState) observer)?
     bindPersistedStateObserver,
     Future<RemoteSnapshot?> Function(String installationId)? onFetch,
@@ -459,6 +508,7 @@ class _CoordinatorHarness {
         : const <_PushCall>[];
     coordinator = AppStoreSyncCoordinator(
       installationIdStore: this.installationIdStore,
+      userIdProvider: userIdProvider,
       metadataStore: metadataStore,
       syncService: this.syncService,
       bindPersistedStateObserver: bindPersistedStateObserver,

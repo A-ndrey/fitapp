@@ -19,16 +19,19 @@ typedef RemoteSnapshotApplier =
     });
 typedef PersistedStateObserverBinder =
     void Function(void Function(PersistedAppState state) observer);
+typedef UserIdProvider = Future<String?> Function();
 
 class AppStoreSyncCoordinator extends ChangeNotifier {
   AppStoreSyncCoordinator({
     InstallationIdStore? installationIdStore,
+    UserIdProvider? userIdProvider,
     SharedPreferencesSyncMetadataStore? metadataStore,
     FirebaseAppStoreSyncService? syncService,
     PersistedStateObserverBinder? bindPersistedStateObserver,
     required LocalSnapshotLoader loadLocalSnapshot,
     required RemoteSnapshotApplier applyRemoteSnapshot,
-  }) : _installationIdStore = installationIdStore ?? InstallationIdStore(),
+  }) : _installationIdStore = installationIdStore,
+       _userIdProvider = userIdProvider,
        _metadataStore = metadataStore ?? SharedPreferencesSyncMetadataStore(),
        _syncService = syncService ?? FirebaseAppStoreSyncService(),
        _loadLocalSnapshot = loadLocalSnapshot,
@@ -36,7 +39,8 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     bindPersistedStateObserver?.call(persistedStateObserver);
   }
 
-  final InstallationIdStore _installationIdStore;
+  final InstallationIdStore? _installationIdStore;
+  final UserIdProvider? _userIdProvider;
   final SharedPreferencesSyncMetadataStore _metadataStore;
   final FirebaseAppStoreSyncService _syncService;
   final LocalSnapshotLoader _loadLocalSnapshot;
@@ -45,7 +49,6 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
   AppStoreSyncStatus _status = const AppStoreSyncStatus();
   String? _installationId;
   SyncMetadata? _metadata;
-  Future<void>? _initializationFuture;
   Future<void>? _startupFuture;
   Future<void> _syncOperationTail = Future<void>.value();
   PersistedAppState? _pendingUploadSnapshot;
@@ -84,7 +87,11 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     );
 
     try {
-      await _ensureInitialized();
+      final didInitialize = await _ensureInitialized();
+      if (!didInitialize) {
+        _setStatus(const AppStoreSyncStatus());
+        return;
+      }
       final localSnapshot = await _loadSnapshotOrEmpty();
       final remoteSnapshot = await _syncService.fetch(_installationId!);
 
@@ -153,22 +160,36 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     }
   }
 
-  Future<void> _ensureInitialized() {
-    return _initializationFuture ??= _initialize();
-  }
+  Future<bool> _ensureInitialized() async {
+    if (_installationId != null) {
+      return true;
+    }
 
-  Future<void> _initialize() async {
-    final installationId = await _installationIdStore.loadOrCreate();
+    final installationId = await _loadIdentityId();
+    if (installationId == null) {
+      return false;
+    }
+
     final loadedMetadata = await _metadataStore.load();
 
     _installationId = installationId;
     if (loadedMetadata != null &&
         loadedMetadata.installationId == installationId) {
       _metadata = loadedMetadata;
-      return;
+      return true;
     }
 
     _metadata = SyncMetadata(installationId: installationId);
+    return true;
+  }
+
+  Future<String?> _loadIdentityId() async {
+    final userIdProvider = _userIdProvider;
+    if (userIdProvider != null) {
+      return userIdProvider();
+    }
+
+    return (_installationIdStore ?? InstallationIdStore()).loadOrCreate();
   }
 
   Future<PersistedAppState> _loadSnapshotOrEmpty() async {
@@ -198,7 +219,12 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
 
   Future<void> _drainUploadQueue() async {
     try {
-      await _ensureInitialized();
+      final didInitialize = await _ensureInitialized();
+      if (!didInitialize) {
+        _pendingUploadSnapshot = null;
+        _setStatus(const AppStoreSyncStatus());
+        return;
+      }
       while (_pendingUploadSnapshot != null) {
         final snapshot = _pendingUploadSnapshot!;
         _pendingUploadSnapshot = null;

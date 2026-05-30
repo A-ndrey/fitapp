@@ -15,6 +15,7 @@ import 'package:fitapp/screens/library_screen.dart';
 import 'package:fitapp/screens/meal_screen.dart';
 import 'package:fitapp/screens/today_screen.dart';
 import 'package:fitapp/state/app_store.dart';
+import 'package:fitapp/state/auth/app_auth_service.dart';
 import 'package:fitapp/state/sync/app_store_sync_coordinator.dart';
 import 'package:fitapp/state/sync/firebase_app_store_sync_service.dart';
 import 'package:fitapp/state/sync/app_store_sync_status.dart';
@@ -203,6 +204,33 @@ class _TrackingSyncAccess extends FitAppSyncAccess {
   @override
   Future<void> syncNow() async {
     syncNowCallCount += 1;
+  }
+}
+
+class _FakeAuthService extends ChangeNotifier implements AppAuthService {
+  _FakeAuthService(this._state);
+
+  AppAuthState _state;
+
+  @override
+  AppAuthState get state => _state;
+
+  @override
+  Future<void> signIn({required String email, required String password}) async {
+    _state = AppAuthState(uid: 'user-1', email: email);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> signOut() async {
+    _state = const AppAuthState();
+    notifyListeners();
+  }
+
+  @override
+  Future<void> signUp({required String email, required String password}) async {
+    _state = AppAuthState(uid: 'user-1', email: email);
+    notifyListeners();
   }
 }
 
@@ -1060,11 +1088,11 @@ void main() {
 
     await openMoreDestination(tester);
 
-    expect(find.text('Sync'), findsOneWidget);
+    expect(find.text('Sync'), findsNothing);
     expect(find.text('Units'), findsOneWidget);
-    expect(find.text('Ready to sync.'), findsOneWidget);
-    expect(find.text('Sync now'), findsOneWidget);
-    expect(find.text('Login'), findsNothing);
+    expect(find.text('Ready to sync.'), findsNothing);
+    expect(find.text('Sync now'), findsNothing);
+    expect(find.text('Login'), findsOneWidget);
     expect(find.text('Logout'), findsNothing);
     await scrollToText(tester, 'Language');
     expect(find.text('Language'), findsOneWidget);
@@ -1087,7 +1115,7 @@ void main() {
     },
   );
 
-  testWidgets('settings sync card renders error status and retries sync', (
+  testWidgets('settings hides sync error status while signed out', (
     tester,
   ) async {
     final store = AppStore.empty();
@@ -1099,39 +1127,37 @@ void main() {
     await tester.pumpWidget(FitApp(store: store, syncAccess: syncAccess));
     await openMoreDestination(tester);
 
-    expect(
-      find.text(
-        'Sync error: Bad state: Sync failed while reaching the server.',
-      ),
-      findsOneWidget,
-    );
-    expect(find.text('Sync now'), findsOneWidget);
-    expect(find.text('Login'), findsNothing);
+    expect(find.textContaining('Sync error:'), findsNothing);
+    expect(find.text('Sync now'), findsNothing);
+    expect(find.text('Login'), findsOneWidget);
     expect(find.text('Logout'), findsNothing);
-
-    await tester.tap(find.text('Sync now'));
-    await tester.pumpAndSettle();
-
-    expect(syncAccess.syncNowCallCount, 1);
+    expect(syncAccess.syncNowCallCount, 0);
   });
 
-  testWidgets('settings sync card updates from coordinator status', (
+  testWidgets('signed-in account card updates from coordinator sync status', (
     tester,
   ) async {
     final store = AppStore.empty();
     final syncAccess = FitAppSyncAccess();
     final coordinator = _TestSyncCoordinator();
+    final authService = _FakeAuthService(
+      const AppAuthState(uid: 'user-1', email: 'me@example.com'),
+    );
     addTearDown(store.dispose);
     addTearDown(syncAccess.dispose);
     addTearDown(coordinator.dispose);
 
     syncAccess.bindCoordinator(coordinator);
-    await tester.pumpWidget(FitApp(store: store, syncAccess: syncAccess));
+    await tester.pumpWidget(
+      FitApp(store: store, syncAccess: syncAccess, authService: authService),
+    );
     await openMoreDestination(tester);
 
+    expect(find.text('Account'), findsOneWidget);
+    expect(find.textContaining('me@example.com'), findsOneWidget);
     expect(find.text('Ready to sync.'), findsOneWidget);
     expect(find.text('Login'), findsNothing);
-    expect(find.text('Logout'), findsNothing);
+    expect(find.text('Logout'), findsOneWidget);
 
     coordinator.setStatus(
       const AppStoreSyncStatus(phase: AppStoreSyncPhase.syncing),

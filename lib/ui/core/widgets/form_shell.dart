@@ -94,13 +94,17 @@ class FormShellPage extends StatelessWidget {
     required this.children,
     super.key,
     this.subtitle,
+    this.primaryActionChild,
+    this.showBodyHeader = true,
   });
 
   final String title;
   final String? subtitle;
   final String primaryActionLabel;
-  final VoidCallback onPrimaryAction;
+  final VoidCallback? onPrimaryAction;
   final List<Widget> children;
+  final Widget? primaryActionChild;
+  final bool showBodyHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +128,7 @@ class FormShellPage extends StatelessWidget {
             Expanded(
               child: FilledButton(
                 onPressed: onPrimaryAction,
-                child: Text(primaryActionLabel),
+                child: primaryActionChild ?? Text(primaryActionLabel),
               ),
             ),
           ],
@@ -134,17 +138,19 @@ class FormShellPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
           children: [
-            Text(title, style: textTheme.headlineSmall),
-            if (subtitle != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                subtitle!,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+            if (showBodyHeader) ...[
+              Text(title, style: textTheme.headlineSmall),
+              if (subtitle != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  subtitle!,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
+              ],
+              const SizedBox(height: 20),
             ],
-            const SizedBox(height: 20),
             ...children,
           ],
         ),

@@ -7,17 +7,23 @@ class SettingsStatusCard extends StatelessWidget {
   const SettingsStatusCard({
     required this.title,
     required this.message,
-    required this.actionLabel,
-    required this.onPressed,
+    this.icon = Icons.cloud_sync_outlined,
     this.messageColor,
+    this.secondaryMessage,
+    this.secondaryMessageColor,
+    this.actionLabel,
+    this.onPressed,
     super.key,
   });
 
   final String title;
   final String message;
-  final String actionLabel;
-  final VoidCallback onPressed;
+  final IconData icon;
   final Color? messageColor;
+  final String? secondaryMessage;
+  final Color? secondaryMessageColor;
+  final String? actionLabel;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +38,7 @@ class SettingsStatusCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.cloud_sync_outlined, color: colorScheme.onSurface),
+                Icon(icon, color: colorScheme.onSurface),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -52,14 +58,25 @@ class SettingsStatusCard extends StatelessWidget {
                 color: messageColor ?? colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: onPressed,
-                child: Text(actionLabel),
+            if (secondaryMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                secondaryMessage!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: secondaryMessageColor ?? colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
+            ],
+            if (actionLabel != null) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: onPressed,
+                  child: Text(actionLabel!),
+                ),
+              ),
+            ],
           ],
         ),
       ),
