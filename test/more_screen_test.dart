@@ -1,5 +1,6 @@
 import 'package:fitapp/main.dart';
 import 'package:fitapp/models/app_preferences.dart';
+import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/screens/more_screen.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/state/sync/app_store_sync_coordinator.dart';
@@ -81,20 +82,15 @@ void main() {
     await pumpScreen(tester, store);
 
     expect(find.byType(AdaptivePage), findsOneWidget);
-    expect(find.text('Settings'), findsWidgets);
-    expect(
-      find.text('Tune units, appearance, and training-log preferences.'),
-      findsOneWidget,
-    );
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Units, sync, and app preferences.'), findsNothing);
     expect(find.text('Sync status'), findsOneWidget);
     expect(find.text('Units'), findsOneWidget);
     expect(find.text('App'), findsOneWidget);
+    expect(find.text('Daily macro targets'), findsOneWidget);
     expect(find.text('Language'), findsOneWidget);
     expect(find.text('Appearance'), findsOneWidget);
-    expect(
-      find.text('Sync is ready. Tap below to check for updates.'),
-      findsOneWidget,
-    );
+    expect(find.text('Ready to sync.'), findsOneWidget);
     expect(find.text('Sync now'), findsOneWidget);
     expect(find.text('Login'), findsNothing);
     expect(find.text('Logout'), findsNothing);
@@ -135,19 +131,13 @@ void main() {
     syncAccess.bindCoordinator(coordinator);
     await pumpScreen(tester, AppStore(), syncAccess: syncAccess);
 
-    expect(
-      find.text('Sync is ready. Tap below to check for updates.'),
-      findsOneWidget,
-    );
+    expect(find.text('Ready to sync.'), findsOneWidget);
 
     coordinator.setStatus(
       const AppStoreSyncStatus(phase: AppStoreSyncPhase.syncing),
     );
     await tester.pumpAndSettle();
-    expect(
-      find.text('Sync in progress. We will keep your data up to date.'),
-      findsOneWidget,
-    );
+    expect(find.text('Syncing...'), findsOneWidget);
   });
 
   testWidgets('more screen preference chips update store', (tester) async {
@@ -164,38 +154,103 @@ void main() {
     expect(find.text('Dark'), findsOneWidget);
   });
 
+  testWidgets('more screen applies daily macro targets to the store', (
+    tester,
+  ) async {
+    final store = AppStore();
+
+    await pumpScreen(tester, store, size: const Size(900, 1400));
+
+    await tester.enterText(
+      find.bySemanticsLabel('Daily calories target'),
+      '2100',
+    );
+    await tester.enterText(
+      find.bySemanticsLabel('Daily protein target'),
+      '140',
+    );
+    await tester.enterText(find.bySemanticsLabel('Daily fat target'), '65');
+    await tester.enterText(find.bySemanticsLabel('Daily carbs target'), '260');
+    await tester.ensureVisible(
+      find.widgetWithText(FilledButton, 'Apply targets'),
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Apply targets'));
+    await tester.pumpAndSettle();
+
+    expect(
+      store.preferences.dailyMacroTargets,
+      const NutritionValues(calories: 2100, protein: 140, fat: 65, carbs: 260),
+    );
+  });
+
+  testWidgets('selected settings chips use readable checkmark color', (
+    tester,
+  ) async {
+    final store = AppStore();
+
+    await pumpScreen(tester, store);
+
+    final systemChip = find.widgetWithText(ChoiceChip, 'System');
+    final chip = tester.widget<ChoiceChip>(systemChip);
+    final context = tester.element(systemChip);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    expect(chip.selected, isTrue);
+    expect(chip.selectedColor, colorScheme.primaryContainer);
+    expect(chip.checkmarkColor, colorScheme.onPrimaryContainer);
+    expect(chip.labelStyle?.color, colorScheme.onPrimaryContainer);
+  });
+
   testWidgets('more screen stacks preference cards below medium layout', (
     tester,
   ) async {
     await pumpScreen(tester, AppStore(), size: const Size(390, 844));
 
+    final unitsCard = find.ancestor(
+      of: find.text('Workout weight'),
+      matching: find.byType(Card),
+    );
+    final dishCard = find.ancestor(
+      of: find.text('Dish weight'),
+      matching: find.byType(Card),
+    );
     final workoutTopLeft = tester.getTopLeft(find.text('Workout weight'));
     final dishTopLeft = tester.getTopLeft(find.text('Dish weight'));
-    final cardWidth = tester
-        .getSize(
-          find.ancestor(
-            of: find.text('Workout weight'),
-            matching: find.byType(Card),
-          ),
-        )
-        .width;
 
+    expect(unitsCard, findsOneWidget);
+    expect(dishCard, findsOneWidget);
+    expect(
+      identical(unitsCard.evaluate().single, dishCard.evaluate().single),
+      isTrue,
+    );
     expect(dishTopLeft.dy, greaterThan(workoutTopLeft.dy));
     expect((dishTopLeft.dx - workoutTopLeft.dx).abs(), lessThan(1));
-    expect(cardWidth, greaterThan(320));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('more screen places preference cards in two columns when wide', (
+  testWidgets('more screen keeps unit preferences in one card when wide', (
     tester,
   ) async {
     await pumpScreen(tester, AppStore(), size: const Size(900, 900));
 
+    final unitsCard = find.ancestor(
+      of: find.text('Workout weight'),
+      matching: find.byType(Card),
+    );
+    final dishCard = find.ancestor(
+      of: find.text('Dish weight'),
+      matching: find.byType(Card),
+    );
     final workoutTopLeft = tester.getTopLeft(find.text('Workout weight'));
     final dishTopLeft = tester.getTopLeft(find.text('Dish weight'));
 
-    expect((dishTopLeft.dy - workoutTopLeft.dy).abs(), lessThan(1));
-    expect(dishTopLeft.dx, greaterThan(workoutTopLeft.dx));
+    expect(unitsCard, findsOneWidget);
+    expect(dishCard, findsOneWidget);
+    expect(
+      identical(unitsCard.evaluate().single, dishCard.evaluate().single),
+      isTrue,
+    );
+    expect(dishTopLeft.dy, greaterThan(workoutTopLeft.dy));
     expect(tester.takeException(), isNull);
   });
 }

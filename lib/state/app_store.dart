@@ -156,6 +156,7 @@ class AppStore extends ChangeNotifier {
           MuscleGroup.triceps,
           MuscleGroup.shoulders,
         ],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     _createBuiltInExercise(
@@ -169,6 +170,7 @@ class AppStore extends ChangeNotifier {
           MuscleGroup.triceps,
           MuscleGroup.shoulders,
         ],
+        measurementType: ExerciseMeasurementType.strength,
       ),
     );
     _createBuiltInExercise(
@@ -178,6 +180,7 @@ class AppStore extends ChangeNotifier {
         description: 'Barbell lower-body compound lift',
         instruction: 'Brace, descend with control, and stand through mid-foot.',
         muscleGroups: [MuscleGroup.quads, MuscleGroup.glutes, MuscleGroup.core],
+        measurementType: ExerciseMeasurementType.strength,
       ),
     );
     _createBuiltInExercise(
@@ -187,6 +190,7 @@ class AppStore extends ChangeNotifier {
         description: 'Static core hold',
         instruction: 'Hold a straight line without letting hips sag.',
         muscleGroups: [MuscleGroup.core],
+        measurementType: ExerciseMeasurementType.duration,
       ),
     );
     _createBuiltInExercise(
@@ -196,6 +200,7 @@ class AppStore extends ChangeNotifier {
         description: 'Steady cardio work',
         instruction: 'Keep a sustainable pace and relaxed posture.',
         muscleGroups: [MuscleGroup.cardio, MuscleGroup.legs],
+        measurementType: ExerciseMeasurementType.cardio,
       ),
     );
   }
@@ -211,15 +216,9 @@ class AppStore extends ChangeNotifier {
             exerciseId: 'bench-press',
             sets: 3,
             reps: 8,
-            weight: 60,
-            unit: 'kg',
+            weightGrams: 60000,
           ),
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
+          TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
         ],
       ),
     );
@@ -233,10 +232,13 @@ class AppStore extends ChangeNotifier {
             exerciseId: 'squat',
             sets: 4,
             reps: 6,
-            weight: 80,
-            unit: 'kg',
+            weightGrams: 80000,
           ),
-          TrainingExercise(exerciseId: 'running', time: 15, unit: 'min'),
+          TrainingExercise(
+            exerciseId: 'running',
+            durationSeconds: 900,
+            distanceMeters: 3000,
+          ),
         ],
       ),
     );
@@ -247,6 +249,54 @@ class AppStore extends ChangeNotifier {
   List<CatalogItem> get items => List.unmodifiable(_catalog.values);
 
   List<MealEntry> get mealEntries => List.unmodifiable(_mealEntries);
+
+  List<MealEntry> get todayMealEntries {
+    final today = _localDateOnly(DateTime.now());
+    return List.unmodifiable(
+      _mealEntries.where((entry) => _localDateOnly(entry.loggedAt) == today),
+    );
+  }
+
+  List<MealEntry> get mealEntriesNewestFirst {
+    final sorted = List<MealEntry>.of(_mealEntries)
+      ..sort((left, right) => right.loggedAt.compareTo(left.loggedAt));
+    return List.unmodifiable(sorted);
+  }
+
+  List<MealHistoryGroup> get mealHistoryGroups {
+    final groups = <MealHistoryGroup>[];
+    DateTime? currentDate;
+    var currentEntries = <MealEntry>[];
+
+    for (final entry in mealEntriesNewestFirst) {
+      final entryDate = _localDateOnly(entry.loggedAt);
+      if (currentDate == null || entryDate != currentDate) {
+        if (currentDate != null) {
+          groups.add(
+            MealHistoryGroup(
+              date: currentDate,
+              entries: List.unmodifiable(currentEntries),
+            ),
+          );
+        }
+        currentDate = entryDate;
+        currentEntries = <MealEntry>[entry];
+      } else {
+        currentEntries.add(entry);
+      }
+    }
+
+    if (currentDate != null) {
+      groups.add(
+        MealHistoryGroup(
+          date: currentDate,
+          entries: List.unmodifiable(currentEntries),
+        ),
+      );
+    }
+
+    return List.unmodifiable(groups);
+  }
 
   List<Exercise> get exercises => List.unmodifiable(_exercises.values);
 
@@ -268,6 +318,8 @@ class AppStore extends ChangeNotifier {
   HeightUnit get heightUnit => _preferences.heightUnit;
 
   DistanceUnit get distanceUnit => _preferences.distanceUnit;
+
+  NutritionValues get dailyMacroTargets => _preferences.dailyMacroTargets;
 
   bool get isLoggedIn => _isLoggedIn;
 
@@ -303,6 +355,11 @@ class AppStore extends ChangeNotifier {
     _didMutatePersistedState();
   }
 
+  void setDailyMacroTargets(NutritionValues targets) {
+    _preferences = _preferences.copyWith(dailyMacroTargets: targets);
+    _didMutatePersistedState();
+  }
+
   void logIn() {
     if (_isLoggedIn) {
       return;
@@ -323,6 +380,7 @@ class AppStore extends ChangeNotifier {
     PersistedAppState state, {
     bool notifyPersistedStateObserver = true,
   }) async {
+    _validateExternalPersistedStateCompatibility(state);
     _validatePersistedState(state);
     _persistedStateObserverGeneration += 1;
     _applyPersistedStateUnchecked(state);
@@ -407,7 +465,7 @@ class AppStore extends ChangeNotifier {
 
   NutritionValues get dailyTotals {
     var total = NutritionValues.zero;
-    for (final entry in _mealEntries) {
+    for (final entry in todayMealEntries) {
       total = total + entry.nutrition;
     }
     return total;
@@ -472,6 +530,20 @@ class AppStore extends ChangeNotifier {
     if (!_exercises.containsKey(exercise.id)) {
       throw ArgumentError('Missing exercise id: ${exercise.id}');
     }
+    final existing = _exercises[exercise.id]!;
+    if (existing.measurementType != exercise.measurementType) {
+      if (_hasWorkoutHistoryForExercise(exercise.id)) {
+        throw ArgumentError(
+          'Exercise measurement type cannot change after workout history exists.',
+        );
+      }
+      if (_isReferencedByAnyTrainingPlan(exercise.id) ||
+          _isReferencedByActiveWorkout(exercise.id)) {
+        throw ArgumentError(
+          'Exercise measurement type cannot change while referenced by a training plan or active workout.',
+        );
+      }
+    }
     _exercises[exercise.id] = _freezeExercise(exercise);
     _didMutatePersistedState();
   }
@@ -483,6 +555,12 @@ class AppStore extends ChangeNotifier {
     }
     if (_isReferencedByAnyTrainingPlan(id)) {
       throw StateError('Exercise is used by a training plan.');
+    }
+    if (_isReferencedByActiveWorkout(id)) {
+      throw StateError('Exercise is used by the active workout.');
+    }
+    if (_isReferencedByCompletedWorkoutHistory(id)) {
+      throw StateError('Exercise is used by completed workout history.');
     }
     _exercises.remove(id);
     _didMutatePersistedState();
@@ -574,12 +652,9 @@ class AppStore extends ChangeNotifier {
     if (resultIndex < 0 || resultIndex >= session.results.length) {
       throw RangeError.index(resultIndex, session.results, 'resultIndex');
     }
-    if (setLog.reps == null && setLog.weight == null && setLog.time == null) {
-      throw ArgumentError('Workout set log must include at least one value.');
-    }
-    _validateOptionalNonNegative(setLog.reps, 'reps');
-    _validateOptionalNonNegative(setLog.weight, 'weight');
-    _validateOptionalNonNegative(setLog.time, 'time');
+    final exerciseId = session.results[resultIndex].exerciseId;
+    final measurementType = _requireExerciseMeasurementType(exerciseId);
+    _validateWorkoutSetLog(setLog, measurementType);
     final updatedResults = List<WorkoutExerciseResult>.of(session.results);
     final current = updatedResults[resultIndex];
     updatedResults[resultIndex] = WorkoutExerciseResult(
@@ -590,6 +665,36 @@ class AppStore extends ChangeNotifier {
         ...current.setLogs,
         setLog,
       ]),
+    );
+    _activeWorkoutSession = session.copyWith(
+      results: List<WorkoutExerciseResult>.unmodifiable(updatedResults),
+    );
+    _didMutatePersistedState();
+  }
+
+  void removeActiveWorkoutSet({
+    required int resultIndex,
+    required int setIndex,
+  }) {
+    final session = _activeWorkoutSession;
+    if (session == null) {
+      throw StateError('No active workout.');
+    }
+    if (resultIndex < 0 || resultIndex >= session.results.length) {
+      throw RangeError.index(resultIndex, session.results, 'resultIndex');
+    }
+    final current = session.results[resultIndex];
+    if (setIndex < 0 || setIndex >= current.setLogs.length) {
+      throw RangeError.index(setIndex, current.setLogs, 'setIndex');
+    }
+    final updatedSetLogs = List<WorkoutSetLog>.of(current.setLogs)
+      ..removeAt(setIndex);
+    final updatedResults = List<WorkoutExerciseResult>.of(session.results);
+    updatedResults[resultIndex] = WorkoutExerciseResult(
+      exerciseId: current.exerciseId,
+      exerciseName: current.exerciseName,
+      target: current.target,
+      setLogs: List<WorkoutSetLog>.unmodifiable(updatedSetLogs),
     );
     _activeWorkoutSession = session.copyWith(
       results: List<WorkoutExerciseResult>.unmodifiable(updatedResults),
@@ -678,7 +783,11 @@ class AppStore extends ChangeNotifier {
     _didMutatePersistedState();
   }
 
-  MealEntry addMealByGrams({required String itemId, required double grams}) {
+  MealEntry addMealByGrams({
+    required String itemId,
+    required double grams,
+    DateTime? loggedAt,
+  }) {
     if (!grams.isFinite || grams <= 0) {
       throw ArgumentError.value(grams, 'grams', 'Must be greater than zero.');
     }
@@ -692,6 +801,7 @@ class AppStore extends ChangeNotifier {
       consumedGrams: grams,
       mode: MealEntryMode.grams,
       enteredQuantity: grams,
+      loggedAt: loggedAt,
       catalog: _catalog,
     );
     _mealEntries.add(entry);
@@ -702,6 +812,7 @@ class AppStore extends ChangeNotifier {
   MealEntry addMealByServings({
     required String itemId,
     required double servings,
+    DateTime? loggedAt,
   }) {
     if (!servings.isFinite || servings <= 0) {
       throw ArgumentError.value(
@@ -721,6 +832,7 @@ class AppStore extends ChangeNotifier {
       consumedGrams: grams,
       mode: MealEntryMode.servings,
       enteredQuantity: servings,
+      loggedAt: loggedAt,
       catalog: _catalog,
     );
     _mealEntries.add(entry);
@@ -900,6 +1012,28 @@ class AppStore extends ChangeNotifier {
     for (final plan in state.userTrainingPlans) {
       validationStore.createTrainingPlan(plan);
     }
+    final activeWorkoutSession = state.activeWorkoutSession;
+    if (activeWorkoutSession != null) {
+      validationStore._validateWorkoutSession(activeWorkoutSession);
+    }
+    for (final session in state.completedWorkoutSessions) {
+      validationStore._validateWorkoutSession(session);
+    }
+  }
+
+  void _validateExternalPersistedStateCompatibility(PersistedAppState state) {
+    for (final exercise in state.userExercises) {
+      final existing = _exercises[exercise.id];
+      if (existing == null) {
+        continue;
+      }
+      if (existing.measurementType != exercise.measurementType &&
+          _hasWorkoutHistoryForExercise(exercise.id)) {
+        throw ArgumentError(
+          'Exercise measurement type cannot change after workout history exists.',
+        );
+      }
+    }
   }
 
   void _notifyPersistedStateSaved(PersistedAppState state) {
@@ -997,6 +1131,11 @@ class AppStore extends ChangeNotifier {
     return buffer.toString().replaceAll(RegExp(r'^-+|-+$'), '');
   }
 
+  static DateTime _localDateOnly(DateTime value) {
+    final localValue = value.toLocal();
+    return DateTime(localValue.year, localValue.month, localValue.day);
+  }
+
   void _validateFood(FoodItem food) {
     if (food.id.trim().isEmpty) {
       throw ArgumentError('Food id must not be empty.');
@@ -1039,16 +1178,121 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Training plan must have at least one exercise.');
     }
     for (final exercise in plan.exercises) {
-      if (!_exercises.containsKey(exercise.exerciseId)) {
-        throw ArgumentError('Missing exercise id: ${exercise.exerciseId}');
-      }
-      _validateOptionalNonNegative(exercise.sets, 'sets');
-      _validateOptionalNonNegative(exercise.reps, 'reps');
-      _validateOptionalNonNegative(exercise.weight, 'weight');
-      _validateOptionalNonNegative(exercise.time, 'time');
-      if (exercise.unit.trim().isEmpty) {
-        throw ArgumentError('Training exercise unit must not be empty.');
-      }
+      final measurementType = _requireExerciseMeasurementType(
+        exercise.exerciseId,
+      );
+      _validateTrainingExercise(exercise, measurementType);
+    }
+  }
+
+  void _validateTrainingExercise(
+    TrainingExercise exercise,
+    ExerciseMeasurementType measurementType,
+  ) {
+    _validateOptionalNonNegative(exercise.sets, 'sets');
+    _validateOptionalNonNegative(exercise.reps, 'reps');
+    _validateOptionalNonNegative(exercise.weightGrams, 'weightGrams');
+    _validateOptionalNonNegative(exercise.durationSeconds, 'durationSeconds');
+    _validateOptionalNonNegative(exercise.distanceMeters, 'distanceMeters');
+    _validateOptionalNonNegative(
+      exercise.assistanceWeightGrams,
+      'assistanceWeightGrams',
+    );
+
+    switch (measurementType) {
+      case ExerciseMeasurementType.strength:
+        _requireAbsent(exercise.durationSeconds, 'durationSeconds');
+        _requireAbsent(exercise.distanceMeters, 'distanceMeters');
+        _requireAbsent(exercise.assistanceWeightGrams, 'assistanceWeightGrams');
+        break;
+      case ExerciseMeasurementType.bodyweight:
+        _requireAbsent(exercise.weightGrams, 'weightGrams');
+        _requireAbsent(exercise.durationSeconds, 'durationSeconds');
+        _requireAbsent(exercise.distanceMeters, 'distanceMeters');
+        _requireAbsent(exercise.assistanceWeightGrams, 'assistanceWeightGrams');
+        break;
+      case ExerciseMeasurementType.duration:
+        _requireAbsent(exercise.reps, 'reps');
+        _requireAbsent(exercise.weightGrams, 'weightGrams');
+        _requireAbsent(exercise.distanceMeters, 'distanceMeters');
+        _requireAbsent(exercise.assistanceWeightGrams, 'assistanceWeightGrams');
+        break;
+      case ExerciseMeasurementType.weightedDuration:
+        _requireAbsent(exercise.reps, 'reps');
+        _requireAbsent(exercise.distanceMeters, 'distanceMeters');
+        _requireAbsent(exercise.assistanceWeightGrams, 'assistanceWeightGrams');
+        break;
+      case ExerciseMeasurementType.cardio:
+        _requireAbsent(exercise.reps, 'reps');
+        _requireAbsent(exercise.weightGrams, 'weightGrams');
+        _requireAbsent(exercise.assistanceWeightGrams, 'assistanceWeightGrams');
+        break;
+      case ExerciseMeasurementType.assisted:
+        _requireAbsent(exercise.weightGrams, 'weightGrams');
+        _requireAbsent(exercise.durationSeconds, 'durationSeconds');
+        _requireAbsent(exercise.distanceMeters, 'distanceMeters');
+        break;
+    }
+  }
+
+  void _validateWorkoutSetLog(
+    WorkoutSetLog setLog,
+    ExerciseMeasurementType measurementType,
+  ) {
+    _validateOptionalNonNegative(setLog.reps, 'reps');
+    _validateOptionalNonNegative(setLog.weightGrams, 'weightGrams');
+    _validateOptionalNonNegative(setLog.durationSeconds, 'durationSeconds');
+    _validateOptionalNonNegative(setLog.distanceMeters, 'distanceMeters');
+    _validateOptionalNonNegative(
+      setLog.assistanceWeightGrams,
+      'assistanceWeightGrams',
+    );
+
+    switch (measurementType) {
+      case ExerciseMeasurementType.strength:
+        _requirePresent(setLog.reps, 'reps');
+        _requirePresent(setLog.weightGrams, 'weightGrams');
+        _requireAbsent(setLog.durationSeconds, 'durationSeconds');
+        _requireAbsent(setLog.distanceMeters, 'distanceMeters');
+        _requireAbsent(setLog.assistanceWeightGrams, 'assistanceWeightGrams');
+        break;
+      case ExerciseMeasurementType.bodyweight:
+        _requirePresent(setLog.reps, 'reps');
+        _requireAbsent(setLog.weightGrams, 'weightGrams');
+        _requireAbsent(setLog.durationSeconds, 'durationSeconds');
+        _requireAbsent(setLog.distanceMeters, 'distanceMeters');
+        _requireAbsent(setLog.assistanceWeightGrams, 'assistanceWeightGrams');
+        break;
+      case ExerciseMeasurementType.duration:
+        _requirePresent(setLog.durationSeconds, 'durationSeconds');
+        _requireAbsent(setLog.reps, 'reps');
+        _requireAbsent(setLog.weightGrams, 'weightGrams');
+        _requireAbsent(setLog.distanceMeters, 'distanceMeters');
+        _requireAbsent(setLog.assistanceWeightGrams, 'assistanceWeightGrams');
+        break;
+      case ExerciseMeasurementType.weightedDuration:
+        _requirePresent(setLog.durationSeconds, 'durationSeconds');
+        _requirePresent(setLog.weightGrams, 'weightGrams');
+        _requireAbsent(setLog.reps, 'reps');
+        _requireAbsent(setLog.distanceMeters, 'distanceMeters');
+        _requireAbsent(setLog.assistanceWeightGrams, 'assistanceWeightGrams');
+        break;
+      case ExerciseMeasurementType.cardio:
+        _requireAnyPresent([
+          setLog.durationSeconds,
+          setLog.distanceMeters,
+        ], 'durationSeconds or distanceMeters');
+        _requireAbsent(setLog.reps, 'reps');
+        _requireAbsent(setLog.weightGrams, 'weightGrams');
+        _requireAbsent(setLog.assistanceWeightGrams, 'assistanceWeightGrams');
+        break;
+      case ExerciseMeasurementType.assisted:
+        _requirePresent(setLog.reps, 'reps');
+        _requirePresent(setLog.assistanceWeightGrams, 'assistanceWeightGrams');
+        _requireAbsent(setLog.weightGrams, 'weightGrams');
+        _requireAbsent(setLog.durationSeconds, 'durationSeconds');
+        _requireAbsent(setLog.distanceMeters, 'distanceMeters');
+        break;
     }
   }
 
@@ -1058,6 +1302,32 @@ class AppStore extends ChangeNotifier {
     }
     if (!value.isFinite || value < 0) {
       throw ArgumentError('$name must be finite and non-negative.');
+    }
+  }
+
+  ExerciseMeasurementType _requireExerciseMeasurementType(String exerciseId) {
+    final exercise = _exercises[exerciseId];
+    if (exercise == null) {
+      throw ArgumentError('Missing exercise id: $exerciseId');
+    }
+    return exercise.measurementType;
+  }
+
+  void _requirePresent(double? value, String name) {
+    if (value == null) {
+      throw ArgumentError('$name is required for this exercise type.');
+    }
+  }
+
+  void _requireAbsent(double? value, String name) {
+    if (value != null) {
+      throw ArgumentError('$name is not allowed for this exercise type.');
+    }
+  }
+
+  void _requireAnyPresent(List<double?> values, String names) {
+    if (values.every((value) => value == null)) {
+      throw ArgumentError('$names is required for this exercise type.');
     }
   }
 
@@ -1123,6 +1393,54 @@ class AppStore extends ChangeNotifier {
       }
     }
     return false;
+  }
+
+  bool _isReferencedByActiveWorkout(String exerciseId) {
+    final activeSession = _activeWorkoutSession;
+    if (activeSession == null) {
+      return false;
+    }
+    return activeSession.results.any(
+      (result) => result.exerciseId == exerciseId,
+    );
+  }
+
+  bool _isReferencedByCompletedWorkoutHistory(String exerciseId) {
+    return _completedWorkoutSessions.any(
+      (session) =>
+          session.results.any((result) => result.exerciseId == exerciseId),
+    );
+  }
+
+  bool _hasWorkoutHistoryForExercise(String exerciseId) {
+    final activeSession = _activeWorkoutSession;
+    if (activeSession != null &&
+        activeSession.results.any(
+          (result) => result.exerciseId == exerciseId,
+        )) {
+      return true;
+    }
+    return _completedWorkoutSessions.any(
+      (session) =>
+          session.results.any((result) => result.exerciseId == exerciseId),
+    );
+  }
+
+  void _validateWorkoutSession(WorkoutSession session) {
+    for (final result in session.results) {
+      final measurementType = _requireExerciseMeasurementType(
+        result.exerciseId,
+      );
+      if (result.target.exerciseId != result.exerciseId) {
+        throw ArgumentError(
+          'Workout result target must reference the same exercise id.',
+        );
+      }
+      _validateTrainingExercise(result.target, measurementType);
+      for (final setLog in result.setLogs) {
+        _validateWorkoutSetLog(setLog, measurementType);
+      }
+    }
   }
 
   bool _dishReferencesTarget(
@@ -1219,6 +1537,7 @@ class AppStore extends ChangeNotifier {
       muscleGroups: List<MuscleGroup>.unmodifiable(
         List<MuscleGroup>.of(exercise.muscleGroups),
       ),
+      measurementType: exercise.measurementType,
     );
   }
 
@@ -1240,6 +1559,13 @@ class AppStore extends ChangeNotifier {
     }
     return value.toStringAsFixed(1);
   }
+}
+
+class MealHistoryGroup {
+  const MealHistoryGroup({required this.date, required this.entries});
+
+  final DateTime date;
+  final List<MealEntry> entries;
 }
 
 class WorkoutExerciseHistoryGroup {

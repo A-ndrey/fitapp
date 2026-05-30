@@ -5,6 +5,8 @@ import '../../models/catalog_item.dart';
 import '../../models/exercise.dart';
 import '../../models/training_plan.dart';
 import '../../state/app_store.dart';
+import '../core/layout/app_breakpoints.dart';
+import '../core/widgets/swipe_action_card.dart';
 import 'library_formatters.dart';
 
 class FoodCatalogCard extends StatelessWidget {
@@ -24,39 +26,64 @@ class FoodCatalogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Card(
-      child: ListTile(
-        title: _BoundedText(item.name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _BoundedText(
-              formatCatalogItemTypeLabel(
-                item,
-                foodLabel: l10n?.catalogSubtypeFood ?? 'food',
-                dishLabel: l10n?.catalogSubtypeDish ?? 'recipe',
-              ),
-            ),
-            _BoundedText(
-              formatCatalogServingNutritionLabel(
-                item,
-                store,
-                servingLabel: l10n?.libraryServingSuffix ?? 'serving',
-                caloriesPerServing: (calories) =>
-                    l10n?.libraryCaloriesPerServingLabel(calories) ??
-                    '$calories kcal per serving',
-              ),
-            ),
-          ],
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
+    return SwipeActionCard(
+      actions: [
+        SwipeCardAction(
+          label: 'Edit',
+          icon: Icons.edit_outlined,
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+          onPressed: onEdit,
         ),
-        isThreeLine: true,
-        trailing: _CatalogCardActions(
-          editTooltip: l10n?.libraryEditItem(item.name) ?? 'Edit ${item.name}',
-          deleteTooltip:
-              l10n?.libraryDeleteItem(item.name) ?? 'Delete ${item.name}',
-          onEdit: onEdit,
-          onDelete: onDelete,
+        SwipeCardAction(
+          label: l10n?.commonDelete ?? 'Delete',
+          icon: Icons.delete_outline,
+          backgroundColor: Theme.of(context).colorScheme.errorContainer,
+          foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+          onPressed: onDelete,
+        ),
+      ],
+      child: Card(
+        child: ListTile(
+          title: _BoundedText(item.name),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _BoundedText(
+                formatCatalogItemTypeLabel(
+                  item,
+                  foodLabel: l10n?.catalogSubtypeFood ?? 'food',
+                  dishLabel: l10n?.catalogSubtypeDish ?? 'recipe',
+                ),
+              ),
+              _BoundedText(
+                formatCatalogServingNutritionLabel(
+                  item,
+                  store,
+                  servingLabel: l10n?.libraryServingSuffix ?? 'serving',
+                  caloriesPerServing: (calories) =>
+                      l10n?.libraryCaloriesPerServingLabel(calories) ??
+                      '$calories kcal per serving',
+                ),
+              ),
+            ],
+          ),
+          isThreeLine: true,
+          trailing: isCompact
+              ? null
+              : _CatalogCardActions(
+                  editTooltip:
+                      l10n?.libraryEditItem(item.name) ?? 'Edit ${item.name}',
+                  deleteTooltip:
+                      l10n?.libraryDeleteItem(item.name) ??
+                      'Delete ${item.name}',
+                  onEdit: onEdit,
+                  onDelete: onDelete,
+                ),
         ),
       ),
     );
@@ -67,36 +94,64 @@ class TrainingPlanCatalogCard extends StatelessWidget {
   const TrainingPlanCatalogCard({
     super.key,
     required this.plan,
+    required this.store,
     required this.onEdit,
     required this.onDelete,
   });
 
   final TrainingPlan plan;
+  final AppStore store;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Card(
-      child: ListTile(
-        title: _BoundedText(plan.name),
-        subtitle: _BoundedText(
-          formatTrainingPlanSummaryLabel(
-            plan,
-            exerciseCountLabel: (count) =>
-                l10n?.libraryExerciseCount(count) ??
-                formatLibraryCountLabel(count, 'exercise'),
-          ),
-          maxLines: 2,
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
+    return SwipeActionCard(
+      actions: [
+        SwipeCardAction(
+          label: 'Edit',
+          icon: Icons.edit_outlined,
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+          onPressed: onEdit,
         ),
-        isThreeLine: true,
-        trailing: _CatalogCardActions(
-          editTooltip: l10n?.libraryEditItem(plan.name) ?? 'Edit ${plan.name}',
-          deleteTooltip:
-              l10n?.libraryDeleteItem(plan.name) ?? 'Delete ${plan.name}',
-          onEdit: onEdit,
-          onDelete: onDelete,
+        SwipeCardAction(
+          label: l10n?.commonDelete ?? 'Delete',
+          icon: Icons.delete_outline,
+          backgroundColor: Theme.of(context).colorScheme.errorContainer,
+          foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+          onPressed: onDelete,
+        ),
+      ],
+      child: Card(
+        child: ListTile(
+          title: _BoundedText(plan.name),
+          subtitle: _BoundedText(
+            formatTrainingPlanSummaryLabel(
+              plan,
+              store: store,
+              exerciseCountLabel: (count) =>
+                  l10n?.libraryExerciseCount(count) ??
+                  formatLibraryCountLabel(count, 'exercise'),
+            ),
+            maxLines: 2,
+          ),
+          isThreeLine: true,
+          trailing: isCompact
+              ? null
+              : _CatalogCardActions(
+                  editTooltip:
+                      l10n?.libraryEditItem(plan.name) ?? 'Edit ${plan.name}',
+                  deleteTooltip:
+                      l10n?.libraryDeleteItem(plan.name) ??
+                      'Delete ${plan.name}',
+                  onEdit: onEdit,
+                  onDelete: onDelete,
+                ),
         ),
       ),
     );
@@ -118,32 +173,59 @@ class ExerciseCatalogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Card(
-      child: ListTile(
-        title: _BoundedText(exercise.name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _BoundedText(exercise.description),
-            _BoundedText(exercise.instruction),
-            _BoundedText(
-              formatExerciseMuscleGroupSummaryLabel(
-                exercise.muscleGroups,
-                emptyLabel: l10n?.libraryMusclesEmpty ?? 'Muscles: -',
-              ),
-            ),
-          ],
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
+    return SwipeActionCard(
+      actions: [
+        SwipeCardAction(
+          label: 'Edit',
+          icon: Icons.edit_outlined,
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+          onPressed: onEdit,
         ),
-        isThreeLine: true,
-        trailing: _CatalogCardActions(
-          editTooltip:
-              l10n?.libraryEditItem(exercise.name) ?? 'Edit ${exercise.name}',
-          deleteTooltip:
-              l10n?.libraryDeleteItem(exercise.name) ??
-              'Delete ${exercise.name}',
-          onEdit: onEdit,
-          onDelete: onDelete,
+        SwipeCardAction(
+          label: l10n?.commonDelete ?? 'Delete',
+          icon: Icons.delete_outline,
+          backgroundColor: Theme.of(context).colorScheme.errorContainer,
+          foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+          onPressed: onDelete,
+        ),
+      ],
+      child: Card(
+        child: ListTile(
+          title: _BoundedText(exercise.name),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _BoundedText(exercise.description),
+              _BoundedText(exercise.instruction),
+              _BoundedText(
+                formatExerciseMeasurementTypeLabel(exercise.measurementType),
+              ),
+              _BoundedText(
+                formatExerciseMuscleGroupSummaryLabel(
+                  exercise.muscleGroups,
+                  emptyLabel: l10n?.libraryMusclesEmpty ?? 'Muscles: -',
+                ),
+              ),
+            ],
+          ),
+          isThreeLine: true,
+          trailing: isCompact
+              ? null
+              : _CatalogCardActions(
+                  editTooltip:
+                      l10n?.libraryEditItem(exercise.name) ??
+                      'Edit ${exercise.name}',
+                  deleteTooltip:
+                      l10n?.libraryDeleteItem(exercise.name) ??
+                      'Delete ${exercise.name}',
+                  onEdit: onEdit,
+                  onDelete: onDelete,
+                ),
         ),
       ),
     );

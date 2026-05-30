@@ -1,17 +1,44 @@
 import 'training_plan.dart';
 
 class WorkoutSetLog {
-  const WorkoutSetLog({this.reps, this.weight, this.time});
+  const WorkoutSetLog({
+    this.reps,
+    this.weightGrams,
+    this.durationSeconds,
+    this.distanceMeters,
+    this.assistanceWeightGrams,
+  });
 
   final double? reps;
-  final double? weight;
-  final double? time;
+  final double? weightGrams;
+  final double? durationSeconds;
+  final double? distanceMeters;
+  final double? assistanceWeightGrams;
 
-  WorkoutSetLog copyWith({double? reps, double? weight, double? time}) {
+  WorkoutSetLog copyWith({
+    double? reps,
+    bool clearReps = false,
+    double? weightGrams,
+    bool clearWeightGrams = false,
+    double? durationSeconds,
+    bool clearDurationSeconds = false,
+    double? distanceMeters,
+    bool clearDistanceMeters = false,
+    double? assistanceWeightGrams,
+    bool clearAssistanceWeightGrams = false,
+  }) {
     return WorkoutSetLog(
-      reps: reps ?? this.reps,
-      weight: weight ?? this.weight,
-      time: time ?? this.time,
+      reps: clearReps ? null : (reps ?? this.reps),
+      weightGrams: clearWeightGrams ? null : (weightGrams ?? this.weightGrams),
+      durationSeconds: clearDurationSeconds
+          ? null
+          : (durationSeconds ?? this.durationSeconds),
+      distanceMeters: clearDistanceMeters
+          ? null
+          : (distanceMeters ?? this.distanceMeters),
+      assistanceWeightGrams: clearAssistanceWeightGrams
+          ? null
+          : (assistanceWeightGrams ?? this.assistanceWeightGrams),
     );
   }
 }

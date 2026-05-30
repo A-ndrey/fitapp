@@ -44,12 +44,14 @@ void main() {
       final sourceTrainingExercises = <TrainingExercise>[
         const TrainingExercise(
           exerciseId: 'burpees',
-          reps: 10,
           sets: 3,
-          unit: 'reps',
+          weightGrams: 10000,
+          durationSeconds: 45,
         ),
       ];
-      final sourceSetLogs = <WorkoutSetLog>[const WorkoutSetLog(reps: 10)];
+      final sourceSetLogs = <WorkoutSetLog>[
+        const WorkoutSetLog(weightGrams: 10000, durationSeconds: 45),
+      ];
       final sourceResults = <WorkoutExerciseResult>[
         WorkoutExerciseResult(
           exerciseId: 'burpees',
@@ -89,6 +91,7 @@ void main() {
           description: 'Conditioning move',
           instruction: 'Keep pace steady.',
           muscleGroups: sourceMuscleGroups,
+          measurementType: ExerciseMeasurementType.weightedDuration,
         ),
       ];
       final sourcePlans = <TrainingPlan>[
@@ -142,24 +145,14 @@ void main() {
       );
       sourceMuscleGroups.add(MuscleGroup.fullBody);
       sourceTrainingExercises.add(
-        const TrainingExercise(
-          exerciseId: 'push-ups',
-          reps: 12,
-          sets: 3,
-          unit: 'reps',
-        ),
+        const TrainingExercise(exerciseId: 'push-ups', reps: 12, sets: 3),
       );
       sourceSetLogs.add(const WorkoutSetLog(reps: 12));
       sourceResults.add(
         const WorkoutExerciseResult(
           exerciseId: 'push-ups',
           exerciseName: 'Push-ups',
-          target: TrainingExercise(
-            exerciseId: 'push-ups',
-            reps: 12,
-            sets: 3,
-            unit: 'reps',
-          ),
+          target: TrainingExercise(exerciseId: 'push-ups', reps: 12, sets: 3),
           setLogs: [WorkoutSetLog(reps: 12)],
         ),
       );
@@ -193,12 +186,7 @@ void main() {
       );
       expect(
         () => state.userTrainingPlans.single.exercises.add(
-          const TrainingExercise(
-            exerciseId: 'push-ups',
-            reps: 12,
-            sets: 3,
-            unit: 'reps',
-          ),
+          const TrainingExercise(exerciseId: 'push-ups', reps: 12, sets: 3),
         ),
         throwsUnsupportedError,
       );
@@ -207,12 +195,7 @@ void main() {
           const WorkoutExerciseResult(
             exerciseId: 'push-ups',
             exerciseName: 'Push-ups',
-            target: TrainingExercise(
-              exerciseId: 'push-ups',
-              reps: 12,
-              sets: 3,
-              unit: 'reps',
-            ),
+            target: TrainingExercise(exerciseId: 'push-ups', reps: 12, sets: 3),
             setLogs: [WorkoutSetLog(reps: 12)],
           ),
         ),
@@ -269,6 +252,74 @@ void main() {
     );
   });
 
+  test('PersistedAppState codec preserves meal entry loggedAt timestamps', () {
+    final state = PersistedAppState(
+      userFoods: const [],
+      userDishes: const [],
+      userExercises: const [],
+      userTrainingPlans: const [],
+      mealEntries: [
+        MealEntry(
+          id: 'meal-entry-1',
+          sourceItemId: 'oats',
+          itemName: 'Oats',
+          itemType: CatalogItemType.food,
+          servingSizeGrams: 40,
+          consumedGrams: 40,
+          mode: MealEntryMode.grams,
+          enteredQuantity: 40,
+          loggedAt: DateTime.utc(2026, 5, 17, 7, 45),
+          nutrition: const NutritionValues(
+            calories: 150,
+            protein: 5,
+            fat: 3,
+            carbs: 27,
+          ),
+        ),
+      ],
+      preferences: const AppPreferences.defaults(),
+      activeWorkoutSession: null,
+      completedWorkoutSessions: const [],
+      mealEntryCounter: 1,
+      workoutSessionCounter: 0,
+    );
+
+    final encoded = PersistedAppStateCodec.encode(state);
+    final decoded = PersistedAppStateCodec.decode(encoded);
+
+    expect(
+      decoded.mealEntries.single.loggedAt,
+      DateTime.utc(2026, 5, 17, 7, 45),
+    );
+  });
+
+  test(
+    'PersistedAppState codec decodes legacy meal entries without loggedAt',
+    () {
+      final payload = _basePersistedPayload()
+        ..['mealEntries'] = [
+          {
+            'id': 'meal-entry-legacy',
+            'sourceItemId': 'oats',
+            'itemName': 'Oats',
+            'itemType': 'food',
+            'servingSizeGrams': 40,
+            'consumedGrams': 40,
+            'mode': 'grams',
+            'enteredQuantity': 40,
+            'nutrition': {'calories': 150, 'protein': 5, 'fat': 3, 'carbs': 27},
+          },
+        ];
+
+      final decoded = PersistedAppStateCodec.decode(payload);
+
+      expect(
+        decoded.mealEntries.single.loggedAt,
+        DateTime.fromMillisecondsSinceEpoch(0),
+      );
+    },
+  );
+
   test(
     'PersistedAppState codec round-trips snapshot data as JSON-safe values',
     () {
@@ -304,6 +355,7 @@ void main() {
             description: 'Conditioning move',
             instruction: 'Keep pace steady.',
             muscleGroups: [MuscleGroup.cardio, MuscleGroup.fullBody],
+            measurementType: ExerciseMeasurementType.weightedDuration,
           ),
         ],
         userTrainingPlans: const [
@@ -314,14 +366,14 @@ void main() {
             exercises: [
               TrainingExercise(
                 exerciseId: 'burpees',
-                reps: 10,
                 sets: 3,
-                unit: 'reps',
+                weightGrams: 10000,
+                durationSeconds: 45,
               ),
             ],
           ),
         ],
-        mealEntries: const [
+        mealEntries: [
           MealEntry(
             id: 'meal-entry-3',
             sourceItemId: 'oats-bowl',
@@ -331,7 +383,8 @@ void main() {
             consumedGrams: 125,
             mode: MealEntryMode.grams,
             enteredQuantity: 125,
-            nutrition: NutritionValues(
+            loggedAt: DateTime.utc(2026, 5, 9, 7, 30),
+            nutrition: const NutritionValues(
               calories: 75,
               protein: 2.5,
               fat: 1.5,
@@ -346,6 +399,12 @@ void main() {
           dishWeightUnit: DishWeightUnit.ounces,
           heightUnit: HeightUnit.inches,
           distanceUnit: DistanceUnit.miles,
+          dailyMacroTargets: NutritionValues(
+            calories: 2400,
+            protein: 160,
+            fat: 80,
+            carbs: 280,
+          ),
         ),
         activeWorkoutSession: WorkoutSession(
           id: 'workout-session-1',
@@ -358,11 +417,11 @@ void main() {
               exerciseName: 'Burpees',
               target: TrainingExercise(
                 exerciseId: 'burpees',
-                reps: 10,
                 sets: 3,
-                unit: 'reps',
+                weightGrams: 10000,
+                durationSeconds: 45,
               ),
-                setLogs: [WorkoutSetLog(reps: 10, weight: 0, time: 45)],
+              setLogs: [WorkoutSetLog(weightGrams: 10000, durationSeconds: 45)],
             ),
           ],
         ),
@@ -379,11 +438,13 @@ void main() {
                 exerciseName: 'Burpees',
                 target: TrainingExercise(
                   exerciseId: 'burpees',
-                  reps: 8,
                   sets: 2,
-                  unit: 'reps',
+                  weightGrams: 8000,
+                  durationSeconds: 40,
                 ),
-                setLogs: [WorkoutSetLog(reps: 8, weight: 0, time: 40)],
+                setLogs: [
+                  WorkoutSetLog(weightGrams: 8000, durationSeconds: 40),
+                ],
               ),
             ],
           ),
@@ -407,6 +468,12 @@ void main() {
         'dishWeightUnit': 'ounces',
         'heightUnit': 'inches',
         'distanceUnit': 'miles',
+        'dailyMacroTargets': <String, Object?>{
+          'calories': 2400.0,
+          'protein': 160.0,
+          'fat': 80.0,
+          'carbs': 280.0,
+        },
       });
 
       final foods = payload['userFoods']! as List<Object?>;
@@ -422,6 +489,15 @@ void main() {
           'fat': 3.0,
           'carbs': 27.0,
         },
+      });
+      final exercises = payload['userExercises']! as List<Object?>;
+      expect(exercises.single, <String, Object?>{
+        'id': 'burpees',
+        'name': 'Burpees',
+        'description': 'Conditioning move',
+        'instruction': 'Keep pace steady.',
+        'muscleGroups': ['cardio', 'fullBody'],
+        'measurementType': 'weightedDuration',
       });
 
       final activeSession =
@@ -441,6 +517,10 @@ void main() {
         MuscleGroup.fullBody,
       ]);
       expect(
+        decoded.userExercises.single.measurementType,
+        ExerciseMeasurementType.weightedDuration,
+      );
+      expect(
         decoded.userTrainingPlans.single.exercises.single.exerciseId,
         'burpees',
       );
@@ -455,6 +535,12 @@ void main() {
           dishWeightUnit: DishWeightUnit.ounces,
           heightUnit: HeightUnit.inches,
           distanceUnit: DistanceUnit.miles,
+          dailyMacroTargets: NutritionValues(
+            calories: 2400,
+            protein: 160,
+            fat: 80,
+            carbs: 280,
+          ),
         ),
       );
       expect(decoded.activeWorkoutSession, isNotNull);
@@ -464,7 +550,13 @@ void main() {
       );
       expect(decoded.activeWorkoutSession!.finishedAt, isNull);
       expect(
-        decoded.activeWorkoutSession!.results.single.setLogs.single.time,
+        decoded
+            .activeWorkoutSession!
+            .results
+            .single
+            .setLogs
+            .single
+            .durationSeconds,
         45,
       );
       expect(decoded.completedWorkoutSessions, hasLength(1));
@@ -485,7 +577,7 @@ void main() {
           'name': 'Broken plan',
           'description': 'Broken',
           'exercises': [
-            {'exerciseId': 'ghost', 'sets': 3.0, 'reps': 8.0, 'unit': 'reps'},
+            {'exerciseId': 'ghost', 'sets': 3.0, 'reps': 8.0},
           ],
         },
       ];
@@ -503,12 +595,7 @@ void main() {
             'name': 'Built-in plan',
             'description': 'Uses bootstrapped exercises',
             'exercises': [
-              {
-                'exerciseId': 'pushups',
-                'sets': 4.0,
-                'reps': 10.0,
-                'unit': 'reps',
-              },
+              {'exerciseId': 'pushups', 'sets': 4.0, 'reps': 10.0},
             ],
           },
         ];

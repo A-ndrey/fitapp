@@ -783,16 +783,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Set working volume, load, duration, and unit.';
 
   @override
-  String get trainingExpectedSetsFieldLabel => 'Working sets';
+  String get trainingExpectedSetsFieldLabel => 'Sets';
 
   @override
-  String get trainingExpectedRepsFieldLabel => 'Target reps';
+  String get trainingExpectedRepsFieldLabel => 'Reps';
 
   @override
-  String get trainingExpectedWeightFieldLabel => 'Target load';
+  String get trainingExpectedWeightFieldLabel => 'Weight';
 
   @override
-  String get trainingExpectedTimeFieldLabel => 'Target duration';
+  String get trainingExpectedTimeFieldLabel => 'Duration';
 
   @override
   String get trainingUnitFieldLabel => 'Load or time unit';

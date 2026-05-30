@@ -348,6 +348,10 @@ class FitHome extends StatefulWidget {
 class _FitHomeState extends State<FitHome> {
   int _selectedIndex = 0;
   final ValueNotifier<bool> _isWorkoutTabCurrent = ValueNotifier<bool>(false);
+  final GlobalKey<NavigatorState> _workoutNavigatorKey =
+      GlobalKey<NavigatorState>();
+  final GlobalKey<LibraryScreenState> _libraryScreenKey =
+      GlobalKey<LibraryScreenState>();
 
   @override
   void dispose() {
@@ -375,6 +379,7 @@ class _FitHomeState extends State<FitHome> {
         icon: Icons.timer_outlined,
         selectedIcon: Icons.timer,
         screen: _WorkoutTabNavigator(
+          navigatorKey: _workoutNavigatorKey,
           store: widget.store,
           isCurrentTabListenable: _isWorkoutTabCurrent,
         ),
@@ -389,7 +394,7 @@ class _FitHomeState extends State<FitHome> {
         label: l10n?.destinationLibrary ?? 'Library',
         icon: Icons.inventory_2_outlined,
         selectedIcon: Icons.inventory_2,
-        screen: LibraryScreen(store: widget.store),
+        screen: LibraryScreen(key: _libraryScreenKey, store: widget.store),
       ),
       _AppDestination(
         label: l10n?.destinationMore ?? 'Settings',
@@ -467,6 +472,14 @@ class _FitHomeState extends State<FitHome> {
 
   void _selectDestination(int index) {
     _isWorkoutTabCurrent.value = index == 1;
+    if (index == _selectedIndex) {
+      if (index == 1) {
+        _workoutNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+      } else if (index == 3) {
+        _libraryScreenKey.currentState?.resetToRoot();
+      }
+      return;
+    }
     setState(() {
       _selectedIndex = index;
     });
@@ -489,16 +502,19 @@ class _AppDestination {
 
 class _WorkoutTabNavigator extends StatelessWidget {
   const _WorkoutTabNavigator({
+    required this.navigatorKey,
     required this.store,
     required this.isCurrentTabListenable,
   });
 
+  final GlobalKey<NavigatorState> navigatorKey;
   final AppStore store;
   final ValueListenable<bool> isCurrentTabListenable;
 
   @override
   Widget build(BuildContext context) {
     return Navigator(
+      key: navigatorKey,
       onGenerateRoute: (settings) {
         return MaterialPageRoute<void>(
           builder: (context) {

@@ -3,16 +3,16 @@ import 'package:flutter/material.dart';
 class ActionCard extends StatelessWidget {
   const ActionCard({
     required this.title,
-    required this.subtitle,
     required this.icon,
     required this.onTap,
     super.key,
+    this.subtitle,
     this.tooltip,
     this.semanticHint,
   });
 
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final IconData icon;
   final VoidCallback onTap;
   final String? tooltip;
@@ -51,13 +51,15 @@ class ActionCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                    if (subtitle != null && subtitle!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        subtitle!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -71,7 +73,9 @@ class ActionCard extends StatelessWidget {
     final card = Semantics(
       button: true,
       hint: semanticHint,
-      label: '${_sentence(title)} ${_sentence(subtitle)}',
+      label: subtitle == null || subtitle!.isEmpty
+          ? _sentence(title)
+          : '${_sentence(title)} ${_sentence(subtitle!)}',
       onTap: onTap,
       child: ExcludeSemantics(child: visualCard),
     );

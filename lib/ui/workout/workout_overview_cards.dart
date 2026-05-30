@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/workout_session.dart';
+import '../core/layout/app_breakpoints.dart';
 import '../core/layout/responsive_layout.dart';
 import '../core/widgets/metric_card.dart';
+import '../core/widgets/swipe_action_card.dart';
 import 'workout_formatters.dart';
 import 'workout_session_cards.dart';
 
@@ -43,7 +45,7 @@ class ActiveWorkoutCard extends StatelessWidget {
                 Text(
                   l10n?.workoutActiveLabel ?? 'Active workout',
                   style: textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
+                    color: colorScheme.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -144,26 +146,44 @@ class WorkoutHistoryCard extends StatelessWidget {
       hourUnit: l10n?.workoutHourUnit ?? 'h',
       minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
     );
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        onTap: onOpen,
-        title: Tooltip(
-          message:
-              l10n?.workoutOpenCompletedTooltip(session.trainingPlanName) ??
-              'Open completed ${session.trainingPlanName}',
-          child: Text(session.trainingPlanName),
-        ),
-        subtitle: Text(
-          '${formatWorkoutDate(session.startedAt)} • '
-          '$duration',
-        ),
-        trailing: IconButton(
-          tooltip:
-              l10n?.workoutDeleteCompletedTooltip(session.trainingPlanName) ??
-              'Delete completed ${session.trainingPlanName}',
-          icon: const Icon(Icons.delete_outline),
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
+    return SwipeActionCard(
+      actions: [
+        SwipeCardAction(
+          label: l10n?.commonDelete ?? 'Delete',
+          icon: Icons.delete_outline,
+          backgroundColor: Theme.of(context).colorScheme.errorContainer,
+          foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
           onPressed: onDelete,
+        ),
+      ],
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          onTap: onOpen,
+          title: Tooltip(
+            message:
+                l10n?.workoutOpenCompletedTooltip(session.trainingPlanName) ??
+                'Open completed ${session.trainingPlanName}',
+            child: Text(session.trainingPlanName),
+          ),
+          subtitle: Text(
+            '${formatWorkoutDate(session.startedAt)} • '
+            '$duration',
+          ),
+          trailing: isCompact
+              ? null
+              : IconButton(
+                  tooltip:
+                      l10n?.workoutDeleteCompletedTooltip(
+                        session.trainingPlanName,
+                      ) ??
+                      'Delete completed ${session.trainingPlanName}',
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: onDelete,
+                ),
         ),
       ),
     );

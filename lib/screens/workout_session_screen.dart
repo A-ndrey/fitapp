@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/exercise.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
@@ -113,7 +114,11 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
           ),
           body: AdaptivePage(
             children: [
-              WorkoutSessionHeaderCard(session: session, l10n: l10n),
+              WorkoutSessionHeaderCard(
+                session: session,
+                store: widget.store,
+                l10n: l10n,
+              ),
               const SizedBox(height: 24),
               SectionHeader(
                 title: l10n?.workoutExerciseQueueTitle ?? 'Exercise queue',
@@ -128,6 +133,11 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 seenExercises[result.exerciseId] = occurrence;
                 final hasRepeatedExercise =
                     (exerciseCounts[result.exerciseId] ?? 0) > 1;
+                final measurementType =
+                    widget.store
+                        .exerciseById(result.exerciseId)
+                        ?.measurementType ??
+                    ExerciseMeasurementType.strength;
                 final exerciseLabel = hasRepeatedExercise
                     ? '${result.exerciseName} ($occurrence)'
                     : result.exerciseName;
@@ -145,6 +155,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     exerciseLabel: exerciseLabel,
                     targetLabel: formatWorkoutTarget(
                       result.target,
+                      measurementType,
                       widget.store,
                       targetPrefix: l10n?.workoutTargetPrefix ?? 'Target:',
                       setsLabel: l10n?.workoutSetsLabel ?? 'sets',

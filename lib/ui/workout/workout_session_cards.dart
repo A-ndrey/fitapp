@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../state/app_store.dart';
 import '../../models/workout_session.dart';
 import 'workout_formatters.dart';
 
 class WorkoutSessionHeaderCard extends StatelessWidget {
-  const WorkoutSessionHeaderCard({required this.session, super.key, this.l10n});
+  const WorkoutSessionHeaderCard({
+    required this.session,
+    required this.store,
+    super.key,
+    this.l10n,
+  });
 
   final WorkoutSession session;
+  final AppStore store;
   final AppLocalizations? l10n;
 
   @override
@@ -19,14 +26,10 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
       hourUnit: l10n?.workoutHourUnit ?? 'h',
       minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
     );
-    final totalVolume = session.results.fold<double>(0, (total, result) {
-      final resultVolume = result.setLogs.fold<double>(
-        0,
-        (setTotal, setLog) =>
-            setTotal + (setLog.weight ?? 0) * (setLog.reps ?? 0),
-      );
-      return total + resultVolume;
-    });
+    final loggedSetCount = session.results.fold<int>(
+      0,
+      (total, result) => total + result.setLogs.length,
+    );
     final completedExercises = session.results
         .where((result) => result.setLogs.isNotEmpty)
         .length;
@@ -40,7 +43,7 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
             Text(
               l10n?.workoutSessionCockpitLabel ?? 'Active session',
               style: textTheme.labelLarge?.copyWith(
-                color: colorScheme.onPrimaryContainer,
+                color: colorScheme.primary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -66,10 +69,7 @@ class WorkoutSessionHeaderCard extends StatelessWidget {
                       l10n?.workoutExerciseCount(session.results.length) ??
                       '${session.results.length} ${session.results.length == 1 ? 'exercise' : 'exercises'}',
                 ),
-                WorkoutInfoPill(
-                  label:
-                      'Total volume ${totalVolume <= 0 ? '0 kg' : '${totalVolume.toStringAsFixed(totalVolume >= 1000 ? 0 : 1)} kg'}',
-                ),
+                WorkoutInfoPill(label: 'Logged sets $loggedSetCount'),
                 WorkoutInfoPill(
                   label:
                       '$completedExercises/${session.results.length} completed',

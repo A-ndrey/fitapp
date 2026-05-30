@@ -131,8 +131,28 @@ void main() {
       store.exerciseById('pushups')!.muscleGroups,
       contains(MuscleGroup.chest),
     );
+    expect(
+      store.exerciseById('pushups')!.measurementType,
+      ExerciseMeasurementType.bodyweight,
+    );
+    expect(
+      store.exerciseById('bench-press')!.measurementType,
+      ExerciseMeasurementType.strength,
+    );
+    expect(
+      store.exerciseById('running')!.measurementType,
+      ExerciseMeasurementType.cardio,
+    );
     expect(store.trainingPlans, hasLength(greaterThanOrEqualTo(2)));
     expect(store.trainingPlans.any((plan) => plan.name == 'Chest day'), isTrue);
+    expect(
+      store.trainingPlanById('chest-day')!.exercises.first.weightGrams,
+      60000,
+    );
+    expect(
+      store.trainingPlanById('leg-day')!.exercises.last.durationSeconds,
+      900,
+    );
   });
 
   test('AppStore.empty starts without exercises or training plans', () {
@@ -182,9 +202,7 @@ void main() {
             id: 'builtin-pushups-plan',
             name: 'Builtin pushups plan',
             description: 'References a built-in exercise.',
-            exercises: [
-              TrainingExercise(exerciseId: 'pushups', reps: 15, unit: 'reps'),
-            ],
+            exercises: [TrainingExercise(exerciseId: 'pushups', reps: 15)],
           ),
         ],
         mealEntries: const [],
@@ -326,6 +344,7 @@ void main() {
           description: 'Updated built-in exercise',
           instruction: 'Updated built-in instruction.',
           muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.bodyweight,
         ),
       ),
       throwsArgumentError,
@@ -342,8 +361,7 @@ void main() {
               exerciseId: 'bench-press',
               sets: 3,
               reps: 8,
-              weight: 60,
-              unit: 'kg',
+              weightGrams: 60000,
             ),
           ],
         ),
@@ -384,16 +402,11 @@ void main() {
             name: 'Remote plan',
             description: 'References a built-in exercise.',
             exercises: [
-              TrainingExercise(
-                exerciseId: 'pushups',
-                sets: 4,
-                reps: 10,
-                unit: 'reps',
-              ),
+              TrainingExercise(exerciseId: 'pushups', sets: 4, reps: 10),
             ],
           ),
         ],
-        mealEntries: const [
+        mealEntries: [
           MealEntry(
             id: 'meal-entry-8',
             sourceItemId: 'cucumber',
@@ -403,7 +416,8 @@ void main() {
             consumedGrams: 150,
             mode: MealEntryMode.grams,
             enteredQuantity: 150,
-            nutrition: NutritionValues(
+            loggedAt: DateTime.utc(2026, 4, 20, 9),
+            nutrition: const NutritionValues(
               calories: 18,
               protein: 0.9,
               fat: 0.2,
@@ -432,10 +446,9 @@ void main() {
                 exerciseId: 'bench-press',
                 sets: 3,
                 reps: 8,
-                weight: 60,
-                unit: 'kg',
+                weightGrams: 60000,
               ),
-              setLogs: [WorkoutSetLog(reps: 8, weight: 60)],
+              setLogs: [WorkoutSetLog(reps: 8, weightGrams: 60000)],
             ),
           ],
         ),
@@ -623,7 +636,6 @@ void main() {
                 exerciseId: 'missing-exercise',
                 sets: 3,
                 reps: 8,
-                unit: 'reps',
               ),
             ],
           ),
@@ -649,6 +661,89 @@ void main() {
     },
   );
 
+  test(
+    'applying an external snapshot rejects measurement type changes for exercises with history',
+    () async {
+      final persistence = FakePersistence();
+      final observedStates = <PersistedAppState>[];
+      final store = AppStore.empty(
+        persistence: persistence,
+        onPersistedStateSaved: observedStates.add,
+      );
+
+      store.createExercise(
+        const Exercise(
+          id: 'custom-pushups',
+          name: 'Custom pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a straight line from shoulders to heels.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'home-chest',
+          name: 'Home chest',
+          description: 'Bodyweight chest work',
+          exercises: [
+            TrainingExercise(exerciseId: 'custom-pushups', sets: 3, reps: 12),
+          ],
+        ),
+      );
+      store.startWorkout(
+        trainingPlanId: 'home-chest',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
+      store.addActiveWorkoutSet(
+        resultIndex: 0,
+        setLog: const WorkoutSetLog(reps: 12),
+      );
+      store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
+      await flushPersistenceQueue();
+
+      observedStates.clear();
+
+      final invalidSnapshot = PersistedAppState(
+        userFoods: const [],
+        userDishes: const [],
+        userExercises: const [
+          Exercise(
+            id: 'custom-pushups',
+            name: 'Custom pushups',
+            description: 'Now assisted.',
+            instruction: 'Use assistance.',
+            muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+            measurementType: ExerciseMeasurementType.assisted,
+          ),
+        ],
+        userTrainingPlans: const [],
+        mealEntries: const [],
+        preferences: const AppPreferences.defaults(),
+        activeWorkoutSession: null,
+        completedWorkoutSessions: const [],
+        mealEntryCounter: 0,
+        workoutSessionCounter: 0,
+      );
+
+      await expectLater(
+        store.applyExternalPersistedState(invalidSnapshot),
+        throwsArgumentError,
+      );
+
+      expect(
+        store.exerciseById('custom-pushups')!.measurementType,
+        ExerciseMeasurementType.bodyweight,
+      );
+      expect(store.completedWorkoutSessions, hasLength(1));
+      expect(observedStates, isEmpty);
+      expect(
+        persistence.savedState!.userExercises.single.measurementType,
+        ExerciseMeasurementType.bodyweight,
+      );
+    },
+  );
+
   test('AppStore.hydrated restores counters and runtime state', () async {
     final persistence = FakePersistence(
       loadedState: PersistedAppState(
@@ -656,7 +751,7 @@ void main() {
         userDishes: const [],
         userExercises: const [],
         userTrainingPlans: const [],
-        mealEntries: const [
+        mealEntries: [
           MealEntry(
             id: 'meal-entry-2',
             sourceItemId: 'tomato',
@@ -666,7 +761,8 @@ void main() {
             consumedGrams: 100,
             mode: MealEntryMode.grams,
             enteredQuantity: 100,
-            nutrition: NutritionValues(
+            loggedAt: DateTime.utc(2026, 5, 8, 7),
+            nutrition: const NutritionValues(
               calories: 18,
               protein: 0.9,
               fat: 0.2,
@@ -695,10 +791,9 @@ void main() {
                 exerciseId: 'bench-press',
                 sets: 3,
                 reps: 8,
-                weight: 60,
-                unit: 'kg',
+                weightGrams: 60000,
               ),
-              setLogs: [WorkoutSetLog(reps: 8, weight: 60)],
+              setLogs: [WorkoutSetLog(reps: 8, weightGrams: 60000)],
             ),
           ],
         ),
@@ -717,10 +812,9 @@ void main() {
                   exerciseId: 'squat',
                   sets: 4,
                   reps: 6,
-                  weight: 80,
-                  unit: 'kg',
+                  weightGrams: 80000,
                 ),
-                setLogs: [WorkoutSetLog(reps: 6, weight: 80)],
+                setLogs: [WorkoutSetLog(reps: 6, weightGrams: 80000)],
               ),
             ],
           ),
@@ -766,6 +860,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -774,14 +869,7 @@ void main() {
         id: 'home-chest',
         name: 'Home chest',
         description: 'Bodyweight chest work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
       ),
     );
 
@@ -798,6 +886,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -808,12 +897,104 @@ void main() {
         description: 'Updated push exercise',
         instruction: 'Use a bench and keep a rigid plank.',
         muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
     expect(store.exerciseById('pushups')!.name, 'Incline pushups');
     expect(store.exerciseById('pushups')!.description, 'Updated push exercise');
   });
+
+  test(
+    'rejects exercise measurement type changes after workout history exists',
+    () {
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a straight line from shoulders to heels.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'home-chest',
+          name: 'Home chest',
+          description: 'Bodyweight chest work',
+          exercises: [
+            TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+          ],
+        ),
+      );
+      store.startWorkout(
+        trainingPlanId: 'home-chest',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
+      store.addActiveWorkoutSet(
+        resultIndex: 0,
+        setLog: const WorkoutSetLog(reps: 12),
+      );
+      store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
+
+      expect(
+        () => store.updateExercise(
+          const Exercise(
+            id: 'pushups',
+            name: 'Pushups',
+            description: 'Bodyweight push exercise',
+            instruction: 'Keep a straight line from shoulders to heels.',
+            muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+            measurementType: ExerciseMeasurementType.assisted,
+          ),
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  test(
+    'rejects exercise measurement type changes while referenced by a training plan',
+    () {
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a straight line from shoulders to heels.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'home-chest',
+          name: 'Home chest',
+          description: 'Bodyweight chest work',
+          exercises: [
+            TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+          ],
+        ),
+      );
+
+      expect(
+        () => store.updateExercise(
+          const Exercise(
+            id: 'pushups',
+            name: 'Pushups',
+            description: 'Bodyweight push exercise',
+            instruction: 'Keep a straight line from shoulders to heels.',
+            muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+            measurementType: ExerciseMeasurementType.assisted,
+          ),
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
 
   test('rejects invalid exercise updates', () {
     final store = AppStore.empty();
@@ -824,6 +1005,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -835,6 +1017,7 @@ void main() {
           description: 'Broken',
           instruction: 'Broken',
           muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.bodyweight,
         ),
       ),
       throwsArgumentError,
@@ -847,6 +1030,7 @@ void main() {
           description: 'Missing',
           instruction: 'Missing',
           muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.bodyweight,
         ),
       ),
       throwsArgumentError,
@@ -863,6 +1047,7 @@ void main() {
         description: '',
         instruction: 'Do the movement.',
         muscleGroups: [MuscleGroup.core],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
       const Exercise(
         id: 'missing-instruction',
@@ -870,6 +1055,7 @@ void main() {
         description: 'Core work',
         instruction: '',
         muscleGroups: [MuscleGroup.core],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
       const Exercise(
         id: 'missing-muscles',
@@ -877,6 +1063,7 @@ void main() {
         description: 'Core work',
         instruction: 'Do the movement.',
         muscleGroups: [],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     ]) {
       expect(() => store.createExercise(exercise), throwsArgumentError);
@@ -892,6 +1079,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -911,6 +1099,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     store.createTrainingPlan(
@@ -918,14 +1107,7 @@ void main() {
         id: 'home-chest',
         name: 'Home chest',
         description: 'Bodyweight chest work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
       ),
     );
 
@@ -941,6 +1123,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     store.createTrainingPlan(
@@ -948,14 +1131,7 @@ void main() {
         id: 'home-chest',
         name: 'Home chest',
         description: 'Bodyweight chest work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
       ),
     );
 
@@ -972,6 +1148,7 @@ void main() {
         description: 'Updated push exercise',
         instruction: 'Use a bench and keep a rigid plank.',
         muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
 
@@ -984,48 +1161,47 @@ void main() {
     expect(secondSession.results.first.exerciseName, 'Incline pushups');
   });
 
-  test('deleting exercises after workout history is retained is allowed', () {
-    final store = AppStore.empty();
-    store.createExercise(
-      const Exercise(
-        id: 'pushups',
-        name: 'Pushups',
-        description: 'Bodyweight push exercise',
-        instruction: 'Keep a straight line from shoulders to heels.',
-        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
-      ),
-    );
-    store.createTrainingPlan(
-      const TrainingPlan(
-        id: 'home-chest',
-        name: 'Home chest',
-        description: 'Bodyweight chest work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
-        ],
-      ),
-    );
+  test(
+    'rejects deleting exercises referenced by completed workout history',
+    () {
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a straight line from shoulders to heels.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'home-chest',
+          name: 'Home chest',
+          description: 'Bodyweight chest work',
+          exercises: [
+            TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+          ],
+        ),
+      );
 
-    final session = store.startWorkout(
-      trainingPlanId: 'home-chest',
-      startedAt: DateTime(2026, 4, 19, 10),
-    );
-    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
-    store.deleteTrainingPlan('home-chest');
-    store.deleteExercise('pushups');
+      final session = store.startWorkout(
+        trainingPlanId: 'home-chest',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
+      store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
+      store.deleteTrainingPlan('home-chest');
 
-    expect(store.exerciseById('pushups'), isNull);
-    expect(session.results.first.exerciseName, 'Pushups');
-    expect(
-      store.completedWorkoutSessions.single.results.first.exerciseName,
-      'Pushups',
-    );
-  });
+      expect(() => store.deleteExercise('pushups'), throwsStateError);
+      expect(store.exerciseById('pushups'), isNotNull);
+      expect(session.results.first.exerciseName, 'Pushups');
+      expect(
+        store.completedWorkoutSessions.single.results.first.exerciseName,
+        'Pushups',
+      );
+    },
+  );
 
   test('updates and deletes training plans', () {
     final store = AppStore.empty();
@@ -1036,6 +1212,7 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     store.createTrainingPlan(
@@ -1043,14 +1220,7 @@ void main() {
         id: 'home-chest',
         name: 'Home chest',
         description: 'Bodyweight chest work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 3,
-            reps: 12,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
       ),
     );
 
@@ -1059,14 +1229,7 @@ void main() {
         id: 'home-chest',
         name: 'Push day',
         description: 'Updated',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'pushups',
-            sets: 4,
-            reps: 10,
-            unit: 'reps',
-          ),
-        ],
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 4, reps: 10)],
       ),
     );
 
@@ -1087,20 +1250,14 @@ void main() {
         description: 'Bodyweight push exercise',
         instruction: 'Keep a straight line from shoulders to heels.',
         muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.bodyweight,
       ),
     );
     const validPlan = TrainingPlan(
       id: 'home-chest',
       name: 'Home chest',
       description: 'Bodyweight chest work',
-      exercises: [
-        TrainingExercise(
-          exerciseId: 'pushups',
-          sets: 3,
-          reps: 12,
-          unit: 'reps',
-        ),
-      ],
+      exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
     );
     store.createTrainingPlan(validPlan);
 
@@ -1127,13 +1284,7 @@ void main() {
       () => store.createTrainingPlan(
         validPlan.copyWith(
           id: 'missing-exercise',
-          exercises: [
-            const TrainingExercise(
-              exerciseId: 'missing',
-              reps: 10,
-              unit: 'reps',
-            ),
-          ],
+          exercises: [const TrainingExercise(exerciseId: 'missing', reps: 10)],
         ),
       ),
       throwsArgumentError,
@@ -1143,11 +1294,7 @@ void main() {
         validPlan.copyWith(
           id: 'bad-number',
           exercises: [
-            const TrainingExercise(
-              exerciseId: 'pushups',
-              reps: double.nan,
-              unit: 'reps',
-            ),
+            const TrainingExercise(exerciseId: 'pushups', reps: double.nan),
           ],
         ),
       ),
@@ -1157,13 +1304,7 @@ void main() {
       () => store.createTrainingPlan(
         validPlan.copyWith(
           id: 'negative',
-          exercises: [
-            const TrainingExercise(
-              exerciseId: 'pushups',
-              reps: -1,
-              unit: 'reps',
-            ),
-          ],
+          exercises: [const TrainingExercise(exerciseId: 'pushups', reps: -1)],
         ),
       ),
       throwsArgumentError,
@@ -1171,9 +1312,13 @@ void main() {
     expect(
       () => store.createTrainingPlan(
         validPlan.copyWith(
-          id: 'blank-unit',
-          exercises: [
-            const TrainingExercise(exerciseId: 'pushups', reps: 10, unit: ''),
+          id: 'bodyweight-with-weight',
+          exercises: const [
+            TrainingExercise(
+              exerciseId: 'pushups',
+              reps: 12,
+              weightGrams: 5000,
+            ),
           ],
         ),
       ),
@@ -1186,6 +1331,90 @@ void main() {
     expect(() => store.deleteTrainingPlan('missing'), throwsArgumentError);
   });
 
+  test(
+    'allows partial training exercise targets for matching measurement types',
+    () {
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'bench-press',
+          name: 'Bench press',
+          description: 'Barbell chest press',
+          instruction: 'Press with control.',
+          muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.strength,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a rigid plank.',
+          muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'plank',
+          name: 'Plank',
+          description: 'Static hold',
+          instruction: 'Brace and hold.',
+          muscleGroups: [MuscleGroup.core],
+          measurementType: ExerciseMeasurementType.duration,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'sled-push',
+          name: 'Sled push',
+          description: 'Weighted push',
+          instruction: 'Drive through the floor.',
+          muscleGroups: [MuscleGroup.legs],
+          measurementType: ExerciseMeasurementType.weightedDuration,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'run',
+          name: 'Run',
+          description: 'Cardio run',
+          instruction: 'Keep a steady pace.',
+          muscleGroups: [MuscleGroup.cardio],
+          measurementType: ExerciseMeasurementType.cardio,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'assisted-pull-up',
+          name: 'Assisted pull-up',
+          description: 'Band-assisted pull-up',
+          instruction: 'Pull to the bar.',
+          muscleGroups: [MuscleGroup.back],
+          measurementType: ExerciseMeasurementType.assisted,
+        ),
+      );
+
+      const plan = TrainingPlan(
+        id: 'partial-targets',
+        name: 'Partial targets',
+        description: 'Targets can be incomplete',
+        exercises: [
+          TrainingExercise(exerciseId: 'bench-press', sets: 3),
+          TrainingExercise(exerciseId: 'pushups'),
+          TrainingExercise(exerciseId: 'plank', sets: 2),
+          TrainingExercise(exerciseId: 'sled-push', durationSeconds: 40),
+          TrainingExercise(exerciseId: 'run'),
+          TrainingExercise(exerciseId: 'assisted-pull-up', reps: 8),
+        ],
+      );
+
+      expect(() => store.createTrainingPlan(plan), returnsNormally);
+      expect(store.trainingPlanById('partial-targets'), isNotNull);
+    },
+  );
+
   test('starts one active workout and snapshots plan data', () {
     final store = AppStore.empty();
     store.createExercise(
@@ -1195,6 +1424,7 @@ void main() {
         description: 'Barbell chest press',
         instruction: 'Keep shoulder blades set and press the bar vertically.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.strength,
       ),
     );
     store.createTrainingPlan(
@@ -1207,8 +1437,7 @@ void main() {
             exerciseId: 'bench-press',
             sets: 3,
             reps: 8,
-            weight: 60,
-            unit: 'kg',
+            weightGrams: 60000,
           ),
         ],
       ),
@@ -1224,7 +1453,7 @@ void main() {
 
     expect(session.trainingPlanName, 'Push day');
     expect(session.results.first.exerciseName, 'Bench press');
-    expect(session.results.first.target.weight, 60);
+    expect(session.results.first.target.weightGrams, 60000);
     expect(session.results.first.setLogs, isEmpty);
     expect(store.activeWorkoutSession!.trainingPlanName, 'Push day');
     expect(
@@ -1246,21 +1475,24 @@ void main() {
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+      setLog: const WorkoutSetLog(reps: 8, weightGrams: 62500),
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 6, weight: 65),
+      setLog: const WorkoutSetLog(reps: 6, weightGrams: 65000),
     );
 
     expect(store.activeWorkoutSession!.results.first.setLogs, hasLength(2));
     expect(store.activeWorkoutSession!.results.first.setLogs.first.reps, 8);
     expect(
-      store.activeWorkoutSession!.results.first.setLogs.first.weight,
-      62.5,
+      store.activeWorkoutSession!.results.first.setLogs.first.weightGrams,
+      62500,
     );
     expect(store.activeWorkoutSession!.results.first.setLogs.last.reps, 6);
-    expect(store.activeWorkoutSession!.results.first.setLogs.last.weight, 65);
+    expect(
+      store.activeWorkoutSession!.results.first.setLogs.last.weightGrams,
+      65000,
+    );
   });
 
   test('rejects invalid workout set logs', () {
@@ -1288,18 +1520,79 @@ void main() {
     expect(
       () => store.addActiveWorkoutSet(
         resultIndex: 0,
-        setLog: const WorkoutSetLog(weight: -1),
+        setLog: const WorkoutSetLog(weightGrams: -1),
       ),
       throwsArgumentError,
     );
     expect(
       () => store.addActiveWorkoutSet(
         resultIndex: 0,
-        setLog: const WorkoutSetLog(time: double.nan),
+        setLog: const WorkoutSetLog(durationSeconds: double.nan),
       ),
       throwsArgumentError,
     );
   });
+
+  test(
+    'rejects workout set logs that do not match exercise measurement type',
+    () {
+      final store = AppStore.empty();
+      store.createExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Pushups',
+          description: 'Bodyweight push exercise',
+          instruction: 'Keep a straight line from shoulders to heels.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+      store.createExercise(
+        const Exercise(
+          id: 'running',
+          name: 'Running',
+          description: 'Steady cardio work',
+          instruction: 'Keep a sustainable pace and relaxed posture.',
+          muscleGroups: [MuscleGroup.cardio, MuscleGroup.legs],
+          measurementType: ExerciseMeasurementType.cardio,
+        ),
+      );
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'mixed',
+          name: 'Mixed',
+          description: 'Bodyweight and cardio work',
+          exercises: [
+            TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+            TrainingExercise(
+              exerciseId: 'running',
+              durationSeconds: 900,
+              distanceMeters: 3000,
+            ),
+          ],
+        ),
+      );
+      store.startWorkout(
+        trainingPlanId: 'mixed',
+        startedAt: DateTime(2026, 4, 19, 10),
+      );
+
+      expect(
+        () => store.addActiveWorkoutSet(
+          resultIndex: 0,
+          setLog: const WorkoutSetLog(reps: 12, weightGrams: 5000),
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => store.addActiveWorkoutSet(
+          resultIndex: 1,
+          setLog: const WorkoutSetLog(reps: 12),
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
 
   test('finished history preserves workout set logs', () {
     final store = AppStore();
@@ -1310,11 +1603,11 @@ void main() {
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+      setLog: const WorkoutSetLog(reps: 8, weightGrams: 62500),
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 6, weight: 65),
+      setLog: const WorkoutSetLog(reps: 6, weightGrams: 65000),
     );
 
     final finished = store.finishActiveWorkout(
@@ -1332,8 +1625,15 @@ void main() {
       8,
     );
     expect(
-      store.completedWorkoutSessions.single.results.first.setLogs.last.weight,
-      65,
+      store
+          .completedWorkoutSessions
+          .single
+          .results
+          .first
+          .setLogs
+          .last
+          .weightGrams,
+      65000,
     );
     expect(finished.finishedAt, DateTime(2026, 4, 19, 10, 45));
     expect(store.workoutStats.completedCount, 1);
@@ -1390,11 +1690,11 @@ void main() {
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+      setLog: const WorkoutSetLog(reps: 8, weightGrams: 62500),
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 6, weight: 65),
+      setLog: const WorkoutSetLog(reps: 6, weightGrams: 65000),
     );
     store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 45));
 
@@ -1403,9 +1703,9 @@ void main() {
     expect(history, hasLength(1));
     expect(history.single.session.results.first.setLogs, hasLength(2));
     expect(history.single.result.setLogs.first.reps, 8);
-    expect(history.single.result.setLogs.first.weight, 62.5);
+    expect(history.single.result.setLogs.first.weightGrams, 62500);
     expect(history.single.result.setLogs.last.reps, 6);
-    expect(history.single.result.setLogs.last.weight, 65);
+    expect(history.single.result.setLogs.last.weightGrams, 65000);
   });
 
   test(
@@ -1419,6 +1719,7 @@ void main() {
           description: 'Bodyweight push exercise',
           instruction: 'Keep a straight line from shoulders to heels.',
           muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.bodyweight,
         ),
       );
       store.createTrainingPlan(
@@ -1427,8 +1728,8 @@ void main() {
           name: 'Repeat pushups',
           description: 'Same exercise twice',
           exercises: [
-            TrainingExercise(exerciseId: 'pushups', reps: 10, unit: 'reps'),
-            TrainingExercise(exerciseId: 'pushups', reps: 8, unit: 'reps'),
+            TrainingExercise(exerciseId: 'pushups', reps: 10),
+            TrainingExercise(exerciseId: 'pushups', reps: 8),
           ],
         ),
       );
@@ -1465,7 +1766,7 @@ void main() {
     );
     store.addActiveWorkoutSet(
       resultIndex: 0,
-      setLog: const WorkoutSetLog(reps: 8, weight: 62.5),
+      setLog: const WorkoutSetLog(reps: 8, weightGrams: 62500),
     );
     final first = store.finishActiveWorkout(
       finishedAt: DateTime(2026, 4, 18, 9, 45),
@@ -1505,6 +1806,7 @@ void main() {
           description: 'Barbell chest press',
           instruction: 'Keep shoulder blades set and press the bar vertically.',
           muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.strength,
         ),
       );
       store.createTrainingPlan(
@@ -1517,8 +1819,7 @@ void main() {
               exerciseId: 'bench-press',
               sets: 3,
               reps: 8,
-              weight: 60,
-              unit: 'kg',
+              weightGrams: 60000,
             ),
           ],
         ),
@@ -1678,6 +1979,54 @@ void main() {
     expect(store.dailyTotals.calories, 18);
   });
 
+  test('daily totals include only entries from the current local day', () {
+    final store = AppStore.empty();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day, 10);
+    final yesterday = today.subtract(const Duration(days: 1));
+    store.createFood(tomato());
+
+    store.addMealByGrams(itemId: 'tomato', grams: 100, loggedAt: today);
+    store.addMealByGrams(itemId: 'tomato', grams: 200, loggedAt: yesterday);
+
+    expect(store.dailyTotals.calories, 18);
+    expect(store.todayMealEntries, hasLength(1));
+    expect(store.todayMealEntries.single.loggedAt, today);
+  });
+
+  test('meal history groups are newest first with newest entries first', () {
+    final store = AppStore.empty();
+    store.createFood(tomato());
+    final todayLate = DateTime(2026, 5, 17, 20, 30);
+    final todayEarly = DateTime(2026, 5, 17, 8, 15);
+    final previousDay = DateTime(2026, 5, 16, 19);
+
+    final earlyEntry = store.addMealByGrams(
+      itemId: 'tomato',
+      grams: 100,
+      loggedAt: todayEarly,
+    );
+    final previousDayEntry = store.addMealByGrams(
+      itemId: 'tomato',
+      grams: 150,
+      loggedAt: previousDay,
+    );
+    final lateEntry = store.addMealByGrams(
+      itemId: 'tomato',
+      grams: 200,
+      loggedAt: todayLate,
+    );
+
+    final groups = store.mealHistoryGroups;
+
+    expect(groups, hasLength(2));
+    expect(groups.first.date, DateTime(2026, 5, 17));
+    expect(groups.first.entries.first.id, lateEntry.id);
+    expect(groups.first.entries.last.id, earlyEntry.id);
+    expect(groups.last.date, DateTime(2026, 5, 16));
+    expect(groups.last.entries.single.id, previousDayEntry.id);
+  });
+
   test('dish cycles are rejected', () {
     final store = AppStore.empty();
     store.createFood(tomato());
@@ -1831,6 +2180,12 @@ void main() {
         dishWeightUnit: DishWeightUnit.grams,
         heightUnit: HeightUnit.centimeters,
         distanceUnit: DistanceUnit.kilometers,
+        dailyMacroTargets: NutritionValues(
+          calories: 2000,
+          protein: 150,
+          fat: 70,
+          carbs: 250,
+        ),
       ),
     );
     expect(store.appearancePreference, AppearancePreference.system);
@@ -1854,6 +2209,9 @@ void main() {
     store.setDishWeightUnit(DishWeightUnit.ounces);
     store.setHeightUnit(HeightUnit.inches);
     store.setDistanceUnit(DistanceUnit.miles);
+    store.setDailyMacroTargets(
+      const NutritionValues(calories: 2400, protein: 160, fat: 80, carbs: 280),
+    );
 
     expect(
       store.preferences,
@@ -1864,9 +2222,15 @@ void main() {
         dishWeightUnit: DishWeightUnit.ounces,
         heightUnit: HeightUnit.inches,
         distanceUnit: DistanceUnit.miles,
+        dailyMacroTargets: NutritionValues(
+          calories: 2400,
+          protein: 160,
+          fat: 80,
+          carbs: 280,
+        ),
       ),
     );
-    expect(notifications, 6);
+    expect(notifications, 7);
   });
 
   test('formatting helpers convert canonical values into display units', () {

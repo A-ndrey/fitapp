@@ -5,19 +5,21 @@ import '../../models/catalog_item.dart';
 import '../../models/meal_entry.dart';
 import '../../models/nutrition.dart';
 import '../../state/app_store.dart';
+import '../core/layout/app_breakpoints.dart';
 import '../core/theme/app_theme.dart';
+import '../core/widgets/swipe_action_card.dart';
 import '../core/widgets/dashboard_panels.dart';
 import 'nutrition_formatters.dart';
 
 class NutritionSummaryGrid extends StatelessWidget {
-  const NutritionSummaryGrid({required this.values, super.key});
-
-  static const _calorieGoal = 3200.0;
-  static const _proteinGoal = 220.0;
-  static const _fatGoal = 80.0;
-  static const _carbGoal = 360.0;
+  const NutritionSummaryGrid({
+    required this.values,
+    required this.targets,
+    super.key,
+  });
 
   final NutritionValues values;
+  final NutritionValues targets;
 
   @override
   Widget build(BuildContext context) {
@@ -37,10 +39,10 @@ class NutritionSummaryGrid extends StatelessWidget {
             valueLabel:
                 '${formatNutritionNumber(values.calories)} ${l10n?.nutritionKilocalorieUnit ?? 'kcal'}',
             targetLabel:
-                '${formatNutritionNumber(_calorieGoal)} ${l10n?.nutritionKilocalorieUnit ?? 'kcal'}',
-            progress: values.calories / _calorieGoal,
+                '${formatNutritionNumber(targets.calories)} ${l10n?.nutritionKilocalorieUnit ?? 'kcal'}',
+            progress: values.calories / targets.calories,
             statusLabel:
-                '${formatNutritionNumber((_calorieGoal - values.calories).clamp(0, _calorieGoal))} left',
+                '${formatNutritionNumber((targets.calories - values.calories).clamp(0, targets.calories))} left',
             leading: const Icon(
               Icons.local_fire_department_outlined,
               color: AppTheme.calorieAccent,
@@ -53,10 +55,10 @@ class NutritionSummaryGrid extends StatelessWidget {
             valueLabel:
                 '${formatNutritionNumber(values.protein)} ${l10n?.nutritionGramUnit ?? 'g'}',
             targetLabel:
-                '${formatNutritionNumber(_proteinGoal)} ${l10n?.nutritionGramUnit ?? 'g'}',
-            progress: values.protein / _proteinGoal,
+                '${formatNutritionNumber(targets.protein)} ${l10n?.nutritionGramUnit ?? 'g'}',
+            progress: values.protein / targets.protein,
             statusLabel:
-                '${formatNutritionNumber((_proteinGoal - values.protein).clamp(0, _proteinGoal))} left',
+                '${formatNutritionNumber((targets.protein - values.protein).clamp(0, targets.protein))} left',
             leading: const Icon(
               Icons.egg_alt_outlined,
               color: AppTheme.proteinAccent,
@@ -69,10 +71,10 @@ class NutritionSummaryGrid extends StatelessWidget {
             valueLabel:
                 '${formatNutritionNumber(values.carbs)} ${l10n?.nutritionGramUnit ?? 'g'}',
             targetLabel:
-                '${formatNutritionNumber(_carbGoal)} ${l10n?.nutritionGramUnit ?? 'g'}',
-            progress: values.carbs / _carbGoal,
+                '${formatNutritionNumber(targets.carbs)} ${l10n?.nutritionGramUnit ?? 'g'}',
+            progress: values.carbs / targets.carbs,
             statusLabel:
-                '${formatNutritionNumber((_carbGoal - values.carbs).clamp(0, _carbGoal))} left',
+                '${formatNutritionNumber((targets.carbs - values.carbs).clamp(0, targets.carbs))} left',
             leading: const Icon(
               Icons.grain_outlined,
               color: AppTheme.carbAccent,
@@ -85,10 +87,10 @@ class NutritionSummaryGrid extends StatelessWidget {
             valueLabel:
                 '${formatNutritionNumber(values.fat)} ${l10n?.nutritionGramUnit ?? 'g'}',
             targetLabel:
-                '${formatNutritionNumber(_fatGoal)} ${l10n?.nutritionGramUnit ?? 'g'}',
-            progress: values.fat / _fatGoal,
+                '${formatNutritionNumber(targets.fat)} ${l10n?.nutritionGramUnit ?? 'g'}',
+            progress: values.fat / targets.fat,
             statusLabel:
-                '${formatNutritionNumber((_fatGoal - values.fat).clamp(0, _fatGoal))} left',
+                '${formatNutritionNumber((targets.fat - values.fat).clamp(0, targets.fat))} left',
             leading: const Icon(
               Icons.water_drop_outlined,
               color: AppTheme.fatAccent,
@@ -119,57 +121,74 @@ class MealEntryCard extends StatelessWidget {
     final subtypeLabel = entry.itemType == CatalogItemType.food
         ? l10n?.catalogSubtypeFood ?? 'food'
         : l10n?.catalogSubtypeDish ?? 'recipe';
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
 
-    return Card(
-      child: ListTile(
-        title: Text(entry.itemName),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${formatMealQuantity(entry, store, servingsLabel: l10n?.mealServingsQuantitySuffix ?? 'servings')} ${l10n?.mealLoggedSuffix ?? 'logged'}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                formatNutritionLine(
-                  entry.nutrition,
-                  kilocalorieLabel: l10n?.nutritionKilocalorieUnit ?? 'kcal',
-                  gramLabel: l10n?.nutritionGramUnit ?? 'g',
-                  proteinLabel: l10n?.nutritionProteinInlineLabel ?? 'protein',
-                  fatLabel: l10n?.nutritionFatInlineLabel ?? 'fat',
-                  carbsLabel: l10n?.nutritionCarbsInlineLabel ?? 'carbs',
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                subtypeLabel,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
+    return SwipeActionCard(
+      actions: [
+        SwipeCardAction(
+          label: l10n?.commonDelete ?? 'Delete',
+          icon: Icons.delete_outline,
+          backgroundColor: Theme.of(context).colorScheme.errorContainer,
+          foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+          onPressed: onRemove,
         ),
-        trailing: PopupMenuButton<_MealEntryAction>(
-          tooltip: l10n?.mealRemoveEntryTooltip ?? 'Remove meal entry',
-          onSelected: (action) {
-            if (action == _MealEntryAction.remove) {
-              onRemove();
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: _MealEntryAction.remove,
-              child: Text(l10n?.commonDelete ?? 'Delete'),
+      ],
+      child: Card(
+        child: ListTile(
+          title: Text(entry.itemName),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${formatMealQuantity(entry, store, servingsLabel: l10n?.mealServingsQuantitySuffix ?? 'servings')} ${l10n?.mealLoggedSuffix ?? 'logged'}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  formatNutritionLine(
+                    entry.nutrition,
+                    kilocalorieLabel: l10n?.nutritionKilocalorieUnit ?? 'kcal',
+                    gramLabel: l10n?.nutritionGramUnit ?? 'g',
+                    proteinLabel:
+                        l10n?.nutritionProteinInlineLabel ?? 'protein',
+                    fatLabel: l10n?.nutritionFatInlineLabel ?? 'fat',
+                    carbsLabel: l10n?.nutritionCarbsInlineLabel ?? 'carbs',
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  subtypeLabel,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
+          trailing: isCompact
+              ? null
+              : PopupMenuButton<_MealEntryAction>(
+                  tooltip: l10n?.mealRemoveEntryTooltip ?? 'Remove meal entry',
+                  onSelected: (action) {
+                    if (action == _MealEntryAction.remove) {
+                      onRemove();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: _MealEntryAction.remove,
+                      child: Text(l10n?.commonDelete ?? 'Delete'),
+                    ),
+                  ],
+                ),
         ),
       ),
     );

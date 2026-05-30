@@ -164,6 +164,7 @@ class PersistedAppStateCodec {
       'name': exercise.name,
       'description': exercise.description,
       'instruction': exercise.instruction,
+      'measurementType': exercise.measurementType.name,
       'muscleGroups': exercise.muscleGroups
           .map((group) => group.name)
           .toList(growable: false),
@@ -177,6 +178,11 @@ class PersistedAppStateCodec {
       name: _readString(payload, 'name'),
       description: _readString(payload, 'description'),
       instruction: _readString(payload, 'instruction'),
+      measurementType: _readEnum(
+        _readString(payload, 'measurementType'),
+        ExerciseMeasurementType.values,
+        'Exercise.measurementType',
+      ),
       muscleGroups: _readList(payload, 'muscleGroups')
           .map(
             (entry) => _readEnum(
@@ -233,9 +239,10 @@ class PersistedAppStateCodec {
       'exerciseId': exercise.exerciseId,
       'sets': exercise.sets,
       'reps': exercise.reps,
-      'weight': exercise.weight,
-      'time': exercise.time,
-      'unit': exercise.unit,
+      'weightGrams': exercise.weightGrams,
+      'durationSeconds': exercise.durationSeconds,
+      'distanceMeters': exercise.distanceMeters,
+      'assistanceWeightGrams': exercise.assistanceWeightGrams,
     };
   }
 
@@ -245,9 +252,13 @@ class PersistedAppStateCodec {
       exerciseId: _readString(payload, 'exerciseId'),
       sets: _readNullableDouble(payload, 'sets'),
       reps: _readNullableDouble(payload, 'reps'),
-      weight: _readNullableDouble(payload, 'weight'),
-      time: _readNullableDouble(payload, 'time'),
-      unit: _readString(payload, 'unit'),
+      weightGrams: _readNullableDouble(payload, 'weightGrams'),
+      durationSeconds: _readNullableDouble(payload, 'durationSeconds'),
+      distanceMeters: _readNullableDouble(payload, 'distanceMeters'),
+      assistanceWeightGrams: _readNullableDouble(
+        payload,
+        'assistanceWeightGrams',
+      ),
     );
   }
 
@@ -261,6 +272,7 @@ class PersistedAppStateCodec {
       'consumedGrams': entry.consumedGrams,
       'mode': entry.mode.name,
       'enteredQuantity': entry.enteredQuantity,
+      'loggedAt': entry.loggedAt.toUtc().toIso8601String(),
       'nutrition': _encodeNutritionValues(entry.nutrition),
     };
   }
@@ -284,6 +296,9 @@ class PersistedAppStateCodec {
         'MealEntry.mode',
       ),
       enteredQuantity: _readDouble(payload, 'enteredQuantity'),
+      loggedAt:
+          _readNullableDateTime(payload, 'loggedAt') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
       nutrition: _decodeNutritionValues(payload['nutrition']),
     );
   }
@@ -296,6 +311,9 @@ class PersistedAppStateCodec {
       'dishWeightUnit': preferences.dishWeightUnit.name,
       'heightUnit': preferences.heightUnit.name,
       'distanceUnit': preferences.distanceUnit.name,
+      'dailyMacroTargets': _encodeNutritionValues(
+        preferences.dailyMacroTargets,
+      ),
     };
   }
 
@@ -332,6 +350,9 @@ class PersistedAppStateCodec {
         DistanceUnit.values,
         'AppPreferences.distanceUnit',
       ),
+      dailyMacroTargets: payload['dailyMacroTargets'] == null
+          ? AppPreferences.defaultDailyMacroTargets
+          : _decodeNutritionValues(payload['dailyMacroTargets']),
     );
   }
 
@@ -399,8 +420,10 @@ class PersistedAppStateCodec {
   static Map<String, Object?> _encodeWorkoutSetLog(WorkoutSetLog setLog) {
     return <String, Object?>{
       'reps': setLog.reps,
-      'weight': setLog.weight,
-      'time': setLog.time,
+      'weightGrams': setLog.weightGrams,
+      'durationSeconds': setLog.durationSeconds,
+      'distanceMeters': setLog.distanceMeters,
+      'assistanceWeightGrams': setLog.assistanceWeightGrams,
     };
   }
 
@@ -408,8 +431,13 @@ class PersistedAppStateCodec {
     final payload = _asMap(encoded, 'WorkoutSetLog');
     return WorkoutSetLog(
       reps: _readNullableDouble(payload, 'reps'),
-      weight: _readNullableDouble(payload, 'weight'),
-      time: _readNullableDouble(payload, 'time'),
+      weightGrams: _readNullableDouble(payload, 'weightGrams'),
+      durationSeconds: _readNullableDouble(payload, 'durationSeconds'),
+      distanceMeters: _readNullableDouble(payload, 'distanceMeters'),
+      assistanceWeightGrams: _readNullableDouble(
+        payload,
+        'assistanceWeightGrams',
+      ),
     );
   }
 

@@ -4,7 +4,7 @@ import 'nutrition.dart';
 enum MealEntryMode { grams, servings }
 
 class MealEntry {
-  const MealEntry({
+  MealEntry({
     required this.id,
     required this.sourceItemId,
     required this.itemName,
@@ -13,6 +13,7 @@ class MealEntry {
     required this.consumedGrams,
     required this.mode,
     required this.enteredQuantity,
+    required this.loggedAt,
     required this.nutrition,
   });
 
@@ -22,6 +23,7 @@ class MealEntry {
     required double consumedGrams,
     required MealEntryMode mode,
     required double enteredQuantity,
+    DateTime? loggedAt,
     required Map<String, CatalogItem> catalog,
   }) {
     return MealEntry(
@@ -33,6 +35,7 @@ class MealEntry {
       consumedGrams: consumedGrams,
       mode: mode,
       enteredQuantity: enteredQuantity,
+      loggedAt: loggedAt ?? DateTime.now(),
       nutrition: item.nutritionForGrams(consumedGrams, catalog),
     );
   }
@@ -45,5 +48,6 @@ class MealEntry {
   final double consumedGrams;
   final MealEntryMode mode;
   final double enteredQuantity;
+  final DateTime loggedAt;
   final NutritionValues nutrition;
 }

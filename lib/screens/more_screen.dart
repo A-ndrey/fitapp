@@ -6,7 +6,6 @@ import '../state/app_store.dart';
 import '../state/sync/app_store_sync_status.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/app_screen_scaffold.dart';
-import '../ui/core/widgets/section_header.dart';
 import '../ui/settings/settings_cards.dart';
 
 class MoreScreen extends StatelessWidget {
@@ -26,10 +25,7 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([
-        store,
-        syncStatusListenable,
-      ]),
+      animation: Listenable.merge([store, syncStatusListenable]),
       builder: (context, _) {
         final preferences = store.preferences;
         final l10n = AppLocalizations.of(context);
@@ -42,12 +38,6 @@ class MoreScreen extends StatelessWidget {
           title: l10n?.destinationMore ?? 'Settings',
           body: AdaptivePage(
             children: [
-              SectionHeader(
-                title: l10n?.destinationMore ?? 'Settings',
-                subtitle:
-                    l10n?.moreSubtitle ??
-                    'Tune units, appearance, and training-log preferences.',
-              ),
               Text(
                 l10n?.moreSyncTitle ?? 'Sync',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -66,76 +56,66 @@ class MoreScreen extends StatelessWidget {
               const SizedBox(height: 20),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final unitsCards = [
-                    PreferenceChipCard<WorkoutWeightUnit>(
-                      title:
-                          l10n?.settingsWorkoutWeightTitle ?? 'Workout weight',
-                      subtitle:
-                          l10n?.settingsWorkoutWeightSubtitle ??
-                          'Weights shown during training sessions.',
-                      value: preferences.workoutWeightUnit,
-                      options: [
-                        PreferenceChipOption(
-                          value: WorkoutWeightUnit.kilograms,
-                          label: l10n?.unitKilograms ?? 'Kilograms',
-                        ),
-                        PreferenceChipOption(
-                          value: WorkoutWeightUnit.pounds,
-                          label: l10n?.unitPounds ?? 'Pounds',
-                        ),
-                      ],
-                      onChanged: store.setWorkoutWeightUnit,
-                    ),
-                    PreferenceChipCard<DishWeightUnit>(
-                      title: l10n?.settingsDishWeightTitle ?? 'Dish weight',
-                      subtitle:
-                          l10n?.settingsDishWeightSubtitle ??
-                          'Food and recipe serving measurements.',
-                      value: preferences.dishWeightUnit,
-                      options: [
-                        PreferenceChipOption(
-                          value: DishWeightUnit.grams,
-                          label: l10n?.unitGrams ?? 'Grams',
-                        ),
-                        PreferenceChipOption(
-                          value: DishWeightUnit.ounces,
-                          label: l10n?.unitOunces ?? 'Ounces',
-                        ),
-                      ],
-                      onChanged: store.setDishWeightUnit,
-                    ),
-                    PreferenceChipCard<HeightUnit>(
-                      title: l10n?.settingsHeightTitle ?? 'Height',
-                      value: preferences.heightUnit,
-                      options: [
-                        PreferenceChipOption(
-                          value: HeightUnit.centimeters,
-                          label: l10n?.unitCentimeters ?? 'Centimeters',
-                        ),
-                        PreferenceChipOption(
-                          value: HeightUnit.inches,
-                          label: l10n?.unitInches ?? 'Inches',
-                        ),
-                      ],
-                      onChanged: store.setHeightUnit,
-                    ),
-                    PreferenceChipCard<DistanceUnit>(
-                      title: l10n?.settingsDistanceTitle ?? 'Distance',
-                      value: preferences.distanceUnit,
-                      options: [
-                        PreferenceChipOption(
-                          value: DistanceUnit.kilometers,
-                          label: l10n?.unitKilometers ?? 'Kilometers',
-                        ),
-                        PreferenceChipOption(
-                          value: DistanceUnit.miles,
-                          label: l10n?.unitMiles ?? 'Miles',
-                        ),
-                      ],
-                      onChanged: store.setDistanceUnit,
-                    ),
-                  ];
+                  final unitsCard = UnitsSettingsCard(
+                    workoutWeightUnit: preferences.workoutWeightUnit,
+                    dishWeightUnit: preferences.dishWeightUnit,
+                    heightUnit: preferences.heightUnit,
+                    distanceUnit: preferences.distanceUnit,
+                    workoutWeightOptions: [
+                      PreferenceChipOption(
+                        value: WorkoutWeightUnit.kilograms,
+                        label: l10n?.unitKilograms ?? 'Kilograms',
+                      ),
+                      PreferenceChipOption(
+                        value: WorkoutWeightUnit.pounds,
+                        label: l10n?.unitPounds ?? 'Pounds',
+                      ),
+                    ],
+                    dishWeightOptions: [
+                      PreferenceChipOption(
+                        value: DishWeightUnit.grams,
+                        label: l10n?.unitGrams ?? 'Grams',
+                      ),
+                      PreferenceChipOption(
+                        value: DishWeightUnit.ounces,
+                        label: l10n?.unitOunces ?? 'Ounces',
+                      ),
+                    ],
+                    heightOptions: [
+                      PreferenceChipOption(
+                        value: HeightUnit.centimeters,
+                        label: l10n?.unitCentimeters ?? 'Centimeters',
+                      ),
+                      PreferenceChipOption(
+                        value: HeightUnit.inches,
+                        label: l10n?.unitInches ?? 'Inches',
+                      ),
+                    ],
+                    distanceOptions: [
+                      PreferenceChipOption(
+                        value: DistanceUnit.kilometers,
+                        label: l10n?.unitKilometers ?? 'Kilometers',
+                      ),
+                      PreferenceChipOption(
+                        value: DistanceUnit.miles,
+                        label: l10n?.unitMiles ?? 'Miles',
+                      ),
+                    ],
+                    onWorkoutWeightChanged: (value) =>
+                        store.setWorkoutWeightUnit(value as WorkoutWeightUnit),
+                    onDishWeightChanged: (value) =>
+                        store.setDishWeightUnit(value as DishWeightUnit),
+                    onHeightChanged: (value) =>
+                        store.setHeightUnit(value as HeightUnit),
+                    onDistanceChanged: (value) =>
+                        store.setDistanceUnit(value as DistanceUnit),
+                  );
                   final appCards = [
+                    MacroTargetsSettingsCard(
+                      initialValue: preferences.dailyMacroTargets,
+                      subtitle: 'Used across Today and Nutrition.',
+                      onApply: store.setDailyMacroTargets,
+                    ),
                     PreferenceChipCard<LanguagePreference>(
                       title: l10n?.settingsLanguageTitle ?? 'Language',
                       subtitle:
@@ -177,7 +157,7 @@ class MoreScreen extends StatelessWidget {
                       children: [
                         _SettingsGroup(
                           title: l10n?.settingsUnitsTitle ?? 'Units',
-                          children: unitsCards,
+                          children: [unitsCard],
                         ),
                         const SizedBox(height: 20),
                         _SettingsGroup(
@@ -194,7 +174,7 @@ class MoreScreen extends StatelessWidget {
                       _SettingsGroup(
                         title: l10n?.settingsUnitsTitle ?? 'Units',
                         columns: 2,
-                        children: unitsCards,
+                        children: [unitsCard],
                       ),
                       const SizedBox(height: 20),
                       _SettingsGroup(
@@ -222,10 +202,10 @@ _SyncCardPresentation _syncCardPresentation(
 
   return switch (resolvedStatus.phase) {
     AppStoreSyncPhase.idle => const _SyncCardPresentation(
-      message: 'Sync is ready. Tap below to check for updates.',
+      message: 'Ready to sync.',
     ),
     AppStoreSyncPhase.syncing => const _SyncCardPresentation(
-      message: 'Sync in progress. We will keep your data up to date.',
+      message: 'Syncing...',
     ),
     AppStoreSyncPhase.synced => _SyncCardPresentation(
       message:

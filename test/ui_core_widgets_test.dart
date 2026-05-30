@@ -11,6 +11,7 @@ import 'package:fitapp/ui/core/widgets/empty_state.dart';
 import 'package:fitapp/ui/core/widgets/form_shell.dart';
 import 'package:fitapp/ui/core/widgets/metric_card.dart';
 import 'package:fitapp/ui/core/widgets/section_header.dart';
+import 'package:fitapp/ui/core/widgets/swipe_action_card.dart';
 import 'package:fitapp/ui/library/library_cards.dart';
 import 'package:fitapp/ui/library/library_formatters.dart';
 import 'package:flutter/material.dart';
@@ -265,6 +266,26 @@ void main() {
     tester,
   ) async {
     final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep your core tight.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'rows',
+        name: 'Rows',
+        description: 'Row variation',
+        instruction: 'Pull to your torso.',
+        muscleGroups: [MuscleGroup.back],
+        measurementType: ExerciseMeasurementType.strength,
+      ),
+    );
     const food = CatalogItem.food(
       FoodItem(
         id: 'rice',
@@ -285,8 +306,13 @@ void main() {
       name: 'Upper',
       description: 'Strength focus',
       exercises: [
-        TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
-        TrainingExercise(exerciseId: 'rows', reps: 10, unit: 'reps'),
+        TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+        TrainingExercise(
+          exerciseId: 'rows',
+          sets: 4,
+          reps: 10,
+          weightGrams: 30000,
+        ),
       ],
     );
 
@@ -300,17 +326,21 @@ void main() {
       formatCatalogServingNutritionLabel(food, store),
       '150 g serving • 195 kcal per serving',
     );
-    expect(formatTrainingPlanSummaryLabel(plan), '2 exercises\nStrength focus');
+    expect(
+      formatTrainingPlanSummaryLabel(plan, store: store),
+      '2 exercises • 3 sets • 12 reps\nStrength focus',
+    );
     expect(
       formatTrainingPlanSummaryLabel(
         plan.copyWith(
           description: '',
           exercises: const [
-            TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
+            TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
           ],
         ),
+        store: store,
       ),
-      '1 exercise',
+      '1 exercise • 3 sets • 12 reps',
     );
     expect(formatExerciseMuscleGroupSummaryLabel(const []), 'Muscles: -');
     expect(
@@ -321,6 +351,25 @@ void main() {
       'Chest, Triceps',
     );
     expect(formatLibraryCountLabel(2, 'exercise'), '2 exercises');
+    expect(
+      formatTrainingPlanSummaryLabel(
+        const TrainingPlan(
+          id: 'run-day',
+          name: 'Run day',
+          description: '',
+          exercises: [
+            TrainingExercise(
+              exerciseId: 'rows',
+              sets: 4,
+              reps: 10,
+              weightGrams: 30000,
+            ),
+          ],
+        ),
+        store: store,
+      ),
+      '1 exercise • 4 sets • 10 reps • 30 kg',
+    );
   });
 
   testWidgets('library cards render labels and invoke action callbacks', (
@@ -329,6 +378,16 @@ void main() {
     final edited = <String>[];
     final deleted = <String>[];
     final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep your core tight.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
+      ),
+    );
     const food = CatalogItem.food(
       FoodItem(
         id: 'rice',
@@ -348,9 +407,7 @@ void main() {
       id: 'upper',
       name: 'Upper body',
       description: 'Strength focus',
-      exercises: [
-        TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
-      ],
+      exercises: [TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12)],
     );
     const exercise = Exercise(
       id: 'pushups',
@@ -358,6 +415,7 @@ void main() {
       description: 'Bodyweight push exercise',
       instruction: 'Keep your core tight.',
       muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+      measurementType: ExerciseMeasurementType.bodyweight,
     );
 
     await tester.pumpWidget(
@@ -373,6 +431,7 @@ void main() {
               ),
               TrainingPlanCatalogCard(
                 plan: plan,
+                store: store,
                 onEdit: () => edited.add(plan.id),
                 onDelete: () => deleted.add(plan.id),
               ),
@@ -391,7 +450,10 @@ void main() {
     expect(find.text('food'), findsOneWidget);
     expect(find.text('150 g serving • 195 kcal per serving'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Upper body'), findsOneWidget);
-    expect(find.text('1 exercise\nStrength focus'), findsOneWidget);
+    expect(
+      find.text('1 exercise • 3 sets • 12 reps\nStrength focus'),
+      findsOneWidget,
+    );
     expect(find.widgetWithText(ListTile, 'Pushups'), findsOneWidget);
     expect(find.text('Bodyweight push exercise'), findsOneWidget);
     expect(find.text('Keep your core tight.'), findsOneWidget);
@@ -424,6 +486,26 @@ void main() {
     tester,
   ) async {
     final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep your core tight.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'rows',
+        name: 'Rows',
+        description: 'Row variation',
+        instruction: 'Pull to your torso.',
+        muscleGroups: [MuscleGroup.back],
+        measurementType: ExerciseMeasurementType.strength,
+      ),
+    );
     const food = CatalogItem.food(
       FoodItem(
         id: 'very-long-food',
@@ -444,8 +526,13 @@ void main() {
       name: 'A very long training plan name that should stay bounded',
       description: 'A long description that remains inside the card bounds',
       exercises: [
-        TrainingExercise(exerciseId: 'pushups', reps: 12, unit: 'reps'),
-        TrainingExercise(exerciseId: 'rows', reps: 10, unit: 'reps'),
+        TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+        TrainingExercise(
+          exerciseId: 'rows',
+          sets: 4,
+          reps: 10,
+          weightGrams: 30000,
+        ),
       ],
     );
     const exercise = Exercise(
@@ -458,6 +545,7 @@ void main() {
         MuscleGroup.shoulders,
         MuscleGroup.triceps,
       ],
+      measurementType: ExerciseMeasurementType.strength,
     );
 
     await tester.pumpWidget(
@@ -476,6 +564,7 @@ void main() {
                   ),
                   TrainingPlanCatalogCard(
                     plan: plan,
+                    store: store,
                     onEdit: () {},
                     onDelete: () {},
                   ),
@@ -493,6 +582,64 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('library cards reveal swipe actions on compact layouts', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    const food = CatalogItem.food(
+      FoodItem(
+        id: 'rice',
+        name: 'Rice bowl',
+        description: 'Cooked rice',
+        servingSizeGrams: 150,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 130,
+          protein: 2.7,
+          fat: 0.3,
+          carbs: 28,
+        ),
+      ),
+    );
+    var edited = false;
+    var deleted = false;
+
+    await tester.binding.setSurfaceSize(const Size(390, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [
+              FoodCatalogCard(
+                item: food,
+                store: store,
+                onEdit: () => edited = true,
+                onDelete: () => deleted = true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final card = find.ancestor(
+      of: find.text('Rice bowl'),
+      matching: find.byType(Card),
+    );
+    await tester.drag(card, const Offset(-240, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('swipe-action-Edit')), findsOneWidget);
+    expect(find.byKey(const ValueKey('swipe-action-Delete')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('swipe-action-Edit')));
+    await tester.pumpAndSettle();
+    expect(edited, isTrue);
+    expect(deleted, isFalse);
   });
 
   testWidgets('form shell primitives render content and actions', (
@@ -594,5 +741,141 @@ void main() {
       expect(find.bySemanticsLabel('Carbs'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
+  });
+
+  testWidgets('swipe action card preserves card surface edge treatment', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SwipeActionCard(
+            actions: [
+              SwipeCardAction(
+                label: 'Delete',
+                icon: Icons.delete_outline,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                onPressed: () {},
+              ),
+            ],
+            child: const Card(child: ListTile(title: Text('Border test'))),
+          ),
+        ),
+      ),
+    );
+
+    final stack = tester.widget<Stack>(
+      find.descendant(
+        of: find.byType(SwipeActionCard),
+        matching: find.byType(Stack),
+      ),
+    );
+    expect(stack.clipBehavior, Clip.none);
+
+    final card = find.byType(Card);
+    expect(
+      find.ancestor(of: card, matching: find.byType(ClipRRect)),
+      findsNothing,
+    );
+  });
+
+  testWidgets('swipe action card paints actions behind the card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SwipeActionCard(
+            actions: [
+              SwipeCardAction(
+                label: 'Delete',
+                icon: Icons.delete_outline,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                onPressed: () {},
+              ),
+            ],
+            child: const Card(child: ListTile(title: Text('Layer test'))),
+          ),
+        ),
+      ),
+    );
+
+    await tester.drag(find.byType(Card), const Offset(-120, 0));
+    await tester.pumpAndSettle();
+
+    final stack = tester.widget<Stack>(
+      find.descendant(
+        of: find.byType(SwipeActionCard),
+        matching: find.byType(Stack),
+      ),
+    );
+
+    expect(stack.children.first, isA<Positioned>());
+    expect(stack.children.last, isA<ClipRect>());
+  });
+
+  testWidgets('swipe action card keeps full-size action content', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SwipeActionCard(
+            actions: [
+              SwipeCardAction(
+                label: 'Delete',
+                icon: Icons.delete_outline,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                onPressed: () {},
+              ),
+            ],
+            child: const Card(child: ListTile(title: Text('Sizing test'))),
+          ),
+        ),
+      ),
+    );
+
+    await tester.drag(find.byType(Card), const Offset(-120, 0));
+    await tester.pumpAndSettle();
+
+    final icon = tester.widget<Icon>(find.byIcon(Icons.delete_outline));
+    final label = tester.widget<Text>(find.text('Delete'));
+
+    expect(icon.size, isNull);
+    expect(label.style?.fontSize, isNull);
+  });
+
+  testWidgets('swipe action buttons match item height', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SwipeActionCard(
+            actions: [
+              SwipeCardAction(
+                label: 'Delete',
+                icon: Icons.delete_outline,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                onPressed: () {},
+              ),
+            ],
+            child: const Card(child: ListTile(title: Text('Height test'))),
+          ),
+        ),
+      ),
+    );
+
+    await tester.drag(find.byType(Card), const Offset(-120, 0));
+    await tester.pumpAndSettle();
+
+    final cardHeight = tester.getSize(find.byType(Card)).height;
+    final actionHeight = tester
+        .getSize(find.byKey(const ValueKey('swipe-action-Delete')))
+        .height;
+
+    expect(actionHeight, cardHeight);
   });
 }

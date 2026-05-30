@@ -1,3 +1,5 @@
+import 'nutrition.dart';
+
 enum AppearancePreference { system, light, dark }
 
 enum LanguagePreference { english }
@@ -18,6 +20,7 @@ class AppPreferences {
     required this.dishWeightUnit,
     required this.heightUnit,
     required this.distanceUnit,
+    this.dailyMacroTargets = defaultDailyMacroTargets,
   });
 
   const AppPreferences.defaults()
@@ -26,7 +29,15 @@ class AppPreferences {
       workoutWeightUnit = WorkoutWeightUnit.kilograms,
       dishWeightUnit = DishWeightUnit.grams,
       heightUnit = HeightUnit.centimeters,
-      distanceUnit = DistanceUnit.kilometers;
+      distanceUnit = DistanceUnit.kilometers,
+      dailyMacroTargets = defaultDailyMacroTargets;
+
+  static const defaultDailyMacroTargets = NutritionValues(
+    calories: 2000,
+    protein: 150,
+    fat: 70,
+    carbs: 250,
+  );
 
   final AppearancePreference appearance;
   final LanguagePreference language;
@@ -34,6 +45,7 @@ class AppPreferences {
   final DishWeightUnit dishWeightUnit;
   final HeightUnit heightUnit;
   final DistanceUnit distanceUnit;
+  final NutritionValues dailyMacroTargets;
 
   AppPreferences copyWith({
     AppearancePreference? appearance,
@@ -42,6 +54,7 @@ class AppPreferences {
     DishWeightUnit? dishWeightUnit,
     HeightUnit? heightUnit,
     DistanceUnit? distanceUnit,
+    NutritionValues? dailyMacroTargets,
   }) {
     return AppPreferences(
       appearance: appearance ?? this.appearance,
@@ -50,6 +63,7 @@ class AppPreferences {
       dishWeightUnit: dishWeightUnit ?? this.dishWeightUnit,
       heightUnit: heightUnit ?? this.heightUnit,
       distanceUnit: distanceUnit ?? this.distanceUnit,
+      dailyMacroTargets: dailyMacroTargets ?? this.dailyMacroTargets,
     );
   }
 
@@ -64,7 +78,8 @@ class AppPreferences {
         other.workoutWeightUnit == workoutWeightUnit &&
         other.dishWeightUnit == dishWeightUnit &&
         other.heightUnit == heightUnit &&
-        other.distanceUnit == distanceUnit;
+        other.distanceUnit == distanceUnit &&
+        other.dailyMacroTargets == dailyMacroTargets;
   }
 
   @override
@@ -75,5 +90,6 @@ class AppPreferences {
     dishWeightUnit,
     heightUnit,
     distanceUnit,
+    dailyMacroTargets,
   );
 }

@@ -290,10 +290,9 @@ class FoodScreen extends StatelessWidget {
   String _emptyMessage(AppLocalizations? l10n) {
     return switch (view) {
       FoodLibraryView.all =>
-        l10n?.foodEmptyMessage ??
-            'Use Add food or recipe to build your reusable catalog.',
-      FoodLibraryView.foods => 'Add foods to build your reusable catalog.',
-      FoodLibraryView.recipes => 'Add recipes to build your reusable catalog.',
+        l10n?.foodEmptyMessage ?? 'Add food or recipe to build your catalog.',
+      FoodLibraryView.foods => 'Add foods to build your catalog.',
+      FoodLibraryView.recipes => 'Add recipes to build your catalog.',
     };
   }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/exercise.dart';
 import '../../models/training_plan.dart';
 import '../../models/workout_session.dart';
 import '../../state/app_store.dart';
+import '../core/widgets/swipe_action_card.dart';
 import 'workout_formatters.dart';
 import 'workout_session_cards.dart';
 
@@ -24,6 +26,7 @@ class WorkoutActiveExerciseSummaryCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
+    final measurementType = _measurementTypeForResult(store, result);
 
     return Card(
       child: Padding(
@@ -41,6 +44,7 @@ class WorkoutActiveExerciseSummaryCard extends StatelessWidget {
             Text(
               formatWorkoutTarget(
                 result.target,
+                measurementType,
                 store,
                 targetPrefix: l10n?.workoutTargetPrefix ?? 'Target:',
                 setsLabel: l10n?.workoutSetsLabel ?? 'sets',
@@ -66,219 +70,243 @@ class WorkoutActiveExerciseSummaryCard extends StatelessWidget {
 
 class WorkoutSetInputCard extends StatelessWidget {
   const WorkoutSetInputCard({
+    required this.target,
     required this.repsController,
     required this.weightController,
-    required this.timeController,
-    required this.target,
+    required this.durationController,
+    required this.distanceController,
+    required this.assistanceWeightController,
+    required this.measurementType,
+    required this.store,
     required this.onLogSet,
     super.key,
-    this.progressionHint,
-    this.previousSetLabel,
-    this.quickFillChips = const [],
   });
 
+  final TrainingExercise target;
   final TextEditingController repsController;
   final TextEditingController weightController;
-  final TextEditingController timeController;
-  final TrainingExercise target;
-  final VoidCallback onLogSet;
-  final String? progressionHint;
-  final String? previousSetLabel;
-  final List<Widget> quickFillChips;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Fast set logging',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            if (previousSetLabel != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                previousSetLabel!,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
-            if (progressionHint != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  progressionHint!,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-              ),
-            ],
-            if (quickFillChips.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Wrap(spacing: 8, runSpacing: 8, children: quickFillChips),
-            ],
-            const SizedBox(height: 16),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final fieldWidth = constraints.maxWidth >= 640
-                    ? 180.0
-                    : constraints.maxWidth;
-                return Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    if (target.reps != null)
-                      SizedBox(
-                        width: fieldWidth,
-                        child: TextField(
-                          controller: repsController,
-                          decoration: InputDecoration(
-                            labelText: l10n?.workoutRepsFieldLabel ?? 'Reps',
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                        ),
-                      ),
-                    if (target.weight != null || target.unit == 'kg')
-                      SizedBox(
-                        width: fieldWidth,
-                        child: TextField(
-                          controller: weightController,
-                          decoration: InputDecoration(
-                            labelText:
-                                l10n?.workoutWeightFieldLabel ?? 'Weight',
-                            helperText: target.weight != null
-                                ? target.unit
-                                : null,
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                        ),
-                      ),
-                    SizedBox(
-                      width: fieldWidth,
-                      child: TextField(
-                        controller: timeController,
-                        decoration: InputDecoration(
-                          labelText: l10n?.workoutTimeFieldLabel ?? 'Time',
-                          helperText: target.time != null ? target.unit : null,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: onLogSet,
-                icon: const Icon(Icons.check_rounded),
-                label: Text(l10n?.workoutLogSetAction ?? 'Log set'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class WorkoutLoggedSetsCard extends StatelessWidget {
-  const WorkoutLoggedSetsCard({
-    required this.target,
-    required this.setLogs,
-    required this.store,
-    required this.onFillSet,
-    super.key,
-  });
-
-  final TrainingExercise target;
-  final List<WorkoutSetLog> setLogs;
+  final TextEditingController durationController;
+  final TextEditingController distanceController;
+  final TextEditingController assistanceWeightController;
+  final ExerciseMeasurementType measurementType;
   final AppStore store;
-  final WorkoutSetLogCallback onFillSet;
+  final VoidCallback onLogSet;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n?.workoutLoggedSetsTitle ?? 'Logged sets',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            if (setLogs.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  l10n?.workoutNoLoggedSetsYet ?? 'No logged sets yet',
-                ),
-              )
-            else
-              ...setLogs.indexed.map((entry) {
-                final setNumber = entry.$1 + 1;
-                final setLog = entry.$2;
-                return Tooltip(
-                  message:
-                      l10n?.workoutUseSetTooltip(setNumber) ??
-                      'Use Set $setNumber',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    onTap: () => onFillSet(setLog),
-                    title: Text(
-                      l10n?.workoutSetLabel(setNumber) ?? 'Set $setNumber',
-                    ),
-                    subtitle: Text(
-                      formatWorkoutSetLog(
-                        target,
-                        setLog,
-                        store,
-                        repsLabel: l10n?.workoutRepsLabel ?? 'reps',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          formatWorkoutTarget(
+            target,
+            measurementType,
+            store,
+            targetPrefix: null,
+            setsLabel: l10n?.workoutSetsLabel ?? 'sets',
+            repsLabel: l10n?.workoutRepsLabel ?? 'reps',
+          ),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final fieldWidth = constraints.maxWidth >= 640
+                ? 180.0
+                : constraints.maxWidth;
+            final fields = workoutFieldsForMeasurementType(measurementType);
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final field in fields)
+                  SizedBox(
+                    width: fieldWidth,
+                    child: TextField(
+                      controller: _controllerFor(field),
+                      decoration: InputDecoration(
+                        labelText: _fieldLabel(field, l10n),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
                     ),
                   ),
-                );
-              }),
-          ],
+              ],
+            );
+          },
         ),
-      ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: onLogSet,
+            icon: const Icon(Icons.check_rounded),
+            label: Text(l10n?.workoutLogSetAction ?? 'Log set'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  TextEditingController _controllerFor(WorkoutLogField field) {
+    switch (field) {
+      case WorkoutLogField.reps:
+        return repsController;
+      case WorkoutLogField.weight:
+        return weightController;
+      case WorkoutLogField.duration:
+        return durationController;
+      case WorkoutLogField.distance:
+        return distanceController;
+      case WorkoutLogField.assistanceWeight:
+        return assistanceWeightController;
+    }
+  }
+
+  String _fieldLabel(WorkoutLogField field, AppLocalizations? l10n) {
+    final unit = preferredWorkoutFieldUnit(field, store);
+    switch (field) {
+      case WorkoutLogField.reps:
+        return l10n?.workoutRepsFieldLabel ?? 'Reps';
+      case WorkoutLogField.weight:
+        return _fieldLabelWithUnit(
+          l10n?.workoutWeightFieldLabel ?? 'Weight',
+          unit,
+        );
+      case WorkoutLogField.duration:
+        return _fieldLabelWithUnit('Duration', unit);
+      case WorkoutLogField.distance:
+        return _fieldLabelWithUnit('Distance', unit);
+      case WorkoutLogField.assistanceWeight:
+        return _fieldLabelWithUnit('Assistance weight', unit);
+    }
+  }
+
+  String _fieldLabelWithUnit(String label, String unit) {
+    if (unit.isEmpty) {
+      return label;
+    }
+    return '$label, $unit';
+  }
+}
+
+class WorkoutExerciseMetaBlock extends StatefulWidget {
+  const WorkoutExerciseMetaBlock({required this.exercise, super.key});
+
+  final Exercise exercise;
+
+  @override
+  State<WorkoutExerciseMetaBlock> createState() =>
+      _WorkoutExerciseMetaBlockState();
+}
+
+class _WorkoutExerciseMetaBlockState extends State<WorkoutExerciseMetaBlock> {
+  bool _instructionExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = widget.exercise.description.trim();
+    final instruction = widget.exercise.instruction.trim();
+    if (description.isEmpty && instruction.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (description.isNotEmpty)
+          Text(description, style: textTheme.bodyLarge),
+        if (description.isNotEmpty && instruction.isNotEmpty)
+          const SizedBox(height: 8),
+        if (instruction.isNotEmpty)
+          _ExpandableInstructionText(
+            instruction: instruction,
+            expanded: _instructionExpanded,
+            onToggle: () {
+              setState(() {
+                _instructionExpanded = !_instructionExpanded;
+              });
+            },
+          ),
+      ],
     );
   }
 }
 
-class WorkoutPreviousResultsCard extends StatelessWidget {
-  const WorkoutPreviousResultsCard({
+class _ExpandableInstructionText extends StatelessWidget {
+  const _ExpandableInstructionText({
+    required this.instruction,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final String instruction;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final textStyle = Theme.of(context).textTheme.bodyMedium;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final direction = Directionality.of(context);
+        final painter = TextPainter(
+          text: TextSpan(text: instruction, style: textStyle),
+          textDirection: direction,
+          maxLines: 3,
+        )..layout(maxWidth: constraints.maxWidth);
+        final isOverflowing = painter.didExceedMaxLines;
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: isOverflowing ? onToggle : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                instruction,
+                style: textStyle,
+                maxLines: expanded ? null : 3,
+                overflow: expanded
+                    ? TextOverflow.visible
+                    : TextOverflow.ellipsis,
+              ),
+              if (isOverflowing) ...[
+                const SizedBox(height: 6),
+                TextButton(
+                  onPressed: onToggle,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  child: Text(expanded ? 'Show less' : 'Show more'),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class WorkoutExerciseHistoryCard extends StatelessWidget {
+  const WorkoutExerciseHistoryCard({
+    required this.measurementType,
+    required this.currentSession,
+    required this.currentResult,
     required this.history,
     required this.store,
     required this.onFillSet,
     super.key,
   });
 
+  final ExerciseMeasurementType measurementType;
+  final WorkoutSession currentSession;
+  final WorkoutExerciseResult currentResult;
   final List<WorkoutExerciseHistoryGroup> history;
   final AppStore store;
   final WorkoutSetLogCallback onFillSet;
@@ -286,41 +314,125 @@ class WorkoutPreviousResultsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final historyGroups = _historyGroups(l10n);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            l10n?.workoutPreviousResultsTitle ?? 'Previous results',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ),
+        Text('History', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
-        if (history.isEmpty)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n?.workoutNoPreviousResults ??
-                    'No previous results for this exercise',
-              ),
+        if (historyGroups.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              l10n?.workoutNoPreviousResults ??
+                  'No previous results for this exercise',
             ),
           )
         else
-          ...history.map(
-            (group) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _PreviousResultGroupCard(
-                group: group,
-                store: store,
-                onFillSet: onFillSet,
-                l10n: l10n,
+          ...historyGroups.expand(
+            (group) => <Widget>[
+              _WorkoutHistoryDivider(title: group.title),
+              ...group.rows.map(
+                (row) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SwipeActionCard(
+                    enabled: row.onDelete != null,
+                    actions: row.onDelete == null
+                        ? const []
+                        : [
+                            SwipeCardAction(
+                              label: l10n?.commonDelete ?? 'Delete',
+                              icon: Icons.delete_outline,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.errorContainer,
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onErrorContainer,
+                              onPressed: row.onDelete!,
+                            ),
+                          ],
+                    child: Card(
+                      child: ListTile(
+                        title: Text(row.label),
+                        onTap: () => onFillSet(row.setLog),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
       ],
     );
+  }
+
+  List<_WorkoutHistoryRenderGroup> _historyGroups(AppLocalizations? l10n) {
+    final groups = <_WorkoutHistoryRenderGroup>[];
+    final currentRows = _rowsForResults(
+      [currentResult],
+      l10n,
+      activeResultIndex: currentSession.results.indexOf(currentResult),
+    );
+    if (currentRows.isNotEmpty) {
+      groups.add(
+        _WorkoutHistoryRenderGroup(
+          title:
+              '${currentSession.trainingPlanName} • '
+              '${formatWorkoutTimestamp(currentSession.startedAt)}',
+          rows: currentRows,
+        ),
+      );
+    }
+    for (final group in history) {
+      final rows = _rowsForResults(group.results, l10n);
+      if (rows.isEmpty) {
+        continue;
+      }
+      groups.add(
+        _WorkoutHistoryRenderGroup(
+          title:
+              '${group.session.trainingPlanName} • '
+              '${formatWorkoutTimestamp(group.session.startedAt)}',
+          rows: rows,
+        ),
+      );
+    }
+    return groups;
+  }
+
+  List<_WorkoutHistoryRenderRow> _rowsForResults(
+    List<WorkoutExerciseResult> results,
+    AppLocalizations? l10n, {
+    int? activeResultIndex,
+  }) {
+    final rows = <_WorkoutHistoryRenderRow>[];
+    for (
+      var resultOffset = results.length - 1;
+      resultOffset >= 0;
+      resultOffset--
+    ) {
+      final result = results[resultOffset];
+      for (var index = result.setLogs.length - 1; index >= 0; index--) {
+        final setLog = result.setLogs[index];
+        final setNumber = index + 1;
+        rows.add(
+          _WorkoutHistoryRenderRow(
+            label:
+                '#$setNumber • '
+                '${formatWorkoutSetLog(setLog, measurementType, store, repsLabel: l10n?.workoutRepsLabel ?? 'reps')}',
+            setLog: setLog,
+            onDelete: activeResultIndex == null
+                ? null
+                : () => store.removeActiveWorkoutSet(
+                    resultIndex: activeResultIndex + resultOffset,
+                    setIndex: index,
+                  ),
+          ),
+        );
+      }
+    }
+    return rows;
   }
 }
 
@@ -428,6 +540,7 @@ class WorkoutCompletedExerciseResultGroupCard extends StatelessWidget {
                 Text(
                   formatWorkoutTarget(
                     result.target,
+                    _measurementTypeForResult(store, result),
                     store,
                     targetPrefix: l10n?.workoutTargetPrefix ?? 'Target:',
                     setsLabel: l10n?.workoutSetsLabel ?? 'sets',
@@ -448,8 +561,8 @@ class WorkoutCompletedExerciseResultGroupCard extends StatelessWidget {
                       ),
                       subtitle: Text(
                         formatWorkoutSetLog(
-                          result.target,
                           setLog,
+                          _measurementTypeForResult(store, result),
                           store,
                           repsLabel: l10n?.workoutRepsLabel ?? 'reps',
                         ),
@@ -466,89 +579,43 @@ class WorkoutCompletedExerciseResultGroupCard extends StatelessWidget {
   }
 }
 
-class _PreviousResultGroupCard extends StatelessWidget {
-  const _PreviousResultGroupCard({
-    required this.group,
-    required this.store,
-    required this.onFillSet,
-    this.l10n,
-  });
+class _WorkoutHistoryDivider extends StatelessWidget {
+  const _WorkoutHistoryDivider({required this.title});
 
-  final WorkoutExerciseHistoryGroup group;
-  final AppStore store;
-  final WorkoutSetLogCallback onFillSet;
-  final AppLocalizations? l10n;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
-    final duration = formatWorkoutDuration(
-      group.session.duration,
-      hourUnit: l10n?.workoutHourUnit ?? 'h',
-      minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
-    );
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${group.session.trainingPlanName} • '
-              '${formatWorkoutDate(group.session.startedAt)} • '
-              '$duration',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            if (group.results.every((result) => result.setLogs.isEmpty))
-              Text(l10n?.workoutNoSetsLogged ?? 'No sets logged')
-            else
-              ...group.results.indexed.expand((resultEntry) {
-                final resultNumber = resultEntry.$1 + 1;
-                final result = resultEntry.$2;
-                final hasMultipleResults = group.results.length > 1;
-                return result.setLogs.indexed.map((setEntry) {
-                  final setNumber = setEntry.$1 + 1;
-                  final setLog = setEntry.$2;
-                  final setLabel = hasMultipleResults
-                      ? l10n?.workoutPreviousSetLabel(
-                              resultNumber,
-                              setNumber,
-                            ) ??
-                            'Entry $resultNumber • Set $setNumber'
-                      : l10n?.workoutSetLabel(setNumber) ?? 'Set $setNumber';
-                  final tooltipLabel = hasMultipleResults
-                      ? l10n?.workoutUsePreviousEntrySetTooltip(
-                              resultNumber,
-                              setNumber,
-                              group.session.trainingPlanName,
-                            ) ??
-                            'Use previous Entry $resultNumber Set $setNumber from ${group.session.trainingPlanName}'
-                      : l10n?.workoutUsePreviousSetTooltip(
-                              setNumber,
-                              group.session.trainingPlanName,
-                            ) ??
-                            'Use previous Set $setNumber from ${group.session.trainingPlanName}';
-                  return Tooltip(
-                    message: tooltipLabel,
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      onTap: () => onFillSet(setLog),
-                      title: Text(setLabel),
-                      subtitle: Text(
-                        formatWorkoutSetLog(
-                          result.target,
-                          setLog,
-                          store,
-                          repsLabel: l10n?.workoutRepsLabel ?? 'reps',
-                        ),
-                      ),
-                    ),
-                  );
-                });
-              }),
-          ],
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 12),
+      child: Text(title, style: Theme.of(context).textTheme.titleSmall),
     );
   }
+}
+
+class _WorkoutHistoryRenderGroup {
+  const _WorkoutHistoryRenderGroup({required this.title, required this.rows});
+
+  final String title;
+  final List<_WorkoutHistoryRenderRow> rows;
+}
+
+class _WorkoutHistoryRenderRow {
+  const _WorkoutHistoryRenderRow({
+    required this.label,
+    required this.setLog,
+    this.onDelete,
+  });
+
+  final String label;
+  final WorkoutSetLog setLog;
+  final VoidCallback? onDelete;
+}
+
+ExerciseMeasurementType _measurementTypeForResult(
+  AppStore store,
+  WorkoutExerciseResult result,
+) {
+  return store.exerciseById(result.exerciseId)?.measurementType ??
+      ExerciseMeasurementType.strength;
 }
