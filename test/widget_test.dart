@@ -25,7 +25,6 @@ import 'package:fitapp/ui/core/widgets/action_card.dart';
 import 'package:fitapp/ui/core/widgets/metric_card.dart';
 import 'package:fitapp/ui/library/library_cards.dart';
 import 'package:fitapp/ui/library/library_formatters.dart';
-import 'package:fitapp/ui/core/widgets/section_header.dart';
 import 'package:fitapp/ui/nutrition/nutrition_cards.dart';
 import 'package:fitapp/ui/nutrition/nutrition_formatters.dart';
 import 'package:fitapp/widgets/dish_form.dart';

@@ -74,7 +74,7 @@ class LibraryScreenState extends State<LibraryScreen> {
     if (!_inDetail) {
       return AdaptivePage(
         children: [
-          _LibraryGroupLabel(title: 'Training'),
+          const _LibraryGroupLabel(title: 'Training'),
           ResponsiveWrap(
             maxItemExtent: 360,
             minItemExtent: 260,

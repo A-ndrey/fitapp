@@ -188,8 +188,8 @@ class _FoodFormState extends State<FoodForm> {
       primaryActionLabel: primaryActionLabel,
       onPrimaryAction: _saveFood,
       fullScreen: widget.fullScreen,
-      children: children,
       maxDialogWidth: 560,
+      children: children,
     );
   }
 
