@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/app_preferences.dart';
 import '../state/app_store.dart';
+import '../state/auth/app_auth_service.dart';
 import '../state/sync/app_store_sync_status.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/app_screen_scaffold.dart';
+import '../ui/core/widgets/form_shell.dart';
 import '../ui/settings/settings_cards.dart';
 
 class MoreScreen extends StatelessWidget {
@@ -14,21 +16,42 @@ class MoreScreen extends StatelessWidget {
     required this.store,
     this.syncStatusListenable,
     this.readSyncStatus,
-    this.onSyncNow,
+    this.authListenable,
+    this.readAuthState,
+    this.onSignIn,
+    this.onSignUp,
+    this.onSignOut,
   });
 
   final AppStore store;
   final Listenable? syncStatusListenable;
   final AppStoreSyncStatus? Function()? readSyncStatus;
-  final Future<void> Function()? onSyncNow;
+  final Listenable? authListenable;
+  final AppAuthState Function()? readAuthState;
+  final Future<void> Function({
+    required String email,
+    required String password,
+  })?
+  onSignIn;
+  final Future<void> Function({
+    required String email,
+    required String password,
+  })?
+  onSignUp;
+  final Future<void> Function()? onSignOut;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([store, syncStatusListenable]),
+      animation: Listenable.merge([
+        store,
+        syncStatusListenable,
+        authListenable,
+      ]),
       builder: (context, _) {
         final preferences = store.preferences;
         final l10n = AppLocalizations.of(context);
+        final authState = readAuthState?.call() ?? const AppAuthState();
         final syncPresentation = _syncCardPresentation(
           readSyncStatus?.call(),
           errorColor: Theme.of(context).colorScheme.error,
@@ -38,20 +61,12 @@ class MoreScreen extends StatelessWidget {
           title: l10n?.destinationMore ?? 'Settings',
           body: AdaptivePage(
             children: [
-              Text(
-                l10n?.moreSyncTitle ?? 'Sync',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SettingsStatusCard(
-                title: l10n?.moreSyncStatusTitle ?? 'Sync status',
-                message: syncPresentation.message,
-                messageColor: syncPresentation.messageColor,
-                actionLabel: 'Sync now',
-                onPressed: () => onSyncNow?.call(),
+              _AuthCard(
+                authState: authState,
+                syncPresentation: syncPresentation,
+                onSignIn: onSignIn,
+                onSignUp: onSignUp,
+                onSignOut: onSignOut,
               ),
               const SizedBox(height: 20),
               LayoutBuilder(
@@ -191,6 +206,363 @@ class MoreScreen extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _AuthCard extends StatelessWidget {
+  const _AuthCard({
+    required this.authState,
+    required this.syncPresentation,
+    required this.onSignIn,
+    required this.onSignUp,
+    required this.onSignOut,
+  });
+
+  final AppAuthState authState;
+  final _SyncCardPresentation syncPresentation;
+  final Future<void> Function({
+    required String email,
+    required String password,
+  })?
+  onSignIn;
+  final Future<void> Function({
+    required String email,
+    required String password,
+  })?
+  onSignUp;
+  final Future<void> Function()? onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    final email = authState.email;
+    final isSignedIn = authState.isSignedIn;
+    return SettingsStatusCard(
+      title: 'Account',
+      icon: Icons.account_circle_outlined,
+      message: isSignedIn
+          ? 'Signed in${email == null ? '' : ' as $email'}.'
+          : 'Sign in to sync your data across devices.',
+      secondaryMessage: isSignedIn ? syncPresentation.message : null,
+      secondaryMessageColor: isSignedIn ? syncPresentation.messageColor : null,
+      actionLabel: isSignedIn ? 'Logout' : 'Login',
+      onPressed: isSignedIn
+          ? () => onSignOut?.call()
+          : () => _openAuthForm(context),
+    );
+  }
+
+  Future<void> _openAuthForm(BuildContext context) {
+    return Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (context) {
+          return _AuthFormScreen(onSignIn: onSignIn, onSignUp: onSignUp);
+        },
+      ),
+    );
+  }
+}
+
+class _AuthFormScreen extends StatefulWidget {
+  const _AuthFormScreen({required this.onSignIn, required this.onSignUp});
+
+  final Future<void> Function({
+    required String email,
+    required String password,
+  })?
+  onSignIn;
+  final Future<void> Function({
+    required String email,
+    required String password,
+  })?
+  onSignUp;
+
+  @override
+  State<_AuthFormScreen> createState() => _AuthFormScreenState();
+}
+
+class _AuthFormScreenState extends State<_AuthFormScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _isSignUp = false;
+  bool _isSubmitting = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_clearErrorAfterEdit);
+    _passwordController.addListener(_clearErrorAfterEdit);
+    _confirmPasswordController.addListener(_clearErrorAfterEdit);
+  }
+
+  @override
+  void dispose() {
+    _emailController.removeListener(_clearErrorAfterEdit);
+    _passwordController.removeListener(_clearErrorAfterEdit);
+    _confirmPasswordController.removeListener(_clearErrorAfterEdit);
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _isSignUp ? 'Create account' : 'Sign in';
+    return FormShellPage(
+      title: title,
+      showBodyHeader: false,
+      primaryActionLabel: title,
+      primaryActionChild: _isSubmitting
+          ? const SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : null,
+      onPrimaryAction: _isSubmitting ? null : _submit,
+      children: [
+        Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+                autofocus: true,
+                autofillHints: const [AutofillHints.email],
+                autocorrect: false,
+                enableSuggestions: false,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                validator: (value) {
+                  final email = value?.trim() ?? '';
+                  if (email.isEmpty) {
+                    return 'Email is required.';
+                  }
+                  if (!_isValidEmail(email)) {
+                    return 'Enter a valid email address.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _passwordController,
+                autofillHints: [
+                  _isSignUp
+                      ? AutofillHints.newPassword
+                      : AutofillHints.password,
+                ],
+                autocorrect: false,
+                enableSuggestions: false,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  helperText: _isSignUp ? 'Use at least 6 characters.' : null,
+                  suffixIcon: IconButton(
+                    tooltip: _obscurePassword
+                        ? 'Show password'
+                        : 'Hide password',
+                    onPressed: _isSubmitting
+                        ? null
+                        : () => setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          }),
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                  ),
+                ),
+                obscureText: _obscurePassword,
+                textInputAction: _isSignUp
+                    ? TextInputAction.next
+                    : TextInputAction.done,
+                onFieldSubmitted: (_) {
+                  if (!_isSubmitting && !_isSignUp) {
+                    _submit();
+                  }
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Password is required.';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters.';
+                  }
+                  return null;
+                },
+              ),
+              if (_isSignUp) ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  autofillHints: const [AutofillHints.newPassword],
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm password',
+                    suffixIcon: IconButton(
+                      tooltip: _obscureConfirmPassword
+                          ? 'Show confirmation password'
+                          : 'Hide confirmation password',
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            }),
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                    ),
+                  ),
+                  obscureText: _obscureConfirmPassword,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) {
+                    if (!_isSubmitting) {
+                      _submit();
+                    }
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Confirm your password.';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'Passwords do not match.';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _errorMessage!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: _isSubmitting ? null : _toggleMode,
+                  child: Text(
+                    _isSignUp
+                        ? 'Already have an account? Sign in'
+                        : 'New here? Create account',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      if (_isSignUp) {
+        await widget.onSignUp?.call(email: email, password: password);
+      } else {
+        await widget.onSignIn?.call(email: email, password: password);
+      }
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } on AuthFailure catch (error) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = _authErrorMessage(error.message);
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = _authErrorMessage(error.toString());
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  void _clearErrorAfterEdit() {
+    if (_errorMessage == null || _isSubmitting) {
+      return;
+    }
+
+    setState(() {
+      _errorMessage = null;
+    });
+  }
+
+  String _authErrorMessage(String rawMessage) {
+    final message = rawMessage.trim();
+    final normalized = message.toLowerCase();
+    final isGeneric =
+        message.isEmpty ||
+        normalized == 'error' ||
+        normalized == 'exception' ||
+        normalized == 'unknown error' ||
+        normalized == 'authentication failed.' ||
+        normalized.startsWith('exception:') ||
+        normalized.startsWith('firebaseexception');
+
+    if (!isGeneric) {
+      return message;
+    }
+
+    if (_isSignUp) {
+      return "We couldn't create your account. Check your email and password, then try again.";
+    }
+
+    return "We couldn't sign you in. Check your email and password, then try again.";
+  }
+
+  void _toggleMode() {
+    setState(() {
+      _isSignUp = !_isSignUp;
+      _errorMessage = null;
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+      _obscurePassword = true;
+      _obscureConfirmPassword = true;
+    });
+  }
+
+  bool _isValidEmail(String value) {
+    final atIndex = value.indexOf('@');
+    final lastDotIndex = value.lastIndexOf('.');
+    return atIndex > 0 &&
+        lastDotIndex > atIndex + 1 &&
+        lastDotIndex < value.length - 1;
   }
 }
 

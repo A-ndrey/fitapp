@@ -19,7 +19,7 @@ void main() {
     'Train': 'Workout stats',
     'Nutrition': 'Nutrition log',
     'Library': 'Training',
-    'Settings': 'Sync',
+    'Settings': 'Account',
   };
 
   Future<void> pumpFitAppAtSize(WidgetTester tester, Size size) async {

@@ -4,6 +4,7 @@ import 'package:fitapp/firebase/firebase_initializer.dart';
 import 'package:fitapp/firebase_options.dart';
 import 'package:fitapp/main.dart';
 import 'package:fitapp/state/app_store.dart';
+import 'package:fitapp/state/auth/app_auth_service.dart';
 import 'package:fitapp/state/persistence/app_store_persistence.dart';
 import 'package:fitapp/state/persistence/persisted_app_state.dart';
 import 'package:fitapp/state/persistence/shared_preferences_sync_metadata_store.dart';
@@ -11,7 +12,6 @@ import 'package:fitapp/state/persistence/sync_metadata.dart';
 import 'package:fitapp/state/sync/app_store_sync_coordinator.dart';
 import 'package:fitapp/state/sync/app_store_sync_status.dart';
 import 'package:fitapp/state/sync/firebase_app_store_sync_service.dart';
-import 'package:fitapp/state/sync/installation_id_store.dart';
 import 'package:fitapp/state/sync/remote_snapshot.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
@@ -94,22 +94,22 @@ void main() {
               );
             },
         syncMetadataStoreFactory: () => metadataStore,
-        installationIdStoreFactory: () => _FakeInstallationIdStore(),
         syncServiceFactory: (_) => _RecordingSyncService(events),
+        authServiceFactory: (_) => _FakeAuthService.signedIn(),
         syncCoordinatorFactory:
             ({
-              required installationIdStore,
               required metadataStore,
               required syncService,
+              required userIdProvider,
               required bindPersistedStateObserver,
               required loadLocalSnapshot,
               required applyRemoteSnapshot,
             }) {
               events.add('create-coordinator');
               return AppStoreSyncCoordinator(
-                installationIdStore: installationIdStore,
                 metadataStore: metadataStore,
                 syncService: syncService,
+                userIdProvider: userIdProvider,
                 bindPersistedStateObserver: bindPersistedStateObserver,
                 loadLocalSnapshot: loadLocalSnapshot,
                 applyRemoteSnapshot: applyRemoteSnapshot,
@@ -167,8 +167,8 @@ void main() {
               );
             },
         syncMetadataStoreFactory: () => metadataStore,
-        installationIdStoreFactory: () => _FakeInstallationIdStore(),
         syncServiceFactory: (_) => _RecordingSyncService(events),
+        authServiceFactory: (_) => _FakeAuthService.signedIn(),
         syncAccess: syncAccess,
       );
 
@@ -258,11 +258,6 @@ class _FakeSyncMetadataStore implements SharedPreferencesSyncMetadataStore {
   }
 }
 
-class _FakeInstallationIdStore implements InstallationIdStore {
-  @override
-  Future<String> loadOrCreate() async => 'installation-1';
-}
-
 class _RecordingSyncService implements FirebaseAppStoreSyncService {
   _RecordingSyncService(this.events);
 
@@ -292,6 +287,34 @@ class _RecordingSyncService implements FirebaseAppStoreSyncService {
       updatedAt: DateTime.utc(2026, 5, 14, 12),
       snapshotHash: snapshotHash,
     );
+  }
+}
+
+class _FakeAuthService extends ChangeNotifier implements AppAuthService {
+  _FakeAuthService.signedIn()
+    : _state = const AppAuthState(uid: 'user-1', email: 'me@example.com');
+
+  AppAuthState _state;
+
+  @override
+  AppAuthState get state => _state;
+
+  @override
+  Future<void> signIn({required String email, required String password}) async {
+    _state = AppAuthState(uid: 'user-1', email: email);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> signOut() async {
+    _state = const AppAuthState();
+    notifyListeners();
+  }
+
+  @override
+  Future<void> signUp({required String email, required String password}) async {
+    _state = AppAuthState(uid: 'user-1', email: email);
+    notifyListeners();
   }
 }
 

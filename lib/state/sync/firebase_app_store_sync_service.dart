@@ -57,8 +57,7 @@ class FirebaseAppStoreSyncService {
     return remoteSnapshot;
   }
 
-  static String _documentPath(String installationId) =>
-      'installations/$installationId/state/current';
+  static String _documentPath(String userId) => 'users/$userId/state/current';
 
   RemoteSnapshot _decodeRemoteSnapshot(Map<String, Object?> document) {
     final decodedSchemaVersion = _readInt(document, 'schemaVersion');
