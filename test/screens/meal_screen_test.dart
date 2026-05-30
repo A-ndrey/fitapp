@@ -106,60 +106,69 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('meal screen groups history by date and shows newest entries first', (
-    tester,
-  ) async {
-    final store = AppStore.empty();
-    final now = DateTime.now();
-    final todayMorning = DateTime(now.year, now.month, now.day, 9);
-    final todayEvening = DateTime(now.year, now.month, now.day, 20);
-    final previousDay = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).subtract(const Duration(days: 1)).copyWith(hour: 18);
-    store.createFood(
-      const FoodItem(
-        id: 'tomato',
-        name: 'Tomato',
-        description: 'Fresh tomato',
-        servingSizeGrams: 100,
-        basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(
-          calories: 18,
-          protein: 0.9,
-          fat: 0.2,
-          carbs: 3.9,
+  testWidgets(
+    'meal screen groups history by date and shows newest entries first',
+    (tester) async {
+      final store = AppStore.empty();
+      final now = DateTime.now();
+      final todayMorning = DateTime(now.year, now.month, now.day, 9);
+      final todayEvening = DateTime(now.year, now.month, now.day, 20);
+      final previousDay = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(const Duration(days: 1)).copyWith(hour: 18);
+      store.createFood(
+        const FoodItem(
+          id: 'tomato',
+          name: 'Tomato',
+          description: 'Fresh tomato',
+          servingSizeGrams: 100,
+          basis: NutritionBasis.per100g,
+          nutrition: NutritionValues(
+            calories: 18,
+            protein: 0.9,
+            fat: 0.2,
+            carbs: 3.9,
+          ),
         ),
-      ),
-    );
+      );
 
-    store.addMealByGrams(itemId: 'tomato', grams: 100, loggedAt: todayMorning);
-    store.addMealByGrams(itemId: 'tomato', grams: 200, loggedAt: previousDay);
-    store.addMealByGrams(itemId: 'tomato', grams: 150, loggedAt: todayEvening);
+      store.addMealByGrams(
+        itemId: 'tomato',
+        grams: 100,
+        loggedAt: todayMorning,
+      );
+      store.addMealByGrams(itemId: 'tomato', grams: 200, loggedAt: previousDay);
+      store.addMealByGrams(
+        itemId: 'tomato',
+        grams: 150,
+        loggedAt: todayEvening,
+      );
 
-    await pumpScreen(tester, store: store);
+      await pumpScreen(tester, store: store);
 
-    final locale = Localizations.localeOf(
-      tester.element(find.byType(MealScreen)),
-    ).toString();
-    final dateFormat = DateFormat.yMMMMd(locale);
+      final locale = Localizations.localeOf(
+        tester.element(find.byType(MealScreen)),
+      ).toString();
+      final dateFormat = DateFormat.yMMMMd(locale);
 
-    expect(find.textContaining('45 kcal'), findsOneWidget);
+      expect(find.textContaining('45 kcal'), findsOneWidget);
 
-    await tester.scrollUntilVisible(
-      find.text(dateFormat.format(todayMorning)),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text(dateFormat.format(todayMorning)), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text(dateFormat.format(todayMorning)),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text(dateFormat.format(todayMorning)), findsOneWidget);
 
-    await tester.scrollUntilVisible(
-      find.text(dateFormat.format(previousDay)),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text(dateFormat.format(previousDay)), findsOneWidget);
-    expect(find.textContaining('36 kcal'), findsOneWidget);
-  });
+      await tester.scrollUntilVisible(
+        find.text(dateFormat.format(previousDay)),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text(dateFormat.format(previousDay)), findsOneWidget);
+      expect(find.textContaining('36 kcal'), findsOneWidget);
+    },
+  );
 }

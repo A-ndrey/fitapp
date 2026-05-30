@@ -1121,49 +1121,43 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
     }
 
     final exercise = switch (widget.exercise.measurementType) {
-      ExerciseMeasurementType.strength =>
-        TrainingExercise(
-          exerciseId: widget.exercise.id,
-          sets: sets,
-          reps: reps,
-          weightGrams: weightInput == null ? null : _normalizeWeight(weightInput),
-        ),
-      ExerciseMeasurementType.bodyweight =>
-        TrainingExercise(
-          exerciseId: widget.exercise.id,
-          sets: sets,
-          reps: reps,
-        ),
-      ExerciseMeasurementType.duration =>
-        TrainingExercise(
-          exerciseId: widget.exercise.id,
-          sets: sets,
-          durationSeconds: duration,
-        ),
-      ExerciseMeasurementType.weightedDuration =>
-        TrainingExercise(
-          exerciseId: widget.exercise.id,
-          sets: sets,
-          weightGrams: weightInput == null ? null : _normalizeWeight(weightInput),
-          durationSeconds: duration,
-        ),
-      ExerciseMeasurementType.cardio =>
-        TrainingExercise(
-          exerciseId: widget.exercise.id,
-          durationSeconds: duration,
-          distanceMeters: distanceInput == null
-              ? null
-              : _normalizeDistance(distanceInput),
-        ),
-      ExerciseMeasurementType.assisted =>
-        TrainingExercise(
-          exerciseId: widget.exercise.id,
-          sets: sets,
-          reps: reps,
-          assistanceWeightGrams: assistanceInput == null
-              ? null
-              : _normalizeWeight(assistanceInput),
-        ),
+      ExerciseMeasurementType.strength => TrainingExercise(
+        exerciseId: widget.exercise.id,
+        sets: sets,
+        reps: reps,
+        weightGrams: weightInput == null ? null : _normalizeWeight(weightInput),
+      ),
+      ExerciseMeasurementType.bodyweight => TrainingExercise(
+        exerciseId: widget.exercise.id,
+        sets: sets,
+        reps: reps,
+      ),
+      ExerciseMeasurementType.duration => TrainingExercise(
+        exerciseId: widget.exercise.id,
+        sets: sets,
+        durationSeconds: duration,
+      ),
+      ExerciseMeasurementType.weightedDuration => TrainingExercise(
+        exerciseId: widget.exercise.id,
+        sets: sets,
+        weightGrams: weightInput == null ? null : _normalizeWeight(weightInput),
+        durationSeconds: duration,
+      ),
+      ExerciseMeasurementType.cardio => TrainingExercise(
+        exerciseId: widget.exercise.id,
+        durationSeconds: duration,
+        distanceMeters: distanceInput == null
+            ? null
+            : _normalizeDistance(distanceInput),
+      ),
+      ExerciseMeasurementType.assisted => TrainingExercise(
+        exerciseId: widget.exercise.id,
+        sets: sets,
+        reps: reps,
+        assistanceWeightGrams: assistanceInput == null
+            ? null
+            : _normalizeWeight(assistanceInput),
+      ),
     };
 
     Navigator.of(context).pop(exercise);
@@ -1242,10 +1236,7 @@ class _TrainingExerciseDialogState extends State<_TrainingExerciseDialog> {
             label: l10n?.trainingExpectedTimeFieldLabel ?? 'Duration',
           ),
           const SizedBox(height: 12),
-          _numberField(
-            controller: _distanceController,
-            label: 'Distance',
-          ),
+          _numberField(controller: _distanceController, label: 'Distance'),
         ]);
         break;
       case ExerciseMeasurementType.assisted:

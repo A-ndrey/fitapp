@@ -73,7 +73,8 @@ class _CatalogItemSearchSheet extends StatefulWidget {
   final String Function(String query)? createActionLabelBuilder;
 
   @override
-  State<_CatalogItemSearchSheet> createState() => _CatalogItemSearchSheetState();
+  State<_CatalogItemSearchSheet> createState() =>
+      _CatalogItemSearchSheetState();
 }
 
 class _CatalogItemSearchSheetState extends State<_CatalogItemSearchSheet> {
@@ -179,7 +180,9 @@ class _CatalogItemSearchSheetState extends State<_CatalogItemSearchSheet> {
                             },
                           );
                         }
-                        final resultIndex = showCreateAction ? index - 1 : index;
+                        final resultIndex = showCreateAction
+                            ? index - 1
+                            : index;
                         final item = results[resultIndex];
                         return _CatalogItemSearchResultTile(
                           item: item,
@@ -246,10 +249,7 @@ class _QuickPickWrap extends StatelessWidget {
 }
 
 class _CatalogItemSearchResultTile extends StatelessWidget {
-  const _CatalogItemSearchResultTile({
-    required this.item,
-    required this.onTap,
-  });
+  const _CatalogItemSearchResultTile({required this.item, required this.onTap});
 
   final CatalogItem item;
   final VoidCallback onTap;

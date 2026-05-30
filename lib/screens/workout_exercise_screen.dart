@@ -70,9 +70,7 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
           ),
           body: AdaptivePage(
             children: [
-              SectionHeader(
-                title: result.exerciseName,
-              ),
+              SectionHeader(title: result.exerciseName),
               if (exercise != null)
                 WorkoutExerciseMetaBlock(exercise: exercise),
               const SizedBox(height: 16),

@@ -450,7 +450,10 @@ void main() {
     expect(find.text('food'), findsOneWidget);
     expect(find.text('150 g serving • 195 kcal per serving'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Upper body'), findsOneWidget);
-    expect(find.text('1 exercise • 3 sets • 12 reps\nStrength focus'), findsOneWidget);
+    expect(
+      find.text('1 exercise • 3 sets • 12 reps\nStrength focus'),
+      findsOneWidget,
+    );
     expect(find.widgetWithText(ListTile, 'Pushups'), findsOneWidget);
     expect(find.text('Bodyweight push exercise'), findsOneWidget);
     expect(find.text('Keep your core tight.'), findsOneWidget);

@@ -80,9 +80,7 @@ void main() {
       name: 'Rice bowl',
       description: 'Simple bowl',
       servingSizeGrams: 100,
-      components: <DishComponent>[
-        DishComponent(itemId: 'rice', grams: 100),
-      ],
+      components: <DishComponent>[DishComponent(itemId: 'rice', grams: 100)],
     );
 
     await tester.pumpWidget(
@@ -101,7 +99,9 @@ void main() {
     expect(_textFieldValue(tester, gramsField), '12');
   });
 
-  testWidgets('recipe serving size grams field rejects letters', (tester) async {
+  testWidgets('recipe serving size grams field rejects letters', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -123,42 +123,40 @@ void main() {
     expect(_textFieldValue(tester, servingSizeField), '12');
   });
 
-  testWidgets(
-    'recipe save blocks when inline ingredient grams are empty',
-    (tester) async {
-      tester.view.physicalSize = const Size(1200, 2000);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      final store = AppStore();
-      addTearDown(store.dispose);
+  testWidgets('recipe save blocks when inline ingredient grams are empty', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final store = AppStore();
+    addTearDown(store.dispose);
 
-      await tester.pumpWidget(_wrapForTest(DishForm(store: store)));
+    await tester.pumpWidget(_wrapForTest(DishForm(store: store)));
 
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Add ingredient'));
-      await tester.pumpAndSettle();
-      await tester.enterText(_textFieldWithLabel('Search ingredients'), 'Rice');
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Rice').last);
-      await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Add ingredient'));
+    await tester.pumpAndSettle();
+    await tester.enterText(_textFieldWithLabel('Search ingredients'), 'Rice');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rice').last);
+    await tester.pumpAndSettle();
 
-      await tester.enterText(_textFieldWithLabel('Recipe name'), 'Rice bowl');
-      await tester.enterText(
-        _textFieldWithLabel('Recipe serving size grams'),
-        '175',
-      );
-      await tester.enterText(_textFieldWithLabel('Ingredient grams'), '');
-      await tester.pump();
+    await tester.enterText(_textFieldWithLabel('Recipe name'), 'Rice bowl');
+    await tester.enterText(
+      _textFieldWithLabel('Recipe serving size grams'),
+      '175',
+    );
+    await tester.enterText(_textFieldWithLabel('Ingredient grams'), '');
+    await tester.pump();
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Save recipe'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Save recipe'));
+    await tester.pumpAndSettle();
 
-      expect(
-        find.text('Choose an item and enter valid ingredient grams.'),
-        findsOneWidget,
-      );
-      expect(store.items.where((item) => item.name == 'Rice bowl'), isEmpty);
-    },
-  );
-
+    expect(
+      find.text('Choose an item and enter valid ingredient grams.'),
+      findsOneWidget,
+    );
+    expect(store.items.where((item) => item.name == 'Rice bowl'), isEmpty);
+  });
 }

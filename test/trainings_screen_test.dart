@@ -121,10 +121,7 @@ void main() {
   Future<void> revealRowActions(WidgetTester tester, String title) async {
     final tile = find.widgetWithText(ListTile, title).last;
     final card = find
-        .ancestor(
-      of: tile,
-      matching: find.byType(SwipeActionCard),
-    )
+        .ancestor(of: tile, matching: find.byType(SwipeActionCard))
         .last;
     await tester.ensureVisible(card);
     await tester.drag(card, const Offset(-240, 0));

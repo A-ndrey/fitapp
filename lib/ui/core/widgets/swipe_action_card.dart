@@ -91,7 +91,7 @@ class _SwipeActionCardState extends State<SwipeActionCard> {
     return SizedBox(
       key: ValueKey('swipe-action-${action.label}'),
       width: _actionWidth,
-          child: ColoredBox(
+      child: ColoredBox(
         color: action.backgroundColor,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,

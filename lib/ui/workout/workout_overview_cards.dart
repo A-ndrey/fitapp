@@ -146,7 +146,9 @@ class WorkoutHistoryCard extends StatelessWidget {
       hourUnit: l10n?.workoutHourUnit ?? 'h',
       minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
     );
-    final isCompact = AppBreakpoints.isCompact(MediaQuery.sizeOf(context).width);
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
     return SwipeActionCard(
       actions: [
         SwipeCardAction(
@@ -160,17 +162,17 @@ class WorkoutHistoryCard extends StatelessWidget {
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: ListTile(
-        onTap: onOpen,
-        title: Tooltip(
-          message:
-              l10n?.workoutOpenCompletedTooltip(session.trainingPlanName) ??
-              'Open completed ${session.trainingPlanName}',
-          child: Text(session.trainingPlanName),
-        ),
-        subtitle: Text(
-          '${formatWorkoutDate(session.startedAt)} • '
-          '$duration',
-        ),
+          onTap: onOpen,
+          title: Tooltip(
+            message:
+                l10n?.workoutOpenCompletedTooltip(session.trainingPlanName) ??
+                'Open completed ${session.trainingPlanName}',
+            child: Text(session.trainingPlanName),
+          ),
+          subtitle: Text(
+            '${formatWorkoutDate(session.startedAt)} • '
+            '$duration',
+          ),
           trailing: isCompact
               ? null
               : IconButton(

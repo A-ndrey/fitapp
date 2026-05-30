@@ -196,8 +196,13 @@ void _addIfPresent(List<String> details, String? value) {
   }
 }
 
-String? _formatTrainingExercisePreview(TrainingExercise exercise, AppStore store) {
-  final measurementType = store.exerciseById(exercise.exerciseId)?.measurementType;
+String? _formatTrainingExercisePreview(
+  TrainingExercise exercise,
+  AppStore store,
+) {
+  final measurementType = store
+      .exerciseById(exercise.exerciseId)
+      ?.measurementType;
   if (measurementType == null) {
     return null;
   }
