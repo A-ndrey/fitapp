@@ -72,6 +72,32 @@ void main() {
     expect(harness.pushCalls.single.installationId, 'user-1');
   });
 
+  test(
+    'first authenticated sync applies existing remote state over blank local state',
+    () async {
+      final remoteSnapshot = _stateWithFood('tomato');
+      final harness = _CoordinatorHarness(
+        localSnapshot: const PersistedAppState.empty(),
+        remoteSnapshot: RemoteSnapshot(
+          state: remoteSnapshot,
+          updatedAt: DateTime.utc(2026, 5, 13, 12),
+          snapshotHash: _snapshotHash(remoteSnapshot),
+        ),
+        userIdProvider: () async => 'user-1',
+      );
+
+      await harness.coordinator.start();
+
+      expect(harness.pushCalls, isEmpty);
+      expect(harness.appliedRemoteSnapshots, hasLength(1));
+      expect(harness.currentLocalSnapshot.userFoods.single.id, 'tomato');
+      expect(
+        harness.metadataStore.savedMetadata.single.lastSyncedSnapshotHash,
+        _snapshotHash(remoteSnapshot),
+      );
+    },
+  );
+
   test('manual sync after sign in uses latest local snapshot', () async {
     var userId = null as String?;
     final harness = _CoordinatorHarness(

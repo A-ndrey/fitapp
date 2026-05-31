@@ -134,6 +134,8 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
       final localSnapshotHash = _snapshotHash(localSnapshot);
       final lastSyncedSnapshotHash = _metadata?.lastSyncedSnapshotHash;
       final acceptedRemoteTimestamp = _metadata?.lastKnownRemoteUpdatedAt;
+      final localIsBlank =
+          localSnapshotHash == _snapshotHash(const PersistedAppState.empty());
 
       if (_isStopped) {
         return;
@@ -159,10 +161,11 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
 
       final localHasUnsyncedChanges =
           _pendingUploadSnapshot != null ||
-          lastSyncedSnapshotHash == null ||
-          lastSyncedSnapshotHash != localSnapshotHash;
+          (lastSyncedSnapshotHash == null
+              ? !localIsBlank
+              : lastSyncedSnapshotHash != localSnapshotHash);
       final remoteIsNewerThanAccepted =
-          acceptedRemoteTimestamp != null &&
+          acceptedRemoteTimestamp == null ||
           remoteSnapshot.updatedAt.isAfter(acceptedRemoteTimestamp);
 
       if (remoteIsNewerThanAccepted && !localHasUnsyncedChanges) {
