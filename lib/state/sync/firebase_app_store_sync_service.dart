@@ -57,6 +57,10 @@ class FirebaseAppStoreSyncService {
     return remoteSnapshot;
   }
 
+  Future<void> deleteUserState(String userId) {
+    return backend.delete(_documentPath(userId));
+  }
+
   static String _documentPath(String userId) => 'users/$userId/state/current';
 
   RemoteSnapshot _decodeRemoteSnapshot(Map<String, Object?> document) {
@@ -117,6 +121,8 @@ abstract class RemoteSnapshotStore {
   Future<Map<String, Object?>?> fetch(String path);
 
   Future<void> set(String path, Map<String, Object?> data);
+
+  Future<void> delete(String path);
 }
 
 class FirestoreRemoteSnapshotStore implements RemoteSnapshotStore {
@@ -142,5 +148,10 @@ class FirestoreRemoteSnapshotStore implements RemoteSnapshotStore {
   @override
   Future<void> set(String path, Map<String, Object?> data) {
     return firestore.doc(path).set(data);
+  }
+
+  @override
+  Future<void> delete(String path) {
+    return firestore.doc(path).delete();
   }
 }

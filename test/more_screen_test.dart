@@ -42,6 +42,9 @@ class _NoopRemoteSnapshotStore implements RemoteSnapshotStore {
 
   @override
   Future<void> set(String path, Map<String, Object?> data) async {}
+
+  @override
+  Future<void> delete(String path) async {}
 }
 
 class _TrackingSyncAccess extends FitAppSyncAccess {
@@ -59,6 +62,7 @@ void main() {
     AppStore store, {
     FitAppSyncAccess? syncAccess,
     AppAuthService? authService,
+    Future<void> Function({required String password})? onDeleteAccount,
     Size? size,
   }) async {
     if (size != null) {
@@ -76,6 +80,7 @@ void main() {
           onSignIn: authService?.signIn,
           onSignUp: authService?.signUp,
           onSignOut: authService?.signOut,
+          onDeleteAccount: onDeleteAccount,
         ),
       ),
     );
@@ -542,6 +547,129 @@ void main() {
     expect(find.text('Login'), findsOneWidget);
   });
 
+  testWidgets('signed-out users do not see delete account action', (
+    tester,
+  ) async {
+    await pumpScreen(tester, AppStore(), authService: _FakeAuthService());
+
+    expect(find.text('Delete account'), findsNothing);
+  });
+
+  testWidgets('delete account confirmation can be canceled', (tester) async {
+    var deleteCallCount = 0;
+    final authService = _FakeAuthService(
+      const AppAuthState(uid: 'user-1', email: 'me@example.com'),
+    );
+
+    await pumpScreen(
+      tester,
+      AppStore(),
+      authService: authService,
+      onDeleteAccount: ({required password}) async {
+        deleteCallCount += 1;
+      },
+    );
+
+    await tester.tap(find.text('Delete account'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete account?'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(deleteCallCount, 0);
+    expect(find.textContaining('me@example.com'), findsOneWidget);
+  });
+
+  testWidgets(
+    'delete account confirmation calls callback and returns to signed-out UI',
+    (tester) async {
+      var deleteCallCount = 0;
+      String? deletePassword;
+      final authService = _FakeAuthService(
+        const AppAuthState(uid: 'user-1', email: 'me@example.com'),
+      );
+
+      await pumpScreen(
+        tester,
+        AppStore(),
+        authService: authService,
+        onDeleteAccount: ({required password}) async {
+          deleteCallCount += 1;
+          deletePassword = password;
+          await authService.deleteAccount();
+        },
+      );
+
+      await tester.tap(find.text('Delete account'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.bySemanticsLabel('Password'), 'secret123');
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete account'));
+      await tester.pumpAndSettle();
+
+      expect(deleteCallCount, 1);
+      expect(deletePassword, 'secret123');
+      expect(find.text('Login'), findsOneWidget);
+      expect(find.text('Delete account'), findsNothing);
+    },
+  );
+
+  testWidgets('delete account failure shows readable error', (tester) async {
+    final authService = _FakeAuthService(
+      const AppAuthState(uid: 'user-1', email: 'me@example.com'),
+    );
+
+    await pumpScreen(
+      tester,
+      AppStore(),
+      authService: authService,
+      onDeleteAccount: ({required password}) async {
+        throw const AuthFailure(
+          'Please sign in again before deleting your account.',
+        );
+      },
+    );
+
+    await tester.tap(find.text('Delete account'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.bySemanticsLabel('Password'), 'secret123');
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete account'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Please sign in again before deleting your account.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('me@example.com'), findsOneWidget);
+  });
+
+  testWidgets('delete account confirmation requires a password', (
+    tester,
+  ) async {
+    var deleteCallCount = 0;
+    final authService = _FakeAuthService(
+      const AppAuthState(uid: 'user-1', email: 'me@example.com'),
+    );
+
+    await pumpScreen(
+      tester,
+      AppStore(),
+      authService: authService,
+      onDeleteAccount: ({required password}) async {
+        deleteCallCount += 1;
+      },
+    );
+
+    await tester.tap(find.text('Delete account'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete account'));
+    await tester.pumpAndSettle();
+
+    expect(deleteCallCount, 0);
+    expect(find.text('Password is required.'), findsOneWidget);
+    expect(find.text('Delete account?'), findsOneWidget);
+  });
+
   testWidgets('more screen stacks preference cards below medium layout', (
     tester,
   ) async {
@@ -609,6 +737,7 @@ class _FakeAuthService extends ChangeNotifier implements AppAuthService {
   final List<_AuthCall> signInCalls = <_AuthCall>[];
   final List<_AuthCall> signUpCalls = <_AuthCall>[];
   int signOutCallCount = 0;
+  int deleteAccountCallCount = 0;
 
   @override
   Future<void> signIn({required String email, required String password}) async {
@@ -642,6 +771,16 @@ class _FakeAuthService extends ChangeNotifier implements AppAuthService {
   @override
   Future<void> signOut() async {
     signOutCallCount += 1;
+    _state = const AppAuthState();
+    notifyListeners();
+  }
+
+  @override
+  Future<void> reauthenticate({required String password}) async {}
+
+  @override
+  Future<void> deleteAccount() async {
+    deleteAccountCallCount += 1;
     _state = const AppAuthState();
     notifyListeners();
   }

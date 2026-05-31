@@ -354,6 +354,94 @@ void main() {
     },
   );
 
+  test('stopped coordinator ignores observer saves and manual sync', () async {
+    final initialSnapshot = _stateWithFood('tomato');
+    final harness = _CoordinatorHarness(
+      localSnapshot: initialSnapshot,
+      remoteSnapshot: RemoteSnapshot(
+        state: initialSnapshot,
+        updatedAt: DateTime.utc(2026, 5, 13, 9),
+        snapshotHash: _snapshotHash(initialSnapshot),
+      ),
+      initialMetadata: SyncMetadata(
+        installationId: 'installation-1',
+        lastKnownRemoteUpdatedAt: DateTime.utc(2026, 5, 13, 9),
+        lastSyncedSnapshotHash: _snapshotHash(initialSnapshot),
+      ),
+    );
+
+    await harness.coordinator.start();
+    await harness.coordinator.stop();
+
+    harness.coordinator.persistedStateObserver(_stateWithFood('cucumber'));
+    await _pumpEventQueue();
+    harness.currentLocalSnapshot = _stateWithFood('pepper');
+    await harness.coordinator.syncNow();
+
+    expect(harness.pushCalls, isEmpty);
+  });
+
+  test(
+    'stopping during startup fetch prevents forced push and metadata changes',
+    () async {
+      final initialSnapshot = _stateWithFood('tomato');
+      final fetchCompleter = Completer<RemoteSnapshot?>();
+      final harness = _CoordinatorHarness(
+        localSnapshot: initialSnapshot,
+        onFetch: (installationId) => fetchCompleter.future,
+      );
+
+      final startFuture = harness.coordinator.start();
+      await _pumpEventQueue();
+      final stopFuture = harness.coordinator.stop();
+
+      fetchCompleter.complete(null);
+      await stopFuture;
+      await startFuture;
+
+      expect(harness.pushCalls, isEmpty);
+      expect(harness.metadataStore.savedMetadata, isEmpty);
+      expect(harness.coordinator.status.phase, AppStoreSyncPhase.syncing);
+    },
+  );
+
+  test(
+    'stopping during startup fetch prevents remote apply and synced metadata',
+    () async {
+      final localSnapshot = _stateWithFood('tomato');
+      final remoteSnapshot = _stateWithFood('cucumber');
+      final fetchCompleter = Completer<RemoteSnapshot?>();
+      final harness = _CoordinatorHarness(
+        localSnapshot: localSnapshot,
+        initialMetadata: SyncMetadata(
+          installationId: 'installation-1',
+          lastKnownRemoteUpdatedAt: DateTime.utc(2026, 5, 13, 8),
+          lastSyncedSnapshotHash: _snapshotHash(localSnapshot),
+        ),
+        onFetch: (installationId) => fetchCompleter.future,
+      );
+
+      final startFuture = harness.coordinator.start();
+      await _pumpEventQueue();
+      final stopFuture = harness.coordinator.stop();
+
+      fetchCompleter.complete(
+        RemoteSnapshot(
+          state: remoteSnapshot,
+          updatedAt: DateTime.utc(2026, 5, 13, 9),
+          snapshotHash: _snapshotHash(remoteSnapshot),
+        ),
+      );
+      await stopFuture;
+      await startFuture;
+
+      expect(harness.appliedRemoteSnapshots, isEmpty);
+      expect(harness.pushCalls, isEmpty);
+      expect(harness.metadataStore.savedMetadata, isEmpty);
+      expect(harness.currentLocalSnapshot.userFoods.single.id, 'tomato');
+    },
+  );
+
   test(
     'observer-driven initialization failures surface as error status',
     () async {
@@ -627,6 +715,9 @@ class _FakeFirebaseAppStoreSyncService implements FirebaseAppStoreSyncService {
       snapshotHash: snapshotHash,
     );
   }
+
+  @override
+  Future<void> deleteUserState(String userId) async {}
 }
 
 class _PushCall {
@@ -657,6 +748,9 @@ class _NoopRemoteSnapshotStore implements RemoteSnapshotStore {
 
   @override
   Future<void> set(String path, Map<String, Object?> data) async {}
+
+  @override
+  Future<void> delete(String path) async {}
 }
 
 class _StaticRemoteSnapshotStore implements RemoteSnapshotStore {
@@ -669,6 +763,9 @@ class _StaticRemoteSnapshotStore implements RemoteSnapshotStore {
 
   @override
   Future<void> set(String path, Map<String, Object?> data) async {}
+
+  @override
+  Future<void> delete(String path) async {}
 }
 
 PersistedAppState _stateWithFood(String id) {

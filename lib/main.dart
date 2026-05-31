@@ -114,6 +114,7 @@ Future<void> launchFitApp({
       store: startup.store,
       syncAccess: startup.syncAccess,
       authService: startup.authService,
+      deleteAccountData: startup.deleteAccountData,
     ),
   );
   unawaited(startup.startBackgroundSync());
@@ -151,8 +152,13 @@ class FitAppStartup {
   final Set<String> _knownExerciseIds;
 
   Future<void>? _backgroundSyncFuture;
+  bool _isDeletingAccount = false;
+  String? _remoteDeletedUserId;
 
   Future<void> startBackgroundSync() {
+    if (_shouldSuppressSyncForCurrentUser) {
+      return Future<void>.value();
+    }
     if (syncAccess.coordinator != null) {
       return Future<void>.value();
     }
@@ -164,8 +170,16 @@ class FitAppStartup {
 
   Future<void> _runBackgroundSync() async {
     try {
+      if (_shouldSuppressSyncForCurrentUser) {
+        return;
+      }
       final didInitialize = await _firebaseInitializer.initialize();
-      if (!didInitialize || !authService.state.isSignedIn) {
+      if (_shouldSuppressSyncForCurrentUser ||
+          !didInitialize ||
+          !authService.state.isSignedIn) {
+        return;
+      }
+      if (_shouldSuppressSyncForCurrentUser) {
         return;
       }
 
@@ -186,16 +200,61 @@ class FitAppStartup {
       syncAccess.bindCoordinator(coordinator);
       await coordinator.start();
     } catch (error) {
-      syncAccess.reportError(error);
+      if (!_isDeletingAccount) {
+        syncAccess.reportError(error);
+      }
+    }
+  }
+
+  Future<void> deleteAccountData({required String password}) async {
+    final userId = authService.state.uid;
+    if (userId == null) {
+      throw const AuthFailure('No account is signed in.');
+    }
+    await authService.reauthenticate(password: password);
+
+    _isDeletingAccount = true;
+    _persistedStateObserverRelay.clear();
+    await syncAccess.stopCoordinator();
+
+    try {
+      final didInitialize = await _firebaseInitializer.initialize();
+      if (!didInitialize) {
+        throw const AuthFailure('Firebase Auth is only available on web.');
+      }
+
+      await _syncServiceFactory(_knownExerciseIds).deleteUserState(userId);
+      _remoteDeletedUserId = userId;
+    } catch (_) {
+      _isDeletingAccount = false;
+      rethrow;
+    }
+
+    try {
+      await authService.deleteAccount();
+      _remoteDeletedUserId = null;
+      _isDeletingAccount = false;
+    } catch (_) {
+      _isDeletingAccount = false;
+      rethrow;
     }
   }
 
   void handleAuthStateChanged() {
     if (authService.state.isSignedIn) {
-      unawaited(startBackgroundSync());
+      if (!_shouldSuppressSyncForCurrentUser) {
+        unawaited(startBackgroundSync());
+      }
     } else {
-      syncAccess.clearCoordinator();
+      _isDeletingAccount = false;
+      unawaited(syncAccess.stopCoordinator());
     }
+  }
+
+  bool get _shouldSuppressSyncForCurrentUser {
+    final deletedUserId = _remoteDeletedUserId;
+    return _isDeletingAccount ||
+        (deletedUserId != null && authService.state.uid == deletedUserId);
   }
 }
 
@@ -236,6 +295,13 @@ class FitAppSyncAccess extends ChangeNotifier {
   void clearCoordinator() {
     _detachCoordinator();
     _setStatus(const AppStoreSyncStatus());
+  }
+
+  Future<void> stopCoordinator() async {
+    final coordinator = _coordinator;
+    _detachCoordinator();
+    _setStatus(const AppStoreSyncStatus());
+    await coordinator?.stop();
   }
 
   void reportError(Object error) {
@@ -301,14 +367,25 @@ class _PersistedStateObserverRelay {
   void bind(void Function(PersistedAppState state) observer) {
     _observer = observer;
   }
+
+  void clear() {
+    _observer = null;
+  }
 }
 
 class FitApp extends StatefulWidget {
-  const FitApp({super.key, this.store, this.syncAccess, this.authService});
+  const FitApp({
+    super.key,
+    this.store,
+    this.syncAccess,
+    this.authService,
+    this.deleteAccountData,
+  });
 
   final AppStore? store;
   final FitAppSyncAccess? syncAccess;
   final AppAuthService? authService;
+  final Future<void> Function({required String password})? deleteAccountData;
 
   @override
   State<FitApp> createState() => _FitAppState();
@@ -360,6 +437,7 @@ class _FitAppState extends State<FitApp> {
             store: _store,
             syncAccess: widget.syncAccess,
             authService: _authService,
+            deleteAccountData: widget.deleteAccountData,
           ),
         );
       },
@@ -381,11 +459,13 @@ class FitHome extends StatefulWidget {
     required this.store,
     required this.authService,
     this.syncAccess,
+    this.deleteAccountData,
   });
 
   final AppStore store;
   final AppAuthService authService;
   final FitAppSyncAccess? syncAccess;
+  final Future<void> Function({required String password})? deleteAccountData;
 
   @override
   State<FitHome> createState() => _FitHomeState();
@@ -455,6 +535,7 @@ class _FitHomeState extends State<FitHome> {
           onSignIn: widget.authService.signIn,
           onSignUp: widget.authService.signUp,
           onSignOut: widget.authService.signOut,
+          onDeleteAccount: widget.deleteAccountData,
         ),
       ),
     ];

@@ -21,6 +21,7 @@ class MoreScreen extends StatelessWidget {
     this.onSignIn,
     this.onSignUp,
     this.onSignOut,
+    this.onDeleteAccount,
   });
 
   final AppStore store;
@@ -39,6 +40,7 @@ class MoreScreen extends StatelessWidget {
   })?
   onSignUp;
   final Future<void> Function()? onSignOut;
+  final Future<void> Function({required String password})? onDeleteAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +69,7 @@ class MoreScreen extends StatelessWidget {
                 onSignIn: onSignIn,
                 onSignUp: onSignUp,
                 onSignOut: onSignOut,
+                onDeleteAccount: onDeleteAccount,
               ),
               const SizedBox(height: 20),
               LayoutBuilder(
@@ -209,13 +212,14 @@ class MoreScreen extends StatelessWidget {
   }
 }
 
-class _AuthCard extends StatelessWidget {
+class _AuthCard extends StatefulWidget {
   const _AuthCard({
     required this.authState,
     required this.syncPresentation,
     required this.onSignIn,
     required this.onSignUp,
     required this.onSignOut,
+    required this.onDeleteAccount,
   });
 
   final AppAuthState authState;
@@ -231,23 +235,114 @@ class _AuthCard extends StatelessWidget {
   })?
   onSignUp;
   final Future<void> Function()? onSignOut;
+  final Future<void> Function({required String password})? onDeleteAccount;
+
+  @override
+  State<_AuthCard> createState() => _AuthCardState();
+}
+
+class _AuthCardState extends State<_AuthCard> {
+  bool _isDeletingAccount = false;
+  String? _deleteErrorMessage;
 
   @override
   Widget build(BuildContext context) {
-    final email = authState.email;
-    final isSignedIn = authState.isSignedIn;
-    return SettingsStatusCard(
-      title: 'Account',
-      icon: Icons.account_circle_outlined,
-      message: isSignedIn
-          ? 'Signed in${email == null ? '' : ' as $email'}.'
-          : 'Sign in to sync your data across devices.',
-      secondaryMessage: isSignedIn ? syncPresentation.message : null,
-      secondaryMessageColor: isSignedIn ? syncPresentation.messageColor : null,
-      actionLabel: isSignedIn ? 'Logout' : 'Login',
-      onPressed: isSignedIn
-          ? () => onSignOut?.call()
-          : () => _openAuthForm(context),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final email = widget.authState.email;
+    final isSignedIn = widget.authState.isSignedIn;
+    final canDeleteAccount = isSignedIn && widget.onDeleteAccount != null;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.account_circle_outlined,
+                  color: colorScheme.onSurface,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Account',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isSignedIn
+                  ? 'Signed in${email == null ? '' : ' as $email'}.'
+                  : 'Sign in to sync your data across devices.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (isSignedIn) ...[
+              const SizedBox(height: 8),
+              Text(
+                widget.syncPresentation.message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color:
+                      widget.syncPresentation.messageColor ??
+                      colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            if (_deleteErrorMessage != null && isSignedIn) ...[
+              const SizedBox(height: 8),
+              Text(
+                _deleteErrorMessage!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.error,
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _isDeletingAccount
+                    ? null
+                    : isSignedIn
+                    ? () => widget.onSignOut?.call()
+                    : () => _openAuthForm(context),
+                child: Text(isSignedIn ? 'Logout' : 'Login'),
+              ),
+            ),
+            if (canDeleteAccount) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: _isDeletingAccount ? null : _confirmDeleteAccount,
+                  style: TextButton.styleFrom(
+                    foregroundColor: colorScheme.error,
+                  ),
+                  icon: _isDeletingAccount
+                      ? SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colorScheme.error,
+                          ),
+                        )
+                      : const Icon(Icons.delete_outline),
+                  label: const Text('Delete account'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -256,10 +351,135 @@ class _AuthCard extends StatelessWidget {
       MaterialPageRoute<void>(
         fullscreenDialog: true,
         builder: (context) {
-          return _AuthFormScreen(onSignIn: onSignIn, onSignUp: onSignUp);
+          return _AuthFormScreen(
+            onSignIn: widget.onSignIn,
+            onSignUp: widget.onSignUp,
+          );
         },
       ),
     );
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final password = await showDialog<String>(
+      context: context,
+      builder: (context) => const _DeleteAccountDialog(),
+    );
+
+    if (password == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isDeletingAccount = true;
+      _deleteErrorMessage = null;
+    });
+
+    try {
+      await widget.onDeleteAccount?.call(password: password);
+    } on AuthFailure catch (error) {
+      if (mounted) {
+        setState(() {
+          _deleteErrorMessage = error.message;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _deleteErrorMessage = error.toString();
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDeletingAccount = false;
+        });
+      }
+    }
+  }
+}
+
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Delete account?'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Your account and cloud sync data will be permanently deleted. '
+              'Local data on this device will remain.',
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _passwordController,
+              autofocus: true,
+              autofillHints: const [AutofillHints.password],
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                suffixIcon: IconButton(
+                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                  onPressed: () => setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  }),
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                ),
+              ),
+              obscureText: _obscurePassword,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submit(),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Password is required.';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Delete account')),
+      ],
+    );
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    Navigator.of(context).pop(_passwordController.text);
   }
 }
 
