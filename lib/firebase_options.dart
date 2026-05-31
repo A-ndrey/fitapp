@@ -17,11 +17,12 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'placeholder-web-api-key',
-    appId: '1:1234567890:web:placeholderfitapp',
-    messagingSenderId: '1234567890',
-    projectId: 'placeholder-fitapp',
-    authDomain: 'placeholder-fitapp.firebaseapp.com',
-    storageBucket: 'placeholder-fitapp.firebasestorage.app',
+    apiKey: 'AIzaSyCXbeMwhnOJ9u3ebJKecjiG-fRMaBqyo7E',
+    appId: '1:253211492166:web:feedc83d86ec8537c22f47',
+    messagingSenderId: '253211492166',
+    projectId: 'fitapp-37523',
+    authDomain: 'fitapp-37523.firebaseapp.com',
+    storageBucket: 'fitapp-37523.firebasestorage.app',
+    measurementId: 'G-RZJJ6SVL94',
   );
 }
