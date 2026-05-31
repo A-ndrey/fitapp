@@ -25,5 +25,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'fitapp-37523.firebasestorage.app',
     measurementId: 'G-RZJJ6SVL94',
   );
-
 }
