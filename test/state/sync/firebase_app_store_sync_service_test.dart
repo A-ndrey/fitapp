@@ -153,6 +153,18 @@ void main() {
   );
 
   test(
+    'FirebaseAppStoreSyncService.deleteUserState deletes the user snapshot document',
+    () async {
+      final backend = _FakeRemoteSnapshotStore();
+      final service = FirebaseAppStoreSyncService(backend: backend);
+
+      await service.deleteUserState('user-1');
+
+      expect(backend.lastDeletePath, 'users/user-1/state/current');
+    },
+  );
+
+  test(
     'FirebaseAppStoreSyncService.fetch decodes a valid remote snapshot',
     () async {
       final updatedAt = DateTime.utc(2026, 5, 13, 14, 15, 16);
@@ -283,6 +295,7 @@ class _FakeRemoteSnapshotStore implements RemoteSnapshotStore {
   Map<String, Object?>? fetchResult;
   String? lastFetchPath;
   String? lastSetPath;
+  String? lastDeletePath;
   Map<String, Object?>? lastSetData;
 
   @override
@@ -295,6 +308,11 @@ class _FakeRemoteSnapshotStore implements RemoteSnapshotStore {
   Future<void> set(String path, Map<String, Object?> data) async {
     lastSetPath = path;
     lastSetData = Map<String, Object?>.from(data);
+  }
+
+  @override
+  Future<void> delete(String path) async {
+    lastDeletePath = path;
   }
 }
 

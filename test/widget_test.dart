@@ -196,6 +196,9 @@ class _NoopRemoteSnapshotStore implements RemoteSnapshotStore {
 
   @override
   Future<void> set(String path, Map<String, Object?> data) async {}
+
+  @override
+  Future<void> delete(String path) async {}
 }
 
 class _TrackingSyncAccess extends FitAppSyncAccess {
@@ -223,6 +226,15 @@ class _FakeAuthService extends ChangeNotifier implements AppAuthService {
 
   @override
   Future<void> signOut() async {
+    _state = const AppAuthState();
+    notifyListeners();
+  }
+
+  @override
+  Future<void> reauthenticate({required String password}) async {}
+
+  @override
+  Future<void> deleteAccount() async {
     _state = const AppAuthState();
     notifyListeners();
   }

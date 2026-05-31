@@ -54,28 +54,47 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
   PersistedAppState? _pendingUploadSnapshot;
   Completer<void>? _uploadDrainCompleter;
   bool _isUploadDrainScheduled = false;
+  bool _isStopped = false;
 
   AppStoreSyncStatus get status => _status;
   void Function(PersistedAppState) get persistedStateObserver =>
       _handlePersistedStateSaved;
 
   Future<void> start() {
+    if (_isStopped) {
+      return Future<void>.value();
+    }
     return _startupFuture ??= _runSerialized(_runStartupReconciliation);
   }
 
   void _handlePersistedStateSaved(PersistedAppState state) {
+    if (_isStopped) {
+      return;
+    }
     _pendingUploadSnapshot = state;
     unawaited(_scheduleUploadDrain());
   }
 
   Future<void> syncNow() async {
+    if (_isStopped) {
+      return;
+    }
     try {
       final snapshot = await _loadSnapshotOrEmpty();
+      if (_isStopped) {
+        return;
+      }
       _pendingUploadSnapshot = snapshot;
       await _scheduleUploadDrain();
     } catch (error, stackTrace) {
       await _handleSyncFailure(error, stackTrace);
     }
+  }
+
+  Future<void> stop() async {
+    _isStopped = true;
+    _pendingUploadSnapshot = null;
+    await _syncOperationTail.catchError((Object _, StackTrace _) {});
   }
 
   Future<void> _runStartupReconciliation() async {
@@ -88,12 +107,21 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
 
     try {
       final didInitialize = await _ensureInitialized();
+      if (_isStopped) {
+        return;
+      }
       if (!didInitialize) {
         _setStatus(const AppStoreSyncStatus());
         return;
       }
       final localSnapshot = await _loadSnapshotOrEmpty();
+      if (_isStopped) {
+        return;
+      }
       final remoteSnapshot = await _syncService.fetch(_installationId!);
+      if (_isStopped) {
+        return;
+      }
 
       if (remoteSnapshot == null) {
         await _pushSnapshot(
@@ -107,12 +135,18 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
       final lastSyncedSnapshotHash = _metadata?.lastSyncedSnapshotHash;
       final acceptedRemoteTimestamp = _metadata?.lastKnownRemoteUpdatedAt;
 
+      if (_isStopped) {
+        return;
+      }
       if (remoteSnapshot.snapshotHash == localSnapshotHash) {
         await _persistSyncMetadata(
           lastKnownRemoteUpdatedAt: remoteSnapshot.updatedAt,
           lastSyncedSnapshotHash: remoteSnapshot.snapshotHash,
           lastSyncError: null,
         );
+        if (_isStopped) {
+          return;
+        }
         _setStatus(
           _status.copyWith(
             phase: AppStoreSyncPhase.synced,
@@ -132,15 +166,24 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
           remoteSnapshot.updatedAt.isAfter(acceptedRemoteTimestamp);
 
       if (remoteIsNewerThanAccepted && !localHasUnsyncedChanges) {
+        if (_isStopped) {
+          return;
+        }
         await _applyRemoteSnapshot(
           remoteSnapshot.state,
           notifyPersistedStateObserver: false,
         );
+        if (_isStopped) {
+          return;
+        }
         await _persistSyncMetadata(
           lastKnownRemoteUpdatedAt: remoteSnapshot.updatedAt,
           lastSyncedSnapshotHash: remoteSnapshot.snapshotHash,
           lastSyncError: null,
         );
+        if (_isStopped) {
+          return;
+        }
         _setStatus(
           _status.copyWith(
             phase: AppStoreSyncPhase.synced,
@@ -151,6 +194,9 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
         return;
       }
 
+      if (_isStopped) {
+        return;
+      }
       await _pushSnapshot(
         _takePendingUploadSnapshot(localSnapshot),
         force: true,
@@ -206,6 +252,9 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
   }
 
   Future<void> _scheduleUploadDrain() async {
+    if (_isStopped) {
+      return;
+    }
     _uploadDrainCompleter ??= Completer<void>();
     if (_isUploadDrainScheduled) {
       await _uploadDrainCompleter!.future;
@@ -219,13 +268,17 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
 
   Future<void> _drainUploadQueue() async {
     try {
+      if (_isStopped) {
+        _pendingUploadSnapshot = null;
+        return;
+      }
       final didInitialize = await _ensureInitialized();
-      if (!didInitialize) {
+      if (_isStopped || !didInitialize) {
         _pendingUploadSnapshot = null;
         _setStatus(const AppStoreSyncStatus());
         return;
       }
-      while (_pendingUploadSnapshot != null) {
+      while (!_isStopped && _pendingUploadSnapshot != null) {
         final snapshot = _pendingUploadSnapshot!;
         _pendingUploadSnapshot = null;
         await _pushSnapshot(snapshot);
@@ -234,7 +287,7 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
       _pendingUploadSnapshot = null;
       await _handleSyncFailure(error, stackTrace);
     } finally {
-      final shouldReschedule = _pendingUploadSnapshot != null;
+      final shouldReschedule = !_isStopped && _pendingUploadSnapshot != null;
       _isUploadDrainScheduled = false;
       _uploadDrainCompleter?.complete();
       _uploadDrainCompleter = null;
@@ -256,6 +309,9 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     PersistedAppState snapshot, {
     bool force = false,
   }) async {
+    if (_isStopped) {
+      return;
+    }
     final snapshotHash = _snapshotHash(snapshot);
     if (!force && _metadata?.lastSyncedSnapshotHash == snapshotHash) {
       _setStatus(
@@ -274,16 +330,25 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
       ),
     );
 
+    if (_isStopped) {
+      return;
+    }
     final remoteSnapshot = await _syncService.push(
       _installationId!,
       snapshot,
       snapshotHash,
     );
+    if (_isStopped) {
+      return;
+    }
     await _persistSyncMetadata(
       lastKnownRemoteUpdatedAt: remoteSnapshot.updatedAt,
       lastSyncedSnapshotHash: remoteSnapshot.snapshotHash,
       lastSyncError: null,
     );
+    if (_isStopped) {
+      return;
+    }
     _setStatus(
       _status.copyWith(
         phase: AppStoreSyncPhase.synced,
@@ -309,6 +374,9 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
   }
 
   Future<void> _handleSyncFailure(Object error, StackTrace stackTrace) async {
+    if (_isStopped) {
+      return;
+    }
     final errorMessage = error.toString();
 
     if (_installationId != null) {

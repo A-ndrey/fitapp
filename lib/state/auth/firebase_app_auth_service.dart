@@ -56,6 +56,44 @@ class FirebaseAppAuthService extends ChangeNotifier implements AppAuthService {
     await auth.signOut();
   }
 
+  @override
+  Future<void> reauthenticate({required String password}) async {
+    try {
+      final auth = await _ensureFirebaseAuth();
+      final user = auth.currentUser;
+      if (user == null) {
+        throw const AuthFailure('No account is signed in.');
+      }
+      final email = user.email;
+      if (email == null) {
+        throw const AuthFailure(
+          'This account cannot be reauthenticated with a password.',
+        );
+      }
+      final credential = firebase_auth.EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+    } on firebase_auth.FirebaseAuthException catch (error) {
+      throw AuthFailure(_messageFor(error));
+    }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      final auth = await _ensureFirebaseAuth();
+      final user = auth.currentUser;
+      if (user == null) {
+        throw const AuthFailure('No account is signed in.');
+      }
+      await user.delete();
+    } on firebase_auth.FirebaseAuthException catch (error) {
+      throw AuthFailure(_messageFor(error));
+    }
+  }
+
   Future<void> _bindAuthState() async {
     final didInitialize = await _firebaseInitializer.initialize();
     if (!didInitialize) {
@@ -101,6 +139,8 @@ class FirebaseAppAuthService extends ChangeNotifier implements AppAuthService {
       'user-not-found' ||
       'wrong-password' ||
       'invalid-credential' => 'Invalid email or password.',
+      'requires-recent-login' =>
+        'Please sign in again before deleting your account.',
       'weak-password' => 'Password is too weak.',
       _ => error.message ?? 'Authentication failed.',
     };

@@ -26,4 +26,8 @@ abstract interface class AppAuthService implements Listenable {
   Future<void> signUp({required String email, required String password});
 
   Future<void> signOut();
+
+  Future<void> reauthenticate({required String password});
+
+  Future<void> deleteAccount();
 }
