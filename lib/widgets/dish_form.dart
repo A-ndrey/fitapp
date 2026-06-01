@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../models/catalog_item.dart';
 import '../models/dish_item.dart';
 import '../state/app_store.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/input/numeric_input_formatters.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/form_shell.dart';
@@ -305,10 +306,13 @@ class _DishFormState extends State<DishForm> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText =
-            error.message?.toString() ??
-            AppLocalizations.of(context)?.dishCouldNotSave ??
-            'Could not save recipe.';
+        _errorText = humanReadableFormError(
+          error,
+          resourceName: 'recipe',
+          fallback:
+              AppLocalizations.of(context)?.dishCouldNotSave ??
+              'Could not save recipe.',
+        );
       });
       return;
     }

@@ -7,6 +7,7 @@ import '../l10n/app_localizations.dart';
 import '../models/exercise.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/section_header.dart';
 import '../ui/workout/workout_formatters.dart';
@@ -195,9 +196,17 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         Navigator.of(context).pop();
       }
     } on Object catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            humanReadableFormError(
+              error,
+              resourceName: 'workout',
+              fallback: 'Could not finish workout.',
+            ),
+          ),
+        ),
+      );
     }
   }
 

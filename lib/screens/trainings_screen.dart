@@ -5,6 +5,7 @@ import '../models/app_preferences.dart';
 import '../models/exercise.dart';
 import '../models/training_plan.dart';
 import '../state/app_store.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/layout/app_breakpoints.dart';
 import '../ui/core/widgets/empty_state.dart';
@@ -310,12 +311,21 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     } on ArgumentError catch (error) {
       _showSnackBar(
         context,
-        error.message?.toString() ??
-            l10n?.trainingCouldNotDelete ??
-            'Could not delete.',
+        humanReadableFormError(
+          error,
+          resourceName: 'training',
+          fallback: l10n?.trainingCouldNotDelete ?? 'Could not delete.',
+        ),
       );
     } on StateError catch (error) {
-      _showSnackBar(context, error.message);
+      _showSnackBar(
+        context,
+        humanReadableFormError(
+          error,
+          resourceName: 'training',
+          fallback: l10n?.trainingCouldNotDelete ?? 'Could not delete.',
+        ),
+      );
     }
   }
 
@@ -362,12 +372,21 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     } on ArgumentError catch (error) {
       _showSnackBar(
         context,
-        error.message?.toString() ??
-            l10n?.trainingCouldNotDelete ??
-            'Could not delete.',
+        humanReadableFormError(
+          error,
+          resourceName: 'exercise',
+          fallback: l10n?.trainingCouldNotDelete ?? 'Could not delete.',
+        ),
       );
     } on StateError catch (error) {
-      _showSnackBar(context, error.message);
+      _showSnackBar(
+        context,
+        humanReadableFormError(
+          error,
+          resourceName: 'exercise',
+          fallback: l10n?.trainingCouldNotDelete ?? 'Could not delete.',
+        ),
+      );
     }
   }
 }
@@ -631,10 +650,13 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText =
-            error.message?.toString() ??
-            AppLocalizations.of(context)?.exerciseCouldNotSave ??
-            'Could not save exercise.';
+        _errorText = humanReadableFormError(
+          error,
+          resourceName: 'exercise',
+          fallback:
+              AppLocalizations.of(context)?.exerciseCouldNotSave ??
+              'Could not save exercise.',
+        );
       });
       return;
     }
@@ -991,10 +1013,13 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText =
-            error.message?.toString() ??
-            AppLocalizations.of(context)?.trainingCouldNotSave ??
-            'Could not save training.';
+        _errorText = humanReadableFormError(
+          error,
+          resourceName: 'training',
+          fallback:
+              AppLocalizations.of(context)?.trainingCouldNotSave ??
+              'Could not save training.',
+        );
       });
       return;
     }

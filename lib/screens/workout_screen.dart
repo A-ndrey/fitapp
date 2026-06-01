@@ -7,6 +7,7 @@ import '../l10n/app_localizations.dart';
 import '../models/training_plan.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/section_header.dart';
@@ -219,9 +220,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     try {
       widget.store.startWorkout(trainingPlanId: plan.id);
     } on Object catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            humanReadableFormError(
+              error,
+              resourceName: 'workout',
+              fallback: 'Could not start workout.',
+            ),
+          ),
+        ),
+      );
       return;
     }
     if (context.mounted) {
@@ -289,9 +298,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     try {
       widget.store.deleteCompletedWorkoutSession(session.id);
     } on Object catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            humanReadableFormError(
+              error,
+              resourceName: 'workout',
+              fallback: 'Could not delete workout.',
+            ),
+          ),
+        ),
+      );
     }
   }
 }
