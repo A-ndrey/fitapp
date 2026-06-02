@@ -63,6 +63,13 @@ String formatTrainingPlanSummaryLabel(
   return '$firstLine\n$description';
 }
 
+String? formatTrainingPlanFirstTargetLabel(TrainingPlan plan, AppStore store) {
+  if (plan.exercises.isEmpty) {
+    return null;
+  }
+  return _formatTrainingExercisePreview(plan.exercises.first, store);
+}
+
 String formatExerciseMuscleGroupSummaryLabel(
   List<MuscleGroup> muscleGroups, {
   String emptyLabel = 'Muscles: -',

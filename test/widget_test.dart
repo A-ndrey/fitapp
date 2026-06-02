@@ -1320,9 +1320,13 @@ void main() {
     expect(find.byType(AdaptivePage), findsOneWidget);
     expect(find.byType(FoodCatalogCard), findsWidgets);
     expect(find.text('Food library'), findsOneWidget);
+    await scrollToText(tester, 'Rice');
     expect(find.text('Rice'), findsOneWidget);
+    expect(find.text('Type'), findsWidgets);
+    expect(find.text('Serving'), findsWidgets);
+    expect(find.text('Calories'), findsWidgets);
     expect(find.textContaining('5.3 oz serving'), findsWidgets);
-    expect(find.textContaining('41 kcal per serving'), findsWidgets);
+    expect(find.textContaining('195 kcal per serving'), findsWidgets);
     expect(find.byTooltip('Add food or recipe'), findsOneWidget);
     expect(find.byTooltip('More actions'), findsWidgets);
   });

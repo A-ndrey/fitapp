@@ -447,16 +447,25 @@ void main() {
     );
 
     expect(find.widgetWithText(ListTile, 'Rice bowl'), findsOneWidget);
+    expect(find.text('Type'), findsWidgets);
     expect(find.text('food'), findsOneWidget);
-    expect(find.text('150 g serving • 195 kcal per serving'), findsOneWidget);
+    expect(find.text('Serving'), findsWidgets);
+    expect(find.text('150 g serving'), findsOneWidget);
+    expect(find.text('Calories'), findsOneWidget);
+    expect(find.text('195 kcal per serving'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Upper body'), findsOneWidget);
-    expect(
-      find.text('1 exercise • 3 sets • 12 reps\nStrength focus'),
-      findsOneWidget,
-    );
+    expect(find.text('Exercises'), findsOneWidget);
+    expect(find.text('1 exercise'), findsOneWidget);
+    expect(find.text('First target'), findsOneWidget);
+    expect(find.text('3 sets • 12 reps'), findsOneWidget);
+    expect(find.text('Notes'), findsOneWidget);
+    expect(find.text('Strength focus'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Pushups'), findsOneWidget);
+    expect(find.text('Description'), findsOneWidget);
     expect(find.text('Bodyweight push exercise'), findsOneWidget);
+    expect(find.text('Instruction'), findsOneWidget);
     expect(find.text('Keep your core tight.'), findsOneWidget);
+    expect(find.text('Muscles'), findsOneWidget);
     expect(find.text('Chest, Triceps'), findsOneWidget);
 
     Future<void> selectCardAction(String title, String actionLabel) async {

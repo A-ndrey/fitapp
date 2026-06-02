@@ -844,14 +844,10 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                     child: Card(
                       child: ListTile(
                         title: Text(exerciseName),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: detailLines
-                              .map((detail) => Text(detail))
-                              .toList(growable: false),
-                        ),
-                        isThreeLine: true,
+                        subtitle: detailLines.isEmpty
+                            ? null
+                            : _TrainingExerciseTargetList(details: detailLines),
+                        isThreeLine: detailLines.isNotEmpty,
                         trailing: isCompact
                             ? null
                             : Row(
@@ -1028,6 +1024,71 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
       return;
     }
     Navigator.of(context).pop();
+  }
+}
+
+class _TrainingExerciseTargetList extends StatelessWidget {
+  const _TrainingExerciseTargetList({required this.details});
+
+  final List<String> details;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ExcludeSemantics(
+            child: Icon(
+              Icons.flag_outlined,
+              size: 18,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Target',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                for (final detail in details)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '- ',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          detail,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
