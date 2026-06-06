@@ -2,6 +2,32 @@ import 'package:flutter/material.dart';
 
 import 'responsive_layout.dart';
 
+abstract final class AppPageSpacing {
+  static const double horizontalMin = 20;
+  static const double sectionGap = 24;
+  static const double headerContentGap = 12;
+  static const double itemGap = 12;
+  static const double compactGap = 8;
+}
+
+class AppPageSectionGap extends StatelessWidget {
+  const AppPageSectionGap({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(height: AppPageSpacing.sectionGap);
+  }
+}
+
+class AppPageHeaderContentGap extends StatelessWidget {
+  const AppPageHeaderContentGap({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(height: AppPageSpacing.headerContentGap);
+  }
+}
+
 class AdaptivePage extends StatelessWidget {
   const AdaptivePage({
     required this.children,
@@ -22,7 +48,7 @@ class AdaptivePage extends StatelessWidget {
       builder: (context, constraints) {
         final horizontalPadding = responsivePageHorizontalPadding(
           constraints.maxWidth,
-          minPadding: 20,
+          minPadding: AppPageSpacing.horizontalMin,
         );
         final contentMaxWidth = responsivePageMaxWidth(
           constraints.maxWidth,
@@ -31,7 +57,10 @@ class AdaptivePage extends StatelessWidget {
 
         final resolvedPadding =
             padding ??
-            EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 24);
+            EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: AppPageSpacing.sectionGap,
+            );
 
         if (fillRemaining != null) {
           final textDirection = Directionality.of(context);

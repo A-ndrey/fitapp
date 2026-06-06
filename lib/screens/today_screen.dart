@@ -141,7 +141,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const AppPageSectionGap(),
               DashboardPanel(
                 title:
                     activeSession?.trainingPlanName ??

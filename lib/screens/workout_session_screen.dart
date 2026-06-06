@@ -120,7 +120,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 store: widget.store,
                 l10n: l10n,
               ),
-              const SizedBox(height: 24),
+              const AppPageSectionGap(),
               SectionHeader(
                 title: l10n?.workoutExerciseQueueTitle ?? 'Exercise queue',
                 subtitle:
@@ -151,7 +151,9 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     : l10n?.workoutOpenExerciseTooltip(result.exerciseName) ??
                           'Open ${result.exerciseName}';
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(
+                    bottom: AppPageSpacing.itemGap,
+                  ),
                   child: WorkoutExerciseProgressCard(
                     exerciseLabel: exerciseLabel,
                     targetLabel: formatWorkoutTarget(

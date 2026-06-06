@@ -72,7 +72,7 @@ class MoreScreen extends StatelessWidget {
                 onSignOut: onSignOut,
                 onDeleteAccount: onDeleteAccount,
               ),
-              const SizedBox(height: 20),
+              const AppPageSectionGap(),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final unitsCard = UnitsSettingsCard(
@@ -178,7 +178,7 @@ class MoreScreen extends StatelessWidget {
                           title: l10n?.settingsUnitsTitle ?? 'Units',
                           children: [unitsCard],
                         ),
-                        const SizedBox(height: 20),
+                        const AppPageSectionGap(),
                         _SettingsGroup(
                           title: l10n?.settingsAppTitle ?? 'App',
                           children: appCards,
@@ -195,7 +195,7 @@ class MoreScreen extends StatelessWidget {
                         columns: 2,
                         children: [unitsCard],
                       ),
-                      const SizedBox(height: 20),
+                      const AppPageSectionGap(),
                       _SettingsGroup(
                         title: l10n?.settingsAppTitle ?? 'App',
                         columns: 2,

@@ -62,12 +62,12 @@ class MealScreen extends StatelessWidget {
                     values: store.dailyTotals,
                     targets: store.dailyMacroTargets,
                   ),
-                  const SizedBox(height: 24),
+                  const AppPageSectionGap(),
                   Text(
                     l10n?.mealEntriesTitle ?? 'Logged meals',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  const SizedBox(height: 12),
+                  const AppPageHeaderContentGap(),
                   if (store.mealEntries.isEmpty)
                     AppEmptyState(
                       icon: Icons.restaurant_menu_outlined,
@@ -82,7 +82,9 @@ class MealScreen extends StatelessWidget {
                         _MealDayDivider(date: group.date),
                         ...group.entries.map(
                           (entry) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.only(
+                              bottom: AppPageSpacing.itemGap,
+                            ),
                             child: MealEntryCard(
                               store: store,
                               entry: entry,

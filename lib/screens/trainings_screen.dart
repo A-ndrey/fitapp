@@ -147,7 +147,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
               });
             },
           ),
-          const SizedBox(height: 16),
+          const AppPageSectionGap(),
         ],
         if (_selectedView == TrainingsCatalogView.plans)
           ..._buildPlansView(context)
@@ -166,7 +166,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
         actionLabel: l10n?.trainingAddPlanAction ?? 'Add training plan',
         onPressed: () => _openPlanDialog(context),
       ),
-      const SizedBox(height: 12),
+      const AppPageHeaderContentGap(),
       if (store.trainingPlans.isEmpty)
         AppEmptyState(
           icon: Icons.assignment_outlined,
@@ -178,7 +178,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
       else
         ...store.trainingPlans.map(
           (plan) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: AppPageSpacing.itemGap),
             child: TrainingPlanCatalogCard(
               plan: plan,
               store: store,
@@ -199,7 +199,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
         actionLabel: l10n?.trainingAddExerciseAction ?? 'Add exercise',
         onPressed: () => _openExerciseDialog(context),
       ),
-      const SizedBox(height: 12),
+      const AppPageHeaderContentGap(),
       if (store.exercises.isEmpty)
         AppEmptyState(
           icon: Icons.fitness_center_outlined,
@@ -211,7 +211,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
       else
         ...store.exercises.map(
           (exercise) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: AppPageSpacing.itemGap),
             child: ExerciseCatalogCard(
               exercise: exercise,
               onEdit: () =>

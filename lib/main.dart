@@ -552,18 +552,22 @@ class _FitHomeState extends State<FitHome> {
         if (constraints.maxWidth < AppBreakpoints.mediumMin) {
           return Scaffold(
             body: body,
-            bottomNavigationBar: NavigationBar(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: _selectDestination,
-              destinations: [
-                for (final destination in destinations)
-                  NavigationDestination(
-                    icon: Icon(destination.icon),
-                    selectedIcon: Icon(destination.selectedIcon),
-                    label: destination.label,
-                    tooltip: destination.label,
-                  ),
-              ],
+            bottomNavigationBar: SafeArea(
+              top: false,
+              minimum: const EdgeInsets.only(bottom: 8),
+              child: NavigationBar(
+                selectedIndex: _selectedIndex,
+                onDestinationSelected: _selectDestination,
+                destinations: [
+                  for (final destination in destinations)
+                    NavigationDestination(
+                      icon: Icon(destination.icon),
+                      selectedIcon: Icon(destination.selectedIcon),
+                      label: destination.label,
+                      tooltip: destination.label,
+                    ),
+                ],
+              ),
             ),
           );
         }

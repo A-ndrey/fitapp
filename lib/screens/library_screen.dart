@@ -92,7 +92,7 @@ class LibraryScreenState extends State<LibraryScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const AppPageSectionGap(),
           const _LibraryGroupLabel(title: 'Food'),
           ResponsiveWrap(
             maxItemExtent: 360,
@@ -214,7 +214,7 @@ class _LibraryGroupLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppPageSpacing.headerContentGap),
       child: Text(
         title,
         style: Theme.of(

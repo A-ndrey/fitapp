@@ -96,6 +96,25 @@ void main() {
     expect(find.byType(NavigationRail), findsNothing);
   });
 
+  testWidgets('compact root shell keeps NavigationBar above bottom safe area', (
+    tester,
+  ) async {
+    tester.view.padding = FakeViewPadding.zero;
+    addTearDown(tester.view.resetPadding);
+
+    await pumpFitAppAtSize(tester, const Size(390, 844));
+
+    final safeArea = tester.widget<SafeArea>(
+      find.ancestor(
+        of: find.byType(NavigationBar),
+        matching: find.byType(SafeArea),
+      ),
+    );
+    expect(safeArea.top, isFalse);
+    expect(safeArea.bottom, isTrue);
+    expect(safeArea.minimum.bottom, 8);
+  });
+
   testWidgets('medium root shell uses NavigationRail', (tester) async {
     await pumpFitAppAtSize(tester, const Size(700, 900));
 

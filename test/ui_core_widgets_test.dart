@@ -693,6 +693,45 @@ void main() {
     expect(saved, isTrue);
   });
 
+  testWidgets('form shell page uses shared page spacing', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormShellPage(
+          title: 'Food item',
+          primaryActionLabel: 'Save',
+          onPrimaryAction: () {},
+          children: const [Text('Form body')],
+        ),
+      ),
+    );
+
+    final listView = tester.widget<ListView>(find.byType(ListView));
+    expect(
+      listView.padding,
+      const EdgeInsets.fromLTRB(
+        AppPageSpacing.horizontalMin,
+        AppPageSpacing.sectionGap,
+        AppPageSpacing.horizontalMin,
+        AppPageSpacing.sectionGap,
+      ),
+    );
+
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is SafeArea &&
+            widget.minimum ==
+                const EdgeInsets.fromLTRB(
+                  AppPageSpacing.horizontalMin,
+                  AppPageSpacing.compactGap,
+                  AppPageSpacing.horizontalMin,
+                  AppPageSpacing.horizontalMin,
+                ),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('form shell exposes dialog title as route semantics', (
     tester,
   ) async {

@@ -110,7 +110,7 @@ class FoodScreen extends StatelessWidget {
     return AdaptivePage(
       children: [
         _buildHeader(context),
-        const SizedBox(height: 12),
+        const AppPageHeaderContentGap(),
         if (items.isEmpty)
           AppEmptyState(
             icon: Icons.inventory_2_outlined,
@@ -120,7 +120,7 @@ class FoodScreen extends StatelessWidget {
         else
           ...items.map(
             (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: AppPageSpacing.itemGap),
               child: FoodCatalogCard(
                 item: item,
                 store: store,
