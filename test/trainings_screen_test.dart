@@ -138,6 +138,9 @@ void main() {
     expect(find.text('Training plans'), findsOneWidget);
     expect(find.text('Chest day'), findsOneWidget);
     expect(find.text('Leg day'), findsOneWidget);
+    expect(find.text('Exercises'), findsWidgets);
+    expect(find.text('First target'), findsWidgets);
+    expect(find.text('Notes'), findsWidgets);
     expect(find.byTooltip('Add training plan'), findsOneWidget);
     expect(find.byTooltip('More actions'), findsNWidgets(2));
   });
@@ -170,6 +173,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Pushups'), findsOneWidget);
+    expect(find.text('Target'), findsOneWidget);
     expect(find.text('4 sets'), findsOneWidget);
 
     await tester.tap(find.text('Save training'));
@@ -240,6 +244,10 @@ void main() {
     expect(find.byType(ExerciseCatalogCard), findsWidgets);
     expect(find.text('Pushups'), findsOneWidget);
     expect(find.text('Bench press'), findsOneWidget);
+    expect(find.text('Type'), findsWidgets);
+    expect(find.text('Muscles'), findsWidgets);
+    expect(find.text('Description'), findsWidgets);
+    expect(find.text('Instruction'), findsWidgets);
     expect(find.byTooltip('Add exercise'), findsOneWidget);
     expect(find.byTooltip('More actions'), findsWidgets);
   });

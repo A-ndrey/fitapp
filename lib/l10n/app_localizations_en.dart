@@ -15,7 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get destinationToday => 'Today';
 
   @override
-  String get destinationTrain => 'Train';
+  String get destinationTrain => 'Workout';
 
   @override
   String get destinationNutrition => 'Nutrition';
@@ -108,7 +108,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayOpenWorkoutSubtitle => 'Return to the active session';
 
   @override
-  String get todayOpenTrainHint => 'Opens Train tab';
+  String get todayOpenTrainHint => 'Opens Workout tab';
 
   @override
   String get todayLogMealAction => 'Log meal';
@@ -341,7 +341,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Start sessions, log sets, and review progress.';
 
   @override
-  String get workoutStatsTitle => 'Workout stats';
+  String get workoutStatsTitle => 'Stats';
 
   @override
   String get workoutNoCompletedSessionsSubtitle => 'No completed sessions yet.';
@@ -352,7 +352,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get workoutHistoryTitle => 'Workout history';
+  String get workoutHistoryTitle => 'History';
 
   @override
   String get workoutEmptyHistoryTitle => 'No completed workouts yet';

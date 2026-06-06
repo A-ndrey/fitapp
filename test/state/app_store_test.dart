@@ -1681,6 +1681,85 @@ void main() {
     expect(store.completedWorkoutHistoryForExercise('bench-press'), isEmpty);
   });
 
+  test('today workout recommendation prefers active workout', () {
+    final store = AppStore();
+    final startedAt = DateTime(2026, 4, 21, 8);
+    final active = store.startWorkout(
+      trainingPlanId: 'leg-day',
+      startedAt: startedAt,
+    );
+
+    final recommendation = store.todayWorkoutRecommendationAt(
+      DateTime(2026, 4, 21, 12),
+    );
+
+    expect(recommendation.status, TodayWorkoutStatus.active);
+    expect(recommendation.plan.id, 'leg-day');
+    expect(recommendation.session, active);
+    expect(recommendation.lastCompletedAt, isNull);
+  });
+
+  test('today workout recommendation marks completed today as done', () {
+    final store = AppStore();
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 21, 8),
+    );
+    final completed = store.finishActiveWorkout(
+      finishedAt: DateTime(2026, 4, 21, 9),
+    );
+
+    final recommendation = store.todayWorkoutRecommendationAt(
+      DateTime(2026, 4, 21, 12),
+    );
+
+    expect(recommendation.status, TodayWorkoutStatus.completedToday);
+    expect(recommendation.plan.id, 'chest-day');
+    expect(recommendation.session, completed);
+    expect(recommendation.lastCompletedAt, DateTime(2026, 4, 21, 8));
+  });
+
+  test('today workout recommendation uses least recent completed plan', () {
+    final store = AppStore();
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 18, 8),
+    );
+    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 18, 9));
+    store.startWorkout(
+      trainingPlanId: 'leg-day',
+      startedAt: DateTime(2026, 4, 20, 8),
+    );
+    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 20, 9));
+
+    final recommendation = store.todayWorkoutRecommendationAt(
+      DateTime(2026, 4, 21, 12),
+    );
+
+    expect(recommendation.status, TodayWorkoutStatus.notStarted);
+    expect(recommendation.plan.id, 'chest-day');
+    expect(recommendation.session, isNull);
+    expect(recommendation.lastCompletedAt, DateTime(2026, 4, 18, 8));
+  });
+
+  test('today workout recommendation prefers plans without history', () {
+    final store = AppStore();
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 18, 8),
+    );
+    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 18, 9));
+
+    final recommendation = store.todayWorkoutRecommendationAt(
+      DateTime(2026, 4, 21, 12),
+    );
+
+    expect(recommendation.status, TodayWorkoutStatus.notStarted);
+    expect(recommendation.plan.id, 'leg-day');
+    expect(recommendation.session, isNull);
+    expect(recommendation.lastCompletedAt, isNull);
+  });
+
   test('completed workout history preserves set logs', () {
     final store = AppStore();
 

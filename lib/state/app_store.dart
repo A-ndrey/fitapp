@@ -447,6 +447,83 @@ class AppStore extends ChangeNotifier {
     return List.unmodifiable(groups);
   }
 
+  TodayWorkoutRecommendation? get todayWorkoutRecommendation {
+    if (_trainingPlans.isEmpty) {
+      return null;
+    }
+    return todayWorkoutRecommendationAt(DateTime.now());
+  }
+
+  TodayWorkoutRecommendation todayWorkoutRecommendationAt(DateTime now) {
+    final activeSession = _activeWorkoutSession;
+    if (activeSession != null) {
+      final activePlan = trainingPlanById(activeSession.trainingPlanId);
+      if (activePlan != null) {
+        return TodayWorkoutRecommendation(
+          status: TodayWorkoutStatus.active,
+          plan: activePlan,
+          session: activeSession,
+        );
+      }
+    }
+
+    final currentPlanIds = _trainingPlans.map((plan) => plan.id).toSet();
+    WorkoutSession? completedToday;
+    for (var i = _completedWorkoutSessions.length - 1; i >= 0; i--) {
+      final session = _completedWorkoutSessions[i];
+      if (!currentPlanIds.contains(session.trainingPlanId)) {
+        continue;
+      }
+      if (_isSameDate(session.startedAt, now)) {
+        completedToday = session;
+        break;
+      }
+    }
+    if (completedToday != null) {
+      return TodayWorkoutRecommendation(
+        status: TodayWorkoutStatus.completedToday,
+        plan: trainingPlanById(completedToday.trainingPlanId)!,
+        session: completedToday,
+        lastCompletedAt: completedToday.startedAt,
+      );
+    }
+
+    final lastCompletedByPlanId = <String, DateTime>{};
+    for (var i = _completedWorkoutSessions.length - 1; i >= 0; i--) {
+      final session = _completedWorkoutSessions[i];
+      if (!currentPlanIds.contains(session.trainingPlanId) ||
+          lastCompletedByPlanId.containsKey(session.trainingPlanId)) {
+        continue;
+      }
+      lastCompletedByPlanId[session.trainingPlanId] = session.startedAt;
+      if (lastCompletedByPlanId.length == currentPlanIds.length) {
+        break;
+      }
+    }
+
+    TrainingPlan? leastRecentPlan;
+    DateTime? leastRecentCompletedAt;
+    for (final plan in _trainingPlans) {
+      final completedAt = lastCompletedByPlanId[plan.id];
+      if (completedAt == null) {
+        leastRecentPlan = plan;
+        leastRecentCompletedAt = null;
+        break;
+      }
+      if (leastRecentCompletedAt == null ||
+          completedAt.isBefore(leastRecentCompletedAt)) {
+        leastRecentPlan = plan;
+        leastRecentCompletedAt = completedAt;
+      }
+    }
+
+    return TodayWorkoutRecommendation(
+      status: TodayWorkoutStatus.notStarted,
+      plan: leastRecentPlan ?? _trainingPlans.first,
+      lastCompletedAt: leastRecentCompletedAt,
+    );
+  }
+
   WorkoutStats get workoutStats {
     var totalDuration = Duration.zero;
     WorkoutSession? latest;
@@ -1134,6 +1211,10 @@ class AppStore extends ChangeNotifier {
   static DateTime _localDateOnly(DateTime value) {
     final localValue = value.toLocal();
     return DateTime(localValue.year, localValue.month, localValue.day);
+  }
+
+  static bool _isSameDate(DateTime first, DateTime second) {
+    return _localDateOnly(first) == _localDateOnly(second);
   }
 
   void _validateFood(FoodItem food) {

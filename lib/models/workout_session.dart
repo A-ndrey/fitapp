@@ -123,3 +123,19 @@ class WorkoutStats {
   final Duration totalDuration;
   final WorkoutSession? latestSession;
 }
+
+enum TodayWorkoutStatus { notStarted, active, completedToday }
+
+class TodayWorkoutRecommendation {
+  const TodayWorkoutRecommendation({
+    required this.status,
+    required this.plan,
+    this.session,
+    this.lastCompletedAt,
+  });
+
+  final TodayWorkoutStatus status;
+  final TrainingPlan plan;
+  final WorkoutSession? session;
+  final DateTime? lastCompletedAt;
+}

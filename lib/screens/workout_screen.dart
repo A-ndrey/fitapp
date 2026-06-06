@@ -7,6 +7,7 @@ import '../l10n/app_localizations.dart';
 import '../models/training_plan.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/section_header.dart';
@@ -119,7 +120,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           ),
           body: AdaptivePage(
             children: [
-              if (activeSession != null)
+              if (activeSession != null) ...[
                 TooltipVisibility(
                   visible: false,
                   child: ActiveWorkoutCard(
@@ -128,9 +129,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     onOpen: () => _openActiveWorkout(context),
                   ),
                 ),
-              const SizedBox(height: 24),
+                const AppPageSectionGap(),
+              ],
               SectionHeader(
-                title: l10n?.workoutStatsTitle ?? 'Workout stats',
+                title: l10n?.workoutStatsTitle ?? 'Stats',
                 subtitle: stats.latestSession == null
                     ? l10n?.workoutNoCompletedSessionsSubtitle ??
                           'No completed sessions yet.'
@@ -145,10 +147,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 latestSessionName: stats.latestSession?.trainingPlanName,
                 l10n: l10n,
               ),
-              const SizedBox(height: 24),
-              SectionHeader(
-                title: l10n?.workoutHistoryTitle ?? 'Workout history',
-              ),
+              const AppPageSectionGap(),
+              SectionHeader(title: l10n?.workoutHistoryTitle ?? 'History'),
               if (completedSessions.isEmpty)
                 AppEmptyState(
                   icon: Icons.history_toggle_off,
@@ -162,7 +162,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               else
                 ...completedSessions.reversed.map(
                   (session) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.only(
+                      bottom: AppPageSpacing.itemGap,
+                    ),
                     child: WorkoutHistoryCard(
                       session: session,
                       l10n: l10n,
@@ -219,9 +221,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     try {
       widget.store.startWorkout(trainingPlanId: plan.id);
     } on Object catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            humanReadableFormError(
+              error,
+              resourceName: 'workout',
+              fallback: 'Could not start workout.',
+            ),
+          ),
+        ),
+      );
       return;
     }
     if (context.mounted) {
@@ -289,9 +299,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     try {
       widget.store.deleteCompletedWorkoutSession(session.id);
     } on Object catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            humanReadableFormError(
+              error,
+              resourceName: 'workout',
+              fallback: 'Could not delete workout.',
+            ),
+          ),
+        ),
+      );
     }
   }
 }

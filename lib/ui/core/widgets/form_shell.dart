@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../layout/adaptive_page.dart';
 import '../theme/app_theme.dart';
 
 class FormShellDialog extends StatelessWidget {
@@ -115,7 +116,12 @@ class FormShellPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        minimum: const EdgeInsets.fromLTRB(
+          AppPageSpacing.horizontalMin,
+          AppPageSpacing.compactGap,
+          AppPageSpacing.horizontalMin,
+          AppPageSpacing.horizontalMin,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -136,7 +142,12 @@ class FormShellPage extends StatelessWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+          padding: const EdgeInsets.fromLTRB(
+            AppPageSpacing.horizontalMin,
+            AppPageSpacing.sectionGap,
+            AppPageSpacing.horizontalMin,
+            AppPageSpacing.sectionGap,
+          ),
           children: [
             if (showBodyHeader) ...[
               Text(title, style: textTheme.headlineSmall),

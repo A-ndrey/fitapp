@@ -18,7 +18,7 @@ void main() {
           body: ActionCard(
             title: 'Start workout',
             subtitle: 'Choose a plan and begin training',
-            semanticHint: 'Opens Train tab',
+            semanticHint: 'Opens Workout tab',
             icon: Icons.play_arrow,
             onTap: () {},
           ),
@@ -30,7 +30,7 @@ void main() {
       tester.getSemantics(find.byType(ActionCard)),
       matchesSemantics(
         label: 'Start workout. Choose a plan and begin training.',
-        hint: 'Opens Train tab',
+        hint: 'Opens Workout tab',
         isButton: true,
         hasTapAction: true,
       ),
@@ -161,8 +161,8 @@ void main() {
         contains('Today'),
       );
       expect(
-        tester.getSemantics(find.text('Train').last).label,
-        contains('Train'),
+        tester.getSemantics(find.text('Workout').last).label,
+        contains('Workout'),
       );
       expect(
         tester.getSemantics(find.text('Nutrition').last).label,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/catalog_item.dart';
 import '../state/app_store.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/library/library_cards.dart';
@@ -109,7 +110,7 @@ class FoodScreen extends StatelessWidget {
     return AdaptivePage(
       children: [
         _buildHeader(context),
-        const SizedBox(height: 12),
+        const AppPageHeaderContentGap(),
         if (items.isEmpty)
           AppEmptyState(
             icon: Icons.inventory_2_outlined,
@@ -119,7 +120,7 @@ class FoodScreen extends StatelessWidget {
         else
           ...items.map(
             (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: AppPageSpacing.itemGap),
               child: FoodCatalogCard(
                 item: item,
                 store: store,
@@ -209,9 +210,17 @@ class FoodScreen extends StatelessWidget {
     try {
       store.deleteItem(itemId);
     } on StateError catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            humanReadableFormError(
+              error,
+              resourceName: 'food or recipe',
+              fallback: 'Could not delete.',
+            ),
+          ),
+        ),
+      );
     }
   }
 

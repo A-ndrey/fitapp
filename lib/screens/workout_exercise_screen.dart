@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../models/exercise.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/section_header.dart';
 import '../ui/workout/workout_detail_cards.dart';
@@ -136,9 +137,17 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
       );
       _clearInputs();
     } on Object catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            humanReadableFormError(
+              error,
+              resourceName: 'set',
+              fallback: 'Could not add set.',
+            ),
+          ),
+        ),
+      );
     }
   }
 

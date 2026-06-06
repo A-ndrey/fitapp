@@ -447,16 +447,25 @@ void main() {
     );
 
     expect(find.widgetWithText(ListTile, 'Rice bowl'), findsOneWidget);
+    expect(find.text('Type'), findsWidgets);
     expect(find.text('food'), findsOneWidget);
-    expect(find.text('150 g serving • 195 kcal per serving'), findsOneWidget);
+    expect(find.text('Serving'), findsWidgets);
+    expect(find.text('150 g serving'), findsOneWidget);
+    expect(find.text('Calories'), findsOneWidget);
+    expect(find.text('195 kcal per serving'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Upper body'), findsOneWidget);
-    expect(
-      find.text('1 exercise • 3 sets • 12 reps\nStrength focus'),
-      findsOneWidget,
-    );
+    expect(find.text('Exercises'), findsOneWidget);
+    expect(find.text('1 exercise'), findsOneWidget);
+    expect(find.text('First target'), findsOneWidget);
+    expect(find.text('3 sets • 12 reps'), findsOneWidget);
+    expect(find.text('Notes'), findsOneWidget);
+    expect(find.text('Strength focus'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Pushups'), findsOneWidget);
+    expect(find.text('Description'), findsOneWidget);
     expect(find.text('Bodyweight push exercise'), findsOneWidget);
+    expect(find.text('Instruction'), findsOneWidget);
     expect(find.text('Keep your core tight.'), findsOneWidget);
+    expect(find.text('Muscles'), findsOneWidget);
     expect(find.text('Chest, Triceps'), findsOneWidget);
 
     Future<void> selectCardAction(String title, String actionLabel) async {
@@ -682,6 +691,45 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(saved, isTrue);
+  });
+
+  testWidgets('form shell page uses shared page spacing', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FormShellPage(
+          title: 'Food item',
+          primaryActionLabel: 'Save',
+          onPrimaryAction: () {},
+          children: const [Text('Form body')],
+        ),
+      ),
+    );
+
+    final listView = tester.widget<ListView>(find.byType(ListView));
+    expect(
+      listView.padding,
+      const EdgeInsets.fromLTRB(
+        AppPageSpacing.horizontalMin,
+        AppPageSpacing.sectionGap,
+        AppPageSpacing.horizontalMin,
+        AppPageSpacing.sectionGap,
+      ),
+    );
+
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is SafeArea &&
+            widget.minimum ==
+                const EdgeInsets.fromLTRB(
+                  AppPageSpacing.horizontalMin,
+                  AppPageSpacing.compactGap,
+                  AppPageSpacing.horizontalMin,
+                  AppPageSpacing.horizontalMin,
+                ),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('form shell exposes dialog title as route semantics', (

@@ -5,6 +5,7 @@ import '../state/app_store.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/layout/responsive_layout.dart';
 import '../ui/core/widgets/action_card.dart';
+import '../ui/core/widgets/section_header.dart';
 import 'food_screen.dart';
 import 'trainings_screen.dart';
 
@@ -74,7 +75,7 @@ class LibraryScreenState extends State<LibraryScreen> {
     if (!_inDetail) {
       return AdaptivePage(
         children: [
-          const _LibraryGroupLabel(title: 'Training'),
+          const SectionHeader(title: 'Training'),
           ResponsiveWrap(
             maxItemExtent: 360,
             minItemExtent: 260,
@@ -92,8 +93,8 @@ class LibraryScreenState extends State<LibraryScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          const _LibraryGroupLabel(title: 'Food'),
+          const AppPageSectionGap(),
+          const SectionHeader(title: 'Food'),
           ResponsiveWrap(
             maxItemExtent: 360,
             minItemExtent: 260,
@@ -203,24 +204,5 @@ class LibraryScreenState extends State<LibraryScreen> {
       case _:
         return;
     }
-  }
-}
-
-class _LibraryGroupLabel extends StatelessWidget {
-  const _LibraryGroupLabel({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-      ),
-    );
   }
 }

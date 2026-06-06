@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../models/food_item.dart';
 import '../models/nutrition.dart';
 import '../state/app_store.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/input/numeric_input_formatters.dart';
 import '../ui/core/widgets/form_shell.dart';
 import 'catalog_form_shared.dart';
@@ -238,10 +239,13 @@ class _FoodFormState extends State<FoodForm> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText =
-            error.message?.toString() ??
-            AppLocalizations.of(context)?.foodCouldNotSave ??
-            'Could not save food.';
+        _errorText = humanReadableFormError(
+          error,
+          resourceName: 'food',
+          fallback:
+              AppLocalizations.of(context)?.foodCouldNotSave ??
+              'Could not save food.',
+        );
       });
       return;
     }

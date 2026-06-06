@@ -8,7 +8,7 @@ import 'package:fitapp/ui/core/widgets/action_card.dart';
 void main() {
   const rootDestinationLabels = [
     'Today',
-    'Train',
+    'Workout',
     'Nutrition',
     'Library',
     'Settings',
@@ -16,8 +16,8 @@ void main() {
 
   const destinationBodyText = {
     'Today': 'Daily progress',
-    'Train': 'Workout stats',
-    'Nutrition': 'Nutrition log',
+    'Workout': 'Stats',
+    'Nutrition': 'Macro targets',
     'Library': 'Training',
     'Settings': 'Account',
   };
@@ -74,7 +74,7 @@ void main() {
   }
 
   Future<void> openActiveWorkoutSession(WidgetTester tester) async {
-    await selectRootDestination(tester, 'Train');
+    await selectRootDestination(tester, 'Workout');
     await tester.ensureVisible(find.text('Start workout'));
     await tester.tap(find.text('Start workout'));
     await tester.pumpAndSettle();
@@ -94,6 +94,25 @@ void main() {
     expect(find.text('Today'), findsWidgets);
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationRail), findsNothing);
+  });
+
+  testWidgets('compact root shell keeps NavigationBar above bottom safe area', (
+    tester,
+  ) async {
+    tester.view.padding = FakeViewPadding.zero;
+    addTearDown(tester.view.resetPadding);
+
+    await pumpFitAppAtSize(tester, const Size(390, 844));
+
+    final safeArea = tester.widget<SafeArea>(
+      find.ancestor(
+        of: find.byType(NavigationBar),
+        matching: find.byType(SafeArea),
+      ),
+    );
+    expect(safeArea.top, isFalse);
+    expect(safeArea.bottom, isTrue);
+    expect(safeArea.minimum.bottom, 8);
   });
 
   testWidgets('medium root shell uses NavigationRail', (tester) async {
@@ -155,7 +174,7 @@ void main() {
   });
 
   testWidgets(
-    're-tapping Train after navigating into workout session returns to workout root',
+    're-tapping Workout after navigating into workout session returns to workout root',
     (tester) async {
       await pumpFitAppAtSize(tester, const Size(390, 844));
       await openActiveWorkoutSession(tester);
@@ -163,15 +182,52 @@ void main() {
       expect(find.text('Workout session'), findsOneWidget);
       expect(find.text('Finish workout'), findsOneWidget);
 
-      await tapRootDestination(tester, 'Train');
+      await tapRootDestination(tester, 'Workout');
 
-      expect(find.text('Workout'), findsOneWidget);
+      expect(find.text('Workout'), findsWidgets);
       expect(find.text('Start workout'), findsNothing);
       expect(find.text('Workout session'), findsNothing);
       expect(find.text('Exercise queue'), findsNothing);
       expect(find.text('Finish workout'), findsNothing);
     },
   );
+
+  testWidgets('today workout card starts recommended workout session', (
+    tester,
+  ) async {
+    await pumpFitAppAtSize(tester, const Size(390, 844));
+
+    await tester.tap(find.text('Chest day').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Start Chest day?'), findsOneWidget);
+
+    await tester.tap(find.text('Start workout'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Workout session'), findsOneWidget);
+    expect(find.text('Finish workout'), findsOneWidget);
+    expect(find.text('Exercise queue'), findsOneWidget);
+  });
+
+  testWidgets('today active workout card opens current workout session', (
+    tester,
+  ) async {
+    await pumpFitAppAtSize(tester, const Size(390, 844));
+
+    await tester.tap(find.text('Chest day').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start workout'));
+    await tester.pumpAndSettle();
+
+    await selectRootDestination(tester, 'Today');
+    expect(find.text('Active workout'), findsWidgets);
+
+    await tester.tap(find.text('Chest day').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Workout session'), findsOneWidget);
+    expect(find.text('Finish workout'), findsOneWidget);
+  });
 
   testWidgets(
     're-tapping Library after drilling into recipes returns to library root',
