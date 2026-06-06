@@ -42,7 +42,7 @@ Future<void> scrollToText(WidgetTester tester, String text) async {
 
 const rootDestinationLabels = [
   'Today',
-  'Train',
+  'Workout',
   'Nutrition',
   'Library',
   'Settings',
@@ -750,6 +750,23 @@ void main() {
     expect(find.text('Chicken breast'), findsOneWidget);
   });
 
+  testWidgets('LibraryScreen root group titles match section header scale', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: LibraryScreen(store: AppStore())),
+    );
+
+    final textTheme = Theme.of(
+      tester.element(find.byType(LibraryScreen)),
+    ).textTheme;
+    final trainingText = tester.widget<Text>(find.text('Training'));
+    final foodText = tester.widget<Text>(find.text('Food'));
+
+    expect(trainingText.style?.fontSize, textTheme.titleLarge?.fontSize);
+    expect(foodText.style?.fontSize, textTheme.titleLarge?.fontSize);
+  });
+
   testWidgets('LibraryScreen detail routes keep a single page scroll shell', (
     tester,
   ) async {
@@ -854,7 +871,7 @@ void main() {
         MaterialApp(home: MealScreen(store: AppStore())),
       );
 
-      expect(find.text('Nutrition log'), findsOneWidget);
+      expect(find.text('Nutrition log'), findsNothing);
       expect(find.text('Macro targets'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
@@ -979,12 +996,12 @@ void main() {
   }
 
   testWidgets(
-    'shows Today, Train, Nutrition, Library and Settings destinations',
+    'shows Today, Workout, Nutrition, Library and Settings destinations',
     (tester) async {
       await tester.pumpWidget(const FitApp());
 
       expect(find.text('Today'), findsWidgets);
-      expect(find.text('Train'), findsWidgets);
+      expect(find.text('Workout'), findsWidgets);
       expect(find.text('Nutrition'), findsWidgets);
       expect(find.text('Library'), findsWidgets);
       expect(find.text('Settings'), findsWidgets);
@@ -1014,7 +1031,7 @@ void main() {
     },
   );
 
-  testWidgets('Nutrition shell shows cockpit header and add action', (
+  testWidgets('Nutrition shell shows add action without repeated title', (
     tester,
   ) async {
     await tester.pumpWidget(const FitApp());
@@ -1022,7 +1039,7 @@ void main() {
     await openNutritionDestination(tester);
 
     expect(find.text('Nutrition'), findsWidgets);
-    expect(find.text('Nutrition log'), findsOneWidget);
+    expect(find.text('Nutrition log'), findsNothing);
     expect(find.text('Macro targets'), findsOneWidget);
     expect(find.text('Calories'), findsOneWidget);
     expect(find.text('Protein'), findsOneWidget);

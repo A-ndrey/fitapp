@@ -9,7 +9,6 @@ import '../ui/core/layout/app_breakpoints.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/app_screen_scaffold.dart';
 import '../ui/core/widgets/empty_state.dart';
-import '../ui/core/widgets/section_header.dart';
 import '../ui/nutrition/catalog_item_search_sheet.dart';
 import '../ui/nutrition/nutrition_cards.dart';
 import '../widgets/food_form.dart';
@@ -45,19 +44,20 @@ class MealScreen extends StatelessWidget {
                     ),
               body: AdaptivePage(
                 children: [
-                  SectionHeader(
-                    title: l10n?.mealCockpitTitle ?? 'Nutrition log',
-                    trailing: showInlineAdd
-                        ? Tooltip(
-                            message: addMealLabel,
-                            child: FilledButton.icon(
-                              onPressed: () => _openAddMealFlow(context),
-                              icon: const Icon(Icons.add),
-                              label: Text(addMealLabel),
-                            ),
-                          )
-                        : null,
-                  ),
+                  if (showInlineAdd) ...[
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Tooltip(
+                        message: addMealLabel,
+                        child: FilledButton.icon(
+                          onPressed: () => _openAddMealFlow(context),
+                          icon: const Icon(Icons.add),
+                          label: Text(addMealLabel),
+                        ),
+                      ),
+                    ),
+                    const AppPageHeaderContentGap(),
+                  ],
                   NutritionSummaryGrid(
                     values: store.dailyTotals,
                     targets: store.dailyMacroTargets,

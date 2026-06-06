@@ -120,7 +120,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           ),
           body: AdaptivePage(
             children: [
-              if (activeSession != null)
+              if (activeSession != null) ...[
                 TooltipVisibility(
                   visible: false,
                   child: ActiveWorkoutCard(
@@ -129,9 +129,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     onOpen: () => _openActiveWorkout(context),
                   ),
                 ),
-              const AppPageSectionGap(),
+                const AppPageSectionGap(),
+              ],
               SectionHeader(
-                title: l10n?.workoutStatsTitle ?? 'Workout stats',
+                title: l10n?.workoutStatsTitle ?? 'Stats',
                 subtitle: stats.latestSession == null
                     ? l10n?.workoutNoCompletedSessionsSubtitle ??
                           'No completed sessions yet.'
@@ -147,9 +148,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 l10n: l10n,
               ),
               const AppPageSectionGap(),
-              SectionHeader(
-                title: l10n?.workoutHistoryTitle ?? 'Workout history',
-              ),
+              SectionHeader(title: l10n?.workoutHistoryTitle ?? 'History'),
               if (completedSessions.isEmpty)
                 AppEmptyState(
                   icon: Icons.history_toggle_off,

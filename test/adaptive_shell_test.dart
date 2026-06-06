@@ -8,7 +8,7 @@ import 'package:fitapp/ui/core/widgets/action_card.dart';
 void main() {
   const rootDestinationLabels = [
     'Today',
-    'Train',
+    'Workout',
     'Nutrition',
     'Library',
     'Settings',
@@ -16,8 +16,8 @@ void main() {
 
   const destinationBodyText = {
     'Today': 'Daily progress',
-    'Train': 'Workout stats',
-    'Nutrition': 'Nutrition log',
+    'Workout': 'Stats',
+    'Nutrition': 'Macro targets',
     'Library': 'Training',
     'Settings': 'Account',
   };
@@ -74,7 +74,7 @@ void main() {
   }
 
   Future<void> openActiveWorkoutSession(WidgetTester tester) async {
-    await selectRootDestination(tester, 'Train');
+    await selectRootDestination(tester, 'Workout');
     await tester.ensureVisible(find.text('Start workout'));
     await tester.tap(find.text('Start workout'));
     await tester.pumpAndSettle();
@@ -174,7 +174,7 @@ void main() {
   });
 
   testWidgets(
-    're-tapping Train after navigating into workout session returns to workout root',
+    're-tapping Workout after navigating into workout session returns to workout root',
     (tester) async {
       await pumpFitAppAtSize(tester, const Size(390, 844));
       await openActiveWorkoutSession(tester);
@@ -182,9 +182,9 @@ void main() {
       expect(find.text('Workout session'), findsOneWidget);
       expect(find.text('Finish workout'), findsOneWidget);
 
-      await tapRootDestination(tester, 'Train');
+      await tapRootDestination(tester, 'Workout');
 
-      expect(find.text('Workout'), findsOneWidget);
+      expect(find.text('Workout'), findsWidgets);
       expect(find.text('Start workout'), findsNothing);
       expect(find.text('Workout session'), findsNothing);
       expect(find.text('Exercise queue'), findsNothing);

@@ -501,7 +501,7 @@ class _FitHomeState extends State<FitHome> {
         ),
       ),
       _AppDestination(
-        label: l10n?.destinationTrain ?? 'Train',
+        label: l10n?.destinationTrain ?? 'Workout',
         icon: Icons.timer_outlined,
         selectedIcon: Icons.timer,
         screen: _WorkoutTabNavigator(
