@@ -192,6 +192,43 @@ void main() {
     },
   );
 
+  testWidgets('today workout card starts recommended workout session', (
+    tester,
+  ) async {
+    await pumpFitAppAtSize(tester, const Size(390, 844));
+
+    await tester.tap(find.text('Chest day').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Start Chest day?'), findsOneWidget);
+
+    await tester.tap(find.text('Start workout'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Workout session'), findsOneWidget);
+    expect(find.text('Finish workout'), findsOneWidget);
+    expect(find.text('Exercise queue'), findsOneWidget);
+  });
+
+  testWidgets('today active workout card opens current workout session', (
+    tester,
+  ) async {
+    await pumpFitAppAtSize(tester, const Size(390, 844));
+
+    await tester.tap(find.text('Chest day').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start workout'));
+    await tester.pumpAndSettle();
+
+    await selectRootDestination(tester, 'Today');
+    expect(find.text('Active workout'), findsWidgets);
+
+    await tester.tap(find.text('Chest day').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Workout session'), findsOneWidget);
+    expect(find.text('Finish workout'), findsOneWidget);
+  });
+
   testWidgets(
     're-tapping Library after drilling into recipes returns to library root',
     (tester) async {
