@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fitapp/models/dish_item.dart';
+import 'package:fitapp/models/food_item.dart';
+import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/widgets/dish_form.dart';
 
@@ -23,6 +25,24 @@ Widget _wrapForTest(Widget child) {
   return MaterialApp(home: Scaffold(body: child));
 }
 
+void _seedRice(AppStore store) {
+  store.createFood(
+    const FoodItem(
+      id: 'rice',
+      name: 'Rice',
+      description: 'Cooked white rice',
+      servingSizeGrams: 150,
+      basis: NutritionBasis.per100g,
+      nutrition: NutritionValues(
+        calories: 130,
+        protein: 2.7,
+        fat: 0.3,
+        carbs: 28,
+      ),
+    ),
+  );
+}
+
 void main() {
   testWidgets(
     'recipe adds ingredient from search sheet and edits grams inline',
@@ -32,6 +52,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final store = AppStore();
+      _seedRice(store);
       addTearDown(store.dispose);
 
       await tester.pumpWidget(_wrapForTest(DishForm(store: store)));
@@ -74,6 +95,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final store = AppStore();
+    _seedRice(store);
     addTearDown(store.dispose);
     const initialDish = DishItem(
       id: 'rice-bowl',
@@ -107,6 +129,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final store = AppStore();
+    _seedRice(store);
     addTearDown(store.dispose);
 
     await tester.pumpWidget(_wrapForTest(DishForm(store: store)));
@@ -131,6 +154,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final store = AppStore();
+    _seedRice(store);
     addTearDown(store.dispose);
 
     await tester.pumpWidget(_wrapForTest(DishForm(store: store)));

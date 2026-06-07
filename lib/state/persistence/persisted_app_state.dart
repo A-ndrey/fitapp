@@ -7,9 +7,7 @@ import '../../models/nutrition.dart';
 import '../../models/training_plan.dart';
 import '../../models/workout_session.dart';
 
-/// Snapshot of persisted user and runtime state only.
-///
-/// Bootstrapped built-in catalog data is excluded and merged separately on load.
+/// Snapshot of persisted user and runtime state.
 class PersistedAppState {
   PersistedAppState({
     required List<FoodItem> userFoods,
