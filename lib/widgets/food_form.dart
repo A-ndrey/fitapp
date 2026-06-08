@@ -217,7 +217,7 @@ class _FoodFormState extends State<FoodForm> {
       return;
     }
 
-    final id = widget.initialFood?.id ?? widget.store.createIdFromName(name);
+    final id = widget.initialFood?.id ?? widget.store.createId();
     final food = FoodItem(
       id: id,
       name: name,

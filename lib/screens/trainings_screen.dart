@@ -622,8 +622,7 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
       });
       return;
     }
-    final id =
-        widget.initialExercise?.id ?? widget.store.createIdFromName(name);
+    final id = widget.initialExercise?.id ?? widget.store.createId();
     if (id.isEmpty) {
       setState(() {
         _errorText =
@@ -995,7 +994,7 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
     }
 
     final plan = TrainingPlan(
-      id: widget.initialPlan?.id ?? widget.store.createIdFromName(name),
+      id: widget.initialPlan?.id ?? widget.store.createId(),
       name: name,
       description: description,
       exercises: List<TrainingExercise>.unmodifiable(_exercises),

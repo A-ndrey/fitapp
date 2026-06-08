@@ -292,7 +292,7 @@ class _DishFormState extends State<DishForm> {
     }
 
     final dish = DishItem(
-      id: widget.initialDish?.id ?? widget.store.createIdFromName(name),
+      id: widget.initialDish?.id ?? widget.store.createId(),
       name: name,
       description: description,
       servingSizeGrams: servingSize,

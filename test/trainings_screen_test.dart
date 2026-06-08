@@ -10,6 +10,10 @@ import 'package:fitapp/ui/library/library_cards.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+final RegExp _uuidPattern = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+);
+
 void main() {
   Future<void> pumpScreen(WidgetTester tester, {AppStore? store}) async {
     await tester.pumpWidget(
@@ -527,7 +531,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final plan = store.trainingPlans.singleWhere(
-      (plan) => plan.id == 'normalization-day',
+      (plan) => plan.name == 'Normalization day',
     );
     expect(plan.exercises.first.weightGrams, closeTo(4535.9237, 0.01));
     expect(plan.exercises.first.durationSeconds, 45);
@@ -576,7 +580,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final plan = store.trainingPlans.singleWhere(
-      (plan) => plan.id == 'cardio-options',
+      (plan) => plan.name == 'Cardio options',
     );
     expect(plan.exercises.first.durationSeconds, 900);
     expect(plan.exercises.first.distanceMeters, isNull);
@@ -655,26 +659,30 @@ void main() {
     expect(find.text('Custom burpee'), findsOneWidget);
   });
 
-  testWidgets('keeps exercise form open when name cannot create an id', (
+  testWidgets('exercise form generates a UUID when name has no slug text', (
     tester,
   ) async {
-    await pumpScreen(tester);
+    final store = AppStore();
+    await pumpScreen(tester, store: store);
 
     await openExercisesView(tester);
     await openExerciseForm(tester);
     await fillExerciseForm(
       tester,
       name: '---',
-      description: 'Invalid generated id',
-      instruction: 'This should stay open.',
+      description: 'Generated id',
+      instruction: 'This should save.',
       muscleGroups: 'Core',
       measurementType: 'Duration',
     );
     await tester.tap(find.text('Save exercise'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Add exercise'), findsWidgets);
-    expect(find.text('Enter a valid exercise name.'), findsOneWidget);
+    final exercise = store.exercises.firstWhere(
+      (exercise) => exercise.name == '---',
+    );
+    expect(exercise.id, matches(_uuidPattern));
+    expect(find.text('Enter a valid exercise name.'), findsNothing);
   });
 
   testWidgets('edits a custom exercise', (tester) async {
