@@ -7,6 +7,7 @@ import '../l10n/app_localizations.dart';
 import '../models/exercise.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/section_header.dart';
 import '../ui/workout/workout_formatters.dart';
@@ -119,7 +120,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 store: widget.store,
                 l10n: l10n,
               ),
-              const SizedBox(height: 24),
+              const AppPageSectionGap(),
               SectionHeader(
                 title: l10n?.workoutExerciseQueueTitle ?? 'Exercise queue',
                 subtitle:
@@ -150,7 +151,9 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     : l10n?.workoutOpenExerciseTooltip(result.exerciseName) ??
                           'Open ${result.exerciseName}';
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(
+                    bottom: AppPageSpacing.itemGap,
+                  ),
                   child: WorkoutExerciseProgressCard(
                     exerciseLabel: exerciseLabel,
                     targetLabel: formatWorkoutTarget(
@@ -195,9 +198,17 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         Navigator.of(context).pop();
       }
     } on Object catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            humanReadableFormError(
+              error,
+              resourceName: 'workout',
+              fallback: 'Could not finish workout.',
+            ),
+          ),
+        ),
+      );
     }
   }
 

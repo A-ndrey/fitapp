@@ -5,6 +5,7 @@ import '../models/app_preferences.dart';
 import '../models/exercise.dart';
 import '../models/training_plan.dart';
 import '../state/app_store.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/layout/app_breakpoints.dart';
 import '../ui/core/widgets/empty_state.dart';
@@ -146,7 +147,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
               });
             },
           ),
-          const SizedBox(height: 16),
+          const AppPageSectionGap(),
         ],
         if (_selectedView == TrainingsCatalogView.plans)
           ..._buildPlansView(context)
@@ -165,7 +166,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
         actionLabel: l10n?.trainingAddPlanAction ?? 'Add training plan',
         onPressed: () => _openPlanDialog(context),
       ),
-      const SizedBox(height: 12),
+      const AppPageHeaderContentGap(),
       if (store.trainingPlans.isEmpty)
         AppEmptyState(
           icon: Icons.assignment_outlined,
@@ -177,7 +178,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
       else
         ...store.trainingPlans.map(
           (plan) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: AppPageSpacing.itemGap),
             child: TrainingPlanCatalogCard(
               plan: plan,
               store: store,
@@ -198,7 +199,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
         actionLabel: l10n?.trainingAddExerciseAction ?? 'Add exercise',
         onPressed: () => _openExerciseDialog(context),
       ),
-      const SizedBox(height: 12),
+      const AppPageHeaderContentGap(),
       if (store.exercises.isEmpty)
         AppEmptyState(
           icon: Icons.fitness_center_outlined,
@@ -210,7 +211,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
       else
         ...store.exercises.map(
           (exercise) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: AppPageSpacing.itemGap),
             child: ExerciseCatalogCard(
               exercise: exercise,
               onEdit: () =>
@@ -310,12 +311,21 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     } on ArgumentError catch (error) {
       _showSnackBar(
         context,
-        error.message?.toString() ??
-            l10n?.trainingCouldNotDelete ??
-            'Could not delete.',
+        humanReadableFormError(
+          error,
+          resourceName: 'training',
+          fallback: l10n?.trainingCouldNotDelete ?? 'Could not delete.',
+        ),
       );
     } on StateError catch (error) {
-      _showSnackBar(context, error.message);
+      _showSnackBar(
+        context,
+        humanReadableFormError(
+          error,
+          resourceName: 'training',
+          fallback: l10n?.trainingCouldNotDelete ?? 'Could not delete.',
+        ),
+      );
     }
   }
 
@@ -362,12 +372,21 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     } on ArgumentError catch (error) {
       _showSnackBar(
         context,
-        error.message?.toString() ??
-            l10n?.trainingCouldNotDelete ??
-            'Could not delete.',
+        humanReadableFormError(
+          error,
+          resourceName: 'exercise',
+          fallback: l10n?.trainingCouldNotDelete ?? 'Could not delete.',
+        ),
       );
     } on StateError catch (error) {
-      _showSnackBar(context, error.message);
+      _showSnackBar(
+        context,
+        humanReadableFormError(
+          error,
+          resourceName: 'exercise',
+          fallback: l10n?.trainingCouldNotDelete ?? 'Could not delete.',
+        ),
+      );
     }
   }
 }
@@ -631,10 +650,13 @@ class _ExerciseDialogState extends State<_ExerciseDialog> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText =
-            error.message?.toString() ??
-            AppLocalizations.of(context)?.exerciseCouldNotSave ??
-            'Could not save exercise.';
+        _errorText = humanReadableFormError(
+          error,
+          resourceName: 'exercise',
+          fallback:
+              AppLocalizations.of(context)?.exerciseCouldNotSave ??
+              'Could not save exercise.',
+        );
       });
       return;
     }
@@ -822,14 +844,10 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
                     child: Card(
                       child: ListTile(
                         title: Text(exerciseName),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: detailLines
-                              .map((detail) => Text(detail))
-                              .toList(growable: false),
-                        ),
-                        isThreeLine: true,
+                        subtitle: detailLines.isEmpty
+                            ? null
+                            : _TrainingExerciseTargetList(details: detailLines),
+                        isThreeLine: detailLines.isNotEmpty,
                         trailing: isCompact
                             ? null
                             : Row(
@@ -991,10 +1009,13 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText =
-            error.message?.toString() ??
-            AppLocalizations.of(context)?.trainingCouldNotSave ??
-            'Could not save training.';
+        _errorText = humanReadableFormError(
+          error,
+          resourceName: 'training',
+          fallback:
+              AppLocalizations.of(context)?.trainingCouldNotSave ??
+              'Could not save training.',
+        );
       });
       return;
     }
@@ -1003,6 +1024,71 @@ class _TrainingPlanDialogState extends State<_TrainingPlanDialog> {
       return;
     }
     Navigator.of(context).pop();
+  }
+}
+
+class _TrainingExerciseTargetList extends StatelessWidget {
+  const _TrainingExerciseTargetList({required this.details});
+
+  final List<String> details;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ExcludeSemantics(
+            child: Icon(
+              Icons.flag_outlined,
+              size: 18,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Target',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                for (final detail in details)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '- ',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          detail,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

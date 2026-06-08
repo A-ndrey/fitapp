@@ -10,6 +10,7 @@ import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/theme/app_theme.dart';
 import '../ui/core/widgets/dashboard_panels.dart';
 import '../ui/core/widgets/section_header.dart';
+import '../ui/workout/workout_formatters.dart';
 
 class TodayScreen extends StatefulWidget {
   const TodayScreen({
@@ -18,12 +19,18 @@ class TodayScreen extends StatefulWidget {
     required this.onOpenTrain,
     required this.onOpenNutrition,
     required this.onOpenLibrary,
+    this.onOpenActiveWorkout,
+    this.onStartWorkout,
+    this.currentDateTime,
   });
 
   final AppStore store;
   final VoidCallback onOpenTrain;
   final VoidCallback onOpenNutrition;
   final VoidCallback onOpenLibrary;
+  final VoidCallback? onOpenActiveWorkout;
+  final FutureOr<void> Function(TrainingPlan plan)? onStartWorkout;
+  final DateTime Function()? currentDateTime;
 
   @override
   State<TodayScreen> createState() => _TodayScreenState();
@@ -78,9 +85,13 @@ class _TodayScreenState extends State<TodayScreen> {
         final activeSession = widget.store.activeWorkoutSession;
         final dailyTotals = widget.store.dailyTotals;
         final dailyMacroTargets = widget.store.dailyMacroTargets;
-        final nextPlan = activeSession == null
-            ? widget.store.trainingPlans.firstOrNull
-            : widget.store.trainingPlanById(activeSession.trainingPlanId);
+        final workoutRecommendation = widget.currentDateTime == null
+            ? widget.store.todayWorkoutRecommendation
+            : widget.store.trainingPlans.isEmpty
+            ? null
+            : widget.store.todayWorkoutRecommendationAt(
+                widget.currentDateTime!(),
+              );
 
         return Scaffold(
           appBar: AppBar(title: Text(l10n?.destinationToday ?? 'Today')),
@@ -141,31 +152,14 @@ class _TodayScreenState extends State<TodayScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              DashboardPanel(
-                title:
-                    activeSession?.trainingPlanName ??
-                    (nextPlan?.name ?? 'Workout'),
-                eyebrow: activeSession == null
-                    ? 'Today workout'
-                    : 'Active workout',
-                emphasis: activeSession == null
-                    ? DashboardPanelEmphasis.defaultSurface
-                    : DashboardPanelEmphasis.live,
-                trailing: activeSession == null
-                    ? null
-                    : DashboardStatChip(
-                        label: _formatDuration(activeSession.duration),
-                        icon: Icons.timer_outlined,
-                        tone: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                child: _TodayWorkoutContent(
-                  plan: nextPlan,
-                  activeSession: activeSession,
-                  formatVolume: _formatVolume,
-                  sessionVolume: _sessionVolume,
-                  completedExercises: _completedExercises,
-                ),
+              const AppPageSectionGap(),
+              _TodayWorkoutPanel(
+                recommendation: workoutRecommendation,
+                onTap: _workoutCardAction(workoutRecommendation),
+                formatDuration: _formatDuration,
+                formatVolume: _formatVolume,
+                sessionVolume: _sessionVolume,
+                completedExercises: _completedExercises,
               ),
             ],
           ),
@@ -226,26 +220,136 @@ class _TodayScreenState extends State<TodayScreen> {
     }
     return '${volume.toStringAsFixed(volume >= 1000 ? 0 : 1)} kg';
   }
+
+  VoidCallback? _workoutCardAction(TodayWorkoutRecommendation? recommendation) {
+    if (recommendation == null ||
+        recommendation.status == TodayWorkoutStatus.completedToday) {
+      return null;
+    }
+    if (recommendation.status == TodayWorkoutStatus.active) {
+      return widget.onOpenActiveWorkout ?? widget.onOpenTrain;
+    }
+    return () => _confirmStartWorkout(recommendation.plan);
+  }
+
+  Future<void> _confirmStartWorkout(TrainingPlan plan) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('Start ${plan.name}?'),
+          content: Text('Begin a new workout session for ${plan.name}.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Start workout'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) {
+      return;
+    }
+    final startWorkout = widget.onStartWorkout;
+    if (startWorkout == null) {
+      widget.onOpenTrain();
+      return;
+    }
+    await startWorkout(plan);
+  }
 }
 
-class _TodayWorkoutContent extends StatelessWidget {
-  const _TodayWorkoutContent({
-    required this.plan,
-    required this.activeSession,
+class _TodayWorkoutPanel extends StatelessWidget {
+  const _TodayWorkoutPanel({
+    required this.recommendation,
+    required this.onTap,
+    required this.formatDuration,
     required this.formatVolume,
     required this.sessionVolume,
     required this.completedExercises,
   });
 
-  final TrainingPlan? plan;
-  final WorkoutSession? activeSession;
+  final TodayWorkoutRecommendation? recommendation;
+  final VoidCallback? onTap;
+  final String Function(Duration duration) formatDuration;
   final String Function(double volume) formatVolume;
   final double Function(WorkoutSession session) sessionVolume;
   final int Function(WorkoutSession session) completedExercises;
 
   @override
   Widget build(BuildContext context) {
-    final session = activeSession;
+    final colorScheme = Theme.of(context).colorScheme;
+    final status = recommendation?.status;
+    final isActive = status == TodayWorkoutStatus.active;
+    final isDoneToday = status == TodayWorkoutStatus.completedToday;
+    final radius = AppTheme.standardSurfaceRadius(colorScheme.brightness);
+
+    return Semantics(
+      button: onTap != null,
+      enabled: onTap != null,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(radius),
+          child: DashboardPanel(
+            title: recommendation?.plan.name ?? 'Workout',
+            eyebrow: switch (status) {
+              TodayWorkoutStatus.active => 'Active workout',
+              TodayWorkoutStatus.completedToday => 'Today workout',
+              TodayWorkoutStatus.notStarted => 'Today workout',
+              null => 'Today workout',
+            },
+            emphasis: isActive
+                ? DashboardPanelEmphasis.live
+                : DashboardPanelEmphasis.defaultSurface,
+            trailing: isActive
+                ? DashboardStatChip(
+                    label: formatDuration(recommendation!.session!.duration),
+                    icon: Icons.timer_outlined,
+                    tone: colorScheme.onSurfaceVariant,
+                  )
+                : isDoneToday
+                ? DashboardStatChip(
+                    label: 'Done today',
+                    icon: Icons.check_circle_outline,
+                    tone: colorScheme.secondary,
+                  )
+                : null,
+            child: _TodayWorkoutContent(
+              recommendation: recommendation,
+              formatVolume: formatVolume,
+              sessionVolume: sessionVolume,
+              completedExercises: completedExercises,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TodayWorkoutContent extends StatelessWidget {
+  const _TodayWorkoutContent({
+    required this.recommendation,
+    required this.formatVolume,
+    required this.sessionVolume,
+    required this.completedExercises,
+  });
+
+  final TodayWorkoutRecommendation? recommendation;
+  final String Function(double volume) formatVolume;
+  final double Function(WorkoutSession session) sessionVolume;
+  final int Function(WorkoutSession session) completedExercises;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = recommendation?.session;
     if (session != null) {
       return Wrap(
         spacing: 8,
@@ -266,6 +370,7 @@ class _TodayWorkoutContent extends StatelessWidget {
       );
     }
 
+    final plan = recommendation?.plan;
     if (plan == null) {
       return Text(
         'No training plan for today.',
@@ -273,7 +378,7 @@ class _TodayWorkoutContent extends StatelessWidget {
       );
     }
 
-    final previewExercises = plan!.exercises.take(3).toList(growable: false);
+    final previewExercises = plan.exercises.take(3).toList(growable: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -281,6 +386,13 @@ class _TodayWorkoutContent extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
+            DashboardStatChip(
+              label: recommendation?.lastCompletedAt == null
+                  ? 'No history yet'
+                  : 'Last done ${formatWorkoutDate(recommendation!.lastCompletedAt!)}',
+              icon: Icons.history_outlined,
+              tone: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             for (final exercise in previewExercises)
               DashboardStatChip(
                 label: exercise.exerciseId.replaceAll('-', ' '),

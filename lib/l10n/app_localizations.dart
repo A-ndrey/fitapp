@@ -109,7 +109,7 @@ abstract class AppLocalizations {
   /// Root navigation destination for workouts.
   ///
   /// In en, this message translates to:
-  /// **'Train'**
+  /// **'Workout'**
   String get destinationTrain;
 
   /// Root navigation destination for meal logging and nutrition.
@@ -220,10 +220,10 @@ abstract class AppLocalizations {
   /// **'Return to the active session'**
   String get todayOpenWorkoutSubtitle;
 
-  /// Accessibility hint for Today actions that open the Train tab.
+  /// Accessibility hint for Today actions that open the Workout tab.
   ///
   /// In en, this message translates to:
-  /// **'Opens Train tab'**
+  /// **'Opens Workout tab'**
   String get todayOpenTrainHint;
 
   /// Today screen action to open nutrition logging.
@@ -667,7 +667,7 @@ abstract class AppLocalizations {
   /// Workout overview stats section title.
   ///
   /// In en, this message translates to:
-  /// **'Workout stats'**
+  /// **'Stats'**
   String get workoutStatsTitle;
 
   /// Workout stats subtitle when there is no completed workout history.
@@ -685,7 +685,7 @@ abstract class AppLocalizations {
   /// Workout history section title.
   ///
   /// In en, this message translates to:
-  /// **'Workout history'**
+  /// **'History'**
   String get workoutHistoryTitle;
 
   /// Workout history empty state title.

@@ -34,7 +34,7 @@ void main() {
 
     for (final label in const [
       'Today',
-      'Train',
+      'Workout',
       'Nutrition',
       'Library',
       'Settings',
@@ -75,7 +75,8 @@ void main() {
     expect(l10n.workoutTitle, 'Workout');
     expect(l10n.workoutTrainingCockpitTitle, 'Training log');
     expect(l10n.workoutExerciseTitle, 'Workout exercise');
-    expect(l10n.workoutHistoryTitle, 'Workout history');
+    expect(l10n.workoutStatsTitle, 'Stats');
+    expect(l10n.workoutHistoryTitle, 'History');
     expect(l10n.workoutDeleteDialogTitle, 'Delete workout?');
     expect(l10n.workoutTargetPrefix, 'Target:');
     expect(l10n.workoutHourUnit, 'h');

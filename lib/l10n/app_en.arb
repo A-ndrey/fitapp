@@ -8,7 +8,7 @@
   "@destinationToday": {
     "description": "Root navigation destination for the dashboard."
   },
-  "destinationTrain": "Train",
+  "destinationTrain": "Workout",
   "@destinationTrain": {
     "description": "Root navigation destination for workouts."
   },
@@ -110,9 +110,9 @@
   "@todayOpenWorkoutSubtitle": {
     "description": "Subtitle for the Today open workout action."
   },
-  "todayOpenTrainHint": "Opens Train tab",
+  "todayOpenTrainHint": "Opens Workout tab",
   "@todayOpenTrainHint": {
-    "description": "Accessibility hint for Today actions that open the Train tab."
+    "description": "Accessibility hint for Today actions that open the Workout tab."
   },
   "todayLogMealAction": "Log meal",
   "@todayLogMealAction": {
@@ -412,7 +412,7 @@
   "@workoutTrainingCockpitSubtitle": {
     "description": "Workout overview hero subtitle."
   },
-  "workoutStatsTitle": "Workout stats",
+  "workoutStatsTitle": "Stats",
   "@workoutStatsTitle": {
     "description": "Workout overview stats section title."
   },
@@ -430,7 +430,7 @@
       }
     }
   },
-  "workoutHistoryTitle": "Workout history",
+  "workoutHistoryTitle": "History",
   "@workoutHistoryTitle": {
     "description": "Workout history section title."
   },

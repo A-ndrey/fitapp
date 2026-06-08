@@ -28,11 +28,11 @@ class CompletedWorkoutScreen extends StatelessWidget {
       body: AdaptivePage(
         children: [
           WorkoutCompletedSummaryCard(session: session, l10n: l10n),
-          const SizedBox(height: 24),
+          const AppPageSectionGap(),
           SectionHeader(title: l10n?.workoutExercisesTitle ?? 'Exercises'),
           ...resultGroups.map(
             (group) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: AppPageSpacing.itemGap),
               child: WorkoutCompletedExerciseResultGroupCard(
                 exerciseName: group.exerciseName,
                 results: group.results,

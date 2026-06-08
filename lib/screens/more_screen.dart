@@ -5,6 +5,7 @@ import '../models/app_preferences.dart';
 import '../state/app_store.dart';
 import '../state/auth/app_auth_service.dart';
 import '../state/sync/app_store_sync_status.dart';
+import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/app_screen_scaffold.dart';
 import '../ui/core/widgets/form_shell.dart';
@@ -71,7 +72,7 @@ class MoreScreen extends StatelessWidget {
                 onSignOut: onSignOut,
                 onDeleteAccount: onDeleteAccount,
               ),
-              const SizedBox(height: 20),
+              const AppPageSectionGap(),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final unitsCard = UnitsSettingsCard(
@@ -177,7 +178,7 @@ class MoreScreen extends StatelessWidget {
                           title: l10n?.settingsUnitsTitle ?? 'Units',
                           children: [unitsCard],
                         ),
-                        const SizedBox(height: 20),
+                        const AppPageSectionGap(),
                         _SettingsGroup(
                           title: l10n?.settingsAppTitle ?? 'App',
                           children: appCards,
@@ -194,7 +195,7 @@ class MoreScreen extends StatelessWidget {
                         columns: 2,
                         children: [unitsCard],
                       ),
-                      const SizedBox(height: 20),
+                      const AppPageSectionGap(),
                       _SettingsGroup(
                         title: l10n?.settingsAppTitle ?? 'App',
                         columns: 2,
@@ -380,13 +381,21 @@ class _AuthCardState extends State<_AuthCard> {
     } on AuthFailure catch (error) {
       if (mounted) {
         setState(() {
-          _deleteErrorMessage = error.message;
+          _deleteErrorMessage = humanReadableFormError(
+            error.message,
+            resourceName: 'account',
+            fallback: "We couldn't delete your account. Please try again.",
+          );
         });
       }
     } catch (error) {
       if (mounted) {
         setState(() {
-          _deleteErrorMessage = error.toString();
+          _deleteErrorMessage = humanReadableFormError(
+            error,
+            resourceName: 'account',
+            fallback: "We couldn't delete your account. Please try again.",
+          );
         });
       }
     } finally {
@@ -721,7 +730,13 @@ class _AuthFormScreenState extends State<_AuthFormScreen> {
     } catch (error) {
       if (mounted) {
         setState(() {
-          _errorMessage = _authErrorMessage(error.toString());
+          _errorMessage = _authErrorMessage(
+            humanReadableFormError(
+              error,
+              resourceName: 'account',
+              fallback: '',
+            ),
+          );
         });
       }
     } finally {

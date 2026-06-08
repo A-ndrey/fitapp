@@ -39,7 +39,7 @@ class _TestFitHomeState extends State<TestFitHome> {
       NavigationDestination(icon: Icon(Icons.today_outlined), label: 'Today'),
       NavigationDestination(
         icon: Icon(Icons.fitness_center_outlined),
-        label: 'Train',
+        label: 'Workout',
       ),
       NavigationDestination(
         icon: Icon(Icons.restaurant_menu_outlined),
@@ -381,7 +381,7 @@ void main() {
 
   const rootDestinationLabels = [
     'Today',
-    'Train',
+    'Workout',
     'Nutrition',
     'Library',
     'Settings',
@@ -418,7 +418,7 @@ void main() {
   }
 
   Future<void> openTrainDestination(WidgetTester tester) async {
-    await openRootDestination(tester, 'Train');
+    await openRootDestination(tester, 'Workout');
   }
 
   Future<void> openExercise(WidgetTester tester, String exerciseName) async {
@@ -663,6 +663,17 @@ void main() {
     );
     store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 18, 9, 30));
   }
+
+  testWidgets('workout stats starts at page top when no session is active', (
+    tester,
+  ) async {
+    await pumpWorkoutScreen(tester);
+
+    final adaptivePageTop = tester.getTopLeft(find.byType(AdaptivePage)).dy;
+    final statsTop = tester.getTopLeft(find.text('Stats')).dy;
+
+    expect(statsTop - adaptivePageTop, lessThan(40));
+  });
 
   testWidgets('workout overview cards render active and history content', (
     tester,
@@ -1192,13 +1203,13 @@ void main() {
         find.text('Start sessions, log sets, and review progress.'),
         findsNothing,
       );
-      expect(find.text('Workout stats'), findsOneWidget);
+      expect(find.text('Stats'), findsOneWidget);
       expect(find.text('No completed sessions yet.'), findsOneWidget);
       expect(find.text('Completed'), findsOneWidget);
       expect(find.text('0'), findsOneWidget);
       expect(find.text('Total time'), findsOneWidget);
       expect(find.text('0 min'), findsOneWidget);
-      expect(find.text('Workout history'), findsOneWidget);
+      expect(find.text('History'), findsOneWidget);
       expect(find.text('No completed workouts yet'), findsOneWidget);
       expect(
         find.text('Start a training plan to build your workout history.'),
@@ -1514,7 +1525,7 @@ void main() {
     expect(find.text('Workout session'), findsNothing);
     expect(find.text('Active workout'), findsNothing);
     expect(find.text('Training log'), findsNothing);
-    expect(find.text('Workout stats'), findsOneWidget);
+    expect(find.text('Stats'), findsOneWidget);
     expect(find.text('Latest: Chest day'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
@@ -1551,7 +1562,7 @@ void main() {
     expect(store.completedWorkoutSessions, hasLength(1));
     expect(find.text('Workout session'), findsNothing);
     expect(find.text('Training log'), findsNothing);
-    expect(find.text('Workout stats'), findsOneWidget);
+    expect(find.text('Stats'), findsOneWidget);
     expect(find.text('Latest: Chest day'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
@@ -1584,7 +1595,7 @@ void main() {
       expect(find.text('Bench press'), findsOneWidget);
       expect(find.text('Set 1'), findsOneWidget);
       expect(find.text('8 reps • 62.5 kg'), findsOneWidget);
-      expect(find.text('Train'), findsWidgets);
+      expect(find.text('Workout'), findsWidgets);
       expect(find.text('Library'), findsWidgets);
     },
   );
@@ -1766,14 +1777,14 @@ void main() {
     await openActiveWorkout(tester);
 
     expect(find.text('Workout session'), findsOneWidget);
-    expect(find.text('Train'), findsWidgets);
+    expect(find.text('Workout'), findsWidgets);
     expect(find.text('Nutrition'), findsWidgets);
     expect(find.text('Library'), findsWidgets);
 
     await openExercise(tester, 'Bench press');
 
     expect(find.text('Workout exercise'), findsWidgets);
-    expect(find.text('Train'), findsWidgets);
+    expect(find.text('Workout'), findsWidgets);
     expect(find.text('Library'), findsWidgets);
 
     await openRootDestination(tester, 'Library');

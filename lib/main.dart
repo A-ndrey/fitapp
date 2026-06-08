@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'firebase/firebase_initializer.dart';
 import 'l10n/app_localizations.dart';
 import 'models/app_preferences.dart';
+import 'models/training_plan.dart';
 import 'screens/library_screen.dart';
 import 'screens/meal_screen.dart';
 import 'screens/more_screen.dart';
 import 'screens/today_screen.dart';
+import 'screens/workout_session_screen.dart';
 import 'screens/workout_screen.dart';
 import 'state/app_store.dart';
 import 'state/auth/app_auth_service.dart';
@@ -498,10 +500,12 @@ class _FitHomeState extends State<FitHome> {
           onOpenTrain: () => _selectDestination(1),
           onOpenNutrition: () => _selectDestination(2),
           onOpenLibrary: () => _selectDestination(3),
+          onOpenActiveWorkout: _openActiveWorkoutFromToday,
+          onStartWorkout: _startWorkoutFromToday,
         ),
       ),
       _AppDestination(
-        label: l10n?.destinationTrain ?? 'Train',
+        label: l10n?.destinationTrain ?? 'Workout',
         icon: Icons.timer_outlined,
         selectedIcon: Icons.timer,
         screen: _WorkoutTabNavigator(
@@ -552,18 +556,22 @@ class _FitHomeState extends State<FitHome> {
         if (constraints.maxWidth < AppBreakpoints.mediumMin) {
           return Scaffold(
             body: body,
-            bottomNavigationBar: NavigationBar(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: _selectDestination,
-              destinations: [
-                for (final destination in destinations)
-                  NavigationDestination(
-                    icon: Icon(destination.icon),
-                    selectedIcon: Icon(destination.selectedIcon),
-                    label: destination.label,
-                    tooltip: destination.label,
-                  ),
-              ],
+            bottomNavigationBar: SafeArea(
+              top: false,
+              minimum: const EdgeInsets.only(bottom: 8),
+              child: NavigationBar(
+                selectedIndex: _selectedIndex,
+                onDestinationSelected: _selectDestination,
+                destinations: [
+                  for (final destination in destinations)
+                    NavigationDestination(
+                      icon: Icon(destination.icon),
+                      selectedIcon: Icon(destination.selectedIcon),
+                      label: destination.label,
+                      tooltip: destination.label,
+                    ),
+                ],
+              ),
             ),
           );
         }
@@ -614,6 +622,38 @@ class _FitHomeState extends State<FitHome> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  Future<void> _startWorkoutFromToday(TrainingPlan plan) async {
+    try {
+      widget.store.startWorkout(trainingPlanId: plan.id);
+      _openActiveWorkoutFromToday();
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not start workout.')));
+    }
+  }
+
+  void _openActiveWorkoutFromToday() {
+    if (widget.store.activeWorkoutSession == null) {
+      _selectDestination(1);
+      return;
+    }
+    _selectDestination(1);
+    final workoutNavigator = _workoutNavigatorKey.currentState;
+    workoutNavigator?.popUntil((route) => route.isFirst);
+    workoutNavigator?.push(
+      MaterialPageRoute<void>(
+        builder: (context) => WorkoutSessionScreen(
+          store: widget.store,
+          isCurrentTabListenable: _isWorkoutTabCurrent,
+        ),
+      ),
+    );
   }
 }
 

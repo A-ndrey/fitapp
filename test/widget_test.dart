@@ -23,6 +23,7 @@ import 'package:fitapp/ui/core/layout/adaptive_page.dart';
 import 'package:fitapp/ui/core/widgets/empty_state.dart';
 import 'package:fitapp/ui/core/theme/app_theme.dart';
 import 'package:fitapp/ui/core/widgets/action_card.dart';
+import 'package:fitapp/ui/core/widgets/dashboard_panels.dart';
 import 'package:fitapp/ui/core/widgets/metric_card.dart';
 import 'package:fitapp/ui/library/library_cards.dart';
 import 'package:fitapp/ui/library/library_formatters.dart';
@@ -42,7 +43,7 @@ Future<void> scrollToText(WidgetTester tester, String text) async {
 
 const rootDestinationLabels = [
   'Today',
-  'Train',
+  'Workout',
   'Nutrition',
   'Library',
   'Settings',
@@ -143,6 +144,39 @@ void seedTraining(AppStore store) {
           weightGrams: 60000,
         ),
         TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+      ],
+    ),
+  );
+}
+
+void seedLegDay(AppStore store) {
+  if (store.trainingPlanById('leg-day') != null) {
+    return;
+  }
+  if (store.exerciseById('squat') == null) {
+    store.createExercise(
+      const Exercise(
+        id: 'squat',
+        name: 'Squat',
+        description: 'Barbell lower-body lift',
+        instruction: 'Brace and stand through mid-foot.',
+        muscleGroups: [MuscleGroup.quads],
+        measurementType: ExerciseMeasurementType.strength,
+      ),
+    );
+  }
+  store.createTrainingPlan(
+    const TrainingPlan(
+      id: 'leg-day',
+      name: 'Leg day',
+      description: 'Squat work',
+      exercises: [
+        TrainingExercise(
+          exerciseId: 'squat',
+          sets: 4,
+          reps: 6,
+          weightGrams: 80000,
+        ),
       ],
     ),
   );
@@ -770,6 +804,7 @@ void main() {
   });
 
   testWidgets('Today dashboard shows active session state', (tester) async {
+    var openedActiveWorkout = false;
     final store = AppStore();
     seedTraining(store);
     store.startWorkout(
@@ -784,6 +819,9 @@ void main() {
           onOpenTrain: () {},
           onOpenNutrition: () {},
           onOpenLibrary: () {},
+          onOpenActiveWorkout: () {
+            openedActiveWorkout = true;
+          },
         ),
       ),
     );
@@ -795,6 +833,123 @@ void main() {
     expect(find.text('PERFORMANCE INSIGHT'), findsNothing);
     expect(find.text('Quick actions'), findsNothing);
     expect(find.text('Open train tab'), findsNothing);
+
+    await tester.tap(find.text('Chest day').last);
+    await tester.pumpAndSettle();
+    expect(openedActiveWorkout, isTrue);
+  });
+
+  testWidgets('Today workout card recommends least recent plan', (
+    tester,
+  ) async {
+    final store = AppStore();
+    seedTraining(store);
+    seedLegDay(store);
+    store.startWorkout(
+      trainingPlanId: 'leg-day',
+      startedAt: DateTime(2026, 4, 18, 8),
+    );
+    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 18, 9));
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 20, 8),
+    );
+    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 20, 9));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TodayScreen(
+          store: store,
+          currentDateTime: () => DateTime(2026, 4, 21, 12),
+          onOpenTrain: () {},
+          onOpenNutrition: () {},
+          onOpenLibrary: () {},
+        ),
+      ),
+    );
+
+    expect(find.text('Leg day'), findsOneWidget);
+    expect(find.text('Last done 2026-04-18'), findsOneWidget);
+  });
+
+  testWidgets('Today workout card confirms before starting workout', (
+    tester,
+  ) async {
+    String? startedPlanId;
+    final store = AppStore();
+    seedTraining(store);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TodayScreen(
+          store: store,
+          currentDateTime: () => DateTime(2026, 4, 21, 12),
+          onOpenTrain: () {},
+          onOpenNutrition: () {},
+          onOpenLibrary: () {},
+          onStartWorkout: (plan) async {
+            startedPlanId = plan.id;
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Chest day'));
+    await tester.pumpAndSettle();
+
+    expect(startedPlanId, isNull);
+    expect(find.text('Start Chest day?'), findsOneWidget);
+
+    await tester.tap(find.text('Start workout'));
+    await tester.pumpAndSettle();
+
+    expect(startedPlanId, 'chest-day');
+  });
+
+  testWidgets('Today workout card is disabled when today workout is done', (
+    tester,
+  ) async {
+    String? startedPlanId;
+    final store = AppStore();
+    seedTraining(store);
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime(2026, 4, 21, 8),
+    );
+    store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 21, 9));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TodayScreen(
+          store: store,
+          currentDateTime: () => DateTime(2026, 4, 21, 12),
+          onOpenTrain: () {},
+          onOpenNutrition: () {},
+          onOpenLibrary: () {},
+          onStartWorkout: (plan) async {
+            startedPlanId = plan.id;
+          },
+        ),
+      ),
+    );
+
+    expect(find.text('Done today'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('Done today'),
+          matching: find.byType(DashboardStatChip),
+        ),
+        matching: find.byIcon(Icons.check_circle_outline),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Chest day').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Start Chest day?'), findsNothing);
+    expect(startedPlanId, isNull);
   });
 
   testWidgets('Today dashboard stays stable across widths', (tester) async {
@@ -849,6 +1004,23 @@ void main() {
     expect(find.byType(FloatingActionButton), findsNothing);
     await scrollToText(tester, 'Chicken breast');
     expect(find.text('Chicken breast'), findsOneWidget);
+  });
+
+  testWidgets('LibraryScreen root group titles match section header scale', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: LibraryScreen(store: AppStore())),
+    );
+
+    final textTheme = Theme.of(
+      tester.element(find.byType(LibraryScreen)),
+    ).textTheme;
+    final trainingText = tester.widget<Text>(find.text('Training'));
+    final foodText = tester.widget<Text>(find.text('Food'));
+
+    expect(trainingText.style?.fontSize, textTheme.titleLarge?.fontSize);
+    expect(foodText.style?.fontSize, textTheme.titleLarge?.fontSize);
   });
 
   testWidgets('LibraryScreen detail routes keep a single page scroll shell', (
@@ -957,7 +1129,7 @@ void main() {
         MaterialApp(home: MealScreen(store: AppStore())),
       );
 
-      expect(find.text('Nutrition log'), findsOneWidget);
+      expect(find.text('Nutrition log'), findsNothing);
       expect(find.text('Macro targets'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
@@ -1101,7 +1273,7 @@ void main() {
   }
 
   testWidgets(
-    'shows Today, Train, Nutrition, Library and Settings destinations',
+    'shows Today, Workout, Nutrition, Library and Settings destinations',
     (tester) async {
       final store = AppStore();
       seedFoods(store);
@@ -1109,7 +1281,7 @@ void main() {
       await tester.pumpWidget(FitApp(store: store));
 
       expect(find.text('Today'), findsWidgets);
-      expect(find.text('Train'), findsWidgets);
+      expect(find.text('Workout'), findsWidgets);
       expect(find.text('Nutrition'), findsWidgets);
       expect(find.text('Library'), findsWidgets);
       expect(find.text('Settings'), findsWidgets);
@@ -1139,7 +1311,7 @@ void main() {
     },
   );
 
-  testWidgets('Nutrition shell shows cockpit header and add action', (
+  testWidgets('Nutrition shell shows add action without repeated title', (
     tester,
   ) async {
     await tester.pumpWidget(const FitApp());
@@ -1147,7 +1319,7 @@ void main() {
     await openNutritionDestination(tester);
 
     expect(find.text('Nutrition'), findsWidgets);
-    expect(find.text('Nutrition log'), findsOneWidget);
+    expect(find.text('Nutrition log'), findsNothing);
     expect(find.text('Macro targets'), findsOneWidget);
     expect(find.text('Calories'), findsOneWidget);
     expect(find.text('Protein'), findsOneWidget);
@@ -1463,9 +1635,13 @@ void main() {
     expect(find.byType(AdaptivePage), findsOneWidget);
     expect(find.byType(FoodCatalogCard), findsWidgets);
     expect(find.text('Food library'), findsOneWidget);
+    await scrollToText(tester, 'Rice');
     expect(find.text('Rice'), findsOneWidget);
+    expect(find.text('Type'), findsWidgets);
+    expect(find.text('Serving'), findsWidgets);
+    expect(find.text('Calories'), findsWidgets);
     expect(find.textContaining('5.3 oz serving'), findsWidgets);
-    expect(find.textContaining('41 kcal per serving'), findsWidgets);
+    expect(find.textContaining('195 kcal per serving'), findsWidgets);
     expect(find.byTooltip('Add food or recipe'), findsOneWidget);
     expect(find.byTooltip('More actions'), findsWidgets);
   });
