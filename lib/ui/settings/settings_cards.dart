@@ -399,7 +399,7 @@ class _MacroTargetsSettingsCardState extends State<MacroTargetsSettingsCard> {
   }
 
   static double? _parse(TextEditingController controller) {
-    return double.tryParse(controller.text.trim());
+    return parsePositiveDecimalInput(controller.text);
   }
 
   static String _format(double value) {

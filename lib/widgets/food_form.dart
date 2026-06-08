@@ -257,7 +257,7 @@ class _FoodFormState extends State<FoodForm> {
   }
 
   double? _parsePositive(TextEditingController controller) {
-    final value = double.tryParse(controller.text.trim());
+    final value = parsePositiveDecimalInput(controller.text);
     if (value == null || !value.isFinite || value <= 0) {
       return null;
     }
@@ -265,7 +265,7 @@ class _FoodFormState extends State<FoodForm> {
   }
 
   double? _parseNonNegative(TextEditingController controller) {
-    final value = double.tryParse(controller.text.trim());
+    final value = parsePositiveDecimalInput(controller.text);
     if (value == null || !value.isFinite || value < 0) {
       return null;
     }

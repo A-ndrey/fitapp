@@ -290,8 +290,8 @@ class _LogAmountSheetState extends State<_LogAmountSheet> {
               Expanded(
                 child: FilledButton(
                   onPressed: () {
-                    final amount = double.tryParse(
-                      _amountController.text.trim(),
+                    final amount = parsePositiveDecimalInput(
+                      _amountController.text,
                     );
                     if (amount == null || !amount.isFinite || amount <= 0) {
                       return;

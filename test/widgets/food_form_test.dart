@@ -17,6 +17,13 @@ Finder _textFieldWithLabel(String label) {
   );
 }
 
+String _textFieldValue(WidgetTester tester, String label) {
+  final field = tester.widget<TextField>(_textFieldWithLabel(label));
+  final controller = field.controller;
+  expect(controller, isNotNull);
+  return controller!.text;
+}
+
 void main() {
   Future<void> pumpForm(WidgetTester tester, AppStore store) async {
     await tester.pumpWidget(
@@ -48,6 +55,53 @@ void main() {
       ),
     );
     expect(field.controller?.text, isEmpty);
+  });
+
+  testWidgets('food edit macro fields accept decimals and reject symbols', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    const tomato = FoodItem(
+      id: 'tomato',
+      name: 'Tomato',
+      description: 'Fresh tomato',
+      servingSizeGrams: 100,
+      basis: NutritionBasis.per100g,
+      nutrition: NutritionValues(
+        calories: 18,
+        protein: 0.9,
+        fat: 0.2,
+        carbs: 3.9,
+      ),
+    );
+    store.createFood(tomato);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FoodForm(store: store, initialFood: tomato),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(_textFieldWithLabel('Calories'), '18,5');
+    await tester.enterText(_textFieldWithLabel('Protein'), '1.25');
+    await tester.enterText(_textFieldWithLabel('Fat'), '0.35');
+    await tester.enterText(_textFieldWithLabel('Carbs'), '4.5');
+    await tester.enterText(_textFieldWithLabel('Carbs'), '4.5a');
+    await tester.pump();
+
+    expect(_textFieldValue(tester, 'Carbs'), '4.5');
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Save food'));
+    await tester.pumpAndSettle();
+
+    final updated = store.itemById('tomato')!.food;
+    expect(updated?.nutrition.calories, 18.5);
+    expect(updated?.nutrition.protein, 1.25);
+    expect(updated?.nutrition.fat, 0.35);
+    expect(updated?.nutrition.carbs, 4.5);
   });
 
   testWidgets('food form creates a UUID when name has no slug text', (

@@ -277,7 +277,7 @@ class _DishFormState extends State<DishForm> {
             0,
             (total, component) => total + component.grams,
           )
-        : double.tryParse(servingSizeInput);
+        : parsePositiveDecimalInput(servingSizeInput);
     if (name.isEmpty ||
         servingSize == null ||
         !servingSize.isFinite ||
@@ -345,7 +345,7 @@ class _DishFormState extends State<DishForm> {
   List<DishComponent>? _parseComponents() {
     final components = <DishComponent>[];
     for (final draft in _componentDrafts) {
-      final grams = double.tryParse(draft.gramsController.text.trim());
+      final grams = parsePositiveDecimalInput(draft.gramsController.text);
       if (grams == null || !grams.isFinite || grams <= 0) {
         return null;
       }
