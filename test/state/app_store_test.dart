@@ -16,6 +16,10 @@ import 'package:fitapp/state/persistence/persisted_app_state_codec.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+final RegExp _uuidPattern = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+);
+
 FoodItem tomato() => const FoodItem(
   id: 'tomato',
   name: 'Tomato',
@@ -1936,6 +1940,157 @@ void main() {
 
     expect(store.searchItems('tomato').single.id, 'tomato');
     expect(store.searchItems('fresh').single.id, 'tomato');
+  });
+
+  test('generated ids are opaque UUIDs independent of names', () {
+    final store = AppStore.empty();
+    store.createFood(tomato());
+
+    final firstId = store.createId();
+    final secondId = store.createId();
+
+    expect(firstId, matches(_uuidPattern));
+    expect(secondId, matches(_uuidPattern));
+    expect(secondId, isNot(firstId));
+    expect(firstId, isNot(contains('tomato')));
+  });
+
+  test('catalog item names must be unique ignoring case and spacing', () {
+    final store = AppStore.empty();
+    store.createFood(tomato());
+    store.createFood(cucumber());
+
+    expect(
+      () => store.createFood(
+        cucumber().copyWith(id: 'tomato-copy', name: ' tomato '),
+      ),
+      throwsArgumentError,
+    );
+
+    expect(
+      () => store.createDish(
+        const DishItem(
+          id: 'tomato-dish',
+          name: 'TOMATO',
+          description: 'Tomato recipe',
+          servingSizeGrams: 100,
+          components: [DishComponent(itemId: 'tomato', grams: 100)],
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.updateFood(cucumber().copyWith(name: 'TOMATO')),
+      throwsArgumentError,
+    );
+  });
+
+  test('exercise names must be unique ignoring case and spacing', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'run',
+        name: 'Run',
+        description: 'Easy run',
+        instruction: 'Keep a steady pace.',
+        muscleGroups: [MuscleGroup.cardio],
+        measurementType: ExerciseMeasurementType.cardio,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'walk',
+        name: 'Walk',
+        description: 'Easy walk',
+        instruction: 'Keep walking.',
+        muscleGroups: [MuscleGroup.cardio],
+        measurementType: ExerciseMeasurementType.cardio,
+      ),
+    );
+
+    expect(
+      () => store.createExercise(
+        const Exercise(
+          id: 'run-copy',
+          name: ' run ',
+          description: 'Another run',
+          instruction: 'Keep moving.',
+          muscleGroups: [MuscleGroup.cardio],
+          measurementType: ExerciseMeasurementType.cardio,
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.updateExercise(
+        const Exercise(
+          id: 'walk',
+          name: 'RUN',
+          description: 'Easy walk',
+          instruction: 'Keep walking.',
+          muscleGroups: [MuscleGroup.cardio],
+          measurementType: ExerciseMeasurementType.cardio,
+        ),
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('training plan names must be unique ignoring case and spacing', () {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'run',
+        name: 'Run',
+        description: 'Easy run',
+        instruction: 'Keep a steady pace.',
+        muscleGroups: [MuscleGroup.cardio],
+        measurementType: ExerciseMeasurementType.cardio,
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'cardio',
+        name: 'Cardio',
+        description: 'Cardio work',
+        exercises: [TrainingExercise(exerciseId: 'run', durationSeconds: 600)],
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'walking',
+        name: 'Walking',
+        description: 'Walking work',
+        exercises: [TrainingExercise(exerciseId: 'run', durationSeconds: 300)],
+      ),
+    );
+
+    expect(
+      () => store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'cardio-copy',
+          name: ' CARDIO ',
+          description: 'More cardio',
+          exercises: [
+            TrainingExercise(exerciseId: 'run', durationSeconds: 900),
+          ],
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => store.updateTrainingPlan(
+        const TrainingPlan(
+          id: 'walking',
+          name: 'cardio',
+          description: 'Walking work',
+          exercises: [
+            TrainingExercise(exerciseId: 'run', durationSeconds: 300),
+          ],
+        ),
+      ),
+      throwsArgumentError,
+    );
   });
 
   test('meal entries store snapshots across food updates', () {

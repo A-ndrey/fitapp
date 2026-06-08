@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
@@ -62,6 +63,7 @@ class AppStore extends ChangeNotifier {
   final Set<String> _builtInTrainingPlanIds = <String>{};
   final AppStorePersistence? _persistence;
   final PersistedAppStateObserver? _onPersistedStateSaved;
+  final Random _idRandom = Random.secure();
   AppPreferences _preferences = const AppPreferences.defaults();
   bool _isLoggedIn = false;
   WorkoutSession? _activeWorkoutSession;
@@ -594,6 +596,7 @@ class AppStore extends ChangeNotifier {
 
   void createExercise(Exercise exercise) {
     _validateExercise(exercise);
+    _assertExerciseNameIsAvailable(exercise.name);
     if (_exercises.containsKey(exercise.id)) {
       throw ArgumentError('Duplicate exercise id: ${exercise.id}');
     }
@@ -607,6 +610,7 @@ class AppStore extends ChangeNotifier {
     if (!_exercises.containsKey(exercise.id)) {
       throw ArgumentError('Missing exercise id: ${exercise.id}');
     }
+    _assertExerciseNameIsAvailable(exercise.name, excludingId: exercise.id);
     final existing = _exercises[exercise.id]!;
     if (existing.measurementType != exercise.measurementType) {
       if (_hasWorkoutHistoryForExercise(exercise.id)) {
@@ -645,6 +649,7 @@ class AppStore extends ChangeNotifier {
 
   void createTrainingPlan(TrainingPlan plan) {
     _validateTrainingPlan(plan);
+    _assertTrainingPlanNameIsAvailable(plan.name);
     if (trainingPlanById(plan.id) != null) {
       throw ArgumentError('Duplicate training plan id: ${plan.id}');
     }
@@ -661,6 +666,7 @@ class AppStore extends ChangeNotifier {
     if (index == -1) {
       throw ArgumentError('Missing training plan id: ${plan.id}');
     }
+    _assertTrainingPlanNameIsAvailable(plan.name, excludingId: plan.id);
     _trainingPlans[index] = _freezeTrainingPlan(plan);
     _didMutatePersistedState();
   }
@@ -804,6 +810,7 @@ class AppStore extends ChangeNotifier {
 
   void createFood(FoodItem food) {
     _validateFood(food);
+    _assertCatalogNameIsAvailable(food.name);
     if (_catalog.containsKey(food.id)) {
       throw ArgumentError('Duplicate item id: ${food.id}');
     }
@@ -821,12 +828,14 @@ class AppStore extends ChangeNotifier {
     if (!existing.isFood) {
       throw ArgumentError('Item id is not a food: ${food.id}');
     }
+    _assertCatalogNameIsAvailable(food.name, excludingId: food.id);
     _catalog[food.id] = CatalogItem.food(food);
     _didMutatePersistedState();
   }
 
   void createDish(DishItem dish) {
     _validateDish(dish);
+    _assertCatalogNameIsAvailable(dish.name);
     if (_catalog.containsKey(dish.id)) {
       throw ArgumentError('Duplicate item id: ${dish.id}');
     }
@@ -844,6 +853,7 @@ class AppStore extends ChangeNotifier {
     if (!existing.isDish) {
       throw ArgumentError('Item id is not a dish: ${dish.id}');
     }
+    _assertCatalogNameIsAvailable(dish.name, excludingId: dish.id);
     _catalog[dish.id] = CatalogItem.dish(_freezeDish(dish));
     _didMutatePersistedState();
   }
@@ -1185,27 +1195,31 @@ class AppStore extends ChangeNotifier {
     _isLoggedIn = false;
   }
 
-  String createIdFromName(String name) {
-    final normalized = name.trim().toLowerCase();
-    if (normalized.isEmpty) {
-      return '';
-    }
-    final buffer = StringBuffer();
-    var lastWasHyphen = false;
-    for (final codeUnit in normalized.codeUnits) {
-      final char = String.fromCharCode(codeUnit);
-      final isAlphaNumeric =
-          (codeUnit >= 48 && codeUnit <= 57) ||
-          (codeUnit >= 97 && codeUnit <= 122);
-      if (isAlphaNumeric) {
-        buffer.write(char);
-        lastWasHyphen = false;
-      } else if (!lastWasHyphen) {
-        buffer.write('-');
-        lastWasHyphen = true;
-      }
-    }
-    return buffer.toString().replaceAll(RegExp(r'^-+|-+$'), '');
+  String createId() {
+    final existingIds = <String>{
+      ..._catalog.keys,
+      ..._exercises.keys,
+      ..._trainingPlans.map((plan) => plan.id),
+    };
+    String id;
+    do {
+      id = _createUuidV4();
+    } while (existingIds.contains(id));
+    return id;
+  }
+
+  String _createUuidV4() {
+    final bytes = List<int>.generate(16, (_) => _idRandom.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    final hex = bytes
+        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+        .join();
+    return '${hex.substring(0, 8)}-'
+        '${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-'
+        '${hex.substring(16, 20)}-'
+        '${hex.substring(20)}';
   }
 
   static DateTime _localDateOnly(DateTime value) {
@@ -1228,6 +1242,46 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Serving size must be greater than zero.');
     }
     _validateNutrition(food.nutrition);
+  }
+
+  void _assertCatalogNameIsAvailable(String name, {String? excludingId}) {
+    final normalizedName = _normalizeUniqueName(name);
+    for (final entry in _catalog.entries) {
+      if (entry.key == excludingId) {
+        continue;
+      }
+      if (_normalizeUniqueName(entry.value.name) == normalizedName) {
+        throw ArgumentError('Duplicate item name: $name');
+      }
+    }
+  }
+
+  void _assertExerciseNameIsAvailable(String name, {String? excludingId}) {
+    final normalizedName = _normalizeUniqueName(name);
+    for (final entry in _exercises.entries) {
+      if (entry.key == excludingId) {
+        continue;
+      }
+      if (_normalizeUniqueName(entry.value.name) == normalizedName) {
+        throw ArgumentError('Duplicate exercise name: $name');
+      }
+    }
+  }
+
+  void _assertTrainingPlanNameIsAvailable(String name, {String? excludingId}) {
+    final normalizedName = _normalizeUniqueName(name);
+    for (final plan in _trainingPlans) {
+      if (plan.id == excludingId) {
+        continue;
+      }
+      if (_normalizeUniqueName(plan.name) == normalizedName) {
+        throw ArgumentError('Duplicate training plan name: $name');
+      }
+    }
+  }
+
+  String _normalizeUniqueName(String name) {
+    return name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   void _validateExercise(Exercise exercise) {
