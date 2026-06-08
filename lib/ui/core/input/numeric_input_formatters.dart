@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 
-final RegExp _positiveDecimalPattern = RegExp(r'^\d*\.?\d*$');
+final RegExp _positiveDecimalPattern = RegExp(r'^\d*(?:[.,]\d*)?$');
 
 const List<TextInputFormatter> positiveDecimalInputFormatters =
     <TextInputFormatter>[_PositiveDecimalTextInputFormatter()];
@@ -18,4 +18,8 @@ class _PositiveDecimalTextInputFormatter extends TextInputFormatter {
     }
     return oldValue;
   }
+}
+
+double? parsePositiveDecimalInput(String text) {
+  return double.tryParse(text.trim().replaceAll(',', '.'));
 }
