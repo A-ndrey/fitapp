@@ -112,47 +112,77 @@ Future<void> flushPersistenceQueue() async {
   await Future<void>.delayed(Duration.zero);
 }
 
+void createChestDayFixture(AppStore store) {
+  store.createExercise(
+    const Exercise(
+      id: 'bench-press',
+      name: 'Bench press',
+      description: 'Barbell chest press',
+      instruction: 'Keep shoulder blades set and press the bar vertically.',
+      muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+      measurementType: ExerciseMeasurementType.strength,
+    ),
+  );
+  store.createTrainingPlan(
+    const TrainingPlan(
+      id: 'chest-day',
+      name: 'Chest day',
+      description: 'Pressing work',
+      exercises: [
+        TrainingExercise(
+          exerciseId: 'bench-press',
+          sets: 3,
+          reps: 8,
+          weightGrams: 60000,
+        ),
+      ],
+    ),
+  );
+}
+
+void createRecommendationFixtures(AppStore store) {
+  createChestDayFixture(store);
+  store.createExercise(
+    const Exercise(
+      id: 'squat',
+      name: 'Squat',
+      description: 'Barbell lower-body lift',
+      instruction: 'Brace and stand through mid-foot.',
+      muscleGroups: [MuscleGroup.quads],
+      measurementType: ExerciseMeasurementType.strength,
+    ),
+  );
+  store.createTrainingPlan(
+    const TrainingPlan(
+      id: 'leg-day',
+      name: 'Leg day',
+      description: 'Squat work',
+      exercises: [
+        TrainingExercise(
+          exerciseId: 'squat',
+          sets: 4,
+          reps: 6,
+          weightGrams: 80000,
+        ),
+      ],
+    ),
+  );
+}
+
 void main() {
-  test('AppStore starts with exactly five sample foods', () {
+  test('AppStore starts without predefined foods', () {
     final store = AppStore();
 
-    expect(store.items, hasLength(5));
-    expect(store.searchItems('chicken').single.name, 'Chicken breast');
+    expect(store.items, isEmpty);
+    expect(store.searchItems('chicken'), isEmpty);
   });
 
-  test('AppStore starts with sample exercises and training plans', () {
+  test('AppStore starts without predefined exercises or training plans', () {
     final store = AppStore();
 
-    expect(store.exercises, hasLength(greaterThanOrEqualTo(5)));
-    expect(store.searchExercises('push').single.name, 'Pushups');
-    expect(store.searchExercises('cardio'), isNotEmpty);
-    expect(store.searchExercises('legs'), isNotEmpty);
-    expect(
-      store.exerciseById('pushups')!.muscleGroups,
-      contains(MuscleGroup.chest),
-    );
-    expect(
-      store.exerciseById('pushups')!.measurementType,
-      ExerciseMeasurementType.bodyweight,
-    );
-    expect(
-      store.exerciseById('bench-press')!.measurementType,
-      ExerciseMeasurementType.strength,
-    );
-    expect(
-      store.exerciseById('running')!.measurementType,
-      ExerciseMeasurementType.cardio,
-    );
-    expect(store.trainingPlans, hasLength(greaterThanOrEqualTo(2)));
-    expect(store.trainingPlans.any((plan) => plan.name == 'Chest day'), isTrue);
-    expect(
-      store.trainingPlanById('chest-day')!.exercises.first.weightGrams,
-      60000,
-    );
-    expect(
-      store.trainingPlanById('leg-day')!.exercises.last.durationSeconds,
-      900,
-    );
+    expect(store.exercises, isEmpty);
+    expect(store.searchExercises('push'), isEmpty);
+    expect(store.trainingPlans, isEmpty);
   });
 
   test('AppStore.empty starts without exercises or training plans', () {
@@ -165,7 +195,7 @@ void main() {
   });
 
   test(
-    'AppStore.hydrated merges built-ins with persisted user state',
+    'AppStore.hydrated restores persisted user state without predefined data',
     () async {
       final persistence = FakePersistence(
         loadedState: PersistedAppState(
@@ -184,42 +214,8 @@ void main() {
 
       final store = await AppStore.hydrated(persistence: persistence);
 
-      expect(store.items, hasLength(6));
-      expect(store.itemById('carrot'), isNotNull);
+      expect(store.items, hasLength(1));
       expect(store.itemById('tomato'), isNotNull);
-    },
-  );
-
-  test(
-    'AppStore.hydrated relies on persistence decode for built-in exercise references',
-    () async {
-      final persistedState = PersistedAppState(
-        userFoods: const [],
-        userDishes: const [],
-        userExercises: const [],
-        userTrainingPlans: const [
-          TrainingPlan(
-            id: 'builtin-pushups-plan',
-            name: 'Builtin pushups plan',
-            description: 'References a built-in exercise.',
-            exercises: [TrainingExercise(exerciseId: 'pushups', reps: 15)],
-          ),
-        ],
-        mealEntries: const [],
-        preferences: const AppPreferences.defaults(),
-        activeWorkoutSession: null,
-        completedWorkoutSessions: const [],
-        mealEntryCounter: 0,
-        workoutSessionCounter: 0,
-      );
-      final persistence = DecodingPersistence(
-        encodedState: PersistedAppStateCodec.encode(persistedState),
-        knownExerciseIds: const {'pushups'},
-      );
-
-      final store = await AppStore.hydrated(persistence: persistence);
-
-      expect(store.trainingPlanById('builtin-pushups-plan'), isNotNull);
     },
   );
 
@@ -314,63 +310,6 @@ void main() {
     expect(restored.isLoggedIn, isFalse);
   });
 
-  test('built-in records cannot be mutated or deleted', () {
-    final store = AppStore();
-
-    expect(
-      () => store.updateFood(
-        const FoodItem(
-          id: 'carrot',
-          name: 'Updated carrot',
-          description: 'Updated built-in food',
-          servingSizeGrams: 100,
-          basis: NutritionBasis.per100g,
-          nutrition: NutritionValues(
-            calories: 50,
-            protein: 1,
-            fat: 0.2,
-            carbs: 11,
-          ),
-        ),
-      ),
-      throwsArgumentError,
-    );
-    expect(() => store.deleteItem('carrot'), throwsStateError);
-    expect(
-      () => store.updateExercise(
-        const Exercise(
-          id: 'pushups',
-          name: 'Updated pushups',
-          description: 'Updated built-in exercise',
-          instruction: 'Updated built-in instruction.',
-          muscleGroups: [MuscleGroup.chest],
-          measurementType: ExerciseMeasurementType.bodyweight,
-        ),
-      ),
-      throwsArgumentError,
-    );
-    expect(() => store.deleteExercise('pushups'), throwsStateError);
-    expect(
-      () => store.updateTrainingPlan(
-        const TrainingPlan(
-          id: 'chest-day',
-          name: 'Updated chest day',
-          description: 'Updated built-in plan',
-          exercises: [
-            TrainingExercise(
-              exerciseId: 'bench-press',
-              sets: 3,
-              reps: 8,
-              weightGrams: 60000,
-            ),
-          ],
-        ),
-      ),
-      throwsArgumentError,
-    );
-    expect(() => store.deleteTrainingPlan('chest-day'), throwsStateError);
-  });
-
   test(
     'applying an external snapshot replaces persisted state and re-persists it',
     () async {
@@ -395,14 +334,44 @@ void main() {
       final externalSnapshot = PersistedAppState(
         userFoods: [cucumber()],
         userDishes: const [],
-        userExercises: const [],
+        userExercises: const [
+          Exercise(
+            id: 'pushups',
+            name: 'Pushups',
+            description: 'Bodyweight horizontal push',
+            instruction: 'Lower under control and press back up.',
+            muscleGroups: [MuscleGroup.chest],
+            measurementType: ExerciseMeasurementType.bodyweight,
+          ),
+          Exercise(
+            id: 'bench-press',
+            name: 'Bench press',
+            description: 'Barbell chest press',
+            instruction: 'Press the bar vertically.',
+            muscleGroups: [MuscleGroup.chest],
+            measurementType: ExerciseMeasurementType.strength,
+          ),
+        ],
         userTrainingPlans: const [
           TrainingPlan(
             id: 'remote-plan',
             name: 'Remote plan',
-            description: 'References a built-in exercise.',
+            description: 'References a remote exercise.',
             exercises: [
               TrainingExercise(exerciseId: 'pushups', sets: 4, reps: 10),
+            ],
+          ),
+          TrainingPlan(
+            id: 'chest-day',
+            name: 'Chest day',
+            description: 'Remote chest plan',
+            exercises: [
+              TrainingExercise(
+                exerciseId: 'bench-press',
+                sets: 3,
+                reps: 8,
+                weightGrams: 60000,
+              ),
             ],
           ),
         ],
@@ -460,7 +429,6 @@ void main() {
       await store.applyExternalPersistedState(externalSnapshot);
 
       expect(listenerNotifications, 1);
-      expect(store.itemById('carrot'), isNotNull);
       expect(store.exerciseById('pushups'), isNotNull);
       expect(store.trainingPlanById('chest-day'), isNotNull);
       expect(store.itemById('tomato'), isNull);
@@ -476,7 +444,7 @@ void main() {
         persistence
             .savedState!
             .userTrainingPlans
-            .single
+            .first
             .exercises
             .single
             .exerciseId,
@@ -749,8 +717,53 @@ void main() {
       loadedState: PersistedAppState(
         userFoods: [tomato()],
         userDishes: const [],
-        userExercises: const [],
-        userTrainingPlans: const [],
+        userExercises: const [
+          Exercise(
+            id: 'bench-press',
+            name: 'Bench press',
+            description: 'Barbell chest press',
+            instruction:
+                'Keep shoulder blades set and press the bar vertically.',
+            muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+            measurementType: ExerciseMeasurementType.strength,
+          ),
+          Exercise(
+            id: 'squat',
+            name: 'Squat',
+            description: 'Barbell lower-body lift',
+            instruction: 'Brace and stand through mid-foot.',
+            muscleGroups: [MuscleGroup.quads],
+            measurementType: ExerciseMeasurementType.strength,
+          ),
+        ],
+        userTrainingPlans: const [
+          TrainingPlan(
+            id: 'chest-day',
+            name: 'Chest day',
+            description: 'Pressing work',
+            exercises: [
+              TrainingExercise(
+                exerciseId: 'bench-press',
+                sets: 3,
+                reps: 8,
+                weightGrams: 60000,
+              ),
+            ],
+          ),
+          TrainingPlan(
+            id: 'leg-day',
+            name: 'Leg day',
+            description: 'Squat work',
+            exercises: [
+              TrainingExercise(
+                exerciseId: 'squat',
+                sets: 4,
+                reps: 6,
+                weightGrams: 80000,
+              ),
+            ],
+          ),
+        ],
         mealEntries: [
           MealEntry(
             id: 'meal-entry-2',
@@ -1468,6 +1481,7 @@ void main() {
 
   test('appends multiple set logs to one workout result', () {
     final store = AppStore();
+    createChestDayFixture(store);
 
     store.startWorkout(
       trainingPlanId: 'chest-day',
@@ -1497,6 +1511,7 @@ void main() {
 
   test('rejects invalid workout set logs', () {
     final store = AppStore();
+    createChestDayFixture(store);
 
     store.startWorkout(
       trainingPlanId: 'chest-day',
@@ -1596,6 +1611,7 @@ void main() {
 
   test('finished history preserves workout set logs', () {
     final store = AppStore();
+    createChestDayFixture(store);
 
     store.startWorkout(
       trainingPlanId: 'chest-day',
@@ -1644,6 +1660,7 @@ void main() {
 
   test('completed workout history returns matching sessions newest first', () {
     final store = AppStore();
+    createChestDayFixture(store);
 
     store.startWorkout(
       trainingPlanId: 'chest-day',
@@ -1672,6 +1689,7 @@ void main() {
 
   test('completed workout history excludes the active workout', () {
     final store = AppStore();
+    createChestDayFixture(store);
 
     store.startWorkout(
       trainingPlanId: 'chest-day',
@@ -1683,6 +1701,7 @@ void main() {
 
   test('today workout recommendation prefers active workout', () {
     final store = AppStore();
+    createRecommendationFixtures(store);
     final startedAt = DateTime(2026, 4, 21, 8);
     final active = store.startWorkout(
       trainingPlanId: 'leg-day',
@@ -1701,6 +1720,7 @@ void main() {
 
   test('today workout recommendation marks completed today as done', () {
     final store = AppStore();
+    createRecommendationFixtures(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 21, 8),
@@ -1721,6 +1741,7 @@ void main() {
 
   test('today workout recommendation uses least recent completed plan', () {
     final store = AppStore();
+    createRecommendationFixtures(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 18, 8),
@@ -1744,6 +1765,7 @@ void main() {
 
   test('today workout recommendation prefers plans without history', () {
     final store = AppStore();
+    createRecommendationFixtures(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 18, 8),
@@ -1762,6 +1784,7 @@ void main() {
 
   test('completed workout history preserves set logs', () {
     final store = AppStore();
+    createChestDayFixture(store);
 
     store.startWorkout(
       trainingPlanId: 'chest-day',
@@ -1838,6 +1861,7 @@ void main() {
 
   test('deletes completed workout sessions by id', () {
     final store = AppStore();
+    createChestDayFixture(store);
 
     store.startWorkout(
       trainingPlanId: 'chest-day',

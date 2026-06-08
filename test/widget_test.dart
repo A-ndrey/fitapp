@@ -49,6 +49,139 @@ const rootDestinationLabels = [
   'Settings',
 ];
 
+void seedFoods(AppStore store) {
+  if (store.itemById('carrot') == null) {
+    store.createFood(
+      const FoodItem(
+        id: 'carrot',
+        name: 'Carrot',
+        description: 'Raw carrot',
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 41,
+          protein: 0.9,
+          fat: 0.2,
+          carbs: 10,
+        ),
+      ),
+    );
+  }
+  if (store.itemById('rice') == null) {
+    store.createFood(
+      const FoodItem(
+        id: 'rice',
+        name: 'Rice',
+        description: 'Cooked white rice',
+        servingSizeGrams: 150,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 130,
+          protein: 2.7,
+          fat: 0.3,
+          carbs: 28,
+        ),
+      ),
+    );
+  }
+  if (store.itemById('chicken-breast') == null) {
+    store.createFood(
+      const FoodItem(
+        id: 'chicken-breast',
+        name: 'Chicken breast',
+        description: 'Cooked skinless chicken breast',
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 165,
+          protein: 31,
+          fat: 3.6,
+          carbs: 0,
+        ),
+      ),
+    );
+  }
+}
+
+void seedTraining(AppStore store) {
+  if (store.trainingPlanById('chest-day') != null) {
+    return;
+  }
+  if (store.exerciseById('pushups') == null) {
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight horizontal push',
+        instruction: 'Lower under control and press back up.',
+        muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.bodyweight,
+      ),
+    );
+  }
+  if (store.exerciseById('bench-press') == null) {
+    store.createExercise(
+      const Exercise(
+        id: 'bench-press',
+        name: 'Bench press',
+        description: 'Barbell chest press',
+        instruction: 'Keep shoulder blades set and press the bar vertically.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.strength,
+      ),
+    );
+  }
+  store.createTrainingPlan(
+    const TrainingPlan(
+      id: 'chest-day',
+      name: 'Chest day',
+      description: 'Pressing work',
+      exercises: [
+        TrainingExercise(
+          exerciseId: 'bench-press',
+          sets: 3,
+          reps: 8,
+          weightGrams: 60000,
+        ),
+        TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+      ],
+    ),
+  );
+}
+
+void seedLegDay(AppStore store) {
+  if (store.trainingPlanById('leg-day') != null) {
+    return;
+  }
+  if (store.exerciseById('squat') == null) {
+    store.createExercise(
+      const Exercise(
+        id: 'squat',
+        name: 'Squat',
+        description: 'Barbell lower-body lift',
+        instruction: 'Brace and stand through mid-foot.',
+        muscleGroups: [MuscleGroup.quads],
+        measurementType: ExerciseMeasurementType.strength,
+      ),
+    );
+  }
+  store.createTrainingPlan(
+    const TrainingPlan(
+      id: 'leg-day',
+      name: 'Leg day',
+      description: 'Squat work',
+      exercises: [
+        TrainingExercise(
+          exerciseId: 'squat',
+          sets: 4,
+          reps: 6,
+          weightGrams: 80000,
+        ),
+      ],
+    ),
+  );
+}
+
 Future<void> tapRootDestination(WidgetTester tester, String label) async {
   if (tester.any(find.byType(NavigationBar))) {
     await tester.tap(
@@ -667,16 +800,17 @@ void main() {
     expect(find.text('Log meal'), findsNothing);
     expect(find.text('Manage library'), findsNothing);
     expect(find.text('Open train tab'), findsNothing);
-    expect(find.text('Chest day'), findsOneWidget);
+    expect(find.text('Chest day'), findsNothing);
   });
 
   testWidgets('Today dashboard shows active session state', (tester) async {
     var openedActiveWorkout = false;
-    final store = AppStore()
-      ..startWorkout(
-        trainingPlanId: 'chest-day',
-        startedAt: DateTime.now().subtract(const Duration(minutes: 1)),
-      );
+    final store = AppStore();
+    seedTraining(store);
+    store.startWorkout(
+      trainingPlanId: 'chest-day',
+      startedAt: DateTime.now().subtract(const Duration(minutes: 1)),
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -709,6 +843,8 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    seedTraining(store);
+    seedLegDay(store);
     store.startWorkout(
       trainingPlanId: 'leg-day',
       startedAt: DateTime(2026, 4, 18, 8),
@@ -741,6 +877,7 @@ void main() {
   ) async {
     String? startedPlanId;
     final store = AppStore();
+    seedTraining(store);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -774,6 +911,7 @@ void main() {
   ) async {
     String? startedPlanId;
     final store = AppStore();
+    seedTraining(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 21, 8),
@@ -839,9 +977,9 @@ void main() {
   testWidgets('LibraryScreen switches between training and food libraries', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      MaterialApp(home: LibraryScreen(store: AppStore())),
-    );
+    final store = AppStore();
+    seedFoods(store);
+    await tester.pumpWidget(MaterialApp(home: LibraryScreen(store: store)));
 
     expect(find.text('Library'), findsOneWidget);
     expect(find.text('Plans, exercises, foods, and recipes.'), findsNothing);
@@ -888,9 +1026,9 @@ void main() {
   testWidgets('LibraryScreen detail routes keep a single page scroll shell', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      MaterialApp(home: LibraryScreen(store: AppStore())),
-    );
+    final store = AppStore();
+    seedTraining(store);
+    await tester.pumpWidget(MaterialApp(home: LibraryScreen(store: store)));
 
     await tester.tap(find.text('Plans'));
     await tester.pumpAndSettle();
@@ -908,6 +1046,8 @@ void main() {
 
   test('library formatters accept localized labels', () {
     final store = AppStore();
+    seedFoods(store);
+    seedTraining(store);
     final food = store.itemById('rice')!;
     final plan = store.trainingPlans.first;
     final exercise = store.exercises.first;
@@ -980,7 +1120,7 @@ void main() {
       );
 
       expect(find.text('Daily progress'), findsWidgets);
-      expect(find.text('Chest day'), findsOneWidget);
+      expect(find.text('Chest day'), findsNothing);
       expect(tester.takeException(), isNull);
 
       await pumpAtSurfaceSize(
@@ -996,7 +1136,26 @@ void main() {
       await pumpAtSurfaceSize(
         tester,
         size,
-        MaterialApp(home: LibraryScreen(store: AppStore())),
+        MaterialApp(
+          home: LibraryScreen(
+            store: AppStore()
+              ..createFood(
+                const FoodItem(
+                  id: 'chicken-breast',
+                  name: 'Chicken breast',
+                  description: 'Cooked skinless chicken breast',
+                  servingSizeGrams: 100,
+                  basis: NutritionBasis.per100g,
+                  nutrition: NutritionValues(
+                    calories: 165,
+                    protein: 31,
+                    fat: 3.6,
+                    carbs: 0,
+                  ),
+                ),
+              ),
+          ),
+        ),
       );
 
       expect(find.text('Library'), findsOneWidget);
@@ -1116,7 +1275,10 @@ void main() {
   testWidgets(
     'shows Today, Workout, Nutrition, Library and Settings destinations',
     (tester) async {
-      await tester.pumpWidget(const FitApp());
+      final store = AppStore();
+      seedFoods(store);
+      seedTraining(store);
+      await tester.pumpWidget(FitApp(store: store));
 
       expect(find.text('Today'), findsWidgets);
       expect(find.text('Workout'), findsWidgets);
@@ -1377,6 +1539,21 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    store.createFood(
+      const FoodItem(
+        id: 'chicken-breast',
+        name: 'Chicken breast',
+        description: 'Cooked skinless chicken breast',
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 165,
+          protein: 31,
+          fat: 3.6,
+          carbs: 0,
+        ),
+      ),
+    );
     await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
@@ -1398,7 +1575,9 @@ void main() {
   testWidgets('Meal search sheet shows title, helper, and result subtype', (
     tester,
   ) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    seedFoods(store);
+    await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
     await tapAddMealFab(tester);
@@ -1447,6 +1626,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    seedFoods(store);
     store.setDishWeightUnit(DishWeightUnit.ounces);
 
     await tester.pumpWidget(MaterialApp(home: FoodScreen(store: store)));
@@ -1490,7 +1670,9 @@ void main() {
   });
 
   testWidgets('creates a dish from existing foods', (tester) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    seedFoods(store);
+    await tester.pumpWidget(FitApp(store: store));
 
     await openLibraryRecipesSection(tester);
     await openAddRecipe(tester);
@@ -1520,7 +1702,9 @@ void main() {
   testWidgets(
     'recipe form calculates serving size from ingredients when empty',
     (tester) async {
-      await tester.pumpWidget(const FitApp());
+      final store = AppStore();
+      seedFoods(store);
+      await tester.pumpWidget(FitApp(store: store));
 
       await openLibraryRecipesSection(tester);
       await openAddRecipe(tester);
@@ -1550,6 +1734,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    seedFoods(store);
     store.setDishWeightUnit(DishWeightUnit.ounces);
 
     await tester.pumpWidget(FitApp(store: store));
@@ -1568,6 +1753,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    seedTraining(store);
     store.setWorkoutWeightUnit(WorkoutWeightUnit.pounds);
 
     await tester.pumpWidget(FitApp(store: store));
@@ -1675,6 +1861,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    seedFoods(store);
     await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
@@ -1750,7 +1937,9 @@ void main() {
   testWidgets('does not offer create action for exact Meal search match', (
     tester,
   ) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    seedFoods(store);
+    await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
     await tapAddMealFab(tester);
@@ -1768,6 +1957,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    seedFoods(store);
     await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
@@ -1799,6 +1989,7 @@ void main() {
 
   testWidgets('logs an existing meal item by grams', (tester) async {
     final store = AppStore();
+    seedFoods(store);
     await tester.pumpWidget(FitApp(store: store));
 
     await logRice150g(tester);
@@ -1812,6 +2003,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    seedFoods(store);
     await tester.pumpWidget(FitApp(store: store));
 
     await logRice150g(tester);
@@ -1828,6 +2020,7 @@ void main() {
 
   testWidgets('logs an existing meal item by servings', (tester) async {
     final store = AppStore();
+    seedFoods(store);
     await tester.pumpWidget(FitApp(store: store));
     await openNutritionDestination(tester);
 
@@ -1989,7 +2182,9 @@ void main() {
   );
 
   testWidgets('editing a dish updates the dish row', (tester) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    seedFoods(store);
+    await tester.pumpWidget(FitApp(store: store));
 
     await openLibraryRecipesSection(tester);
     await openAddRecipe(tester);
@@ -2028,7 +2223,9 @@ void main() {
   testWidgets('editing a dish component updates dish nutrition', (
     tester,
   ) async {
-    await tester.pumpWidget(const FitApp());
+    final store = AppStore();
+    seedFoods(store);
+    await tester.pumpWidget(FitApp(store: store));
 
     await createSimpleSalad(tester);
     await scrollToText(tester, 'Simple salad');

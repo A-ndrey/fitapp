@@ -118,6 +118,71 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  AppStore storeWithTrainingFixtures() {
+    final store = AppStore();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight horizontal push',
+        instruction: 'Lower under control and press back up.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.bodyweight,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'bench-press',
+        name: 'Bench press',
+        description: 'Barbell chest press',
+        instruction: 'Keep shoulder blades set and press the bar vertically.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.strength,
+      ),
+    );
+    store.createExercise(
+      const Exercise(
+        id: 'running',
+        name: 'Running',
+        description: 'Steady cardio work',
+        instruction: 'Keep a sustainable pace and relaxed posture.',
+        muscleGroups: [MuscleGroup.cardio, MuscleGroup.legs],
+        measurementType: ExerciseMeasurementType.cardio,
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'chest-day',
+        name: 'Chest day',
+        description: 'Pressing work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'bench-press',
+            sets: 3,
+            reps: 8,
+            weightGrams: 60000,
+          ),
+          TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+        ],
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'leg-day',
+        name: 'Leg day',
+        description: 'Cardio work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'running',
+            durationSeconds: 900,
+            distanceMeters: 3000,
+          ),
+        ],
+      ),
+    );
+    return store;
+  }
+
   Future<void> revealRowActions(WidgetTester tester, String title) async {
     final tile = find.widgetWithText(ListTile, title).last;
     final card = find
@@ -128,10 +193,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('lists sample training plans and exposes row actions', (
-    tester,
-  ) async {
-    await pumpScreen(tester);
+  testWidgets('lists training plans and exposes row actions', (tester) async {
+    await pumpScreen(tester, store: storeWithTrainingFixtures());
 
     expect(find.byType(AdaptivePage), findsOneWidget);
     expect(find.byType(TrainingPlanCatalogCard), findsNWidgets(2));
@@ -145,10 +208,10 @@ void main() {
     expect(find.byTooltip('More actions'), findsNWidgets(2));
   });
 
-  testWidgets('creates a training plan from predefined exercises', (
+  testWidgets('creates a training plan from existing exercises', (
     tester,
   ) async {
-    final store = AppStore();
+    final store = storeWithTrainingFixtures();
     await pumpScreen(tester, store: store);
 
     await tester.tap(find.byTooltip('Add training plan'));
@@ -186,7 +249,7 @@ void main() {
   testWidgets('keeps invalid training plan form open and can edit/delete', (
     tester,
   ) async {
-    final store = AppStore();
+    final store = storeWithTrainingFixtures();
     await pumpScreen(tester, store: store);
 
     await tester.tap(find.byTooltip('Add training plan'));
@@ -233,7 +296,7 @@ void main() {
   testWidgets('switches to exercises view and exposes exercise actions', (
     tester,
   ) async {
-    await pumpScreen(tester);
+    await pumpScreen(tester, store: storeWithTrainingFixtures());
 
     await openExercisesView(tester);
 
@@ -339,7 +402,7 @@ void main() {
   testWidgets('exercise and training forms use polished sections', (
     tester,
   ) async {
-    await pumpScreen(tester);
+    await pumpScreen(tester, store: storeWithTrainingFixtures());
 
     await openExercisesView(tester);
     await openExerciseForm(tester);
@@ -369,7 +432,7 @@ void main() {
   testWidgets('bodyweight plan entry hides load and duration fields', (
     tester,
   ) async {
-    await pumpScreen(tester);
+    await pumpScreen(tester, store: storeWithTrainingFixtures());
 
     await tester.tap(find.byTooltip('Add training plan'));
     await tester.pumpAndSettle();
@@ -388,7 +451,7 @@ void main() {
   testWidgets('cardio plan entry shows duration and distance only', (
     tester,
   ) async {
-    await pumpScreen(tester);
+    await pumpScreen(tester, store: storeWithTrainingFixtures());
 
     await tester.tap(find.byTooltip('Add training plan'));
     await tester.pumpAndSettle();
@@ -718,7 +781,7 @@ void main() {
   testWidgets(
     'plan editor exercise rows reveal swipe actions on compact layouts',
     (tester) async {
-      final store = AppStore();
+      final store = storeWithTrainingFixtures();
       await tester.binding.setSurfaceSize(const Size(390, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await pumpScreen(tester, store: store);

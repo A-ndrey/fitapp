@@ -489,6 +489,52 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  void ensureChestDayPlan(AppStore store) {
+    if (store.trainingPlanById('chest-day') != null) {
+      return;
+    }
+    if (store.exerciseById('bench-press') == null) {
+      store.createExercise(
+        const Exercise(
+          id: 'bench-press',
+          name: 'Bench press',
+          description: 'Barbell chest press',
+          instruction: 'Keep shoulder blades set and press the bar vertically.',
+          muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+          measurementType: ExerciseMeasurementType.strength,
+        ),
+      );
+    }
+    if (store.exerciseById('pushups') == null) {
+      store.createExercise(
+        const Exercise(
+          id: 'pushups',
+          name: 'Pushups',
+          description: 'Bodyweight horizontal push',
+          instruction: 'Lower under control and press back up.',
+          muscleGroups: [MuscleGroup.chest],
+          measurementType: ExerciseMeasurementType.bodyweight,
+        ),
+      );
+    }
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'chest-day',
+        name: 'Chest day',
+        description: 'Pressing work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'bench-press',
+            sets: 3,
+            reps: 8,
+            weightGrams: 60000,
+          ),
+          TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
+        ],
+      ),
+    );
+  }
+
   void finishChestWorkoutWithBenchSet(
     AppStore store, {
     required DateTime startedAt,
@@ -496,6 +542,7 @@ void main() {
     double reps = 8,
     double weightKg = 62.5,
   }) {
+    ensureChestDayPlan(store);
     store.startWorkout(trainingPlanId: 'chest-day', startedAt: startedAt);
     store.addActiveWorkoutSet(
       resultIndex: 0,
@@ -632,6 +679,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    ensureChestDayPlan(store);
     final active = store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),
@@ -639,6 +687,7 @@ void main() {
     store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 45));
     final completed = store.completedWorkoutSessions.single;
     final secondStore = AppStore();
+    ensureChestDayPlan(secondStore);
     final secondActive = secondStore.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 20, 10),
@@ -692,6 +741,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    ensureChestDayPlan(store);
     final session = store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 25, 10),
@@ -739,6 +789,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    ensureChestDayPlan(store);
     final session = store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 25, 10),
@@ -1128,7 +1179,24 @@ void main() {
   testWidgets(
     'shows workout stats and uses a persistent FAB to open the plan picker',
     (tester) async {
-      await pumpWorkoutScreen(tester);
+      final store = AppStore();
+      ensureChestDayPlan(store);
+      store.createTrainingPlan(
+        const TrainingPlan(
+          id: 'leg-day',
+          name: 'Leg day',
+          description: 'Lower-body work',
+          exercises: [
+            TrainingExercise(
+              exerciseId: 'bench-press',
+              sets: 3,
+              reps: 8,
+              weightGrams: 60000,
+            ),
+          ],
+        ),
+      );
+      await pumpWorkoutScreen(tester, store: store);
 
       expect(find.text('Training log'), findsNothing);
       expect(
@@ -1170,6 +1238,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    ensureChestDayPlan(store);
     await pumpWorkoutScreen(tester, store: store);
 
     await openStartWorkoutPicker(tester);
@@ -1188,6 +1257,7 @@ void main() {
     'active session shows a persistent FAB that opens the workout session screen',
     (tester) async {
       final store = AppStore();
+      ensureChestDayPlan(store);
       store.startWorkout(
         trainingPlanId: 'chest-day',
         startedAt: DateTime(2026, 4, 19, 10),
@@ -1217,6 +1287,7 @@ void main() {
 
   testWidgets('exercise rows open the workout exercise screen', (tester) async {
     final store = AppStore();
+    ensureChestDayPlan(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),
@@ -1296,6 +1367,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    ensureChestDayPlan(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),
@@ -1330,6 +1402,7 @@ void main() {
 
   testWidgets('multiple set logs accumulate', (tester) async {
     final store = AppStore();
+    ensureChestDayPlan(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),
@@ -1357,6 +1430,7 @@ void main() {
       startedAt: DateTime(2026, 4, 18, 9),
       finishedAt: DateTime(2026, 4, 18, 9, 45),
     );
+    ensureChestDayPlan(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),
@@ -1394,6 +1468,7 @@ void main() {
   ) async {
     final store = AppStore();
     store.setWorkoutWeightUnit(WorkoutWeightUnit.pounds);
+    ensureChestDayPlan(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),
@@ -1435,6 +1510,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    ensureChestDayPlan(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),
@@ -1458,6 +1534,7 @@ void main() {
 
   testWidgets('finishes active session after switching tabs', (tester) async {
     final store = AppStore();
+    ensureChestDayPlan(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),
@@ -1577,6 +1654,7 @@ void main() {
       startedAt: DateTime(2026, 4, 18, 9),
       finishedAt: DateTime(2026, 4, 18, 9, 45),
     );
+    ensureChestDayPlan(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),
@@ -1686,6 +1764,7 @@ void main() {
     tester,
   ) async {
     final store = AppStore();
+    ensureChestDayPlan(store);
     store.startWorkout(
       trainingPlanId: 'chest-day',
       startedAt: DateTime(2026, 4, 19, 10),

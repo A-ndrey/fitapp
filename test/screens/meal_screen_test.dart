@@ -7,6 +7,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 
 void main() {
+  void seedRice(AppStore store) {
+    store.createFood(
+      const FoodItem(
+        id: 'rice',
+        name: 'Rice',
+        description: 'Cooked white rice',
+        servingSizeGrams: 150,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 130,
+          protein: 2.7,
+          fat: 0.3,
+          carbs: 28,
+        ),
+      ),
+    );
+  }
+
   Future<void> pumpScreen(WidgetTester tester, {AppStore? store}) async {
     await tester.pumpWidget(
       MaterialApp(home: MealScreen(store: store ?? AppStore())),
@@ -57,6 +75,7 @@ void main() {
 
   testWidgets('meal logging defaults servings to 1', (tester) async {
     final store = AppStore();
+    seedRice(store);
     await pumpScreen(tester, store: store);
 
     await openRiceAmountSheet(tester);
@@ -74,6 +93,7 @@ void main() {
 
   testWidgets('meal logging amount field rejects letters', (tester) async {
     final store = AppStore();
+    seedRice(store);
     await pumpScreen(tester, store: store);
 
     await openRiceAmountSheet(tester);

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fitapp/main.dart';
+import 'package:fitapp/models/exercise.dart';
+import 'package:fitapp/models/training_plan.dart';
+import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/ui/core/layout/app_breakpoints.dart';
 import 'package:fitapp/ui/core/widgets/action_card.dart';
 
@@ -22,13 +25,47 @@ void main() {
     'Settings': 'Account',
   };
 
-  Future<void> pumpFitAppAtSize(WidgetTester tester, Size size) async {
+  AppStore storeWithChestDay() {
+    final store = AppStore();
+    store.createExercise(
+      const Exercise(
+        id: 'bench-press',
+        name: 'Bench press',
+        description: 'Barbell chest press',
+        instruction: 'Keep shoulder blades set and press the bar vertically.',
+        muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
+        measurementType: ExerciseMeasurementType.strength,
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'chest-day',
+        name: 'Chest day',
+        description: 'Pressing work',
+        exercises: [
+          TrainingExercise(
+            exerciseId: 'bench-press',
+            sets: 3,
+            reps: 8,
+            weightGrams: 60000,
+          ),
+        ],
+      ),
+    );
+    return store;
+  }
+
+  Future<void> pumpFitAppAtSize(
+    WidgetTester tester,
+    Size size, {
+    AppStore? store,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const FitApp());
+    await tester.pumpWidget(FitApp(store: store ?? storeWithChestDay()));
   }
 
   Future<void> tapRootDestination(WidgetTester tester, String label) async {
@@ -176,7 +213,11 @@ void main() {
   testWidgets(
     're-tapping Workout after navigating into workout session returns to workout root',
     (tester) async {
-      await pumpFitAppAtSize(tester, const Size(390, 844));
+      await pumpFitAppAtSize(
+        tester,
+        const Size(390, 844),
+        store: storeWithChestDay(),
+      );
       await openActiveWorkoutSession(tester);
 
       expect(find.text('Workout session'), findsOneWidget);

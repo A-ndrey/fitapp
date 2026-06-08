@@ -21,13 +21,7 @@ class AppStore extends ChangeNotifier {
     AppStorePersistence? persistence,
     PersistedAppStateObserver? onPersistedStateSaved,
   }) : _persistence = persistence,
-       _onPersistedStateSaved = onPersistedStateSaved {
-    _runWithoutPersistence(() {
-      _bootstrapSampleFoods();
-      _bootstrapSampleExercises();
-      _bootstrapSampleTrainingPlans();
-    });
-  }
+       _onPersistedStateSaved = onPersistedStateSaved;
 
   AppStore.empty({
     AppStorePersistence? persistence,
@@ -70,179 +64,6 @@ class AppStore extends ChangeNotifier {
   Future<void> _pendingSave = Future<void>.value();
   bool _isPersistenceSuspended = false;
   int _persistedStateObserverGeneration = 0;
-
-  void _bootstrapSampleFoods() {
-    _createBuiltInFood(
-      const FoodItem(
-        id: 'carrot',
-        name: 'Carrot',
-        description: 'Raw carrot',
-        servingSizeGrams: 100,
-        basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(
-          calories: 41,
-          protein: 0.9,
-          fat: 0.2,
-          carbs: 10,
-        ),
-      ),
-    );
-    _createBuiltInFood(
-      const FoodItem(
-        id: 'onion',
-        name: 'Onion',
-        description: 'Raw onion',
-        servingSizeGrams: 100,
-        basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(
-          calories: 40,
-          protein: 1.1,
-          fat: 0.1,
-          carbs: 9.3,
-        ),
-      ),
-    );
-    _createBuiltInFood(
-      const FoodItem(
-        id: 'chicken-breast',
-        name: 'Chicken breast',
-        description: 'Cooked skinless chicken breast',
-        servingSizeGrams: 100,
-        basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(
-          calories: 165,
-          protein: 31,
-          fat: 3.6,
-          carbs: 0,
-        ),
-      ),
-    );
-    _createBuiltInFood(
-      const FoodItem(
-        id: 'rice',
-        name: 'Rice',
-        description: 'Cooked white rice',
-        servingSizeGrams: 150,
-        basis: NutritionBasis.per100g,
-        nutrition: NutritionValues(
-          calories: 130,
-          protein: 2.7,
-          fat: 0.3,
-          carbs: 28,
-        ),
-      ),
-    );
-    _createBuiltInFood(
-      const FoodItem(
-        id: 'olive-oil',
-        name: 'Olive oil',
-        description: 'Extra virgin olive oil',
-        servingSizeGrams: 10,
-        basis: NutritionBasis.perServing,
-        nutrition: NutritionValues(calories: 90, protein: 0, fat: 10, carbs: 0),
-      ),
-    );
-  }
-
-  void _bootstrapSampleExercises() {
-    _createBuiltInExercise(
-      const Exercise(
-        id: 'pushups',
-        name: 'Pushups',
-        description: 'Bodyweight horizontal push',
-        instruction: 'Lower under control and press back to a straight plank.',
-        muscleGroups: [
-          MuscleGroup.chest,
-          MuscleGroup.triceps,
-          MuscleGroup.shoulders,
-        ],
-        measurementType: ExerciseMeasurementType.bodyweight,
-      ),
-    );
-    _createBuiltInExercise(
-      const Exercise(
-        id: 'bench-press',
-        name: 'Bench press',
-        description: 'Barbell chest press',
-        instruction: 'Keep shoulder blades set and press the bar vertically.',
-        muscleGroups: [
-          MuscleGroup.chest,
-          MuscleGroup.triceps,
-          MuscleGroup.shoulders,
-        ],
-        measurementType: ExerciseMeasurementType.strength,
-      ),
-    );
-    _createBuiltInExercise(
-      const Exercise(
-        id: 'squat',
-        name: 'Squat',
-        description: 'Barbell lower-body compound lift',
-        instruction: 'Brace, descend with control, and stand through mid-foot.',
-        muscleGroups: [MuscleGroup.quads, MuscleGroup.glutes, MuscleGroup.core],
-        measurementType: ExerciseMeasurementType.strength,
-      ),
-    );
-    _createBuiltInExercise(
-      const Exercise(
-        id: 'plank',
-        name: 'Plank',
-        description: 'Static core hold',
-        instruction: 'Hold a straight line without letting hips sag.',
-        muscleGroups: [MuscleGroup.core],
-        measurementType: ExerciseMeasurementType.duration,
-      ),
-    );
-    _createBuiltInExercise(
-      const Exercise(
-        id: 'running',
-        name: 'Running',
-        description: 'Steady cardio work',
-        instruction: 'Keep a sustainable pace and relaxed posture.',
-        muscleGroups: [MuscleGroup.cardio, MuscleGroup.legs],
-        measurementType: ExerciseMeasurementType.cardio,
-      ),
-    );
-  }
-
-  void _bootstrapSampleTrainingPlans() {
-    _createBuiltInTrainingPlan(
-      const TrainingPlan(
-        id: 'chest-day',
-        name: 'Chest day',
-        description: 'Pressing work for chest and triceps',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'bench-press',
-            sets: 3,
-            reps: 8,
-            weightGrams: 60000,
-          ),
-          TrainingExercise(exerciseId: 'pushups', sets: 3, reps: 12),
-        ],
-      ),
-    );
-    _createBuiltInTrainingPlan(
-      const TrainingPlan(
-        id: 'leg-day',
-        name: 'Leg day',
-        description: 'Squat-focused lower-body work',
-        exercises: [
-          TrainingExercise(
-            exerciseId: 'squat',
-            sets: 4,
-            reps: 6,
-            weightGrams: 80000,
-          ),
-          TrainingExercise(
-            exerciseId: 'running',
-            durationSeconds: 900,
-            distanceMeters: 3000,
-          ),
-        ],
-      ),
-    );
-  }
 
   Map<String, CatalogItem> get catalog => Map.unmodifiable(_catalog);
 
@@ -923,21 +744,6 @@ class AppStore extends ChangeNotifier {
     if (_mealEntries.length != before) {
       _didMutatePersistedState();
     }
-  }
-
-  void _createBuiltInFood(FoodItem food) {
-    createFood(food);
-    _builtInCatalogIds.add(food.id);
-  }
-
-  void _createBuiltInExercise(Exercise exercise) {
-    createExercise(exercise);
-    _builtInExerciseIds.add(exercise.id);
-  }
-
-  void _createBuiltInTrainingPlan(TrainingPlan plan) {
-    createTrainingPlan(plan);
-    _builtInTrainingPlanIds.add(plan.id);
   }
 
   void _didMutatePersistedState() {
