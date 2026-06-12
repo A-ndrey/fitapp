@@ -1,3 +1,4 @@
+import 'package:fitapp/models/dish_item.dart';
 import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/screens/meal_screen.dart';
@@ -21,6 +22,18 @@ void main() {
           fat: 0.3,
           carbs: 28,
         ),
+      ),
+    );
+  }
+
+  void seedRiceBowl(AppStore store) {
+    store.createDish(
+      const DishItem(
+        id: 'rice-bowl',
+        name: 'Rice bowl',
+        description: 'Rice with vegetables and sauce',
+        servingSizeGrams: 350,
+        components: [DishComponent(itemId: 'rice', grams: 150)],
       ),
     );
   }
@@ -124,6 +137,77 @@ void main() {
 
     expect(find.byType(BottomSheet), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('meal picker rows show details and library icons', (
+    tester,
+  ) async {
+    final store = AppStore();
+    seedRice(store);
+    seedRiceBowl(store);
+    await pumpScreen(tester, store: store);
+
+    await tapAddMealAction(tester);
+
+    final riceTile = find.ancestor(
+      of: find.text('Rice').last,
+      matching: find.byType(ListTile),
+    );
+    final riceBowlTile = find.ancestor(
+      of: find.text('Rice bowl').last,
+      matching: find.byType(ListTile),
+    );
+
+    expect(
+      find.descendant(of: riceTile, matching: find.byIcon(Icons.eco_outlined)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: riceBowlTile,
+        matching: find.byIcon(Icons.ramen_dining_outlined),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: riceTile, matching: find.text('Cooked white rice')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: riceBowlTile,
+        matching: find.text('Rice with vegetables and sauce'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: riceTile, matching: find.text('150 g serving')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: riceBowlTile, matching: find.text('350 g serving')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: riceTile, matching: find.text('food')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: riceBowlTile, matching: find.text('recipe')),
+      findsNothing,
+    );
+
+    await tester.tap(find.text('Rice').last);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.ancestor(
+        of: find.bySemanticsLabel('Grams'),
+        matching: find.byType(TextField),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Servings'), findsOneWidget);
   });
 
   testWidgets(
