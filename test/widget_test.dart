@@ -1572,7 +1572,7 @@ void main() {
     expect(find.textContaining('62'), findsWidgets);
   });
 
-  testWidgets('Meal search sheet shows title, helper, and result subtype', (
+  testWidgets('Meal search sheet shows title, helper, and result details', (
     tester,
   ) async {
     final store = AppStore();
@@ -1604,7 +1604,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
-    expect(find.text('food'), findsOneWidget);
+    expect(find.text('Cooked white rice'), findsOneWidget);
+    expect(find.text('150 g serving'), findsOneWidget);
   });
 
   testWidgets('creates a food from the Food tab', (tester) async {
@@ -1978,6 +1979,8 @@ void main() {
     expect(find.text('Servings'), findsOneWidget);
 
     for (final value in ['abc', '0', '-1', 'NaN', 'Infinity']) {
+      await tester.enterText(find.bySemanticsLabel('Grams'), '');
+      await tester.pumpAndSettle();
       await tester.enterText(find.bySemanticsLabel('Grams'), value);
       await tapLogFoodDialogAction(tester);
 

@@ -104,12 +104,69 @@ void main() {
     expect(store.mealEntries.single.enteredQuantity, 1);
   });
 
+  testWidgets('meal logging defaults grams to one serving', (tester) async {
+    final store = AppStore();
+    seedRice(store);
+    await pumpScreen(tester, store: store);
+
+    await openRiceAmountSheet(tester);
+
+    final gramsField = labeledField(tester, 'Grams');
+    expect(gramsField.controller?.text, '150');
+  });
+
+  testWidgets('meal logging amount sheet shows food serving details', (
+    tester,
+  ) async {
+    final store = AppStore();
+    seedRice(store);
+    await pumpScreen(tester, store: store);
+
+    await openRiceAmountSheet(tester);
+
+    expect(find.text('Rice'), findsOneWidget);
+    expect(find.text('Cooked white rice'), findsOneWidget);
+    expect(find.text('150 g per serving'), findsOneWidget);
+  });
+
+  testWidgets('meal logging keeps separate grams and servings values', (
+    tester,
+  ) async {
+    final store = AppStore();
+    seedRice(store);
+    await pumpScreen(tester, store: store);
+
+    await openRiceAmountSheet(tester);
+    await tester.enterText(find.bySemanticsLabel('Grams'), '200');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Servings'));
+    await tester.pumpAndSettle();
+    var servingsField = labeledField(tester, 'Servings');
+    expect(servingsField.controller?.text, '1');
+
+    await tester.enterText(find.bySemanticsLabel('Servings'), '2');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Grams'));
+    await tester.pumpAndSettle();
+    final gramsField = labeledField(tester, 'Grams');
+    expect(gramsField.controller?.text, '200');
+
+    await tester.tap(find.text('Servings'));
+    await tester.pumpAndSettle();
+    servingsField = labeledField(tester, 'Servings');
+    expect(servingsField.controller?.text, '2');
+  });
+
   testWidgets('meal logging amount field rejects letters', (tester) async {
     final store = AppStore();
     seedRice(store);
     await pumpScreen(tester, store: store);
 
     await openRiceAmountSheet(tester);
+    await tester.enterText(find.bySemanticsLabel('Grams'), '');
+    await tester.pumpAndSettle();
     await tester.enterText(find.bySemanticsLabel('Grams'), 'abc');
     await tester.pumpAndSettle();
 
