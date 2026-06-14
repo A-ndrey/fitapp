@@ -160,6 +160,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 formatVolume: _formatVolume,
                 sessionVolume: _sessionVolume,
                 completedExercises: _completedExercises,
+                exerciseLabel: _exerciseLabel,
               ),
             ],
           ),
@@ -221,6 +222,11 @@ class _TodayScreenState extends State<TodayScreen> {
     return '${volume.toStringAsFixed(volume >= 1000 ? 0 : 1)} kg';
   }
 
+  String _exerciseLabel(TrainingExercise exercise) {
+    return widget.store.exerciseById(exercise.exerciseId)?.name ??
+        exercise.exerciseId.replaceAll('-', ' ');
+  }
+
   VoidCallback? _workoutCardAction(TodayWorkoutRecommendation? recommendation) {
     if (recommendation == null ||
         recommendation.status == TodayWorkoutStatus.completedToday) {
@@ -272,6 +278,7 @@ class _TodayWorkoutPanel extends StatelessWidget {
     required this.formatVolume,
     required this.sessionVolume,
     required this.completedExercises,
+    required this.exerciseLabel,
   });
 
   final TodayWorkoutRecommendation? recommendation;
@@ -280,6 +287,7 @@ class _TodayWorkoutPanel extends StatelessWidget {
   final String Function(double volume) formatVolume;
   final double Function(WorkoutSession session) sessionVolume;
   final int Function(WorkoutSession session) completedExercises;
+  final String Function(TrainingExercise exercise) exerciseLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -326,6 +334,7 @@ class _TodayWorkoutPanel extends StatelessWidget {
               formatVolume: formatVolume,
               sessionVolume: sessionVolume,
               completedExercises: completedExercises,
+              exerciseLabel: exerciseLabel,
             ),
           ),
         ),
@@ -340,12 +349,14 @@ class _TodayWorkoutContent extends StatelessWidget {
     required this.formatVolume,
     required this.sessionVolume,
     required this.completedExercises,
+    required this.exerciseLabel,
   });
 
   final TodayWorkoutRecommendation? recommendation;
   final String Function(double volume) formatVolume;
   final double Function(WorkoutSession session) sessionVolume;
   final int Function(WorkoutSession session) completedExercises;
+  final String Function(TrainingExercise exercise) exerciseLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -395,7 +406,7 @@ class _TodayWorkoutContent extends StatelessWidget {
             ),
             for (final exercise in previewExercises)
               DashboardStatChip(
-                label: exercise.exerciseId.replaceAll('-', ' '),
+                label: exerciseLabel(exercise),
                 icon: Icons.fitness_center_outlined,
                 tone: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

@@ -872,6 +872,28 @@ void main() {
     expect(find.text('Last done 2026-04-18'), findsOneWidget);
   });
 
+  testWidgets('Today workout card shows exercise names', (tester) async {
+    final store = AppStore();
+    seedTraining(store);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TodayScreen(
+          store: store,
+          currentDateTime: () => DateTime(2026, 4, 21, 12),
+          onOpenTrain: () {},
+          onOpenNutrition: () {},
+          onOpenLibrary: () {},
+        ),
+      ),
+    );
+
+    expect(find.text('Bench press'), findsOneWidget);
+    expect(find.text('Pushups'), findsOneWidget);
+    expect(find.text('bench press'), findsNothing);
+    expect(find.text('pushups'), findsNothing);
+  });
+
   testWidgets('Today workout card confirms before starting workout', (
     tester,
   ) async {
