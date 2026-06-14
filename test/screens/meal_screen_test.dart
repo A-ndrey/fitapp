@@ -1,3 +1,4 @@
+import 'package:fitapp/models/dish_item.dart';
 import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/screens/meal_screen.dart';
@@ -21,6 +22,18 @@ void main() {
           fat: 0.3,
           carbs: 28,
         ),
+      ),
+    );
+  }
+
+  void seedRiceBowl(AppStore store) {
+    store.createDish(
+      const DishItem(
+        id: 'rice-bowl',
+        name: 'Rice bowl',
+        description: 'Rice with vegetables and sauce',
+        servingSizeGrams: 350,
+        components: [DishComponent(itemId: 'rice', grams: 150)],
       ),
     );
   }
@@ -91,12 +104,69 @@ void main() {
     expect(store.mealEntries.single.enteredQuantity, 1);
   });
 
+  testWidgets('meal logging defaults grams to one serving', (tester) async {
+    final store = AppStore();
+    seedRice(store);
+    await pumpScreen(tester, store: store);
+
+    await openRiceAmountSheet(tester);
+
+    final gramsField = labeledField(tester, 'Grams');
+    expect(gramsField.controller?.text, '150');
+  });
+
+  testWidgets('meal logging amount sheet shows food serving details', (
+    tester,
+  ) async {
+    final store = AppStore();
+    seedRice(store);
+    await pumpScreen(tester, store: store);
+
+    await openRiceAmountSheet(tester);
+
+    expect(find.text('Rice'), findsOneWidget);
+    expect(find.text('Cooked white rice'), findsOneWidget);
+    expect(find.text('150 g per serving'), findsOneWidget);
+  });
+
+  testWidgets('meal logging keeps separate grams and servings values', (
+    tester,
+  ) async {
+    final store = AppStore();
+    seedRice(store);
+    await pumpScreen(tester, store: store);
+
+    await openRiceAmountSheet(tester);
+    await tester.enterText(find.bySemanticsLabel('Grams'), '200');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Servings'));
+    await tester.pumpAndSettle();
+    var servingsField = labeledField(tester, 'Servings');
+    expect(servingsField.controller?.text, '1');
+
+    await tester.enterText(find.bySemanticsLabel('Servings'), '2');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Grams'));
+    await tester.pumpAndSettle();
+    final gramsField = labeledField(tester, 'Grams');
+    expect(gramsField.controller?.text, '200');
+
+    await tester.tap(find.text('Servings'));
+    await tester.pumpAndSettle();
+    servingsField = labeledField(tester, 'Servings');
+    expect(servingsField.controller?.text, '2');
+  });
+
   testWidgets('meal logging amount field rejects letters', (tester) async {
     final store = AppStore();
     seedRice(store);
     await pumpScreen(tester, store: store);
 
     await openRiceAmountSheet(tester);
+    await tester.enterText(find.bySemanticsLabel('Grams'), '');
+    await tester.pumpAndSettle();
     await tester.enterText(find.bySemanticsLabel('Grams'), 'abc');
     await tester.pumpAndSettle();
 
@@ -124,6 +194,77 @@ void main() {
 
     expect(find.byType(BottomSheet), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('meal picker rows show details and library icons', (
+    tester,
+  ) async {
+    final store = AppStore();
+    seedRice(store);
+    seedRiceBowl(store);
+    await pumpScreen(tester, store: store);
+
+    await tapAddMealAction(tester);
+
+    final riceTile = find.ancestor(
+      of: find.text('Rice').last,
+      matching: find.byType(ListTile),
+    );
+    final riceBowlTile = find.ancestor(
+      of: find.text('Rice bowl').last,
+      matching: find.byType(ListTile),
+    );
+
+    expect(
+      find.descendant(of: riceTile, matching: find.byIcon(Icons.eco_outlined)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: riceBowlTile,
+        matching: find.byIcon(Icons.ramen_dining_outlined),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: riceTile, matching: find.text('Cooked white rice')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: riceBowlTile,
+        matching: find.text('Rice with vegetables and sauce'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: riceTile, matching: find.text('150 g serving')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: riceBowlTile, matching: find.text('350 g serving')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: riceTile, matching: find.text('food')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: riceBowlTile, matching: find.text('recipe')),
+      findsNothing,
+    );
+
+    await tester.tap(find.text('Rice').last);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.ancestor(
+        of: find.bySemanticsLabel('Grams'),
+        matching: find.byType(TextField),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Servings'), findsOneWidget);
   });
 
   testWidgets(

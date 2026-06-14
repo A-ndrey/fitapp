@@ -250,6 +250,100 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
   });
 
+  testWidgets('plan exercise picker filters by search text', (tester) async {
+    final store = storeWithTrainingFixtures();
+    await pumpScreen(tester, store: store);
+
+    await tester.tap(find.byTooltip('Add training plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add exercise'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.bySemanticsLabel('Search exercises'), 'bench');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bench press'), findsOneWidget);
+    expect(find.text('Pushups'), findsNothing);
+    expect(find.text('Running'), findsNothing);
+
+    await tester.tap(find.text('Bench press').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Set targets'), findsOneWidget);
+  });
+
+  testWidgets('plan exercise picker matches all selected muscle groups', (
+    tester,
+  ) async {
+    final store = storeWithTrainingFixtures();
+    await pumpScreen(tester, store: store);
+
+    await tester.tap(find.byTooltip('Add training plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add exercise'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(muscleGroupChip('Chest').last);
+    await tester.pumpAndSettle();
+    await tester.tap(muscleGroupChip('Triceps').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bench press'), findsOneWidget);
+    expect(find.text('Pushups'), findsOneWidget);
+    expect(find.text('Running'), findsNothing);
+
+    await tester.tap(muscleGroupChip('Back').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bench press'), findsNothing);
+    expect(find.text('Pushups'), findsNothing);
+    expect(find.text('Running'), findsNothing);
+  });
+
+  testWidgets('plan exercise picker combines search and muscle filters', (
+    tester,
+  ) async {
+    final store = storeWithTrainingFixtures();
+    await pumpScreen(tester, store: store);
+
+    await tester.tap(find.byTooltip('Add training plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add exercise'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(muscleGroupChip('Chest').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.bySemanticsLabel('Search exercises'), 'bench');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bench press'), findsOneWidget);
+    expect(find.text('Pushups'), findsNothing);
+    expect(find.text('Running'), findsNothing);
+  });
+
+  testWidgets('plan exercise picker shows an empty state for no matches', (
+    tester,
+  ) async {
+    final store = storeWithTrainingFixtures();
+    await pumpScreen(tester, store: store);
+
+    await tester.tap(find.byTooltip('Add training plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add exercise'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.bySemanticsLabel('Search exercises'),
+      'no matching exercise',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No exercises match these filters'), findsOneWidget);
+    expect(find.text('Bench press'), findsNothing);
+    expect(find.text('Pushups'), findsNothing);
+    expect(find.text('Running'), findsNothing);
+  });
+
   testWidgets('keeps invalid training plan form open and can edit/delete', (
     tester,
   ) async {

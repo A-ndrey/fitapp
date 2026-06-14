@@ -11,6 +11,7 @@ import '../ui/core/widgets/app_screen_scaffold.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/nutrition/catalog_item_search_sheet.dart';
 import '../ui/nutrition/nutrition_cards.dart';
+import '../ui/nutrition/nutrition_formatters.dart';
 import '../widgets/food_form.dart';
 
 class MealScreen extends StatelessWidget {
@@ -212,12 +213,18 @@ class _LogAmountSheet extends StatefulWidget {
 }
 
 class _LogAmountSheetState extends State<_LogAmountSheet> {
-  final TextEditingController _amountController = TextEditingController();
+  late final TextEditingController _gramsController = TextEditingController(
+    text: formatNutritionNumber(widget.item.servingSizeGrams),
+  );
+  final TextEditingController _servingsController = TextEditingController(
+    text: '1',
+  );
   _LogAmountMode _mode = _LogAmountMode.grams;
 
   @override
   void dispose() {
-    _amountController.dispose();
+    _gramsController.dispose();
+    _servingsController.dispose();
     super.dispose();
   }
 
@@ -227,6 +234,12 @@ class _LogAmountSheetState extends State<_LogAmountSheet> {
     final gramsLabel = l10n?.mealGramsLabel ?? 'Grams';
     final servingsLabel = l10n?.mealServingsLabel ?? 'Servings';
     final label = _mode == _LogAmountMode.grams ? gramsLabel : servingsLabel;
+    final controller = _mode == _LogAmountMode.grams
+        ? _gramsController
+        : _servingsController;
+    final description = widget.item.description.trim();
+    final servingSize =
+        '${formatNutritionNumber(widget.item.servingSizeGrams)} g per serving';
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -240,6 +253,12 @@ class _LogAmountSheetState extends State<_LogAmountSheet> {
         children: [
           Text(widget.item.name, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 6),
+          if (description.isNotEmpty) ...[
+            Text(description, style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 4),
+          ],
+          Text(servingSize, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 12),
           Text(
             l10n?.mealAmountPrompt ??
                 "Choose how much you ate, then add it to today's meal log.",
@@ -263,16 +282,12 @@ class _LogAmountSheetState extends State<_LogAmountSheet> {
             onSelectionChanged: (selection) {
               setState(() {
                 _mode = selection.first;
-                if (_mode == _LogAmountMode.servings &&
-                    _amountController.text.trim().isEmpty) {
-                  _amountController.text = '1';
-                }
               });
             },
           ),
           const SizedBox(height: 16),
           TextField(
-            controller: _amountController,
+            controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: positiveDecimalInputFormatters,
             decoration: InputDecoration(labelText: label),
@@ -290,9 +305,7 @@ class _LogAmountSheetState extends State<_LogAmountSheet> {
               Expanded(
                 child: FilledButton(
                   onPressed: () {
-                    final amount = parsePositiveDecimalInput(
-                      _amountController.text,
-                    );
+                    final amount = parsePositiveDecimalInput(controller.text);
                     if (amount == null || !amount.isFinite || amount <= 0) {
                       return;
                     }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/catalog_item.dart';
 import '../../state/app_store.dart';
+import '../library/library_formatters.dart';
 
 class CatalogItemSearchSheetResult {
   const CatalogItemSearchSheetResult.item(this.item) : createName = '';
@@ -186,6 +187,7 @@ class _CatalogItemSearchSheetState extends State<_CatalogItemSearchSheet> {
                         final item = results[resultIndex];
                         return _CatalogItemSearchResultTile(
                           item: item,
+                          store: widget.store,
                           onTap: () {
                             Navigator.of(
                               context,
@@ -249,21 +251,38 @@ class _QuickPickWrap extends StatelessWidget {
 }
 
 class _CatalogItemSearchResultTile extends StatelessWidget {
-  const _CatalogItemSearchResultTile({required this.item, required this.onTap});
+  const _CatalogItemSearchResultTile({
+    required this.item,
+    required this.store,
+    required this.onTap,
+  });
 
   final CatalogItem item;
+  final AppStore store;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final description = item.description.trim();
+    final servingLabel = formatCatalogNutritionServingLabel(
+      item,
+      store,
+      servingLabel: l10n?.libraryServingSuffix ?? 'serving',
+    );
     return ListTile(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      leading: Icon(
+        item.isFood ? Icons.eco_outlined : Icons.ramen_dining_outlined,
+      ),
       title: Text(item.name),
-      subtitle: Text(
-        item.isFood
-            ? l10n?.catalogSubtypeFood ?? 'food'
-            : l10n?.catalogSubtypeDish ?? 'recipe',
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (description.isNotEmpty)
+            Text(description, maxLines: 2, overflow: TextOverflow.ellipsis),
+          Text(servingLabel),
+        ],
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,

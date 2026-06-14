@@ -872,6 +872,28 @@ void main() {
     expect(find.text('Last done 2026-04-18'), findsOneWidget);
   });
 
+  testWidgets('Today workout card shows exercise names', (tester) async {
+    final store = AppStore();
+    seedTraining(store);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TodayScreen(
+          store: store,
+          currentDateTime: () => DateTime(2026, 4, 21, 12),
+          onOpenTrain: () {},
+          onOpenNutrition: () {},
+          onOpenLibrary: () {},
+        ),
+      ),
+    );
+
+    expect(find.text('Bench press'), findsOneWidget);
+    expect(find.text('Pushups'), findsOneWidget);
+    expect(find.text('bench press'), findsNothing);
+    expect(find.text('pushups'), findsNothing);
+  });
+
   testWidgets('Today workout card confirms before starting workout', (
     tester,
   ) async {
@@ -1572,7 +1594,7 @@ void main() {
     expect(find.textContaining('62'), findsWidgets);
   });
 
-  testWidgets('Meal search sheet shows title, helper, and result subtype', (
+  testWidgets('Meal search sheet shows title, helper, and result details', (
     tester,
   ) async {
     final store = AppStore();
@@ -1604,7 +1626,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(ListTile, 'Rice'), findsOneWidget);
-    expect(find.text('food'), findsOneWidget);
+    expect(find.text('Cooked white rice'), findsOneWidget);
+    expect(find.text('150 g serving'), findsOneWidget);
   });
 
   testWidgets('creates a food from the Food tab', (tester) async {
@@ -1978,6 +2001,8 @@ void main() {
     expect(find.text('Servings'), findsOneWidget);
 
     for (final value in ['abc', '0', '-1', 'NaN', 'Infinity']) {
+      await tester.enterText(find.bySemanticsLabel('Grams'), '');
+      await tester.pumpAndSettle();
       await tester.enterText(find.bySemanticsLabel('Grams'), value);
       await tapLogFoodDialogAction(tester);
 
