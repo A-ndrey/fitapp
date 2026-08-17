@@ -940,6 +940,12 @@ abstract class AppLocalizations {
   /// **'Foods'**
   String get libraryFoodsSection;
 
+  /// Empty state message when a library search has no matches.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different name.'**
+  String get libraryNoSearchResultsMessage;
+
   /// Tooltip for editing a catalog item.
   ///
   /// In en, this message translates to:
@@ -1093,6 +1099,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add exercise'**
   String get trainingAddExerciseAction;
+
+  /// Search field label for training plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Search training plans'**
+  String get trainingSearchPlansLabel;
+
+  /// Search field label for exercises.
+  ///
+  /// In en, this message translates to:
+  /// **'Search exercises'**
+  String get trainingSearchExercisesLabel;
+
+  /// Empty state title when no training plans match a search.
+  ///
+  /// In en, this message translates to:
+  /// **'No training plans match your search'**
+  String get trainingNoPlansSearchResults;
+
+  /// Empty state title when no exercises match a search.
+  ///
+  /// In en, this message translates to:
+  /// **'No exercises match your search'**
+  String get trainingNoExercisesSearchResults;
 
   /// Empty state title for training plans.
   ///
@@ -1417,6 +1447,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add food or recipe'**
   String get foodAddItemAction;
+
+  /// Search field label for foods.
+  ///
+  /// In en, this message translates to:
+  /// **'Search foods'**
+  String get foodSearchFoodsLabel;
+
+  /// Search field label for recipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Search recipes'**
+  String get foodSearchRecipesLabel;
+
+  /// Empty state title when no foods match a search.
+  ///
+  /// In en, this message translates to:
+  /// **'No foods match your search'**
+  String get foodNoFoodsSearchResults;
+
+  /// Empty state title when no recipes match a search.
+  ///
+  /// In en, this message translates to:
+  /// **'No recipes match your search'**
+  String get foodNoRecipesSearchResults;
 
   /// Empty state title for food catalog.
   ///

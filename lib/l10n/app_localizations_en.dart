@@ -529,6 +529,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryFoodsSection => 'Foods';
 
   @override
+  String get libraryNoSearchResultsMessage => 'Try a different name.';
+
+  @override
   String libraryEditItem(String itemName) {
     return 'Edit $itemName';
   }
@@ -629,6 +632,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trainingAddExerciseAction => 'Add exercise';
+
+  @override
+  String get trainingSearchPlansLabel => 'Search training plans';
+
+  @override
+  String get trainingSearchExercisesLabel => 'Search exercises';
+
+  @override
+  String get trainingNoPlansSearchResults =>
+      'No training plans match your search';
+
+  @override
+  String get trainingNoExercisesSearchResults =>
+      'No exercises match your search';
 
   @override
   String get trainingNoPlansTitle => 'No training plans yet';
@@ -809,6 +826,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foodAddItemAction => 'Add food or recipe';
+
+  @override
+  String get foodSearchFoodsLabel => 'Search foods';
+
+  @override
+  String get foodSearchRecipesLabel => 'Search recipes';
+
+  @override
+  String get foodNoFoodsSearchResults => 'No foods match your search';
+
+  @override
+  String get foodNoRecipesSearchResults => 'No recipes match your search';
 
   @override
   String get foodEmptyTitle => 'No foods or recipes yet';

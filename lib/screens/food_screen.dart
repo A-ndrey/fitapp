@@ -59,7 +59,7 @@ Future<void> openRecipeFormScreen(
   );
 }
 
-class FoodScreen extends StatelessWidget {
+class FoodScreen extends StatefulWidget {
   const FoodScreen({
     super.key,
     required this.store,
@@ -72,6 +72,32 @@ class FoodScreen extends StatelessWidget {
   final bool embedded;
   final FoodLibraryView view;
   final bool showEmbeddedAction;
+
+  @override
+  State<FoodScreen> createState() => _FoodScreenState();
+}
+
+class _FoodScreenState extends State<FoodScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  AppStore get store => widget.store;
+  bool get embedded => widget.embedded;
+  FoodLibraryView get view => widget.view;
+  bool get showEmbeddedAction => widget.showEmbeddedAction;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant FoodScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.view != widget.view) {
+      _searchController.clear();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,22 +126,34 @@ class FoodScreen extends StatelessWidget {
 
   Widget _buildBody(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final items = switch (view) {
+    final sourceItems = switch (view) {
       FoodLibraryView.all => store.items,
       FoodLibraryView.foods =>
         store.items.where((item) => item.isFood).toList(),
       FoodLibraryView.recipes =>
         store.items.where((item) => !item.isFood).toList(),
     };
+    final items = _matchingItems(sourceItems);
     return AdaptivePage(
       children: [
         _buildHeader(context),
         const AppPageHeaderContentGap(),
-        if (items.isEmpty)
+        if (view != FoodLibraryView.all) ...[
+          _buildSearchField(l10n),
+          const AppPageHeaderContentGap(),
+        ],
+        if (sourceItems.isEmpty)
           AppEmptyState(
             icon: Icons.inventory_2_outlined,
             title: _emptyTitle(l10n),
             message: _emptyMessage(l10n),
+          )
+        else if (items.isEmpty)
+          AppEmptyState(
+            icon: Icons.inventory_2_outlined,
+            title: _searchEmptyTitle(l10n),
+            message:
+                l10n?.libraryNoSearchResultsMessage ?? 'Try a different name.',
           )
         else
           ...items.map(
@@ -131,6 +169,42 @@ class FoodScreen extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  List<CatalogItem> _matchingItems(List<CatalogItem> items) {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty || view == FoodLibraryView.all) {
+      return items;
+    }
+    return items
+        .where((item) => item.name.toLowerCase().contains(query))
+        .toList();
+  }
+
+  Widget _buildSearchField(AppLocalizations? l10n) {
+    return TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        labelText: switch (view) {
+          FoodLibraryView.foods => l10n?.foodSearchFoodsLabel ?? 'Search foods',
+          FoodLibraryView.recipes =>
+            l10n?.foodSearchRecipesLabel ?? 'Search recipes',
+          FoodLibraryView.all => '',
+        },
+        prefixIcon: const Icon(Icons.search),
+      ),
+      onChanged: (_) => setState(() {}),
+    );
+  }
+
+  String _searchEmptyTitle(AppLocalizations? l10n) {
+    return switch (view) {
+      FoodLibraryView.foods =>
+        l10n?.foodNoFoodsSearchResults ?? 'No foods match your search',
+      FoodLibraryView.recipes =>
+        l10n?.foodNoRecipesSearchResults ?? 'No recipes match your search',
+      FoodLibraryView.all => '',
+    };
   }
 
   Widget _buildHeader(BuildContext context) {
