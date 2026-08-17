@@ -76,6 +76,7 @@ class TrainingsScreen extends StatefulWidget {
 
 class _TrainingsScreenState extends State<TrainingsScreen> {
   late TrainingsCatalogView _selectedView;
+  final TextEditingController _searchController = TextEditingController();
 
   AppStore get store => widget.store;
 
@@ -90,7 +91,14 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialView != widget.initialView) {
       _selectedView = widget.initialView;
+      _searchController.clear();
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -144,6 +152,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
             onSelectionChanged: (selection) {
               setState(() {
                 _selectedView = selection.first;
+                _searchController.clear();
               });
             },
           ),
@@ -159,12 +168,17 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
 
   List<Widget> _buildPlansView(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final plans = _matchingPlans();
     return [
       _buildSectionHeader(
         context,
         title: l10n?.trainingPlansTitle ?? 'Training plans',
         actionLabel: l10n?.trainingAddPlanAction ?? 'Add training plan',
         onPressed: () => _openPlanDialog(context),
+      ),
+      const AppPageHeaderContentGap(),
+      _buildSearchField(
+        l10n?.trainingSearchPlansLabel ?? 'Search training plans',
       ),
       const AppPageHeaderContentGap(),
       if (store.trainingPlans.isEmpty)
@@ -175,8 +189,17 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
               l10n?.trainingNoPlansMessage ??
               'Create a training plan to organize exercises.',
         )
+      else if (plans.isEmpty)
+        AppEmptyState(
+          icon: Icons.assignment_outlined,
+          title:
+              l10n?.trainingNoPlansSearchResults ??
+              'No training plans match your search',
+          message:
+              l10n?.libraryNoSearchResultsMessage ?? 'Try a different name.',
+        )
       else
-        ...store.trainingPlans.map(
+        ...plans.map(
           (plan) => Padding(
             padding: const EdgeInsets.only(bottom: AppPageSpacing.itemGap),
             child: TrainingPlanCatalogCard(
@@ -192,12 +215,17 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
 
   List<Widget> _buildExercisesView(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final exercises = _matchingExercises();
     return [
       _buildSectionHeader(
         context,
         title: l10n?.trainingExercisesSegment ?? 'Exercises',
         actionLabel: l10n?.trainingAddExerciseAction ?? 'Add exercise',
         onPressed: () => _openExerciseDialog(context),
+      ),
+      const AppPageHeaderContentGap(),
+      _buildSearchField(
+        l10n?.trainingSearchExercisesLabel ?? 'Search exercises',
       ),
       const AppPageHeaderContentGap(),
       if (store.exercises.isEmpty)
@@ -208,8 +236,17 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
               l10n?.trainingNoExercisesMessage ??
               'Create an exercise to use it in training plans.',
         )
+      else if (exercises.isEmpty)
+        AppEmptyState(
+          icon: Icons.fitness_center_outlined,
+          title:
+              l10n?.trainingNoExercisesSearchResults ??
+              'No exercises match your search',
+          message:
+              l10n?.libraryNoSearchResultsMessage ?? 'Try a different name.',
+        )
       else
-        ...store.exercises.map(
+        ...exercises.map(
           (exercise) => Padding(
             padding: const EdgeInsets.only(bottom: AppPageSpacing.itemGap),
             child: ExerciseCatalogCard(
@@ -221,6 +258,37 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
           ),
         ),
     ];
+  }
+
+  List<TrainingPlan> _matchingPlans() {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      return store.trainingPlans;
+    }
+    return store.trainingPlans
+        .where((plan) => plan.name.toLowerCase().contains(query))
+        .toList();
+  }
+
+  List<Exercise> _matchingExercises() {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      return store.exercises;
+    }
+    return store.exercises
+        .where((exercise) => exercise.name.toLowerCase().contains(query))
+        .toList();
+  }
+
+  Widget _buildSearchField(String label) {
+    return TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: const Icon(Icons.search),
+      ),
+      onChanged: (_) => setState(() {}),
+    );
   }
 
   Widget _buildSectionHeader(

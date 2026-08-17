@@ -688,6 +688,10 @@
   "@libraryFoodsSection": {
     "description": "Library segment label for foods and dishes."
   },
+  "libraryNoSearchResultsMessage": "Try a different name.",
+  "@libraryNoSearchResultsMessage": {
+    "description": "Empty state message when a library search has no matches."
+  },
   "libraryEditItem": "Edit {itemName}",
   "@libraryEditItem": {
     "description": "Tooltip for editing a catalog item.",
@@ -851,6 +855,22 @@
   "trainingAddExerciseAction": "Add exercise",
   "@trainingAddExerciseAction": {
     "description": "Action label for adding an exercise."
+  },
+  "trainingSearchPlansLabel": "Search training plans",
+  "@trainingSearchPlansLabel": {
+    "description": "Search field label for training plans."
+  },
+  "trainingSearchExercisesLabel": "Search exercises",
+  "@trainingSearchExercisesLabel": {
+    "description": "Search field label for exercises."
+  },
+  "trainingNoPlansSearchResults": "No training plans match your search",
+  "@trainingNoPlansSearchResults": {
+    "description": "Empty state title when no training plans match a search."
+  },
+  "trainingNoExercisesSearchResults": "No exercises match your search",
+  "@trainingNoExercisesSearchResults": {
+    "description": "Empty state title when no exercises match a search."
   },
   "trainingNoPlansTitle": "No training plans yet",
   "@trainingNoPlansTitle": {
@@ -1091,6 +1111,22 @@
   "foodAddItemAction": "Add food or recipe",
   "@foodAddItemAction": {
     "description": "Action label for adding food or dish."
+  },
+  "foodSearchFoodsLabel": "Search foods",
+  "@foodSearchFoodsLabel": {
+    "description": "Search field label for foods."
+  },
+  "foodSearchRecipesLabel": "Search recipes",
+  "@foodSearchRecipesLabel": {
+    "description": "Search field label for recipes."
+  },
+  "foodNoFoodsSearchResults": "No foods match your search",
+  "@foodNoFoodsSearchResults": {
+    "description": "Empty state title when no foods match a search."
+  },
+  "foodNoRecipesSearchResults": "No recipes match your search",
+  "@foodNoRecipesSearchResults": {
+    "description": "Empty state title when no recipes match a search."
   },
   "foodEmptyTitle": "No foods or recipes yet",
   "@foodEmptyTitle": {

@@ -138,7 +138,7 @@ void main() {
       const Exercise(
         id: 'bench-press',
         name: 'Bench press',
-        description: 'Barbell chest press',
+        description: 'Barbell chest press with a push pattern',
         instruction: 'Keep shoulder blades set and press the bar vertically.',
         muscleGroups: [MuscleGroup.chest, MuscleGroup.triceps],
         measurementType: ExerciseMeasurementType.strength,
@@ -174,7 +174,7 @@ void main() {
       const TrainingPlan(
         id: 'leg-day',
         name: 'Leg day',
-        description: 'Cardio work',
+        description: 'Chest recovery cardio work',
         exercises: [
           TrainingExercise(
             exerciseId: 'running',
@@ -212,6 +212,19 @@ void main() {
     expect(find.byTooltip('More actions'), findsNWidgets(2));
   });
 
+  testWidgets('training plans filter case-insensitively by name', (
+    tester,
+  ) async {
+    await pumpScreen(tester, store: storeWithTrainingFixtures());
+
+    await enterLabeledText(tester, 'Search training plans', 'cHeSt');
+
+    expect(find.text('Chest day'), findsOneWidget);
+    expect(find.text('Leg day'), findsNothing);
+
+    await enterLabeledText(tester, 'Search training plans', '');
+  });
+
   testWidgets('creates a training plan from existing exercises', (
     tester,
   ) async {
@@ -246,6 +259,8 @@ void main() {
     await tester.tap(find.text('Save training'));
     await tester.pumpAndSettle();
 
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -600));
+    await tester.pumpAndSettle();
     expect(find.text('Push day'), findsOneWidget);
     expect(find.byType(AlertDialog), findsNothing);
   });
@@ -371,6 +386,8 @@ void main() {
     await tester.tap(find.text('Save training'));
     await tester.pumpAndSettle();
 
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -600));
+    await tester.pumpAndSettle();
     expect(find.text('Push day'), findsOneWidget);
 
     await openCatalogActions(tester, 'Push day');
@@ -412,6 +429,40 @@ void main() {
     expect(find.byTooltip('Add exercise'), findsOneWidget);
     expect(find.byTooltip('More actions'), findsWidgets);
   });
+
+  testWidgets(
+    'exercises filter by name and show an empty state for no matches',
+    (tester) async {
+      await pumpScreen(tester, store: storeWithTrainingFixtures());
+
+      final exercisesSegment = find.descendant(
+        of: find.byWidgetPredicate(
+          (widget) => widget is SegmentedButton<TrainingsCatalogView>,
+        ),
+        matching: find.text('Exercises'),
+      );
+      await tester.tap(exercisesSegment);
+      await tester.pumpAndSettle();
+      await enterLabeledText(tester, 'Search exercises', 'push');
+
+      expect(find.text('Pushups'), findsOneWidget);
+      expect(find.text('Bench press'), findsNothing);
+      expect(find.text('Running'), findsNothing);
+
+      await enterLabeledText(
+        tester,
+        'Search exercises',
+        'no matching exercise',
+      );
+
+      expect(find.text('No exercises match your search'), findsOneWidget);
+      expect(find.text('Pushups'), findsNothing);
+      expect(find.text('Bench press'), findsNothing);
+      expect(find.text('Running'), findsNothing);
+
+      await enterLabeledText(tester, 'Search exercises', '');
+    },
+  );
 
   testWidgets('shows shared empty states for empty training catalog', (
     tester,

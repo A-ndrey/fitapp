@@ -1669,6 +1669,125 @@ void main() {
     expect(find.byTooltip('More actions'), findsWidgets);
   });
 
+  testWidgets('FoodScreen filters foods by a case-insensitive name search', (
+    tester,
+  ) async {
+    final store = AppStore();
+    seedFoods(store);
+    store.createFood(
+      const FoodItem(
+        id: 'cucumber',
+        name: 'Cucumber',
+        description: 'Carrot garnish',
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 15,
+          protein: 0.7,
+          fat: 0.1,
+          carbs: 3.6,
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FoodScreen(store: store, view: FoodLibraryView.foods),
+      ),
+    );
+
+    await tester.enterText(find.bySemanticsLabel('Search foods'), 'CARROT');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Carrot'), findsOneWidget);
+    expect(find.text('Rice'), findsNothing);
+    expect(find.text('Chicken breast'), findsNothing);
+    expect(find.text('Cucumber'), findsNothing);
+  });
+
+  testWidgets(
+    'FoodScreen shows a food search empty state when no foods match',
+    (tester) async {
+      final store = AppStore();
+      seedFoods(store);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FoodScreen(store: store, view: FoodLibraryView.foods),
+        ),
+      );
+
+      await tester.enterText(find.bySemanticsLabel('Search foods'), 'lentil');
+      await tester.pumpAndSettle();
+
+      expect(find.text('No foods match your search'), findsOneWidget);
+    },
+  );
+
+  testWidgets('FoodScreen filters recipes by name search', (tester) async {
+    final store = AppStore();
+    seedFoods(store);
+    store.createDish(
+      const DishItem(
+        id: 'carrot-salad',
+        name: 'Carrot salad',
+        description: 'A simple carrot salad',
+        servingSizeGrams: 100,
+        components: [DishComponent(itemId: 'carrot', grams: 100)],
+      ),
+    );
+    store.createDish(
+      const DishItem(
+        id: 'garden-bowl',
+        name: 'Garden bowl',
+        description: 'Carrot and cucumber bowl',
+        servingSizeGrams: 100,
+        components: [DishComponent(itemId: 'carrot', grams: 100)],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FoodScreen(store: store, view: FoodLibraryView.recipes),
+      ),
+    );
+
+    await tester.enterText(find.bySemanticsLabel('Search recipes'), 'cArRoT');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Carrot salad'), findsOneWidget);
+    expect(find.text('Carrot'), findsNothing);
+    expect(find.text('Garden bowl'), findsNothing);
+  });
+
+  testWidgets(
+    'FoodScreen shows a recipe search empty state when no recipes match',
+    (tester) async {
+      final store = AppStore();
+      seedFoods(store);
+      store.createDish(
+        const DishItem(
+          id: 'carrot-salad',
+          name: 'Carrot salad',
+          description: 'A simple carrot salad',
+          servingSizeGrams: 100,
+          components: [DishComponent(itemId: 'carrot', grams: 100)],
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FoodScreen(store: store, view: FoodLibraryView.recipes),
+        ),
+      );
+
+      await tester.enterText(find.bySemanticsLabel('Search recipes'), 'soup');
+      await tester.pumpAndSettle();
+
+      expect(find.text('No recipes match your search'), findsOneWidget);
+    },
+  );
+
   testWidgets('embedded empty FoodScreen is scaffold-free with empty state', (
     tester,
   ) async {
