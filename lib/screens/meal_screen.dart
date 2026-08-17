@@ -106,13 +106,7 @@ class MealScreen extends StatelessWidget {
 
   Future<void> _openAddMealFlow(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
-    final recentItems = store.mealEntries
-        .map((entry) => store.itemById(entry.sourceItemId))
-        .whereType<CatalogItem>()
-        .toSet()
-        .take(4)
-        .toList(growable: false);
-    final frequentItems = store.items.take(4).toList(growable: false);
+    final recommendations = store.mealItemRecommendations();
     final result = await showCatalogItemSearchSheet(
       context: context,
       store: store,
@@ -122,9 +116,9 @@ class MealScreen extends StatelessWidget {
           'Search saved foods and recipes, or create a new food from your query.',
       searchFieldLabel:
           l10n?.mealSearchFieldLabel ?? 'Search foods and recipes',
-      recentItems: recentItems,
+      recentItems: recommendations.recent,
       recentLabel: 'Recent foods',
-      frequentItems: frequentItems,
+      frequentItems: recommendations.frequent,
       frequentLabel: 'Frequent foods',
       allowCreate: true,
       createActionLabelBuilder: (query) =>

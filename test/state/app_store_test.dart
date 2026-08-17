@@ -2285,6 +2285,57 @@ void main() {
     expect(groups.last.entries.single.id, previousDayEntry.id);
   });
 
+  test('meal item recommendations reflect recency and weighted frequency', () {
+    final store = AppStore.empty();
+    final now = DateTime(2026, 5, 17, 12);
+    store.createFood(tomato());
+    store.createFood(cucumber());
+    store.createFood(
+      const FoodItem(
+        id: 'spinach',
+        name: 'Spinach',
+        description: 'Fresh spinach',
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues(
+          calories: 23,
+          protein: 2.9,
+          fat: 0.4,
+          carbs: 3.6,
+        ),
+      ),
+    );
+
+    store.addMealByGrams(itemId: 'tomato', grams: 100, loggedAt: now);
+    store.addMealByGrams(
+      itemId: 'cucumber',
+      grams: 100,
+      loggedAt: now.subtract(const Duration(days: 20)),
+    );
+    store.addMealByGrams(
+      itemId: 'cucumber',
+      grams: 100,
+      loggedAt: now.subtract(const Duration(days: 21)),
+    );
+    store.addMealByGrams(
+      itemId: 'spinach',
+      grams: 100,
+      loggedAt: now.subtract(const Duration(days: 1)),
+    );
+    store.deleteItem('spinach');
+
+    final recommendations = store.mealItemRecommendations(now: now);
+
+    expect(recommendations.recent.map((item) => item.id), [
+      'tomato',
+      'cucumber',
+    ]);
+    expect(recommendations.frequent.map((item) => item.id), [
+      'tomato',
+      'cucumber',
+    ]);
+  });
+
   test('dish cycles are rejected', () {
     final store = AppStore.empty();
     store.createFood(tomato());
