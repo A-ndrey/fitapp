@@ -121,6 +121,69 @@ class AppStore extends ChangeNotifier {
     return List.unmodifiable(groups);
   }
 
+  MealItemRecommendations mealItemRecommendations({DateTime? now}) {
+    const recommendationLimit = 4;
+    const frequencyDecayDays = 14.0;
+    final referenceTime = now ?? DateTime.now();
+    final usageByItemId = <String, _MealItemUsage>{};
+
+    for (final entry in _mealEntries) {
+      final item = _catalog[entry.sourceItemId];
+      if (item == null) {
+        continue;
+      }
+      final ageInDays =
+          max(0, referenceTime.difference(entry.loggedAt).inSeconds) /
+          Duration.secondsPerDay;
+      final existingUsage = usageByItemId[entry.sourceItemId];
+      if (existingUsage == null) {
+        usageByItemId[entry.sourceItemId] = _MealItemUsage(
+          item: item,
+          lastLoggedAt: entry.loggedAt,
+          weightedFrequency: exp(-ageInDays / frequencyDecayDays),
+        );
+        continue;
+      }
+      existingUsage.weightedFrequency += exp(-ageInDays / frequencyDecayDays);
+      if (entry.loggedAt.isAfter(existingUsage.lastLoggedAt)) {
+        existingUsage.lastLoggedAt = entry.loggedAt;
+      }
+    }
+
+    final usages = usageByItemId.values.toList(growable: false);
+    final recentUsages = List<_MealItemUsage>.of(usages)
+      ..sort(_compareByRecency);
+    final frequentUsages = List<_MealItemUsage>.of(usages)
+      ..sort(_compareByWeightedFrequency);
+
+    return MealItemRecommendations(
+      recent: List.unmodifiable(
+        recentUsages.take(recommendationLimit).map((usage) => usage.item),
+      ),
+      frequent: List.unmodifiable(
+        frequentUsages.take(recommendationLimit).map((usage) => usage.item),
+      ),
+    );
+  }
+
+  int _compareByRecency(_MealItemUsage left, _MealItemUsage right) {
+    final recencyComparison = right.lastLoggedAt.compareTo(left.lastLoggedAt);
+    if (recencyComparison != 0) {
+      return recencyComparison;
+    }
+    return left.item.id.compareTo(right.item.id);
+  }
+
+  int _compareByWeightedFrequency(_MealItemUsage left, _MealItemUsage right) {
+    final frequencyComparison = right.weightedFrequency.compareTo(
+      left.weightedFrequency,
+    );
+    if (frequencyComparison != 0) {
+      return frequencyComparison;
+    }
+    return _compareByRecency(left, right);
+  }
+
   List<Exercise> get exercises => List.unmodifiable(_exercises.values);
 
   List<TrainingPlan> get trainingPlans => List.unmodifiable(_trainingPlans);
@@ -1507,6 +1570,25 @@ class MealHistoryGroup {
 
   final DateTime date;
   final List<MealEntry> entries;
+}
+
+class MealItemRecommendations {
+  const MealItemRecommendations({required this.recent, required this.frequent});
+
+  final List<CatalogItem> recent;
+  final List<CatalogItem> frequent;
+}
+
+class _MealItemUsage {
+  _MealItemUsage({
+    required this.item,
+    required this.lastLoggedAt,
+    required this.weightedFrequency,
+  });
+
+  final CatalogItem item;
+  DateTime lastLoggedAt;
+  double weightedFrequency;
 }
 
 class WorkoutExerciseHistoryGroup {
