@@ -1329,5 +1329,57 @@
   "dishComponentValidation": "Choose an item and enter valid ingredient grams.",
   "@dishComponentValidation": {
     "description": "Dish component validation message."
+  },
+  "libraryImportJsonAction": "Import JSON",
+  "@libraryImportJsonAction": {
+    "description": "Action to import library data from JSON."
+  },
+  "libraryExportAllJsonAction": "Export all as JSON",
+  "@libraryExportAllJsonAction": {
+    "description": "Action to export the active library category."
+  },
+  "libraryExportItemJsonAction": "Export as JSON",
+  "@libraryExportItemJsonAction": {
+    "description": "Action to export one library item."
+  },
+  "libraryExportAction": "Export",
+  "@libraryExportAction": {
+    "description": "Short export action label."
+  },
+  "libraryCopyJsonAction": "Copy JSON",
+  "@libraryCopyJsonAction": {
+    "description": "Action to copy exported JSON."
+  },
+  "librarySaveJsonAction": "Save JSON file",
+  "@librarySaveJsonAction": {
+    "description": "Action to save exported JSON to a file."
+  },
+  "libraryPasteJsonAction": "Paste JSON",
+  "@libraryPasteJsonAction": {
+    "description": "Action to import JSON from the clipboard."
+  },
+  "libraryChooseJsonAction": "Choose JSON file",
+  "@libraryChooseJsonAction": {
+    "description": "Action to import JSON from a file."
+  },
+  "libraryReviewImportTitle": "Review import",
+  "@libraryReviewImportTitle": {
+    "description": "Title for the library import preview."
+  },
+  "libraryReviewImportMessage": "Review every change before anything is saved.",
+  "@libraryReviewImportMessage": {
+    "description": "Description for the library import preview."
+  },
+  "libraryImportAsCopyAction": "Import as copy",
+  "@libraryImportAsCopyAction": {
+    "description": "Action to create a copy instead of updating an item."
+  },
+  "libraryImportAsCopyMessage": "Keep the current item unchanged.",
+  "@libraryImportAsCopyMessage": {
+    "description": "Explanation for importing an item as a copy."
+  },
+  "libraryEmptyImportMessage": "This file does not contain any items.",
+  "@libraryEmptyImportMessage": {
+    "description": "Empty state for an import document without items."
   }
 }

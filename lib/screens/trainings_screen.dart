@@ -62,6 +62,8 @@ class TrainingsScreen extends StatefulWidget {
     this.initialView = TrainingsCatalogView.plans,
     this.showEmbeddedAction = true,
     this.showViewSwitcher = true,
+    this.onExportPlan,
+    this.onExportExercise,
   });
 
   final AppStore store;
@@ -69,6 +71,8 @@ class TrainingsScreen extends StatefulWidget {
   final TrainingsCatalogView initialView;
   final bool showEmbeddedAction;
   final bool showViewSwitcher;
+  final ValueChanged<TrainingPlan>? onExportPlan;
+  final ValueChanged<Exercise>? onExportExercise;
 
   @override
   State<TrainingsScreen> createState() => _TrainingsScreenState();
@@ -207,6 +211,9 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
               store: store,
               onEdit: () => _openPlanDialog(context, initialPlan: plan),
               onDelete: () => _confirmDeletePlan(context, plan),
+              onExport: widget.onExportPlan == null
+                  ? null
+                  : () => widget.onExportPlan!(plan),
             ),
           ),
         ),
@@ -254,6 +261,9 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
               onEdit: () =>
                   _openExerciseDialog(context, initialExercise: exercise),
               onDelete: () => _confirmDeleteExercise(context, exercise),
+              onExport: widget.onExportExercise == null
+                  ? null
+                  : () => widget.onExportExercise!(exercise),
             ),
           ),
         ),

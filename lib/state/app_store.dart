@@ -65,6 +65,8 @@ class AppStore extends ChangeNotifier {
   int _workoutSessionCounter = 0;
   Future<void> _pendingSave = Future<void>.value();
   bool _isPersistenceSuspended = false;
+  int _persistedMutationBatchDepth = 0;
+  bool _hasBatchedPersistedMutation = false;
   int _persistedStateObserverGeneration = 0;
 
   Map<String, CatalogItem> get catalog => Map.unmodifiable(_catalog);
@@ -820,8 +822,27 @@ class AppStore extends ChangeNotifier {
   }
 
   void _didMutatePersistedState() {
+    if (_persistedMutationBatchDepth > 0) {
+      _hasBatchedPersistedMutation = true;
+      return;
+    }
     notifyListeners();
     unawaited(_schedulePersistenceSave());
+  }
+
+  /// Coalesces multiple validated state mutations into one notification/save.
+  T runPersistedMutationBatch<T>(T Function() action) {
+    _persistedMutationBatchDepth += 1;
+    try {
+      return action();
+    } finally {
+      _persistedMutationBatchDepth -= 1;
+      if (_persistedMutationBatchDepth == 0 && _hasBatchedPersistedMutation) {
+        _hasBatchedPersistedMutation = false;
+        notifyListeners();
+        unawaited(_schedulePersistenceSave());
+      }
+    }
   }
 
   void _didMutateTransientState() {

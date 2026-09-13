@@ -991,4 +991,45 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dishComponentValidation =>
       'Choose an item and enter valid ingredient grams.';
+
+  @override
+  String get libraryImportJsonAction => 'Import JSON';
+
+  @override
+  String get libraryExportAllJsonAction => 'Export all as JSON';
+
+  @override
+  String get libraryExportItemJsonAction => 'Export as JSON';
+
+  @override
+  String get libraryExportAction => 'Export';
+
+  @override
+  String get libraryCopyJsonAction => 'Copy JSON';
+
+  @override
+  String get librarySaveJsonAction => 'Save JSON file';
+
+  @override
+  String get libraryPasteJsonAction => 'Paste JSON';
+
+  @override
+  String get libraryChooseJsonAction => 'Choose JSON file';
+
+  @override
+  String get libraryReviewImportTitle => 'Review import';
+
+  @override
+  String get libraryReviewImportMessage =>
+      'Review every change before anything is saved.';
+
+  @override
+  String get libraryImportAsCopyAction => 'Import as copy';
+
+  @override
+  String get libraryImportAsCopyMessage => 'Keep the current item unchanged.';
+
+  @override
+  String get libraryEmptyImportMessage =>
+      'This file does not contain any items.';
 }
