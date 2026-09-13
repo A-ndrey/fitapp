@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/catalog_item.dart';
+import '../models/exercise.dart';
+import '../models/library_transfer.dart';
+import '../models/training_plan.dart';
 import '../state/app_store.dart';
+import '../state/library_transfer/library_transfer_controller.dart';
+import '../state/library_transfer/library_transfer_service.dart';
 import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/layout/responsive_layout.dart';
 import '../ui/core/widgets/action_card.dart';
 import '../ui/core/widgets/section_header.dart';
+import '../ui/library/library_transfer_ui.dart';
 import 'food_screen.dart';
 import 'trainings_screen.dart';
 
@@ -25,6 +32,21 @@ class LibraryScreen extends StatefulWidget {
 class LibraryScreenState extends State<LibraryScreen> {
   TrainingLibraryTab? _selectedTrainingTab;
   FoodLibraryTab? _selectedFoodTab;
+  late final LibraryTransferController _transferController;
+
+  @override
+  void initState() {
+    super.initState();
+    _transferController = LibraryTransferController(
+      service: LibraryTransferService(widget.store),
+    );
+  }
+
+  @override
+  void dispose() {
+    _transferController.dispose();
+    super.dispose();
+  }
 
   bool get _inDetail =>
       _selectedTrainingTab != null || _selectedFoodTab != null;
@@ -54,6 +76,26 @@ class LibraryScreenState extends State<LibraryScreen> {
               )
             : null,
         title: Text(l10n?.destinationLibrary ?? 'Library'),
+        actions: _inDetail
+            ? [
+                IconButton(
+                  key: const ValueKey('library-import-action'),
+                  tooltip: l10n?.libraryImportJsonAction ?? 'Import JSON',
+                  onPressed: () => showLibraryImportOptions(
+                    context,
+                    controller: _transferController,
+                  ),
+                  icon: const Icon(Icons.upload_file_outlined),
+                ),
+                IconButton(
+                  key: const ValueKey('library-export-category-action'),
+                  tooltip:
+                      l10n?.libraryExportAllJsonAction ?? 'Export all as JSON',
+                  onPressed: _exportActiveCategory,
+                  icon: const Icon(Icons.download_outlined),
+                ),
+              ]
+            : null,
       ),
       floatingActionButton: compact && _inDetail
           ? FloatingActionButton(
@@ -129,6 +171,8 @@ class LibraryScreenState extends State<LibraryScreen> {
             : TrainingsCatalogView.exercises,
         showEmbeddedAction: !compact,
         showViewSwitcher: false,
+        onExportPlan: _exportPlan,
+        onExportExercise: _exportExercise,
       );
     }
 
@@ -139,6 +183,7 @@ class LibraryScreenState extends State<LibraryScreen> {
           ? FoodLibraryView.foods
           : FoodLibraryView.recipes,
       showEmbeddedAction: !compact,
+      onExportItem: _exportCatalogItem,
     );
   }
 
@@ -205,4 +250,50 @@ class LibraryScreenState extends State<LibraryScreen> {
         return;
     }
   }
+
+  LibraryCategory? get _activeCategory {
+    return switch ((_selectedTrainingTab, _selectedFoodTab)) {
+      (TrainingLibraryTab.plans, _) => LibraryCategory.trainingPlans,
+      (TrainingLibraryTab.exercises, _) => LibraryCategory.exercises,
+      (_, FoodLibraryTab.foods) => LibraryCategory.foods,
+      (_, FoodLibraryTab.recipes) => LibraryCategory.recipes,
+      _ => null,
+    };
+  }
+
+  Future<void> _exportActiveCategory() async {
+    final category = _activeCategory;
+    if (category == null) {
+      return;
+    }
+    await showLibraryExportOptions(
+      context,
+      controller: _transferController,
+      category: category,
+    );
+  }
+
+  Future<void> _exportPlan(TrainingPlan plan) => showLibraryExportOptions(
+    context,
+    controller: _transferController,
+    category: LibraryCategory.trainingPlans,
+    itemId: plan.id,
+    itemName: plan.name,
+  );
+
+  Future<void> _exportExercise(Exercise exercise) => showLibraryExportOptions(
+    context,
+    controller: _transferController,
+    category: LibraryCategory.exercises,
+    itemId: exercise.id,
+    itemName: exercise.name,
+  );
+
+  Future<void> _exportCatalogItem(CatalogItem item) => showLibraryExportOptions(
+    context,
+    controller: _transferController,
+    category: item.isFood ? LibraryCategory.foods : LibraryCategory.recipes,
+    itemId: item.id,
+    itemName: item.name,
+  );
 }

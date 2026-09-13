@@ -16,12 +16,14 @@ class FoodCatalogCard extends StatelessWidget {
     required this.store,
     required this.onEdit,
     required this.onDelete,
+    this.onExport,
   });
 
   final CatalogItem item;
   final AppStore store;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +33,14 @@ class FoodCatalogCard extends StatelessWidget {
     );
     return SwipeActionCard(
       actions: [
+        if (onExport != null)
+          SwipeCardAction(
+            label: l10n?.libraryExportAction ?? 'Export',
+            icon: Icons.download_outlined,
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+            onPressed: onExport!,
+          ),
         SwipeCardAction(
           label: 'Edit',
           icon: Icons.edit_outlined,
@@ -93,6 +103,7 @@ class FoodCatalogCard extends StatelessWidget {
                       'Delete ${item.name}',
                   onEdit: onEdit,
                   onDelete: onDelete,
+                  onExport: onExport,
                 ),
         ),
       ),
@@ -107,12 +118,14 @@ class TrainingPlanCatalogCard extends StatelessWidget {
     required this.store,
     required this.onEdit,
     required this.onDelete,
+    this.onExport,
   });
 
   final TrainingPlan plan;
   final AppStore store;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +135,14 @@ class TrainingPlanCatalogCard extends StatelessWidget {
     );
     return SwipeActionCard(
       actions: [
+        if (onExport != null)
+          SwipeCardAction(
+            label: l10n?.libraryExportAction ?? 'Export',
+            icon: Icons.download_outlined,
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+            onPressed: onExport!,
+          ),
         SwipeCardAction(
           label: 'Edit',
           icon: Icons.edit_outlined,
@@ -177,6 +198,7 @@ class TrainingPlanCatalogCard extends StatelessWidget {
                       'Delete ${plan.name}',
                   onEdit: onEdit,
                   onDelete: onDelete,
+                  onExport: onExport,
                 ),
         ),
       ),
@@ -190,11 +212,13 @@ class ExerciseCatalogCard extends StatelessWidget {
     required this.exercise,
     required this.onEdit,
     required this.onDelete,
+    this.onExport,
   });
 
   final Exercise exercise;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -204,6 +228,14 @@ class ExerciseCatalogCard extends StatelessWidget {
     );
     return SwipeActionCard(
       actions: [
+        if (onExport != null)
+          SwipeCardAction(
+            label: l10n?.libraryExportAction ?? 'Export',
+            icon: Icons.download_outlined,
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+            onPressed: onExport!,
+          ),
         SwipeCardAction(
           label: 'Edit',
           icon: Icons.edit_outlined,
@@ -268,6 +300,7 @@ class ExerciseCatalogCard extends StatelessWidget {
                       'Delete ${exercise.name}',
                   onEdit: onEdit,
                   onDelete: onDelete,
+                  onExport: onExport,
                 ),
         ),
       ),
@@ -416,25 +449,38 @@ class _CatalogCardActions extends StatelessWidget {
     required this.deleteTooltip,
     required this.onEdit,
     required this.onDelete,
+    this.onExport,
   });
 
   final String editTooltip;
   final String deleteTooltip;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onExport;
 
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<_CatalogAction>(
       tooltip: 'More actions',
       onSelected: (action) {
-        if (action == _CatalogAction.edit) {
-          onEdit();
-        } else {
-          onDelete();
+        switch (action) {
+          case _CatalogAction.export:
+            onExport?.call();
+          case _CatalogAction.edit:
+            onEdit();
+          case _CatalogAction.delete:
+            onDelete();
         }
       },
       itemBuilder: (context) => [
+        if (onExport != null)
+          PopupMenuItem<_CatalogAction>(
+            value: _CatalogAction.export,
+            child: Text(
+              AppLocalizations.of(context)?.libraryExportItemJsonAction ??
+                  'Export as JSON',
+            ),
+          ),
         PopupMenuItem<_CatalogAction>(
           value: _CatalogAction.edit,
           child: Text(editTooltip),
@@ -448,7 +494,7 @@ class _CatalogCardActions extends StatelessWidget {
   }
 }
 
-enum _CatalogAction { edit, delete }
+enum _CatalogAction { export, edit, delete }
 
 class _BoundedText extends StatelessWidget {
   const _BoundedText(this.data);

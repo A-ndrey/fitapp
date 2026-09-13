@@ -66,12 +66,14 @@ class FoodScreen extends StatefulWidget {
     this.embedded = false,
     this.view = FoodLibraryView.all,
     this.showEmbeddedAction = true,
+    this.onExportItem,
   });
 
   final AppStore store;
   final bool embedded;
   final FoodLibraryView view;
   final bool showEmbeddedAction;
+  final ValueChanged<CatalogItem>? onExportItem;
 
   @override
   State<FoodScreen> createState() => _FoodScreenState();
@@ -164,6 +166,9 @@ class _FoodScreenState extends State<FoodScreen> {
                 store: store,
                 onEdit: () => _openEditItemFlow(context, item.id),
                 onDelete: () => _confirmDeleteItem(context, item.id),
+                onExport: widget.onExportItem == null
+                    ? null
+                    : () => widget.onExportItem!(item),
               ),
             ),
           ),

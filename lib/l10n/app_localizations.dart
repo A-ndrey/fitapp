@@ -1747,6 +1747,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose an item and enter valid ingredient grams.'**
   String get dishComponentValidation;
+
+  /// Action to import library data from JSON.
+  ///
+  /// In en, this message translates to:
+  /// **'Import JSON'**
+  String get libraryImportJsonAction;
+
+  /// Action to export the active library category.
+  ///
+  /// In en, this message translates to:
+  /// **'Export all as JSON'**
+  String get libraryExportAllJsonAction;
+
+  /// Action to export one library item.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as JSON'**
+  String get libraryExportItemJsonAction;
+
+  /// Short export action label.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get libraryExportAction;
+
+  /// Action to copy exported JSON.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy JSON'**
+  String get libraryCopyJsonAction;
+
+  /// Action to save exported JSON to a file.
+  ///
+  /// In en, this message translates to:
+  /// **'Save JSON file'**
+  String get librarySaveJsonAction;
+
+  /// Action to import JSON from the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste JSON'**
+  String get libraryPasteJsonAction;
+
+  /// Action to import JSON from a file.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose JSON file'**
+  String get libraryChooseJsonAction;
+
+  /// Title for the library import preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review import'**
+  String get libraryReviewImportTitle;
+
+  /// Description for the library import preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review every change before anything is saved.'**
+  String get libraryReviewImportMessage;
+
+  /// Action to create a copy instead of updating an item.
+  ///
+  /// In en, this message translates to:
+  /// **'Import as copy'**
+  String get libraryImportAsCopyAction;
+
+  /// Explanation for importing an item as a copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the current item unchanged.'**
+  String get libraryImportAsCopyMessage;
+
+  /// Empty state for an import document without items.
+  ///
+  /// In en, this message translates to:
+  /// **'This file does not contain any items.'**
+  String get libraryEmptyImportMessage;
 }
 
 class _AppLocalizationsDelegate
