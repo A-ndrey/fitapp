@@ -79,6 +79,7 @@ class WorkoutSetInputCard extends StatelessWidget {
     required this.measurementType,
     required this.store,
     required this.onLogSet,
+    this.enabled = true,
     super.key,
   });
 
@@ -91,6 +92,7 @@ class WorkoutSetInputCard extends StatelessWidget {
   final ExerciseMeasurementType measurementType;
   final AppStore store;
   final VoidCallback onLogSet;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -125,6 +127,7 @@ class WorkoutSetInputCard extends StatelessWidget {
                     width: fieldWidth,
                     child: TextField(
                       controller: _controllerFor(field),
+                      enabled: enabled,
                       decoration: InputDecoration(
                         labelText: _fieldLabel(field, l10n),
                       ),
@@ -141,7 +144,7 @@ class WorkoutSetInputCard extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: onLogSet,
+            onPressed: enabled ? onLogSet : null,
             icon: const Icon(Icons.check_rounded),
             label: Text(l10n?.workoutLogSetAction ?? 'Log set'),
           ),
@@ -616,6 +619,7 @@ ExerciseMeasurementType _measurementTypeForResult(
   AppStore store,
   WorkoutExerciseResult result,
 ) {
-  return store.exerciseById(result.exerciseId)?.measurementType ??
+  return result.measurementType ??
+      store.exerciseById(result.exerciseId)?.measurementType ??
       ExerciseMeasurementType.strength;
 }

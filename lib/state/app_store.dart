@@ -12,6 +12,7 @@ import '../models/meal_entry.dart';
 import '../models/nutrition.dart';
 import '../models/training_plan.dart';
 import '../models/workout_session.dart';
+import 'app_state_components.dart';
 import 'persistence/app_store_persistence.dart';
 import 'persistence/persisted_app_state.dart';
 
@@ -47,27 +48,57 @@ class AppStore extends ChangeNotifier {
     return store;
   }
 
-  final Map<String, CatalogItem> _catalog = <String, CatalogItem>{};
-  final List<MealEntry> _mealEntries = <MealEntry>[];
-  final Map<String, Exercise> _exercises = <String, Exercise>{};
-  final List<TrainingPlan> _trainingPlans = <TrainingPlan>[];
-  final List<WorkoutSession> _completedWorkoutSessions = <WorkoutSession>[];
-  final Set<String> _builtInCatalogIds = <String>{};
-  final Set<String> _builtInExerciseIds = <String>{};
-  final Set<String> _builtInTrainingPlanIds = <String>{};
+  /// Independently listenable reusable-food state.
+  final FoodLibraryState foodLibraryState = FoodLibraryState();
+
+  /// Independently listenable reusable-training state.
+  final TrainingLibraryState trainingLibraryState = TrainingLibraryState();
+
+  /// Independently listenable meal-history state.
+  final NutritionHistoryState nutritionHistoryState = NutritionHistoryState();
+
+  /// Independently listenable active and completed workout state.
+  final WorkoutState workoutState = WorkoutState();
+
+  /// Independently listenable preference state.
+  final PreferencesState preferencesState = PreferencesState();
+
+  Map<String, CatalogItem> get _catalog => foodLibraryState.mutableCatalog;
+  List<MealEntry> get _mealEntries => nutritionHistoryState.mutableEntries;
+  Map<String, Exercise> get _exercises => trainingLibraryState.mutableExercises;
+  List<TrainingPlan> get _trainingPlans =>
+      trainingLibraryState.mutableTrainingPlans;
+  List<WorkoutSession> get _completedWorkoutSessions =>
+      workoutState.mutableCompletedSessions;
+  Set<String> get _builtInCatalogIds => foodLibraryState.builtInIds;
+  Set<String> get _builtInExerciseIds =>
+      trainingLibraryState.builtInExerciseIds;
+  Set<String> get _builtInTrainingPlanIds =>
+      trainingLibraryState.builtInTrainingPlanIds;
   final AppStorePersistence? _persistence;
   final PersistedAppStateObserver? _onPersistedStateSaved;
   final Random _idRandom = Random.secure();
-  AppPreferences _preferences = const AppPreferences.defaults();
+  AppPreferences get _preferences => preferencesState.mutableValue;
+  set _preferences(AppPreferences value) =>
+      preferencesState.mutableValue = value;
   bool _isLoggedIn = false;
-  WorkoutSession? _activeWorkoutSession;
-  int _mealEntryCounter = 0;
-  int _workoutSessionCounter = 0;
+  WorkoutSession? get _activeWorkoutSession =>
+      workoutState.mutableActiveSession;
+  set _activeWorkoutSession(WorkoutSession? value) =>
+      workoutState.mutableActiveSession = value;
+  int get _mealEntryCounter => nutritionHistoryState.legacyCounter;
+  set _mealEntryCounter(int value) =>
+      nutritionHistoryState.legacyCounter = value;
+  int get _workoutSessionCounter => workoutState.legacyCounter;
+  set _workoutSessionCounter(int value) => workoutState.legacyCounter = value;
   Future<void> _pendingSave = Future<void>.value();
   bool _isPersistenceSuspended = false;
   int _persistedMutationBatchDepth = 0;
-  bool _hasBatchedPersistedMutation = false;
+  final Set<AppStateSlice> _batchedPersistedSlices = <AppStateSlice>{};
   int _persistedStateObserverGeneration = 0;
+  Listenable? _activeWorkoutLeaseListenable;
+  bool Function()? _activeWorkoutReadOnlyProvider;
+  Future<bool> Function()? _activeWorkoutTakeover;
 
   Map<String, CatalogItem> get catalog => Map.unmodifiable(_catalog);
 
@@ -213,39 +244,71 @@ class AppStore extends ChangeNotifier {
 
   WorkoutSession? get activeWorkoutSession => _activeWorkoutSession;
 
+  bool get isActiveWorkoutReadOnly =>
+      _activeWorkoutReadOnlyProvider?.call() ?? false;
+
+  void bindActiveWorkoutLeaseController({
+    required Listenable listenable,
+    required bool Function() isReadOnly,
+    required Future<bool> Function() takeOver,
+  }) {
+    _activeWorkoutLeaseListenable?.removeListener(_didMutateTransientState);
+    _activeWorkoutLeaseListenable = listenable;
+    _activeWorkoutReadOnlyProvider = isReadOnly;
+    _activeWorkoutTakeover = takeOver;
+    listenable.addListener(_didMutateTransientState);
+    _didMutateTransientState();
+  }
+
+  void unbindActiveWorkoutLeaseController() {
+    _activeWorkoutLeaseListenable?.removeListener(_didMutateTransientState);
+    _activeWorkoutLeaseListenable = null;
+    _activeWorkoutReadOnlyProvider = null;
+    _activeWorkoutTakeover = null;
+    _didMutateTransientState();
+  }
+
+  Future<bool> takeOverActiveWorkout() async {
+    final takeOver = _activeWorkoutTakeover;
+    if (takeOver == null) {
+      return false;
+    }
+    return takeOver();
+  }
+
   void setAppearancePreference(AppearancePreference preference) {
     _preferences = _preferences.copyWith(appearance: preference);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.preferences);
   }
 
   void setLanguagePreference(LanguagePreference preference) {
     _preferences = _preferences.copyWith(language: preference);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.preferences);
   }
 
   void setWorkoutWeightUnit(WorkoutWeightUnit unit) {
     _preferences = _preferences.copyWith(workoutWeightUnit: unit);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.preferences);
   }
 
   void setDishWeightUnit(DishWeightUnit unit) {
     _preferences = _preferences.copyWith(dishWeightUnit: unit);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.preferences);
   }
 
   void setHeightUnit(HeightUnit unit) {
     _preferences = _preferences.copyWith(heightUnit: unit);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.preferences);
   }
 
   void setDistanceUnit(DistanceUnit unit) {
     _preferences = _preferences.copyWith(distanceUnit: unit);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.preferences);
   }
 
   void setDailyMacroTargets(NutritionValues targets) {
     _preferences = _preferences.copyWith(dailyMacroTargets: targets);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.preferences);
   }
 
   void logIn() {
@@ -272,6 +335,9 @@ class AppStore extends ChangeNotifier {
     _validatePersistedState(state);
     _persistedStateObserverGeneration += 1;
     _applyPersistedStateUnchecked(state);
+    for (final slice in AppStateSlice.values) {
+      _componentFor(slice).markChanged();
+    }
     notifyListeners();
     await _schedulePersistenceSave(
       notifyPersistedStateObserver: notifyPersistedStateObserver,
@@ -487,7 +553,7 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Duplicate exercise id: ${exercise.id}');
     }
     _exercises[exercise.id] = _freezeExercise(exercise);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.trainingLibrary);
   }
 
   void updateExercise(Exercise exercise) {
@@ -512,7 +578,7 @@ class AppStore extends ChangeNotifier {
       }
     }
     _exercises[exercise.id] = _freezeExercise(exercise);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.trainingLibrary);
   }
 
   void deleteExercise(String id) {
@@ -526,11 +592,8 @@ class AppStore extends ChangeNotifier {
     if (_isReferencedByActiveWorkout(id)) {
       throw StateError('Exercise is used by the active workout.');
     }
-    if (_isReferencedByCompletedWorkoutHistory(id)) {
-      throw StateError('Exercise is used by completed workout history.');
-    }
     _exercises.remove(id);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.trainingLibrary);
   }
 
   void createTrainingPlan(TrainingPlan plan) {
@@ -540,7 +603,7 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Duplicate training plan id: ${plan.id}');
     }
     _trainingPlans.add(_freezeTrainingPlan(plan));
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.trainingLibrary);
   }
 
   void updateTrainingPlan(TrainingPlan plan) {
@@ -554,7 +617,7 @@ class AppStore extends ChangeNotifier {
     }
     _assertTrainingPlanNameIsAvailable(plan.name, excludingId: plan.id);
     _trainingPlans[index] = _freezeTrainingPlan(plan);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.trainingLibrary);
   }
 
   void deleteTrainingPlan(String id) {
@@ -567,7 +630,7 @@ class AppStore extends ChangeNotifier {
       throw StateError('Training plan is used by the active workout.');
     }
     _trainingPlans.removeAt(index);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.trainingLibrary);
   }
 
   WorkoutSession startWorkout({
@@ -593,6 +656,7 @@ class AppStore extends ChangeNotifier {
         WorkoutExerciseResult(
           exerciseId: exercise.id,
           exerciseName: exercise.name,
+          measurementType: exercise.measurementType,
           target: plannedExercise,
           setLogs: const [],
         ),
@@ -606,7 +670,7 @@ class AppStore extends ChangeNotifier {
       results: List<WorkoutExerciseResult>.unmodifiable(results),
     );
     _activeWorkoutSession = session;
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.workout);
     return session;
   }
 
@@ -614,6 +678,7 @@ class AppStore extends ChangeNotifier {
     required int resultIndex,
     required WorkoutSetLog setLog,
   }) {
+    _assertActiveWorkoutIsWritable();
     final session = _activeWorkoutSession;
     if (session == null) {
       throw StateError('No active workout.');
@@ -629,6 +694,7 @@ class AppStore extends ChangeNotifier {
     updatedResults[resultIndex] = WorkoutExerciseResult(
       exerciseId: current.exerciseId,
       exerciseName: current.exerciseName,
+      measurementType: current.measurementType,
       target: current.target,
       setLogs: List<WorkoutSetLog>.unmodifiable(<WorkoutSetLog>[
         ...current.setLogs,
@@ -638,13 +704,14 @@ class AppStore extends ChangeNotifier {
     _activeWorkoutSession = session.copyWith(
       results: List<WorkoutExerciseResult>.unmodifiable(updatedResults),
     );
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.workout);
   }
 
   void removeActiveWorkoutSet({
     required int resultIndex,
     required int setIndex,
   }) {
+    _assertActiveWorkoutIsWritable();
     final session = _activeWorkoutSession;
     if (session == null) {
       throw StateError('No active workout.');
@@ -662,16 +729,18 @@ class AppStore extends ChangeNotifier {
     updatedResults[resultIndex] = WorkoutExerciseResult(
       exerciseId: current.exerciseId,
       exerciseName: current.exerciseName,
+      measurementType: current.measurementType,
       target: current.target,
       setLogs: List<WorkoutSetLog>.unmodifiable(updatedSetLogs),
     );
     _activeWorkoutSession = session.copyWith(
       results: List<WorkoutExerciseResult>.unmodifiable(updatedResults),
     );
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.workout);
   }
 
   WorkoutSession finishActiveWorkout({DateTime? finishedAt}) {
+    _assertActiveWorkoutIsWritable();
     final session = _activeWorkoutSession;
     if (session == null) {
       throw StateError('No active workout.');
@@ -679,7 +748,7 @@ class AppStore extends ChangeNotifier {
     final finished = session.copyWith(finishedAt: finishedAt ?? DateTime.now());
     _activeWorkoutSession = null;
     _completedWorkoutSessions.add(finished);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.workout);
     return finished;
   }
 
@@ -691,7 +760,7 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Missing completed workout session id: $sessionId');
     }
     _completedWorkoutSessions.removeAt(index);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.workout);
   }
 
   void createFood(FoodItem food) {
@@ -701,7 +770,7 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Duplicate item id: ${food.id}');
     }
     _catalog[food.id] = CatalogItem.food(food);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.foodLibrary);
   }
 
   void updateFood(FoodItem food) {
@@ -716,7 +785,7 @@ class AppStore extends ChangeNotifier {
     }
     _assertCatalogNameIsAvailable(food.name, excludingId: food.id);
     _catalog[food.id] = CatalogItem.food(food);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.foodLibrary);
   }
 
   void createDish(DishItem dish) {
@@ -726,7 +795,7 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Duplicate item id: ${dish.id}');
     }
     _catalog[dish.id] = CatalogItem.dish(_freezeDish(dish));
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.foodLibrary);
   }
 
   void updateDish(DishItem dish) {
@@ -741,7 +810,7 @@ class AppStore extends ChangeNotifier {
     }
     _assertCatalogNameIsAvailable(dish.name, excludingId: dish.id);
     _catalog[dish.id] = CatalogItem.dish(_freezeDish(dish));
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.foodLibrary);
   }
 
   void deleteItem(String id) {
@@ -753,7 +822,7 @@ class AppStore extends ChangeNotifier {
       throw StateError('Item is used by a recipe.');
     }
     _catalog.remove(id);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.foodLibrary);
   }
 
   MealEntry addMealByGrams({
@@ -778,7 +847,7 @@ class AppStore extends ChangeNotifier {
       catalog: _catalog,
     );
     _mealEntries.add(entry);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.nutritionHistory);
     return entry;
   }
 
@@ -809,7 +878,7 @@ class AppStore extends ChangeNotifier {
       catalog: _catalog,
     );
     _mealEntries.add(entry);
-    _didMutatePersistedState();
+    _didMutatePersistedState(AppStateSlice.nutritionHistory);
     return entry;
   }
 
@@ -817,17 +886,28 @@ class AppStore extends ChangeNotifier {
     final before = _mealEntries.length;
     _mealEntries.removeWhere((entry) => entry.id == id);
     if (_mealEntries.length != before) {
-      _didMutatePersistedState();
+      _didMutatePersistedState(AppStateSlice.nutritionHistory);
     }
   }
 
-  void _didMutatePersistedState() {
+  void _didMutatePersistedState(AppStateSlice slice) {
     if (_persistedMutationBatchDepth > 0) {
-      _hasBatchedPersistedMutation = true;
+      _batchedPersistedSlices.add(slice);
       return;
     }
+    _componentFor(slice).markChanged();
     notifyListeners();
     unawaited(_schedulePersistenceSave());
+  }
+
+  AppStateComponent _componentFor(AppStateSlice slice) {
+    return switch (slice) {
+      AppStateSlice.foodLibrary => foodLibraryState,
+      AppStateSlice.trainingLibrary => trainingLibraryState,
+      AppStateSlice.nutritionHistory => nutritionHistoryState,
+      AppStateSlice.workout => workoutState,
+      AppStateSlice.preferences => preferencesState,
+    };
   }
 
   /// Coalesces multiple validated state mutations into one notification/save.
@@ -837,8 +917,13 @@ class AppStore extends ChangeNotifier {
       return action();
     } finally {
       _persistedMutationBatchDepth -= 1;
-      if (_persistedMutationBatchDepth == 0 && _hasBatchedPersistedMutation) {
-        _hasBatchedPersistedMutation = false;
+      if (_persistedMutationBatchDepth == 0 &&
+          _batchedPersistedSlices.isNotEmpty) {
+        final changedSlices = Set<AppStateSlice>.of(_batchedPersistedSlices);
+        _batchedPersistedSlices.clear();
+        for (final slice in changedSlices) {
+          _componentFor(slice).markChanged();
+        }
         notifyListeners();
         unawaited(_schedulePersistenceSave());
       }
@@ -847,6 +932,12 @@ class AppStore extends ChangeNotifier {
 
   void _didMutateTransientState() {
     notifyListeners();
+  }
+
+  void _assertActiveWorkoutIsWritable() {
+    if (isActiveWorkoutReadOnly) {
+      throw StateError('The active workout is open on another device.');
+    }
   }
 
   void _runWithoutPersistence(void Function() action) {
@@ -925,6 +1016,12 @@ class AppStore extends ChangeNotifier {
     );
   }
 
+  /// Returns an immutable snapshot of all persisted state components.
+  PersistedAppState get persistedSnapshot => _toPersistedAppState();
+
+  /// Waits until all persistence work already queued by this store completes.
+  Future<void> flushPersistence() => _pendingSave;
+
   void _applyPersistedState(PersistedAppState state) {
     _validatePersistedState(state);
     _applyPersistedStateUnchecked(state);
@@ -964,10 +1061,16 @@ class AppStore extends ChangeNotifier {
         ..clear()
         ..addAll(state.mealEntries);
       _preferences = state.preferences.copyWith();
-      _activeWorkoutSession = state.activeWorkoutSession;
+      _activeWorkoutSession = _backfillWorkoutSessionSnapshots(
+        state.activeWorkoutSession,
+      );
       _completedWorkoutSessions
         ..clear()
-        ..addAll(state.completedWorkoutSessions);
+        ..addAll(
+          state.completedWorkoutSessions.map(
+            (session) => _backfillWorkoutSessionSnapshots(session)!,
+          ),
+        );
       _mealEntryCounter = state.mealEntryCounter;
       _workoutSessionCounter = state.workoutSessionCounter;
       _isLoggedIn = false;
@@ -1430,32 +1533,17 @@ class AppStore extends ChangeNotifier {
     );
   }
 
-  bool _isReferencedByCompletedWorkoutHistory(String exerciseId) {
-    return _completedWorkoutSessions.any(
-      (session) =>
-          session.results.any((result) => result.exerciseId == exerciseId),
-    );
-  }
-
   bool _hasWorkoutHistoryForExercise(String exerciseId) {
     final activeSession = _activeWorkoutSession;
-    if (activeSession != null &&
-        activeSession.results.any(
-          (result) => result.exerciseId == exerciseId,
-        )) {
-      return true;
-    }
-    return _completedWorkoutSessions.any(
-      (session) =>
-          session.results.any((result) => result.exerciseId == exerciseId),
-    );
+    return activeSession != null &&
+        activeSession.results.any((result) => result.exerciseId == exerciseId);
   }
 
   void _validateWorkoutSession(WorkoutSession session) {
     for (final result in session.results) {
-      final measurementType = _requireExerciseMeasurementType(
-        result.exerciseId,
-      );
+      final measurementType =
+          result.measurementType ??
+          _requireExerciseMeasurementType(result.exerciseId);
       if (result.target.exerciseId != result.exerciseId) {
         throw ArgumentError(
           'Workout result target must reference the same exercise id.',
@@ -1466,6 +1554,27 @@ class AppStore extends ChangeNotifier {
         _validateWorkoutSetLog(setLog, measurementType);
       }
     }
+  }
+
+  WorkoutSession? _backfillWorkoutSessionSnapshots(WorkoutSession? session) {
+    if (session == null) {
+      return null;
+    }
+    return session.copyWith(
+      results: List<WorkoutExerciseResult>.unmodifiable(
+        session.results.map((result) {
+          final measurementType =
+              result.measurementType ??
+              _exercises[result.exerciseId]?.measurementType;
+          if (measurementType == null) {
+            throw ArgumentError(
+              'Missing exercise snapshot for ${result.exerciseId}.',
+            );
+          }
+          return result.copyWith(measurementType: measurementType);
+        }),
+      ),
+    );
   }
 
   bool _dishReferencesTarget(
@@ -1533,12 +1642,12 @@ class AppStore extends ChangeNotifier {
 
   String _nextMealEntryId() {
     _mealEntryCounter += 1;
-    return 'meal-entry-${_mealEntryCounter.toString()}';
+    return _createUuidV4();
   }
 
   String _nextWorkoutSessionId() {
     _workoutSessionCounter += 1;
-    return 'workout-session-${_workoutSessionCounter.toString()}';
+    return _createUuidV4();
   }
 
   DishItem _freezeDish(DishItem dish) {
@@ -1583,6 +1692,17 @@ class AppStore extends ChangeNotifier {
       return rounded.toInt().toString();
     }
     return value.toStringAsFixed(1);
+  }
+
+  @override
+  void dispose() {
+    _activeWorkoutLeaseListenable?.removeListener(_didMutateTransientState);
+    foodLibraryState.dispose();
+    trainingLibraryState.dispose();
+    nutritionHistoryState.dispose();
+    workoutState.dispose();
+    preferencesState.dispose();
+    super.dispose();
   }
 }
 

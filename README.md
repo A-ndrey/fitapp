@@ -95,12 +95,14 @@ cloud sync.
 
 The sync flow is:
 
-1. The app loads local state from `shared_preferences`.
+1. The app loads account-scoped state slices from `shared_preferences`.
 2. When a web user signs in, Firebase initializes and starts background sync.
-3. The sync coordinator reconciles local state with the remote Firestore
-   snapshot.
-4. Local persisted-state changes enqueue a remote upload.
-5. Deleting an account removes the remote state document and then deletes the
+3. A one-time migration reads `users/{uid}/state/current`, validates the v2
+   entities, and commits `users/{uid}/sync/manifest` last.
+4. Foods, recipes, exercises, plans, meal entries, and workout sessions sync as
+   independent documents. Deleted entities remain as tombstones.
+5. Collection listeners merge remote changes into the local cache.
+6. Deleting an account removes all known user collections and then deletes the
    Firebase Auth account.
 
 To use sync with your own Firebase project:
@@ -111,14 +113,60 @@ To use sync with your own Firebase project:
 4. Enable Cloud Firestore.
 5. Generate Flutter Firebase options for your project.
 6. Replace the local Firebase configuration with your generated values.
-7. Add Firestore security rules that allow each authenticated user to read and
-   write only their own `users/{uid}/state/current` document.
+7. Add Firestore security rules that allow each authenticated user to access
+   only their own FitApp documents.
 
-The remote app-state document path is:
+Deploy these transition rules before opening the v2 client. They keep the
+legacy snapshot writable only for the short migration rollout:
 
-```text
-users/{uid}/state/current
+```javascript
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/state/current {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/{collection}/{documentId} {
+      allow read, write: if isOwner(userId)
+        && collection in [
+          'foods',
+          'recipes',
+          'exercises',
+          'trainingPlans',
+          'mealEntries',
+          'workoutSessions',
+          'runtime',
+          'preferences',
+          'sync'
+        ];
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
 ```
+
+After every client has committed v2, make the legacy document read-only while
+still allowing account deletion:
+
+```javascript
+match /users/{userId}/state/current {
+  allow read, delete: if isOwner(userId);
+  allow create, update: if false;
+}
+```
+
+The v2 collections live under `users/{uid}` and are named `foods`, `recipes`,
+`exercises`, `trainingPlans`, `mealEntries`, `workoutSessions`, `runtime`,
+`preferences`, and `sync`.
 
 Deploy a web build only after configuring Firebase for your own project:
 

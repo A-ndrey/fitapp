@@ -80,6 +80,52 @@ class PersistedAppStateCodec {
     );
   }
 
+  static Map<String, Object?> encodeFoodItem(FoodItem item) =>
+      _encodeFoodItem(item);
+
+  static FoodItem decodeFoodItem(Object? encoded) => _decodeFoodItem(encoded);
+
+  static Map<String, Object?> encodeDishItem(DishItem item) =>
+      _encodeDishItem(item);
+
+  static DishItem decodeDishItem(Object? encoded) => _decodeDishItem(encoded);
+
+  static Map<String, Object?> encodeExercise(Exercise exercise) =>
+      _encodeExercise(exercise);
+
+  static Exercise decodeExercise(Object? encoded) => _decodeExercise(encoded);
+
+  static Map<String, Object?> encodeTrainingPlan(TrainingPlan plan) =>
+      _encodeTrainingPlan(plan);
+
+  static TrainingPlan decodeTrainingPlan(
+    Object? encoded,
+    Set<String> exerciseIds,
+  ) => _decodeTrainingPlan(encoded, exerciseIds);
+
+  static Map<String, Object?> encodeMealEntry(MealEntry entry) =>
+      _encodeMealEntry(entry);
+
+  static MealEntry decodeMealEntry(Object? encoded) =>
+      _decodeMealEntry(encoded);
+
+  static Map<String, Object?> encodePreferences(AppPreferences preferences) =>
+      _encodePreferences(preferences);
+
+  static AppPreferences decodePreferences(Object? encoded) =>
+      _decodePreferences(encoded);
+
+  static Map<String, Object?> encodeWorkoutSession(WorkoutSession session) =>
+      Map<String, Object?>.from(_encodeWorkoutSession(session)! as Map);
+
+  static WorkoutSession decodeWorkoutSession(Object? encoded) {
+    final session = _decodeWorkoutSession(encoded);
+    if (session == null) {
+      throw const FormatException('WorkoutSession must not be null.');
+    }
+    return session;
+  }
+
   static WorkoutSession _decodeCompletedWorkoutSession(Object? encoded) {
     final session = _decodeWorkoutSession(encoded);
     if (session == null) {
@@ -397,6 +443,8 @@ class PersistedAppStateCodec {
     return <String, Object?>{
       'exerciseId': result.exerciseId,
       'exerciseName': result.exerciseName,
+      if (result.measurementType != null)
+        'measurementType': result.measurementType!.name,
       'target': _encodeTrainingExercise(result.target),
       'setLogs': result.setLogs
           .map(_encodeWorkoutSetLog)
@@ -409,6 +457,16 @@ class PersistedAppStateCodec {
     return WorkoutExerciseResult(
       exerciseId: _readString(payload, 'exerciseId'),
       exerciseName: _readString(payload, 'exerciseName'),
+      measurementType: payload['measurementType'] == null
+          ? null
+          : _readEnum(
+              _asString(
+                payload['measurementType'],
+                'WorkoutExerciseResult.measurementType',
+              ),
+              ExerciseMeasurementType.values,
+              'WorkoutExerciseResult.measurementType',
+            ),
       target: _decodeTrainingExercise(payload['target']),
       setLogs: _readList(
         payload,

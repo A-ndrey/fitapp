@@ -608,15 +608,12 @@ class LibraryTransferService {
         (plan) =>
             plan.exercises.any((target) => target.exerciseId == exercise.id),
       );
-      final usedByHistory = _store
-          .completedWorkoutHistoryForExercise(exercise.id)
-          .isNotEmpty;
       final usedByActive =
           _store.activeWorkoutSession?.results.any(
             (result) => result.exerciseId == exercise.id,
           ) ??
           false;
-      if (usedByPlan || usedByHistory || usedByActive) {
+      if (usedByPlan || usedByActive) {
         return 'Measurement type cannot change while the exercise is in use.';
       }
     }
