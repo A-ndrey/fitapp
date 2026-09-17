@@ -26,11 +26,11 @@ class PersistedAppState {
        userTrainingPlans = List.unmodifiable(
          userTrainingPlans.map(_cloneTrainingPlan),
        ),
-       mealEntries = List.unmodifiable(mealEntries.map(_cloneMealEntry)),
+       mealEntries = _cloneMealEntriesInChronologicalOrder(mealEntries),
        preferences = _cloneAppPreferences(preferences),
        activeWorkoutSession = _cloneWorkoutSession(activeWorkoutSession),
-       completedWorkoutSessions = List.unmodifiable(
-         completedWorkoutSessions.map(_cloneWorkoutSession),
+       completedWorkoutSessions = _cloneWorkoutSessionsInChronologicalOrder(
+         completedWorkoutSessions,
        );
 
   const PersistedAppState.empty()
@@ -49,10 +49,16 @@ class PersistedAppState {
   final List<DishItem> userDishes;
   final List<Exercise> userExercises;
   final List<TrainingPlan> userTrainingPlans;
+
+  /// Logged meals ordered from oldest to newest.
   final List<MealEntry> mealEntries;
+
   final AppPreferences preferences;
   final WorkoutSession? activeWorkoutSession;
+
+  /// Completed workouts ordered from oldest to newest.
   final List<WorkoutSession> completedWorkoutSessions;
+
   final int mealEntryCounter;
   final int workoutSessionCounter;
 
@@ -107,6 +113,37 @@ class PersistedAppState {
         carbs: entry.nutrition.carbs,
       ),
     );
+  }
+
+  static List<MealEntry> _cloneMealEntriesInChronologicalOrder(
+    Iterable<MealEntry> entries,
+  ) {
+    final sorted = entries.map(_cloneMealEntry).toList(growable: false)
+      ..sort((left, right) {
+        final timestampComparison = left.loggedAt.compareTo(right.loggedAt);
+        return timestampComparison != 0
+            ? timestampComparison
+            : left.id.compareTo(right.id);
+      });
+    return List.unmodifiable(sorted);
+  }
+
+  static List<WorkoutSession> _cloneWorkoutSessionsInChronologicalOrder(
+    Iterable<WorkoutSession> sessions,
+  ) {
+    final sorted =
+        sessions
+            .map((session) => _cloneWorkoutSession(session)!)
+            .toList(growable: false)
+          ..sort((left, right) {
+            final timestampComparison = left.startedAt.compareTo(
+              right.startedAt,
+            );
+            return timestampComparison != 0
+                ? timestampComparison
+                : left.id.compareTo(right.id);
+          });
+    return List.unmodifiable(sorted);
   }
 
   static AppPreferences _cloneAppPreferences(AppPreferences preferences) {

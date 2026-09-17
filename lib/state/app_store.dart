@@ -221,8 +221,11 @@ class AppStore extends ChangeNotifier {
 
   List<TrainingPlan> get trainingPlans => List.unmodifiable(_trainingPlans);
 
-  List<WorkoutSession> get completedWorkoutSessions =>
-      List.unmodifiable(_completedWorkoutSessions);
+  List<WorkoutSession> get completedWorkoutSessions {
+    final sorted = List<WorkoutSession>.of(_completedWorkoutSessions)
+      ..sort(_compareWorkoutSessionsChronologically);
+    return List.unmodifiable(sorted);
+  }
 
   AppPreferences get preferences => _preferences;
 
@@ -384,8 +387,7 @@ class AppStore extends ChangeNotifier {
     String exerciseId,
   ) {
     final groups = <WorkoutExerciseHistoryGroup>[];
-    for (var i = _completedWorkoutSessions.length - 1; i >= 0; i--) {
-      final session = _completedWorkoutSessions[i];
+    for (final session in completedWorkoutSessions.reversed) {
       final matchingResults = <WorkoutExerciseResult>[];
       for (final result in session.results) {
         if (result.exerciseId == exerciseId) {
@@ -427,14 +429,20 @@ class AppStore extends ChangeNotifier {
 
     final currentPlanIds = _trainingPlans.map((plan) => plan.id).toSet();
     WorkoutSession? completedToday;
-    for (var i = _completedWorkoutSessions.length - 1; i >= 0; i--) {
-      final session = _completedWorkoutSessions[i];
+    final lastCompletedByPlanId = <String, DateTime>{};
+    for (final session in _completedWorkoutSessions) {
       if (!currentPlanIds.contains(session.trainingPlanId)) {
         continue;
       }
-      if (_isSameDate(session.startedAt, now)) {
+      if (_isSameDate(session.startedAt, now) &&
+          (completedToday == null ||
+              _compareWorkoutSessionsChronologically(completedToday, session) <
+                  0)) {
         completedToday = session;
-        break;
+      }
+      final previous = lastCompletedByPlanId[session.trainingPlanId];
+      if (previous == null || session.startedAt.isAfter(previous)) {
+        lastCompletedByPlanId[session.trainingPlanId] = session.startedAt;
       }
     }
     if (completedToday != null) {
@@ -444,19 +452,6 @@ class AppStore extends ChangeNotifier {
         session: completedToday,
         lastCompletedAt: completedToday.startedAt,
       );
-    }
-
-    final lastCompletedByPlanId = <String, DateTime>{};
-    for (var i = _completedWorkoutSessions.length - 1; i >= 0; i--) {
-      final session = _completedWorkoutSessions[i];
-      if (!currentPlanIds.contains(session.trainingPlanId) ||
-          lastCompletedByPlanId.containsKey(session.trainingPlanId)) {
-        continue;
-      }
-      lastCompletedByPlanId[session.trainingPlanId] = session.startedAt;
-      if (lastCompletedByPlanId.length == currentPlanIds.length) {
-        break;
-      }
     }
 
     TrainingPlan? leastRecentPlan;
@@ -1226,6 +1221,16 @@ class AppStore extends ChangeNotifier {
 
   static bool _isSameDate(DateTime first, DateTime second) {
     return _localDateOnly(first) == _localDateOnly(second);
+  }
+
+  static int _compareWorkoutSessionsChronologically(
+    WorkoutSession left,
+    WorkoutSession right,
+  ) {
+    final timestampComparison = left.startedAt.compareTo(right.startedAt);
+    return timestampComparison != 0
+        ? timestampComparison
+        : left.id.compareTo(right.id);
   }
 
   void _validateFood(FoodItem food) {

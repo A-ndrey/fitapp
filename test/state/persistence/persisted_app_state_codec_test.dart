@@ -34,6 +34,46 @@ Map<String, Object?> _basePersistedPayload() {
 }
 
 void main() {
+  test('PersistedAppState orders history by domain timestamps', () {
+    final sharedMealTime = DateTime.utc(2026, 5, 17, 12);
+    final sharedWorkoutTime = DateTime.utc(2026, 5, 16, 9);
+    final state = PersistedAppState(
+      userFoods: const [],
+      userDishes: const [],
+      userExercises: const [],
+      userTrainingPlans: const [],
+      mealEntries: [
+        _mealEntry('z-new', DateTime.utc(2026, 5, 18)),
+        _mealEntry('z-same', sharedMealTime),
+        _mealEntry('a-old', DateTime.utc(2026, 5, 16)),
+        _mealEntry('a-same', sharedMealTime),
+      ],
+      preferences: const AppPreferences.defaults(),
+      activeWorkoutSession: null,
+      completedWorkoutSessions: [
+        _workoutSession('z-new', DateTime.utc(2026, 5, 18, 9)),
+        _workoutSession('z-same', sharedWorkoutTime),
+        _workoutSession('a-old', DateTime.utc(2026, 5, 14, 9)),
+        _workoutSession('a-same', sharedWorkoutTime),
+      ],
+      mealEntryCounter: 0,
+      workoutSessionCounter: 0,
+    );
+
+    expect(state.mealEntries.map((entry) => entry.id), [
+      'a-old',
+      'a-same',
+      'z-same',
+      'z-new',
+    ]);
+    expect(state.completedWorkoutSessions.map((session) => session.id), [
+      'a-old',
+      'a-same',
+      'z-same',
+      'z-new',
+    ]);
+  });
+
   test(
     'PersistedAppState copies nested collection-backed models on construction',
     () {
@@ -624,5 +664,31 @@ void main() {
         throwsFormatException,
       );
     },
+  );
+}
+
+MealEntry _mealEntry(String id, DateTime loggedAt) {
+  return MealEntry(
+    id: id,
+    sourceItemId: 'food',
+    itemName: 'Food',
+    itemType: CatalogItemType.food,
+    servingSizeGrams: 100,
+    consumedGrams: 100,
+    mode: MealEntryMode.grams,
+    enteredQuantity: 100,
+    loggedAt: loggedAt,
+    nutrition: NutritionValues.zero,
+  );
+}
+
+WorkoutSession _workoutSession(String id, DateTime startedAt) {
+  return WorkoutSession(
+    id: id,
+    trainingPlanId: 'plan',
+    trainingPlanName: 'Plan',
+    startedAt: startedAt,
+    finishedAt: startedAt.add(const Duration(hours: 1)),
+    results: const [],
   );
 }
