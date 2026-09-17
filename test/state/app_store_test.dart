@@ -556,6 +556,40 @@ void main() {
   );
 
   test(
+    'applying an already persisted snapshot does not write it a second time',
+    () async {
+      final persistence = FakePersistence();
+      final observedStates = <PersistedAppState>[];
+      final store = AppStore.empty(
+        persistence: persistence,
+        onPersistedStateSaved: observedStates.add,
+      );
+      final externalSnapshot = PersistedAppState(
+        userFoods: [cucumber()],
+        userDishes: const [],
+        userExercises: const [],
+        userTrainingPlans: const [],
+        mealEntries: const [],
+        preferences: const AppPreferences.defaults(),
+        activeWorkoutSession: null,
+        completedWorkoutSessions: const [],
+        mealEntryCounter: 0,
+        workoutSessionCounter: 0,
+      );
+
+      await store.applyExternalPersistedState(
+        externalSnapshot,
+        notifyPersistedStateObserver: false,
+        persist: false,
+      );
+
+      expect(store.itemById('cucumber'), isNotNull);
+      expect(persistence.saveCount, 0);
+      expect(observedStates, isEmpty);
+    },
+  );
+
+  test(
     'applying a suppressed external snapshot blocks stale queued observer notifications',
     () async {
       final persistence = DeferredPersistence();

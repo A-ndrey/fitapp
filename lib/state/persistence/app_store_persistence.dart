@@ -6,15 +6,23 @@ abstract interface class AppStorePersistence {
   Future<void> save(PersistedAppState state);
 }
 
-/// Persistence that isolates guest data from each authenticated account.
-abstract interface class AccountScopedAppStorePersistence
+/// Persistence for the single local cache owned by this device.
+///
+/// The cache can remain available while signed out. [ownerUserId] only guards
+/// cloud synchronization; it does not control whether local data is visible.
+abstract interface class DeviceAppStorePersistence
     implements AppStorePersistence {
-  String? get activeUserId;
+  String? get ownerUserId;
 
-  Future<PersistedAppState?> activateGuest();
+  Object? get loadError;
 
-  Future<PersistedAppState?> activateAccount(
-    String userId, {
-    PersistedAppState? seed,
-  });
+  /// Selects and migrates this user's legacy account cache when startup could
+  /// not choose one safely before authentication completed.
+  Future<PersistedAppState?> migrateLegacyAccount(String userId);
+
+  /// Atomically commits [state] and its synchronization owner.
+  Future<void> replace(PersistedAppState state, {required String? ownerUserId});
+
+  /// Removes the device cache and all retained legacy state.
+  Future<void> clear();
 }

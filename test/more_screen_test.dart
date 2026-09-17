@@ -7,6 +7,7 @@ import 'package:fitapp/screens/more_screen.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/state/auth/app_auth_service.dart';
 import 'package:fitapp/state/sync/app_store_sync_coordinator.dart';
+import 'package:fitapp/state/sync/app_store_sync_conflict.dart';
 import 'package:fitapp/state/sync/firebase_app_store_sync_service.dart';
 import 'package:fitapp/state/sync/app_store_sync_status.dart';
 import 'package:fitapp/ui/core/layout/adaptive_page.dart';
@@ -62,7 +63,14 @@ void main() {
     AppStore store, {
     FitAppSyncAccess? syncAccess,
     AppAuthService? authService,
-    Future<void> Function({required String password})? onDeleteAccount,
+    AppStoreSyncConflict? syncConflict,
+    Future<void> Function()? onReplaceLocalWithAccountData,
+    Future<void> Function()? onReplaceAccountWithLocalData,
+    Future<void> Function({
+      required String password,
+      required bool deleteLocalData,
+    })?
+    onDeleteAccount,
     Size? size,
     String buildId = 'test-build-id',
   }) async {
@@ -76,11 +84,14 @@ void main() {
           store: store,
           syncStatusListenable: syncAccess,
           readSyncStatus: () => syncAccess?.status,
+          readSyncConflict: () => syncConflict ?? syncAccess?.conflict,
           authListenable: authService,
           readAuthState: () => authService?.state ?? const AppAuthState(),
           onSignIn: authService?.signIn,
           onSignUp: authService?.signUp,
           onSignOut: authService?.signOut,
+          onReplaceLocalWithAccountData: onReplaceLocalWithAccountData,
+          onReplaceAccountWithLocalData: onReplaceAccountWithLocalData,
           onDeleteAccount: onDeleteAccount,
           buildId: buildId,
         ),
@@ -564,6 +575,85 @@ void main() {
     expect(find.text('Login'), findsOneWidget);
   });
 
+  testWidgets(
+    'sync conflict requires explicit account overwrite confirmation',
+    (tester) async {
+      var replaceCallCount = 0;
+      final authService = _FakeAuthService(
+        const AppAuthState(uid: 'user-2', email: 'other@example.com'),
+      );
+
+      await pumpScreen(
+        tester,
+        AppStore(),
+        authService: authService,
+        syncConflict: const AppStoreSyncConflict(
+          reason: AppStoreSyncConflictReason.differentAccount,
+        ),
+        onReplaceAccountWithLocalData: () async {
+          replaceCallCount += 1;
+        },
+      );
+
+      expect(
+        find.textContaining('local data and account data cannot be combined'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Replace account data with local data'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Replace account data?'), findsOneWidget);
+      expect(
+        find.textContaining('Cloud data for this account will be completely'),
+        findsOneWidget,
+      );
+      expect(replaceCallCount, 0);
+
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Replace account data'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(replaceCallCount, 1);
+    },
+  );
+
+  testWidgets('sync conflict requires explicit local overwrite confirmation', (
+    tester,
+  ) async {
+    var replaceCallCount = 0;
+    final authService = _FakeAuthService(
+      const AppAuthState(uid: 'user-1', email: 'me@example.com'),
+    );
+
+    await pumpScreen(
+      tester,
+      AppStore(),
+      authService: authService,
+      syncConflict: const AppStoreSyncConflict(
+        reason: AppStoreSyncConflictReason.unownedLocalAndRemoteData,
+      ),
+      onReplaceLocalWithAccountData: () async {
+        replaceCallCount += 1;
+      },
+    );
+
+    await tester.tap(find.text('Replace local data with account data'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Replace local data?'), findsOneWidget);
+    expect(
+      find.textContaining('Unsynced local changes will be lost'),
+      findsOneWidget,
+    );
+    expect(replaceCallCount, 0);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Replace local data'));
+    await tester.pumpAndSettle();
+
+    expect(replaceCallCount, 1);
+  });
+
   testWidgets('signed-out users do not see delete account action', (
     tester,
   ) async {
@@ -582,7 +672,7 @@ void main() {
       tester,
       AppStore(),
       authService: authService,
-      onDeleteAccount: ({required password}) async {
+      onDeleteAccount: ({required password, required deleteLocalData}) async {
         deleteCallCount += 1;
       },
     );
@@ -603,6 +693,7 @@ void main() {
     (tester) async {
       var deleteCallCount = 0;
       String? deletePassword;
+      bool? deletedLocalData;
       final authService = _FakeAuthService(
         const AppAuthState(uid: 'user-1', email: 'me@example.com'),
       );
@@ -611,9 +702,10 @@ void main() {
         tester,
         AppStore(),
         authService: authService,
-        onDeleteAccount: ({required password}) async {
+        onDeleteAccount: ({required password, required deleteLocalData}) async {
           deleteCallCount += 1;
           deletePassword = password;
+          deletedLocalData = deleteLocalData;
           await authService.deleteAccount();
         },
       );
@@ -621,15 +713,53 @@ void main() {
       await tester.tap(find.text('Delete account'));
       await tester.pumpAndSettle();
       await tester.enterText(find.bySemanticsLabel('Password'), 'secret123');
-      await tester.tap(find.widgetWithText(FilledButton, 'Delete account'));
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Delete account, keep local data'),
+      );
       await tester.pumpAndSettle();
 
       expect(deleteCallCount, 1);
       expect(deletePassword, 'secret123');
+      expect(deletedLocalData, isFalse);
       expect(find.text('Login'), findsOneWidget);
       expect(find.text('Delete account'), findsNothing);
     },
   );
+
+  testWidgets('deleting local data requires a second confirmation', (
+    tester,
+  ) async {
+    var deleteCallCount = 0;
+    bool? deletedLocalData;
+    final authService = _FakeAuthService(
+      const AppAuthState(uid: 'user-1', email: 'me@example.com'),
+    );
+
+    await pumpScreen(
+      tester,
+      AppStore(),
+      authService: authService,
+      onDeleteAccount: ({required password, required deleteLocalData}) async {
+        deleteCallCount += 1;
+        deletedLocalData = deleteLocalData;
+      },
+    );
+
+    await tester.tap(find.text('Delete account'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.bySemanticsLabel('Password'), 'secret123');
+    await tester.tap(find.text('Delete account and all data'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete account and all data?'), findsOneWidget);
+    expect(deleteCallCount, 0);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete everything'));
+    await tester.pumpAndSettle();
+
+    expect(deleteCallCount, 1);
+    expect(deletedLocalData, isTrue);
+  });
 
   testWidgets('delete account failure shows readable error', (tester) async {
     final authService = _FakeAuthService(
@@ -640,7 +770,7 @@ void main() {
       tester,
       AppStore(),
       authService: authService,
-      onDeleteAccount: ({required password}) async {
+      onDeleteAccount: ({required password, required deleteLocalData}) async {
         throw const AuthFailure(
           'Please sign in again before deleting your account.',
         );
@@ -650,7 +780,9 @@ void main() {
     await tester.tap(find.text('Delete account'));
     await tester.pumpAndSettle();
     await tester.enterText(find.bySemanticsLabel('Password'), 'secret123');
-    await tester.tap(find.widgetWithText(FilledButton, 'Delete account'));
+    await tester.tap(
+      find.widgetWithText(FilledButton, 'Delete account, keep local data'),
+    );
     await tester.pumpAndSettle();
 
     expect(
@@ -672,14 +804,16 @@ void main() {
       tester,
       AppStore(),
       authService: authService,
-      onDeleteAccount: ({required password}) async {
+      onDeleteAccount: ({required password, required deleteLocalData}) async {
         deleteCallCount += 1;
       },
     );
 
     await tester.tap(find.text('Delete account'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Delete account'));
+    await tester.tap(
+      find.widgetWithText(FilledButton, 'Delete account, keep local data'),
+    );
     await tester.pumpAndSettle();
 
     expect(deleteCallCount, 0);

@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../models/app_preferences.dart';
 import '../state/app_store.dart';
 import '../state/auth/app_auth_service.dart';
+import '../state/sync/app_store_sync_conflict.dart';
 import '../state/sync/app_store_sync_status.dart';
 import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
@@ -18,11 +19,14 @@ class MoreScreen extends StatelessWidget {
     required this.store,
     this.syncStatusListenable,
     this.readSyncStatus,
+    this.readSyncConflict,
     this.authListenable,
     this.readAuthState,
     this.onSignIn,
     this.onSignUp,
     this.onSignOut,
+    this.onReplaceLocalWithAccountData,
+    this.onReplaceAccountWithLocalData,
     this.onDeleteAccount,
     this.buildId = appBuildId,
   });
@@ -30,6 +34,7 @@ class MoreScreen extends StatelessWidget {
   final AppStore store;
   final Listenable? syncStatusListenable;
   final AppStoreSyncStatus? Function()? readSyncStatus;
+  final AppStoreSyncConflict? Function()? readSyncConflict;
   final Listenable? authListenable;
   final AppAuthState Function()? readAuthState;
   final Future<void> Function({
@@ -43,7 +48,13 @@ class MoreScreen extends StatelessWidget {
   })?
   onSignUp;
   final Future<void> Function()? onSignOut;
-  final Future<void> Function({required String password})? onDeleteAccount;
+  final Future<void> Function()? onReplaceLocalWithAccountData;
+  final Future<void> Function()? onReplaceAccountWithLocalData;
+  final Future<void> Function({
+    required String password,
+    required bool deleteLocalData,
+  })?
+  onDeleteAccount;
   final String buildId;
 
   @override
@@ -58,6 +69,7 @@ class MoreScreen extends StatelessWidget {
         final preferences = store.preferences;
         final l10n = AppLocalizations.of(context);
         final authState = readAuthState?.call() ?? const AppAuthState();
+        final syncConflict = readSyncConflict?.call();
         final syncPresentation = _syncCardPresentation(
           readSyncStatus?.call(),
           errorColor: Theme.of(context).colorScheme.error,
@@ -70,9 +82,12 @@ class MoreScreen extends StatelessWidget {
               _AuthCard(
                 authState: authState,
                 syncPresentation: syncPresentation,
+                syncConflict: syncConflict,
                 onSignIn: onSignIn,
                 onSignUp: onSignUp,
                 onSignOut: onSignOut,
+                onReplaceLocalWithAccountData: onReplaceLocalWithAccountData,
+                onReplaceAccountWithLocalData: onReplaceAccountWithLocalData,
                 onDeleteAccount: onDeleteAccount,
               ),
               const AppPageSectionGap(),
@@ -244,14 +259,18 @@ class _AuthCard extends StatefulWidget {
   const _AuthCard({
     required this.authState,
     required this.syncPresentation,
+    required this.syncConflict,
     required this.onSignIn,
     required this.onSignUp,
     required this.onSignOut,
+    required this.onReplaceLocalWithAccountData,
+    required this.onReplaceAccountWithLocalData,
     required this.onDeleteAccount,
   });
 
   final AppAuthState authState;
   final _SyncCardPresentation syncPresentation;
+  final AppStoreSyncConflict? syncConflict;
   final Future<void> Function({
     required String email,
     required String password,
@@ -263,7 +282,13 @@ class _AuthCard extends StatefulWidget {
   })?
   onSignUp;
   final Future<void> Function()? onSignOut;
-  final Future<void> Function({required String password})? onDeleteAccount;
+  final Future<void> Function()? onReplaceLocalWithAccountData;
+  final Future<void> Function()? onReplaceAccountWithLocalData;
+  final Future<void> Function({
+    required String password,
+    required bool deleteLocalData,
+  })?
+  onDeleteAccount;
 
   @override
   State<_AuthCard> createState() => _AuthCardState();
@@ -271,7 +296,9 @@ class _AuthCard extends StatefulWidget {
 
 class _AuthCardState extends State<_AuthCard> {
   bool _isDeletingAccount = false;
+  bool _isResolvingConflict = false;
   String? _deleteErrorMessage;
+  String? _conflictErrorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -322,6 +349,56 @@ class _AuthCardState extends State<_AuthCard> {
                   color:
                       widget.syncPresentation.messageColor ??
                       colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            if (isSignedIn && widget.syncConflict != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Sync is paused because local data and account data '
+                      'cannot be combined safely. Choose which copy to keep.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onErrorContainer,
+                      ),
+                    ),
+                    if (_conflictErrorMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _conflictErrorMessage!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.error,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _isResolvingConflict
+                          ? null
+                          : _confirmReplaceLocalData,
+                      child: const Text('Replace local data with account data'),
+                    ),
+                    const SizedBox(height: 8),
+                    FilledButton(
+                      onPressed: _isResolvingConflict
+                          ? null
+                          : _confirmReplaceAccountData,
+                      child: Text(
+                        _isResolvingConflict
+                            ? 'Replacing data…'
+                            : 'Replace account data with local data',
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -388,14 +465,120 @@ class _AuthCardState extends State<_AuthCard> {
     );
   }
 
+  Future<void> _confirmReplaceLocalData() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Replace local data?'),
+        content: const Text(
+          'Data on this device will be completely replaced with data from '
+          'the account. Unsynced local changes will be lost.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Replace local data'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _resolveConflict(widget.onReplaceLocalWithAccountData);
+    }
+  }
+
+  Future<void> _confirmReplaceAccountData() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Replace account data?'),
+        content: const Text(
+          'Cloud data for this account will be completely replaced with '
+          'data from this device. This cannot be undone after syncing.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Replace account data'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _resolveConflict(widget.onReplaceAccountWithLocalData);
+    }
+  }
+
+  Future<void> _resolveConflict(Future<void> Function()? resolver) async {
+    if (resolver == null) {
+      return;
+    }
+    setState(() {
+      _isResolvingConflict = true;
+      _conflictErrorMessage = null;
+    });
+    try {
+      await resolver();
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _conflictErrorMessage = humanReadableFormError(
+            error,
+            resourceName: 'data',
+            fallback: "We couldn't replace the data. Please try again.",
+          );
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isResolvingConflict = false;
+        });
+      }
+    }
+  }
+
   Future<void> _confirmDeleteAccount() async {
-    final password = await showDialog<String>(
+    final request = await showDialog<_DeleteAccountRequest>(
       context: context,
       builder: (context) => const _DeleteAccountDialog(),
     );
 
-    if (password == null || !mounted) {
+    if (request == null || !mounted) {
       return;
+    }
+    if (request.deleteLocalData) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete account and all data?'),
+          content: const Text(
+            'The account, cloud data, and all local data on this device will '
+            'be permanently deleted.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete everything'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) {
+        return;
+      }
     }
 
     setState(() {
@@ -404,7 +587,10 @@ class _AuthCardState extends State<_AuthCard> {
     });
 
     try {
-      await widget.onDeleteAccount?.call(password: password);
+      await widget.onDeleteAccount?.call(
+        password: request.password,
+        deleteLocalData: request.deleteLocalData,
+      );
     } on AuthFailure catch (error) {
       if (mounted) {
         setState(() {
@@ -465,7 +651,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
           children: [
             const Text(
               'Your account and cloud sync data will be permanently deleted. '
-              'Local data on this device will remain.',
+              'Choose whether to keep the local data on this device.',
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -506,17 +692,39 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Delete account')),
+        TextButton(
+          onPressed: () => _submit(deleteLocalData: true),
+          child: const Text('Delete account and all data'),
+        ),
+        FilledButton(
+          onPressed: () => _submit(deleteLocalData: false),
+          child: const Text('Delete account, keep local data'),
+        ),
       ],
     );
   }
 
-  void _submit() {
+  void _submit({bool deleteLocalData = false}) {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    Navigator.of(context).pop(_passwordController.text);
+    Navigator.of(context).pop(
+      _DeleteAccountRequest(
+        password: _passwordController.text,
+        deleteLocalData: deleteLocalData,
+      ),
+    );
   }
+}
+
+class _DeleteAccountRequest {
+  const _DeleteAccountRequest({
+    required this.password,
+    required this.deleteLocalData,
+  });
+
+  final String password;
+  final bool deleteLocalData;
 }
 
 class _AuthFormScreen extends StatefulWidget {

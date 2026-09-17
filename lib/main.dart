@@ -23,6 +23,7 @@ import 'state/persistence/shared_preferences_sync_metadata_store.dart';
 import 'ui/core/layout/app_breakpoints.dart';
 import 'ui/core/theme/app_theme.dart';
 import 'state/sync/app_store_sync_coordinator.dart';
+import 'state/sync/app_store_sync_conflict.dart';
 import 'state/sync/app_store_sync_status.dart';
 import 'state/sync/firebase_app_store_sync_service.dart';
 import 'state/sync/persisted_entity_bundle.dart';
@@ -104,6 +105,10 @@ Future<FitAppStartup> prepareFitAppStartup({
     knownExerciseIds: knownExerciseIds,
   );
   startup.syncAccess._bindStartupRetry(startup.startBackgroundSync);
+  startup.syncAccess._bindConflictResolvers(
+    replaceLocalWithAccountData: startup.replaceLocalWithAccountData,
+    replaceAccountWithLocalData: startup.replaceAccountWithLocalData,
+  );
   authService.addListener(startup.handleAuthStateChanged);
   return startup;
 }
@@ -186,32 +191,19 @@ class FitAppStartup {
       if (userId == null) {
         return;
       }
-      await _activateAccountCache(userId);
+      final syncService = _syncServiceFactory(_knownExerciseIds);
+      final canSync = await _prepareDeviceCacheForSync(userId, syncService);
       if (_shouldSuppressSyncForCurrentUser) {
         return;
       }
+      if (!canSync) {
+        return;
+      }
+      if (authService.state.uid != userId) {
+        return;
+      }
 
-      final coordinator = _syncCoordinatorFactory(
-        metadataStore: _metadataStore,
-        syncService: _syncServiceFactory(_knownExerciseIds),
-        userIdProvider: () async => authService.state.uid,
-        bindPersistedStateObserver: _persistedStateObserverRelay.bind,
-        loadLocalSnapshot: _persistence.load,
-        applyRemoteSnapshot:
-            (state, {required notifyPersistedStateObserver}) async {
-              await store.applyExternalPersistedState(
-                state,
-                notifyPersistedStateObserver: notifyPersistedStateObserver,
-              );
-            },
-      );
-      store.bindActiveWorkoutLeaseController(
-        listenable: coordinator,
-        isReadOnly: () => coordinator.isActiveWorkoutReadOnly,
-        takeOver: coordinator.takeOverActiveWorkout,
-      );
-      syncAccess.bindCoordinator(coordinator);
-      await coordinator.start();
+      await _startCoordinator(syncService, expectedUserId: userId);
     } catch (error) {
       if (!_isDeletingAccount) {
         syncAccess.reportError(error);
@@ -219,7 +211,162 @@ class FitAppStartup {
     }
   }
 
-  Future<void> deleteAccountData({required String password}) async {
+  Future<void> _startCoordinator(
+    FirebaseAppStoreSyncService syncService, {
+    required String expectedUserId,
+  }) async {
+    if (syncAccess.coordinator != null ||
+        _shouldSuppressSyncForCurrentUser ||
+        authService.state.uid != expectedUserId) {
+      return;
+    }
+    final coordinator = _syncCoordinatorFactory(
+      metadataStore: _metadataStore,
+      syncService: syncService,
+      userIdProvider: () async => expectedUserId,
+      bindPersistedStateObserver: _persistedStateObserverRelay.bind,
+      loadLocalSnapshot: _persistence.load,
+      applyRemoteSnapshot:
+          (state, {required notifyPersistedStateObserver}) async {
+            await store.applyExternalPersistedState(
+              state,
+              notifyPersistedStateObserver: notifyPersistedStateObserver,
+            );
+          },
+    );
+    store.bindActiveWorkoutLeaseController(
+      listenable: coordinator,
+      isReadOnly: () => coordinator.isActiveWorkoutReadOnly,
+      takeOver: coordinator.takeOverActiveWorkout,
+    );
+    syncAccess.bindCoordinator(coordinator);
+    await coordinator.start();
+  }
+
+  Future<bool> _prepareDeviceCacheForSync(
+    String userId,
+    FirebaseAppStoreSyncService syncService,
+  ) async {
+    final persistence = _persistence;
+    if (persistence is! DeviceAppStorePersistence) {
+      return true;
+    }
+    if (persistence.loadError case final Object error) {
+      syncAccess.reportError(
+        StateError('Local cache could not be loaded: $error'),
+      );
+      return false;
+    }
+
+    final migrated = await persistence.migrateLegacyAccount(userId);
+    if (persistence.loadError case final Object error) {
+      syncAccess.reportError(
+        StateError('Local cache migration failed: $error'),
+      );
+      return false;
+    }
+    if (migrated != null &&
+        _snapshotHash(migrated) != _snapshotHash(store.persistedSnapshot)) {
+      await store.applyExternalPersistedState(
+        migrated,
+        notifyPersistedStateObserver: false,
+        persist: false,
+      );
+    }
+
+    final ownerUserId = persistence.ownerUserId;
+    if (ownerUserId != null) {
+      if (ownerUserId != userId) {
+        syncAccess.reportConflict(
+          const AppStoreSyncConflict(
+            reason: AppStoreSyncConflictReason.differentAccount,
+          ),
+        );
+        return false;
+      }
+      syncAccess.clearConflict();
+      return true;
+    }
+
+    final local = store.persistedSnapshot;
+    final remote = await syncService.fetch(userId);
+    if (authService.state.uid != userId) {
+      return false;
+    }
+    final localIsBlank = _isBlank(local);
+    final remoteIsBlank = remote == null || _isBlank(remote.state);
+    if (!localIsBlank && !remoteIsBlank) {
+      syncAccess.reportConflict(
+        const AppStoreSyncConflict(
+          reason: AppStoreSyncConflictReason.unownedLocalAndRemoteData,
+        ),
+      );
+      return false;
+    }
+
+    if (!localIsBlank && remote != null && remoteIsBlank) {
+      await syncService.push(userId, local, _snapshotHash(local));
+      _verifyCurrentUser(userId);
+    }
+    final selectedState = remoteIsBlank ? local : remote.state;
+    await persistence.replace(selectedState, ownerUserId: userId);
+    if (_snapshotHash(selectedState) != _snapshotHash(local)) {
+      await store.applyExternalPersistedState(
+        selectedState,
+        notifyPersistedStateObserver: false,
+        persist: false,
+      );
+    }
+    syncAccess.clearConflict();
+    return true;
+  }
+
+  Future<void> replaceLocalWithAccountData() async {
+    final (userId, persistence) = _conflictResolutionContext();
+    final syncService = _syncServiceFactory(_knownExerciseIds);
+    final remote = await syncService.fetch(userId);
+    _verifyCurrentUser(userId);
+    final state = remote?.state ?? const PersistedAppState.empty();
+    await persistence.replace(state, ownerUserId: userId);
+    await store.applyExternalPersistedState(
+      state,
+      notifyPersistedStateObserver: false,
+      persist: false,
+    );
+    syncAccess.clearConflict();
+    await _startCoordinator(syncService, expectedUserId: userId);
+  }
+
+  Future<void> replaceAccountWithLocalData() async {
+    final (userId, persistence) = _conflictResolutionContext();
+    final syncService = _syncServiceFactory(_knownExerciseIds);
+    final local = store.persistedSnapshot;
+    await syncService.push(userId, local, _snapshotHash(local));
+    _verifyCurrentUser(userId);
+    await persistence.replace(local, ownerUserId: userId);
+    syncAccess.clearConflict();
+    await _startCoordinator(syncService, expectedUserId: userId);
+  }
+
+  (String, DeviceAppStorePersistence) _conflictResolutionContext() {
+    final userId = authService.state.uid;
+    final persistence = _persistence;
+    if (userId == null || persistence is! DeviceAppStorePersistence) {
+      throw StateError('The sync conflict is no longer active.');
+    }
+    return (userId, persistence);
+  }
+
+  void _verifyCurrentUser(String expectedUserId) {
+    if (authService.state.uid != expectedUserId) {
+      throw StateError('The signed-in account changed during the operation.');
+    }
+  }
+
+  Future<void> deleteAccountData({
+    required String password,
+    bool deleteLocalData = false,
+  }) async {
     final userId = authService.state.uid;
     if (userId == null) {
       throw const AuthFailure('No account is signed in.');
@@ -246,12 +393,38 @@ class FitAppStartup {
 
     try {
       await authService.deleteAccount();
+      await _finishLocalAccountDeletion(deleteLocalData: deleteLocalData);
       _remoteDeletedUserId = null;
       _isDeletingAccount = false;
     } catch (_) {
       _isDeletingAccount = false;
       rethrow;
     }
+  }
+
+  Future<void> _finishLocalAccountDeletion({
+    required bool deleteLocalData,
+  }) async {
+    final persistence = _persistence;
+    if (persistence is! DeviceAppStorePersistence) {
+      if (deleteLocalData) {
+        await store.applyExternalPersistedState(
+          const PersistedAppState.empty(),
+          notifyPersistedStateObserver: false,
+        );
+      }
+      return;
+    }
+    if (deleteLocalData) {
+      await persistence.clear();
+      await store.applyExternalPersistedState(
+        const PersistedAppState.empty(),
+        notifyPersistedStateObserver: false,
+        persist: false,
+      );
+      return;
+    }
+    await persistence.replace(store.persistedSnapshot, ownerUserId: null);
   }
 
   void handleAuthStateChanged() {
@@ -262,55 +435,16 @@ class FitAppStartup {
     } else {
       _isDeletingAccount = false;
       store.unbindActiveWorkoutLeaseController();
-      unawaited(
-        syncAccess.stopCoordinator().then((_) => _activateGuestCache()),
-      );
+      syncAccess.clearConflict();
+      unawaited(syncAccess.stopCoordinator());
     }
   }
 
-  Future<void> _activateAccountCache(String userId) async {
-    final persistence = _persistence;
-    if (persistence is! AccountScopedAppStorePersistence ||
-        persistence.activeUserId == userId) {
-      return;
-    }
-    await store.flushPersistence();
-    PersistedAppState? guestSeed;
-    if (persistence.activeUserId == null) {
-      guestSeed = store.persistedSnapshot;
-    } else {
-      guestSeed = await persistence.activateGuest();
-    }
-    final accountState = await persistence.activateAccount(
-      userId,
-      seed: guestSeed,
-    );
-    final mergedLocalState = switch ((guestSeed, accountState)) {
-      (final PersistedAppState guest, final PersistedAppState account) =>
-        PersistedEntityBundle.merge(guest, account, preferRemote: true),
-      (final PersistedAppState guest, null) => guest,
-      (null, final PersistedAppState account) => account,
-      (null, null) => const PersistedAppState.empty(),
-    };
-    await store.applyExternalPersistedState(
-      mergedLocalState,
-      notifyPersistedStateObserver: false,
-    );
-  }
+  bool _isBlank(PersistedAppState state) =>
+      _snapshotHash(state) == _snapshotHash(const PersistedAppState.empty());
 
-  Future<void> _activateGuestCache() async {
-    final persistence = _persistence;
-    if (persistence is! AccountScopedAppStorePersistence ||
-        persistence.activeUserId == null) {
-      return;
-    }
-    await store.flushPersistence();
-    final guestState = await persistence.activateGuest();
-    await store.applyExternalPersistedState(
-      guestState ?? const PersistedAppState.empty(),
-      notifyPersistedStateObserver: false,
-    );
-  }
+  String _snapshotHash(PersistedAppState state) =>
+      PersistedEntityBundle.snapshotHash(state);
 
   bool get _shouldSuppressSyncForCurrentUser {
     final deletedUserId = _remoteDeletedUserId;
@@ -322,13 +456,20 @@ class FitAppStartup {
 class FitAppSyncAccess extends ChangeNotifier {
   AppStoreSyncCoordinator? get coordinator => _coordinator;
   AppStoreSyncStatus get status => _status;
+  AppStoreSyncConflict? get conflict => _conflict;
 
   AppStoreSyncCoordinator? _coordinator;
+  AppStoreSyncConflict? _conflict;
   Future<void> Function()? _startupRetry;
+  Future<void> Function()? _replaceLocalWithAccountData;
+  Future<void> Function()? _replaceAccountWithLocalData;
   VoidCallback? _coordinatorListener;
   AppStoreSyncStatus _status = const AppStoreSyncStatus();
 
   Future<void> syncNow() async {
+    if (_conflict != null) {
+      return;
+    }
     final coordinator = _coordinator;
     if (coordinator != null) {
       await coordinator.syncNow();
@@ -339,6 +480,14 @@ class FitAppSyncAccess extends ChangeNotifier {
     if (startupRetry != null) {
       await startupRetry();
     }
+  }
+
+  Future<void> replaceLocalWithAccountData() async {
+    await _resolveConflict(_replaceLocalWithAccountData);
+  }
+
+  Future<void> replaceAccountWithLocalData() async {
+    await _resolveConflict(_replaceAccountWithLocalData);
   }
 
   void bindCoordinator(AppStoreSyncCoordinator coordinator) {
@@ -374,6 +523,25 @@ class FitAppSyncAccess extends ChangeNotifier {
     );
   }
 
+  void reportConflict(AppStoreSyncConflict conflict) {
+    _conflict = conflict;
+    _setStatus(
+      const AppStoreSyncStatus(
+        phase: AppStoreSyncPhase.error,
+        lastErrorMessage: 'Sync is paused until a data source is selected.',
+      ),
+    );
+    notifyListeners();
+  }
+
+  void clearConflict() {
+    if (_conflict == null) {
+      return;
+    }
+    _conflict = null;
+    notifyListeners();
+  }
+
   void _handleCoordinatorChanged() {
     final coordinator = _coordinator;
     if (coordinator == null) {
@@ -394,6 +562,26 @@ class FitAppSyncAccess extends ChangeNotifier {
 
   void _bindStartupRetry(Future<void> Function() startupRetry) {
     _startupRetry = startupRetry;
+  }
+
+  void _bindConflictResolvers({
+    required Future<void> Function() replaceLocalWithAccountData,
+    required Future<void> Function() replaceAccountWithLocalData,
+  }) {
+    _replaceLocalWithAccountData = replaceLocalWithAccountData;
+    _replaceAccountWithLocalData = replaceAccountWithLocalData;
+  }
+
+  Future<void> _resolveConflict(Future<void> Function()? resolver) async {
+    if (_conflict == null || resolver == null) {
+      return;
+    }
+    try {
+      await resolver();
+    } catch (error) {
+      reportError(error);
+      rethrow;
+    }
   }
 
   void _detachCoordinator() {
@@ -446,7 +634,11 @@ class FitApp extends StatefulWidget {
   final AppStore? store;
   final FitAppSyncAccess? syncAccess;
   final AppAuthService? authService;
-  final Future<void> Function({required String password})? deleteAccountData;
+  final Future<void> Function({
+    required String password,
+    required bool deleteLocalData,
+  })?
+  deleteAccountData;
 
   @override
   State<FitApp> createState() => _FitAppState();
@@ -526,7 +718,11 @@ class FitHome extends StatefulWidget {
   final AppStore store;
   final AppAuthService authService;
   final FitAppSyncAccess? syncAccess;
-  final Future<void> Function({required String password})? deleteAccountData;
+  final Future<void> Function({
+    required String password,
+    required bool deleteLocalData,
+  })?
+  deleteAccountData;
 
   @override
   State<FitHome> createState() => _FitHomeState();
@@ -593,11 +789,16 @@ class _FitHomeState extends State<FitHome> {
           store: widget.store,
           syncStatusListenable: widget.syncAccess,
           readSyncStatus: () => widget.syncAccess?.status,
+          readSyncConflict: () => widget.syncAccess?.conflict,
           authListenable: widget.authService,
           readAuthState: () => widget.authService.state,
           onSignIn: widget.authService.signIn,
           onSignUp: widget.authService.signUp,
           onSignOut: widget.authService.signOut,
+          onReplaceLocalWithAccountData:
+              widget.syncAccess?.replaceLocalWithAccountData,
+          onReplaceAccountWithLocalData:
+              widget.syncAccess?.replaceAccountWithLocalData,
           onDeleteAccount: widget.deleteAccountData,
         ),
       ),
