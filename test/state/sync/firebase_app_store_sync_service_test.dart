@@ -9,6 +9,7 @@ import 'package:fitapp/state/persistence/persisted_app_state.dart';
 import 'package:fitapp/state/persistence/persisted_app_state_codec.dart';
 import 'package:fitapp/state/sync/firebase_app_store_sync_service.dart';
 import 'package:fitapp/state/sync/installation_id_store.dart';
+import 'package:fitapp/state/sync/persisted_entity_bundle.dart';
 import 'package:fitapp/state/sync/remote_snapshot.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -123,8 +124,78 @@ void main() {
 
     await service.push('user-1', legacySnapshot.state, 'ignored');
     final upgradedDocument = backend.documents['users/user-1/foods/tomato']!;
-    expect(upgradedDocument['contentHashVersion'], 2);
+    expect(upgradedDocument['contentHashVersion'], 3);
     expect((await service.fetch('user-1'))!.isLegacy, isFalse);
+  });
+
+  test('entity sync upgrades v2 hashes after numeric normalization', () async {
+    SharedPreferences.setMockInitialValues(const {});
+    final backend = _FakeEntityRemoteSnapshotStore();
+    final payload = PersistedAppStateCodec.encodeFoodItem(
+      _stateWithFood('tomato').userFoods.single,
+    );
+    final firestorePayload = _convertWholeDoublesToInts(payload);
+    backend.documents['users/user-1/sync/manifest'] = <String, Object?>{
+      'schemaVersion': 2,
+      'committed': true,
+    };
+    backend.documents['users/user-1/foods/tomato'] = <String, Object?>{
+      'schemaVersion': 2,
+      'payload': firestorePayload,
+      'contentHash': 'v2-order-only-hash',
+      'contentHashVersion': 2,
+      'updatedAt': DateTime.utc(2026, 5, 13),
+      'deletedAt': null,
+    };
+    final service = FirebaseAppStoreSyncService(backend: backend);
+
+    final v2Snapshot = await service.fetch('user-1');
+    expect(v2Snapshot!.isLegacy, isTrue);
+    await service.push('user-1', v2Snapshot.state, 'ignored');
+
+    final upgradedDocument = backend.documents['users/user-1/foods/tomato']!;
+    expect(upgradedDocument['contentHashVersion'], 3);
+    expect((await service.fetch('user-1'))!.isLegacy, isFalse);
+  });
+
+  test('canonical hashes treat whole doubles and integers equally', () {
+    expect(
+      PersistedEntityBundle.hashJson({
+        'servingSizeGrams': 100.0,
+        'nutrition': {'calories': 123.0},
+      }),
+      PersistedEntityBundle.hashJson({
+        'servingSizeGrams': 100,
+        'nutrition': {'calories': 123},
+      }),
+    );
+  });
+
+  test('v3 validation canonicalizes Firestore numeric payloads', () async {
+    SharedPreferences.setMockInitialValues(const {});
+    final backend = _FakeEntityRemoteSnapshotStore();
+    final payload = PersistedAppStateCodec.encodeFoodItem(
+      _stateWithFood('tomato').userFoods.single,
+    );
+    backend.documents['users/user-1/sync/manifest'] = <String, Object?>{
+      'schemaVersion': 2,
+      'committed': true,
+    };
+    backend.documents['users/user-1/foods/tomato'] = <String, Object?>{
+      'schemaVersion': 2,
+      'payload': _convertWholeDoublesToInts(payload),
+      'contentHash': PersistedEntityBundle.hashJson(payload),
+      'contentHashVersion': 3,
+      'updatedAt': DateTime.utc(2026, 5, 13),
+      'deletedAt': null,
+    };
+
+    final snapshot = await FirebaseAppStoreSyncService(
+      backend: backend,
+    ).fetch('user-1');
+
+    expect(snapshot!.isLegacy, isFalse);
+    expect(snapshot.state.userFoods.single.servingSizeGrams, 100.0);
   });
 
   test('entity sync rejects invalid canonical content hashes', () async {
@@ -141,7 +212,7 @@ void main() {
       'schemaVersion': 2,
       'payload': payload,
       'contentHash': 'invalid',
-      'contentHashVersion': 2,
+      'contentHashVersion': 3,
       'updatedAt': DateTime.utc(2026, 5, 13),
       'deletedAt': null,
     };
@@ -401,6 +472,22 @@ String _legacyHashJson(Object? value) {
     hash = (hash * 0x01000193) & 0xFFFFFFFF;
   }
   return hash.toRadixString(16).padLeft(8, '0');
+}
+
+Object? _convertWholeDoublesToInts(Object? value) {
+  if (value is Map) {
+    return <String, Object?>{
+      for (final entry in value.entries)
+        entry.key as String: _convertWholeDoublesToInts(entry.value),
+    };
+  }
+  if (value is Iterable) {
+    return value.map(_convertWholeDoublesToInts).toList(growable: false);
+  }
+  if (value is double && value == value.truncateToDouble()) {
+    return value.toInt();
+  }
+  return value;
 }
 
 Map<String, Object?> _persistedPayloadWithTrainingExercise(String exerciseId) {

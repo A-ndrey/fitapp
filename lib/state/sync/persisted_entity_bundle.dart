@@ -306,6 +306,9 @@ class PersistedEntityBundle {
     if (value is Iterable) {
       return value.map(_canonicalizeJson).toList(growable: false);
     }
+    if (value is num && value.isFinite && value == value.truncate()) {
+      return value.toInt();
+    }
     return value;
   }
 
