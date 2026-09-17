@@ -46,6 +46,35 @@ void main() {
     },
   );
 
+  test('scoped metadata remains isolated per account', () async {
+    SharedPreferences.setMockInitialValues(const {});
+    final store = SharedPreferencesSyncMetadataStore();
+
+    await saveSyncMetadataFor(
+      store,
+      const SyncMetadata(
+        installationId: 'user-a',
+        lastSyncedSnapshotHash: 'hash-a',
+      ),
+    );
+    await saveSyncMetadataFor(
+      store,
+      const SyncMetadata(
+        installationId: 'user-b',
+        lastSyncedSnapshotHash: 'hash-b',
+      ),
+    );
+
+    expect(
+      (await loadSyncMetadataFor(store, 'user-a'))!.lastSyncedSnapshotHash,
+      'hash-a',
+    );
+    expect(
+      (await loadSyncMetadataFor(store, 'user-b'))!.lastSyncedSnapshotHash,
+      'hash-b',
+    );
+  });
+
   test(
     'SharedPreferencesSyncMetadataStore throws when persisted value is invalid JSON',
     () async {

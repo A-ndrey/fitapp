@@ -84,6 +84,7 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
                 assistanceWeightController: _assistanceWeightController,
                 measurementType: measurementType,
                 store: widget.store,
+                enabled: !widget.store.isActiveWorkoutReadOnly,
                 onLogSet: () => _logSet(context, measurementType),
               ),
               const SizedBox(height: 16),
@@ -190,7 +191,8 @@ class _WorkoutExerciseScreenState extends State<WorkoutExerciseScreen> {
   ExerciseMeasurementType _measurementTypeForResult(
     WorkoutExerciseResult result,
   ) {
-    return widget.store.exerciseById(result.exerciseId)?.measurementType ??
+    return result.measurementType ??
+        widget.store.exerciseById(result.exerciseId)?.measurementType ??
         ExerciseMeasurementType.strength;
   }
 }

@@ -25,6 +25,7 @@ import 'ui/core/theme/app_theme.dart';
 import 'state/sync/app_store_sync_coordinator.dart';
 import 'state/sync/app_store_sync_status.dart';
 import 'state/sync/firebase_app_store_sync_service.dart';
+import 'state/sync/persisted_entity_bundle.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -181,6 +182,11 @@ class FitAppStartup {
           !authService.state.isSignedIn) {
         return;
       }
+      final userId = authService.state.uid;
+      if (userId == null) {
+        return;
+      }
+      await _activateAccountCache(userId);
       if (_shouldSuppressSyncForCurrentUser) {
         return;
       }
@@ -198,6 +204,11 @@ class FitAppStartup {
                 notifyPersistedStateObserver: notifyPersistedStateObserver,
               );
             },
+      );
+      store.bindActiveWorkoutLeaseController(
+        listenable: coordinator,
+        isReadOnly: () => coordinator.isActiveWorkoutReadOnly,
+        takeOver: coordinator.takeOverActiveWorkout,
       );
       syncAccess.bindCoordinator(coordinator);
       await coordinator.start();
@@ -217,6 +228,7 @@ class FitAppStartup {
 
     _isDeletingAccount = true;
     _persistedStateObserverRelay.clear();
+    store.unbindActiveWorkoutLeaseController();
     await syncAccess.stopCoordinator();
 
     try {
@@ -249,8 +261,55 @@ class FitAppStartup {
       }
     } else {
       _isDeletingAccount = false;
-      unawaited(syncAccess.stopCoordinator());
+      store.unbindActiveWorkoutLeaseController();
+      unawaited(
+        syncAccess.stopCoordinator().then((_) => _activateGuestCache()),
+      );
     }
+  }
+
+  Future<void> _activateAccountCache(String userId) async {
+    final persistence = _persistence;
+    if (persistence is! AccountScopedAppStorePersistence ||
+        persistence.activeUserId == userId) {
+      return;
+    }
+    await store.flushPersistence();
+    PersistedAppState? guestSeed;
+    if (persistence.activeUserId == null) {
+      guestSeed = store.persistedSnapshot;
+    } else {
+      guestSeed = await persistence.activateGuest();
+    }
+    final accountState = await persistence.activateAccount(
+      userId,
+      seed: guestSeed,
+    );
+    final mergedLocalState = switch ((guestSeed, accountState)) {
+      (final PersistedAppState guest, final PersistedAppState account) =>
+        PersistedEntityBundle.merge(guest, account, preferRemote: true),
+      (final PersistedAppState guest, null) => guest,
+      (null, final PersistedAppState account) => account,
+      (null, null) => const PersistedAppState.empty(),
+    };
+    await store.applyExternalPersistedState(
+      mergedLocalState,
+      notifyPersistedStateObserver: false,
+    );
+  }
+
+  Future<void> _activateGuestCache() async {
+    final persistence = _persistence;
+    if (persistence is! AccountScopedAppStorePersistence ||
+        persistence.activeUserId == null) {
+      return;
+    }
+    await store.flushPersistence();
+    final guestState = await persistence.activateGuest();
+    await store.applyExternalPersistedState(
+      guestState ?? const PersistedAppState.empty(),
+      notifyPersistedStateObserver: false,
+    );
   }
 
   bool get _shouldSuppressSyncForCurrentUser {

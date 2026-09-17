@@ -10,6 +10,8 @@ import '../persistence/sync_metadata.dart';
 import 'app_store_sync_status.dart';
 import 'firebase_app_store_sync_service.dart';
 import 'installation_id_store.dart';
+import 'persisted_entity_bundle.dart';
+import 'remote_snapshot.dart';
 
 typedef LocalSnapshotLoader = Future<PersistedAppState?> Function();
 typedef RemoteSnapshotApplier =
@@ -55,8 +57,15 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
   Completer<void>? _uploadDrainCompleter;
   bool _isUploadDrainScheduled = false;
   bool _isStopped = false;
+  StreamSubscription<RemoteSnapshot>? _remoteSubscription;
+  bool _isStartingRemoteWatch = false;
+  RemoteSnapshot? _pendingRemoteSnapshot;
+  Timer? _remoteRefreshDebounce;
+  Timer? _leaseHeartbeat;
+  bool _isActiveWorkoutReadOnly = false;
 
   AppStoreSyncStatus get status => _status;
+  bool get isActiveWorkoutReadOnly => _isActiveWorkoutReadOnly;
   void Function(PersistedAppState) get persistedStateObserver =>
       _handlePersistedStateSaved;
 
@@ -64,7 +73,9 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     if (_isStopped) {
       return Future<void>.value();
     }
-    return _startupFuture ??= _runSerialized(_runStartupReconciliation);
+    return _startupFuture ??= _runSerialized(
+      _runStartupReconciliation,
+    ).then((_) => _startRemoteWatch());
   }
 
   void _handlePersistedStateSaved(PersistedAppState state) {
@@ -86,6 +97,7 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
       }
       _pendingUploadSnapshot = snapshot;
       await _scheduleUploadDrain();
+      await _startRemoteWatch();
     } catch (error, stackTrace) {
       await _handleSyncFailure(error, stackTrace);
     }
@@ -94,6 +106,10 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
   Future<void> stop() async {
     _isStopped = true;
     _pendingUploadSnapshot = null;
+    _pendingRemoteSnapshot = null;
+    _remoteRefreshDebounce?.cancel();
+    _leaseHeartbeat?.cancel();
+    await _remoteSubscription?.cancel();
     await _syncOperationTail.catchError((Object _, StackTrace _) {});
   }
 
@@ -128,6 +144,11 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
           _takePendingUploadSnapshot(localSnapshot),
           force: true,
         );
+        return;
+      }
+
+      if (_syncService.usesEntityStorage) {
+        await _reconcileEntityState(localSnapshot, remoteSnapshot);
         return;
       }
 
@@ -209,6 +230,194 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     }
   }
 
+  Future<void> _reconcileEntityState(
+    PersistedAppState localSnapshot,
+    RemoteSnapshot remoteSnapshot,
+  ) async {
+    final ownsActiveWorkoutLease = await _updateActiveWorkoutLeaseState(
+      remoteSnapshot,
+    );
+    final localHash = _snapshotHash(localSnapshot);
+    final localIsBlank =
+        localHash == _snapshotHash(const PersistedAppState.empty());
+    final localHasUnsyncedChanges =
+        _pendingUploadSnapshot != null ||
+        (_metadata?.lastSyncedSnapshotHash == null
+            ? !localIsBlank
+            : _metadata!.lastSyncedSnapshotHash != localHash);
+    final localEntityHashes = PersistedEntityBundle.hashes(localSnapshot);
+    final localDeletedKeys = localHasUnsyncedChanges
+        ? _metadata?.lastSyncedEntityHashes.keys
+                  .where(
+                    (key) =>
+                        !localEntityHashes.containsKey(key) &&
+                        _metadata!.lastSyncedEntityHashes[key] != 'deleted',
+                  )
+                  .toSet() ??
+              const <String>{}
+        : const <String>{};
+    final preferRemote =
+        remoteSnapshot.isLegacy ||
+        !localHasUnsyncedChanges ||
+        _metadata?.lastSyncedSnapshotHash == null;
+    final mergedPreferences = PersistedEntityBundle.mergePreferences(
+      localSnapshot.preferences,
+      remoteSnapshot.state.preferences,
+      previouslySyncedHashes:
+          _metadata?.lastSyncedPreferenceGroupHashes ?? const {},
+      preferRemote: preferRemote,
+    );
+    final merged = PersistedEntityBundle.merge(
+      localSnapshot,
+      remoteSnapshot.state,
+      preferRemote: preferRemote,
+      preferRemoteActiveWorkout: !ownsActiveWorkoutLease,
+      remoteEntityHashes: remoteSnapshot.entityHashes,
+      localDeletedKeys: localDeletedKeys,
+      mergedPreferences: mergedPreferences,
+    );
+    final mergedHash = _snapshotHash(merged);
+
+    if (mergedHash != localHash) {
+      await _applyRemoteSnapshot(merged, notifyPersistedStateObserver: false);
+    }
+    if (_isStopped) {
+      return;
+    }
+    if (remoteSnapshot.isLegacy || mergedHash != remoteSnapshot.snapshotHash) {
+      await _pushSnapshot(merged, force: true);
+      return;
+    }
+    await _persistSyncMetadata(
+      lastKnownRemoteUpdatedAt: remoteSnapshot.updatedAt,
+      lastSyncedSnapshotHash: remoteSnapshot.snapshotHash,
+      lastSyncError: null,
+      entityHashes: remoteSnapshot.entityHashes,
+      preferenceGroupHashes: PersistedEntityBundle.preferenceGroupHashes(
+        merged.preferences,
+      ),
+    );
+    _setStatus(
+      _status.copyWith(
+        phase: AppStoreSyncPhase.synced,
+        lastSyncedAt: remoteSnapshot.updatedAt,
+        lastErrorMessage: null,
+      ),
+    );
+  }
+
+  Future<void> _startRemoteWatch() async {
+    if (_isStopped ||
+        !_syncService.usesEntityStorage ||
+        _installationId == null ||
+        _remoteSubscription != null ||
+        _isStartingRemoteWatch) {
+      return;
+    }
+    _isStartingRemoteWatch = true;
+    try {
+      final hasCommittedEntityState = await _syncService
+          .hasCommittedEntityState(_installationId!);
+      if (_isStopped || !hasCommittedEntityState) {
+        return;
+      }
+      _remoteSubscription = _syncService
+          .watchUserState(_installationId!)
+          .listen(
+            (snapshot) {
+              _pendingRemoteSnapshot = snapshot;
+              _remoteRefreshDebounce?.cancel();
+              _remoteRefreshDebounce = Timer(
+                const Duration(milliseconds: 250),
+                () => unawaited(_runSerialized(_applyWatchedRemoteSnapshot)),
+              );
+            },
+            onError: (Object error, StackTrace stackTrace) {
+              unawaited(_handleSyncFailure(error, stackTrace));
+            },
+          );
+      _leaseHeartbeat ??= Timer.periodic(
+        const Duration(minutes: 1),
+        (_) => unawaited(_renewActiveWorkoutLease()),
+      );
+    } catch (error, stackTrace) {
+      await _handleSyncFailure(error, stackTrace);
+    } finally {
+      _isStartingRemoteWatch = false;
+    }
+  }
+
+  Future<bool> takeOverActiveWorkout() async {
+    if (_isStopped ||
+        !_syncService.usesEntityStorage ||
+        _installationId == null) {
+      return false;
+    }
+    final claimed = await _syncService.claimActiveWorkoutLease(
+      _installationId!,
+      force: true,
+    );
+    if (claimed) {
+      _setActiveWorkoutReadOnly(false);
+      await syncNow();
+    }
+    return claimed;
+  }
+
+  Future<void> _renewActiveWorkoutLease() async {
+    if (_isStopped || _installationId == null || _isActiveWorkoutReadOnly) {
+      return;
+    }
+    final local = await _loadSnapshotOrEmpty();
+    if (local.activeWorkoutSession == null) {
+      return;
+    }
+    final claimed = await _syncService.claimActiveWorkoutLease(
+      _installationId!,
+      force: false,
+    );
+    if (!claimed) {
+      _setActiveWorkoutReadOnly(true);
+    }
+  }
+
+  Future<bool> _updateActiveWorkoutLeaseState(RemoteSnapshot snapshot) async {
+    if (snapshot.state.activeWorkoutSession == null) {
+      _setActiveWorkoutReadOnly(false);
+      return true;
+    }
+    final ownsLease = await _syncService.activeWorkoutLeaseIsOwnedByThisDevice(
+      snapshot,
+    );
+    _setActiveWorkoutReadOnly(!ownsLease);
+    return ownsLease;
+  }
+
+  void _setActiveWorkoutReadOnly(bool value) {
+    if (_isActiveWorkoutReadOnly == value) {
+      return;
+    }
+    _isActiveWorkoutReadOnly = value;
+    notifyListeners();
+  }
+
+  Future<void> _applyWatchedRemoteSnapshot() async {
+    if (_isStopped) {
+      return;
+    }
+    try {
+      final remote = _pendingRemoteSnapshot;
+      _pendingRemoteSnapshot = null;
+      if (remote == null || remote.isLegacy || _isStopped) {
+        return;
+      }
+      final local = await _loadSnapshotOrEmpty();
+      await _reconcileEntityState(local, remote);
+    } catch (error, stackTrace) {
+      await _handleSyncFailure(error, stackTrace);
+    }
+  }
+
   Future<bool> _ensureInitialized() async {
     if (_installationId != null) {
       return true;
@@ -219,7 +428,10 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
       return false;
     }
 
-    final loadedMetadata = await _metadataStore.load();
+    final loadedMetadata = await loadSyncMetadataFor(
+      _metadataStore,
+      installationId,
+    );
 
     _installationId = installationId;
     if (loadedMetadata != null &&
@@ -344,10 +556,17 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     if (_isStopped) {
       return;
     }
+    if (_syncService.usesEntityStorage) {
+      await _updateActiveWorkoutLeaseState(remoteSnapshot);
+    }
     await _persistSyncMetadata(
       lastKnownRemoteUpdatedAt: remoteSnapshot.updatedAt,
       lastSyncedSnapshotHash: remoteSnapshot.snapshotHash,
       lastSyncError: null,
+      entityHashes: remoteSnapshot.entityHashes,
+      preferenceGroupHashes: PersistedEntityBundle.preferenceGroupHashes(
+        remoteSnapshot.state.preferences,
+      ),
     );
     if (_isStopped) {
       return;
@@ -365,14 +584,24 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     required DateTime? lastKnownRemoteUpdatedAt,
     required String? lastSyncedSnapshotHash,
     required String? lastSyncError,
+    Map<String, String>? entityHashes,
+    Map<String, String>? preferenceGroupHashes,
   }) async {
     final metadata = SyncMetadata(
       installationId: _installationId!,
       lastKnownRemoteUpdatedAt: lastKnownRemoteUpdatedAt,
       lastSyncedSnapshotHash: lastSyncedSnapshotHash,
       lastSyncError: lastSyncError,
+      lastSyncedEntityHashes:
+          entityHashes ??
+          _metadata?.lastSyncedEntityHashes ??
+          const <String, String>{},
+      lastSyncedPreferenceGroupHashes:
+          preferenceGroupHashes ??
+          _metadata?.lastSyncedPreferenceGroupHashes ??
+          const <String, String>{},
     );
-    await _metadataStore.save(metadata);
+    await saveSyncMetadataFor(_metadataStore, metadata);
     _metadata = metadata;
   }
 
@@ -424,7 +653,10 @@ class AppStoreSyncCoordinator extends ChangeNotifier {
     notifyListeners();
   }
 
-  static String _snapshotHash(PersistedAppState state) {
+  String _snapshotHash(PersistedAppState state) {
+    if (_syncService.usesEntityStorage) {
+      return PersistedEntityBundle.snapshotHash(state);
+    }
     final bytes = utf8.encode(jsonEncode(PersistedAppStateCodec.encode(state)));
     var hash = 0x811c9dc5;
     for (final byte in bytes) {

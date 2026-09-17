@@ -1,3 +1,4 @@
+import 'exercise.dart';
 import 'training_plan.dart';
 
 class WorkoutSetLog {
@@ -47,24 +48,28 @@ class WorkoutExerciseResult {
   const WorkoutExerciseResult({
     required this.exerciseId,
     required this.exerciseName,
+    this.measurementType,
     required this.target,
     required this.setLogs,
   });
 
   final String exerciseId;
   final String exerciseName;
+  final ExerciseMeasurementType? measurementType;
   final TrainingExercise target;
   final List<WorkoutSetLog> setLogs;
 
   WorkoutExerciseResult copyWith({
     String? exerciseId,
     String? exerciseName,
+    ExerciseMeasurementType? measurementType,
     TrainingExercise? target,
     List<WorkoutSetLog>? setLogs,
   }) {
     return WorkoutExerciseResult(
       exerciseId: exerciseId ?? this.exerciseId,
       exerciseName: exerciseName ?? this.exerciseName,
+      measurementType: measurementType ?? this.measurementType,
       target: target ?? this.target,
       setLogs: setLogs ?? this.setLogs,
     );

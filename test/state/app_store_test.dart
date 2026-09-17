@@ -181,6 +181,71 @@ void main() {
     expect(store.searchItems('chicken'), isEmpty);
   });
 
+  test('state components notify independently behind the AppStore facade', () {
+    final store = AppStore.empty();
+    var foodNotifications = 0;
+    var preferenceNotifications = 0;
+    store.foodLibraryState.addListener(() => foodNotifications += 1);
+    store.preferencesState.addListener(() => preferenceNotifications += 1);
+
+    store.createFood(tomato());
+
+    expect(foodNotifications, 1);
+    expect(preferenceNotifications, 0);
+
+    store.setAppearancePreference(AppearancePreference.dark);
+
+    expect(foodNotifications, 1);
+    expect(preferenceNotifications, 1);
+  });
+
+  test('active workout mutations require an explicit lease takeover', () async {
+    final store = AppStore.empty();
+    store.createExercise(
+      const Exercise(
+        id: 'pushups',
+        name: 'Pushups',
+        description: 'Bodyweight push exercise',
+        instruction: 'Keep a straight line.',
+        muscleGroups: [MuscleGroup.chest],
+        measurementType: ExerciseMeasurementType.bodyweight,
+      ),
+    );
+    store.createTrainingPlan(
+      const TrainingPlan(
+        id: 'plan',
+        name: 'Plan',
+        description: 'Plan',
+        exercises: [TrainingExercise(exerciseId: 'pushups', sets: 1, reps: 10)],
+      ),
+    );
+    store.startWorkout(trainingPlanId: 'plan');
+    final readOnly = ValueNotifier<bool>(true);
+    store.bindActiveWorkoutLeaseController(
+      listenable: readOnly,
+      isReadOnly: () => readOnly.value,
+      takeOver: () async {
+        readOnly.value = false;
+        return true;
+      },
+    );
+
+    expect(
+      () => store.addActiveWorkoutSet(
+        resultIndex: 0,
+        setLog: const WorkoutSetLog(reps: 10),
+      ),
+      throwsStateError,
+    );
+
+    expect(await store.takeOverActiveWorkout(), isTrue);
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: const WorkoutSetLog(reps: 10),
+    );
+    expect(store.activeWorkoutSession!.results.single.setLogs, hasLength(1));
+  });
+
   test('AppStore starts without predefined exercises or training plans', () {
     final store = AppStore();
 
@@ -634,7 +699,7 @@ void main() {
   );
 
   test(
-    'applying an external snapshot rejects measurement type changes for exercises with history',
+    'completed workout snapshots allow later exercise type changes',
     () async {
       final persistence = FakePersistence();
       final observedStates = <PersistedAppState>[];
@@ -676,7 +741,7 @@ void main() {
 
       observedStates.clear();
 
-      final invalidSnapshot = PersistedAppState(
+      final updatedSnapshot = PersistedAppState(
         userFoods: const [],
         userDishes: const [],
         userExercises: const [
@@ -693,25 +758,26 @@ void main() {
         mealEntries: const [],
         preferences: const AppPreferences.defaults(),
         activeWorkoutSession: null,
-        completedWorkoutSessions: const [],
+        completedWorkoutSessions: store.completedWorkoutSessions,
         mealEntryCounter: 0,
         workoutSessionCounter: 0,
       );
 
-      await expectLater(
-        store.applyExternalPersistedState(invalidSnapshot),
-        throwsArgumentError,
-      );
+      await store.applyExternalPersistedState(updatedSnapshot);
 
       expect(
         store.exerciseById('custom-pushups')!.measurementType,
-        ExerciseMeasurementType.bodyweight,
+        ExerciseMeasurementType.assisted,
       );
       expect(store.completedWorkoutSessions, hasLength(1));
-      expect(observedStates, isEmpty);
+      expect(
+        store.completedWorkoutSessions.single.results.single.measurementType,
+        ExerciseMeasurementType.bodyweight,
+      );
+      expect(observedStates, hasLength(1));
       expect(
         persistence.savedState!.userExercises.single.measurementType,
-        ExerciseMeasurementType.bodyweight,
+        ExerciseMeasurementType.assisted,
       );
     },
   );
@@ -847,7 +913,7 @@ void main() {
     expect(store.preferences.appearance, AppearancePreference.dark);
     expect(store.activeWorkoutSession!.id, 'workout-session-3');
     expect(store.completedWorkoutSessions.single.id, 'workout-session-2');
-    expect(nextMeal.id, 'meal-entry-3');
+    expect(nextMeal.id, matches(_uuidPattern));
     expect(
       () => store.startWorkout(
         trainingPlanId: 'chest-day',
@@ -865,7 +931,8 @@ void main() {
     );
 
     expect(finished.id, 'workout-session-3');
-    expect(newSession.id, 'workout-session-4');
+    expect(newSession.id, matches(_uuidPattern));
+    expect(newSession.id, isNot(finished.id));
   });
 
   test('creates training plans with existing exercises', () {
@@ -1179,7 +1246,7 @@ void main() {
   });
 
   test(
-    'rejects deleting exercises referenced by completed workout history',
+    'deletes exercises referenced only by self-contained workout history',
     () {
       final store = AppStore.empty();
       store.createExercise(
@@ -1210,12 +1277,16 @@ void main() {
       store.finishActiveWorkout(finishedAt: DateTime(2026, 4, 19, 10, 30));
       store.deleteTrainingPlan('home-chest');
 
-      expect(() => store.deleteExercise('pushups'), throwsStateError);
-      expect(store.exerciseById('pushups'), isNotNull);
+      store.deleteExercise('pushups');
+      expect(store.exerciseById('pushups'), isNull);
       expect(session.results.first.exerciseName, 'Pushups');
       expect(
         store.completedWorkoutSessions.single.results.first.exerciseName,
         'Pushups',
+      );
+      expect(
+        store.completedWorkoutSessions.single.results.first.measurementType,
+        ExerciseMeasurementType.bodyweight,
       );
     },
   );

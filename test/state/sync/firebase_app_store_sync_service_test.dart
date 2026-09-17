@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fitapp/models/app_preferences.dart';
+import 'package:fitapp/models/food_item.dart';
+import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/state/persistence/persisted_app_state.dart';
 import 'package:fitapp/state/persistence/persisted_app_state_codec.dart';
 import 'package:fitapp/state/sync/firebase_app_store_sync_service.dart';
@@ -31,6 +34,57 @@ void main() {
       expect(first, isNotEmpty);
       expect(first.length, greaterThanOrEqualTo(32));
       expect(reloaded, first);
+    },
+  );
+
+  test('entity sync migrates legacy state and commits a v2 manifest', () async {
+    SharedPreferences.setMockInitialValues(const {});
+    final backend = _FakeEntityRemoteSnapshotStore();
+    final legacy = _stateWithFood('legacy-food');
+    backend.documents['users/user-1/state/current'] = _remoteDocument(
+      updatedAt: DateTime.utc(2026, 5, 13),
+      snapshotHash: 'legacy-hash',
+      payload: PersistedAppStateCodec.encode(legacy),
+    );
+    final service = FirebaseAppStoreSyncService(backend: backend);
+
+    final beforeMigration = await service.fetch('user-1');
+    expect(beforeMigration!.isLegacy, isTrue);
+
+    final migrated = await service.push('user-1', legacy, 'ignored');
+    final reloaded = await service.fetch('user-1');
+
+    expect(migrated.isLegacy, isFalse);
+    expect(reloaded!.state.userFoods.single.id, 'legacy-food');
+    expect(
+      backend.documents['users/user-1/sync/manifest']!['committed'],
+      isTrue,
+    );
+    expect(backend.documents, contains('users/user-1/foods/legacy-food'));
+    expect(
+      backend.documents,
+      contains('users/user-1/state/current'),
+      reason: 'legacy rollback data must remain available',
+    );
+  });
+
+  test(
+    'entity sync writes tombstones instead of resurrectable deletes',
+    () async {
+      SharedPreferences.setMockInitialValues(const {});
+      final backend = _FakeEntityRemoteSnapshotStore();
+      final service = FirebaseAppStoreSyncService(backend: backend);
+
+      await service.push('user-1', _stateWithFood('tomato'), 'ignored');
+      backend.lastBatchPaths.clear();
+      await service.push('user-1', const PersistedAppState.empty(), 'ignored');
+
+      expect(backend.lastBatchPaths, contains('users/user-1/foods/tomato'));
+      expect(
+        backend.documents['users/user-1/foods/tomato']!['deletedAt'],
+        isNotNull,
+      );
+      expect((await service.fetch('user-1'))!.state.userFoods, isEmpty);
     },
   );
 
@@ -238,6 +292,30 @@ void main() {
   );
 }
 
+PersistedAppState _stateWithFood(String id) {
+  return PersistedAppState(
+    userFoods: [
+      FoodItem(
+        id: id,
+        name: id,
+        description: id,
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues.zero,
+      ),
+    ],
+    userDishes: const [],
+    userExercises: const [],
+    userTrainingPlans: const [],
+    mealEntries: const [],
+    preferences: const AppPreferences.defaults(),
+    activeWorkoutSession: null,
+    completedWorkoutSessions: const [],
+    mealEntryCounter: 0,
+    workoutSessionCounter: 0,
+  );
+}
+
 Map<String, Object?> _remoteDocument({
   required DateTime updatedAt,
   required String snapshotHash,
@@ -313,6 +391,104 @@ class _FakeRemoteSnapshotStore implements RemoteSnapshotStore {
   @override
   Future<void> delete(String path) async {
     lastDeletePath = path;
+  }
+}
+
+class _FakeEntityRemoteSnapshotStore implements EntityRemoteSnapshotStore {
+  final Map<String, Map<String, Object?>> documents = {};
+  final List<String> lastBatchPaths = [];
+  var _clock = DateTime.utc(2026, 5, 13, 12);
+
+  @override
+  Future<Map<String, Object?>?> fetch(String path) async {
+    final value = documents[path];
+    return value == null ? null : Map<String, Object?>.from(value);
+  }
+
+  @override
+  Future<void> set(String path, Map<String, Object?> data) async {
+    documents[path] = _resolve(data);
+  }
+
+  @override
+  Future<void> delete(String path) async {
+    documents.remove(path);
+  }
+
+  @override
+  Future<List<RemoteEntityRecord>> fetchCollection(String path) async {
+    final prefix = '$path/';
+    return documents.entries
+        .where((entry) => entry.key.startsWith(prefix))
+        .map(
+          (entry) => RemoteEntityRecord(
+            path: entry.key,
+            data: Map<String, Object?>.from(entry.value),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Stream<List<RemoteEntityRecord>> watchCollection(String path) =>
+      const Stream<List<RemoteEntityRecord>>.empty();
+
+  @override
+  Future<void> setAll(Map<String, Map<String, Object?>> values) async {
+    lastBatchPaths.addAll(values.keys);
+    for (final entry in values.entries) {
+      documents[entry.key] = _resolve(entry.value);
+    }
+  }
+
+  @override
+  Future<bool> acquireMigrationLease(
+    String path, {
+    required String writerId,
+    required DateTime expiresAt,
+  }) async {
+    documents[path] = <String, Object?>{
+      'schemaVersion': 2,
+      'committed': false,
+      'writerId': writerId,
+      'leaseExpiresAt': expiresAt,
+      'updatedAt': _nextTimestamp(),
+    };
+    return true;
+  }
+
+  @override
+  Future<bool> claimActiveWorkoutLease(
+    String path, {
+    required String writerId,
+    required DateTime expiresAt,
+    required bool force,
+  }) async {
+    final document = documents[path];
+    if (document == null || document['deletedAt'] != null) {
+      return false;
+    }
+    document['leaseOwnerId'] = writerId;
+    document['leaseExpiresAt'] = Timestamp.fromDate(expiresAt);
+    document['updatedAt'] = _nextTimestamp();
+    return true;
+  }
+
+  @override
+  Future<void> deleteCollection(String path) async {
+    final prefix = '$path/';
+    documents.removeWhere((key, _) => key.startsWith(prefix));
+  }
+
+  Map<String, Object?> _resolve(Map<String, Object?> data) {
+    return data.map((key, value) {
+      return MapEntry(key, value is FieldValue ? _nextTimestamp() : value);
+    });
+  }
+
+  DateTime _nextTimestamp() {
+    _clock = _clock.add(const Duration(seconds: 1));
+    return _clock;
   }
 }
 

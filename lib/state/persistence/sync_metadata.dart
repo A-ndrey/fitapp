@@ -4,12 +4,16 @@ class SyncMetadata {
     this.lastKnownRemoteUpdatedAt,
     this.lastSyncedSnapshotHash,
     this.lastSyncError,
+    this.lastSyncedEntityHashes = const <String, String>{},
+    this.lastSyncedPreferenceGroupHashes = const <String, String>{},
   });
 
   final String installationId;
   final DateTime? lastKnownRemoteUpdatedAt;
   final String? lastSyncedSnapshotHash;
   final String? lastSyncError;
+  final Map<String, String> lastSyncedEntityHashes;
+  final Map<String, String> lastSyncedPreferenceGroupHashes;
 
   Map<String, Object?> toJson() {
     return <String, Object?>{
@@ -17,6 +21,8 @@ class SyncMetadata {
       'lastKnownRemoteUpdatedAt': lastKnownRemoteUpdatedAt?.toIso8601String(),
       'lastSyncedSnapshotHash': lastSyncedSnapshotHash,
       'lastSyncError': lastSyncError,
+      'lastSyncedEntityHashes': lastSyncedEntityHashes,
+      'lastSyncedPreferenceGroupHashes': lastSyncedPreferenceGroupHashes,
     };
   }
 
@@ -37,12 +43,22 @@ class SyncMetadata {
       key: 'lastSyncedSnapshotHash',
     );
     final lastSyncError = _readNullableString(json, key: 'lastSyncError');
+    final lastSyncedEntityHashes = _readStringMap(
+      json,
+      key: 'lastSyncedEntityHashes',
+    );
+    final lastSyncedPreferenceGroupHashes = _readStringMap(
+      json,
+      key: 'lastSyncedPreferenceGroupHashes',
+    );
 
     return SyncMetadata(
       installationId: installationId,
       lastKnownRemoteUpdatedAt: lastKnownRemoteUpdatedAt,
       lastSyncedSnapshotHash: lastSyncedSnapshotHash,
       lastSyncError: lastSyncError,
+      lastSyncedEntityHashes: lastSyncedEntityHashes,
+      lastSyncedPreferenceGroupHashes: lastSyncedPreferenceGroupHashes,
     );
   }
 
@@ -75,5 +91,28 @@ class SyncMetadata {
     }
 
     throw FormatException('Sync metadata $key must be a string or null.');
+  }
+
+  static Map<String, String> _readStringMap(
+    Map<String, Object?> json, {
+    required String key,
+  }) {
+    final value = json[key];
+    if (value == null) {
+      return const <String, String>{};
+    }
+    if (value is! Map) {
+      throw FormatException('Sync metadata $key must be an object.');
+    }
+    return Map.unmodifiable(
+      value.map((mapKey, mapValue) {
+        if (mapKey is! String || mapValue is! String) {
+          throw FormatException(
+            'Sync metadata $key must contain string values.',
+          );
+        }
+        return MapEntry(mapKey, mapValue);
+      }),
+    );
   }
 }

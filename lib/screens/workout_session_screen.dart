@@ -32,6 +32,7 @@ class WorkoutSessionScreen extends StatefulWidget {
 
 class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   Timer? _timer;
+  bool _isTakingOver = false;
   bool get _isCurrentTab =>
       widget.isCurrentTabListenable?.value ?? widget.isCurrentTab;
 
@@ -101,6 +102,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         }
         final exerciseCounts = _exerciseCounts(session.results);
         final seenExercises = <String, int>{};
+        final isReadOnly = widget.store.isActiveWorkoutReadOnly;
         return Scaffold(
           appBar: AppBar(
             title: Text(l10n?.workoutSessionTitle ?? 'Workout session'),
@@ -108,13 +110,44 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
           bottomNavigationBar: SafeArea(
             minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: FilledButton.icon(
-              onPressed: () => _finishWorkout(context),
+              onPressed: isReadOnly ? null : () => _finishWorkout(context),
               icon: const Icon(Icons.flag_outlined),
               label: Text(l10n?.workoutFinishAction ?? 'Finish workout'),
             ),
           ),
           body: AdaptivePage(
             children: [
+              if (isReadOnly) ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Workout active on another device',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'This workout is read-only until you explicitly '
+                          'continue it on this device.',
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: _isTakingOver
+                              ? null
+                              : () => _takeOverWorkout(context),
+                          child: Text(
+                            _isTakingOver ? 'Taking over…' : 'Continue here',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const AppPageSectionGap(),
+              ],
               WorkoutSessionHeaderCard(
                 session: session,
                 store: widget.store,
@@ -135,6 +168,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 final hasRepeatedExercise =
                     (exerciseCounts[result.exerciseId] ?? 0) > 1;
                 final measurementType =
+                    result.measurementType ??
                     widget.store
                         .exerciseById(result.exerciseId)
                         ?.measurementType ??
@@ -209,6 +243,22 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
           ),
         ),
       );
+    }
+  }
+
+  Future<void> _takeOverWorkout(BuildContext context) async {
+    setState(() => _isTakingOver = true);
+    try {
+      final didTakeOver = await widget.store.takeOverActiveWorkout();
+      if (!didTakeOver && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not take over the workout.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isTakingOver = false);
+      }
     }
   }
 

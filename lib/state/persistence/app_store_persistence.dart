@@ -5,3 +5,16 @@ abstract interface class AppStorePersistence {
   Future<PersistedAppState?> load();
   Future<void> save(PersistedAppState state);
 }
+
+/// Persistence that isolates guest data from each authenticated account.
+abstract interface class AccountScopedAppStorePersistence
+    implements AppStorePersistence {
+  String? get activeUserId;
+
+  Future<PersistedAppState?> activateGuest();
+
+  Future<PersistedAppState?> activateAccount(
+    String userId, {
+    PersistedAppState? seed,
+  });
+}
