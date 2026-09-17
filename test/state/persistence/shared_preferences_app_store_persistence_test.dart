@@ -53,6 +53,29 @@ void main() {
     );
   });
 
+  test('unscoped v1 async migration failure is reported', () async {
+    SharedPreferences.resetStatic();
+    final platformStore = _ControllableSharedPreferencesStore();
+    SharedPreferencesStorePlatform.instance = platformStore;
+    final preferences = await SharedPreferences.getInstance();
+    final legacyRaw = jsonEncode(
+      PersistedAppStateCodec.encode(_stateWithFood('legacy-food')),
+    );
+    await preferences.setString(
+      SharedPreferencesAppStorePersistence.storageKey,
+      legacyRaw,
+    );
+    platformStore.failDeviceManifestWrites = true;
+    final persistence = SharedPreferencesAppStorePersistence();
+
+    expect(await persistence.load(), isNull);
+    expect(persistence.loadError, isA<StateError>());
+    expect(
+      preferences.getString(SharedPreferencesAppStorePersistence.storageKey),
+      legacyRaw,
+    );
+  });
+
   test(
     'single legacy account cache becomes the device cache before first frame',
     () async {
@@ -87,6 +110,28 @@ void main() {
       );
     },
   );
+
+  test('single account async migration failure is reported', () async {
+    SharedPreferences.resetStatic();
+    final platformStore = _ControllableSharedPreferencesStore();
+    SharedPreferencesStorePlatform.instance = platformStore;
+    final preferences = await SharedPreferences.getInstance();
+    await _writeLegacyV2(
+      preferences,
+      scope: 'user:user-1',
+      state: _stateWithFood('account-food'),
+    );
+    platformStore.failDeviceManifestWrites = true;
+    final persistence = SharedPreferencesAppStorePersistence();
+
+    expect(await persistence.load(), isNull);
+    expect(persistence.loadError, isA<StateError>());
+    expect(persistence.ownerUserId, isNull);
+    expect(
+      preferences.getString('app_store_state_v2:user:user-1:manifest'),
+      isNotNull,
+    );
+  });
 
   test('multiple legacy account caches wait for authenticated user', () async {
     SharedPreferences.setMockInitialValues(const {});

@@ -43,11 +43,11 @@ class SharedPreferencesAppStorePersistence
 
       final legacyUsers = _legacyAccountUserIds(preferences);
       if (legacyUsers.length == 1) {
-        return _migrateLegacyAccount(preferences, legacyUsers.single);
+        return await _migrateLegacyAccount(preferences, legacyUsers.single);
       }
 
       if (legacyUsers.isEmpty) {
-        return _migrateUnscopedV1(preferences);
+        return await _migrateUnscopedV1(preferences);
       }
       return null;
     } catch (error) {
