@@ -169,7 +169,7 @@ class FirebaseAppStoreSyncService {
         'schemaVersion': 2,
         'payload': entry.value,
         'contentHash': desiredHashes[entry.key],
-        'contentHashVersion': 3,
+        'contentHashVersion': 4,
         'updatedAt': FieldValue.serverTimestamp(),
         'writerId': writerId,
         'deletedAt': null,
@@ -193,7 +193,7 @@ class FirebaseAppStoreSyncService {
         'schemaVersion': 2,
         'payload': null,
         'contentHash': 'deleted',
-        'contentHashVersion': 3,
+        'contentHashVersion': 4,
         'updatedAt': FieldValue.serverTimestamp(),
         'writerId': writerId,
         'deletedAt': FieldValue.serverTimestamp(),
@@ -294,7 +294,8 @@ class FirebaseAppStoreSyncService {
       final contentHashVersion = document['contentHashVersion'];
       if (contentHashVersion != null &&
           contentHashVersion != 2 &&
-          contentHashVersion != 3) {
+          contentHashVersion != 3 &&
+          contentHashVersion != 4) {
         throw FormatException(
           'Entity ${record.path} contentHashVersion is unsupported.',
         );
@@ -302,7 +303,7 @@ class FirebaseAppStoreSyncService {
       entities[relativePath] = normalizedPayload;
       storedContentHashes[relativePath] = contentHash;
       contentHashVersions[relativePath] = contentHashVersion as int?;
-      if (contentHashVersion == 3) {
+      if (contentHashVersion == 4) {
         hashes[relativePath] = contentHash;
       } else {
         containsLegacyContentHashes = true;
@@ -315,7 +316,7 @@ class FirebaseAppStoreSyncService {
     );
     final canonicalEntities = PersistedEntityBundle.encode(state);
     for (final entry in contentHashVersions.entries) {
-      if (entry.value != 3) {
+      if (entry.value != 4) {
         continue;
       }
       final canonicalPayload = canonicalEntities[entry.key];

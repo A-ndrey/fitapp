@@ -286,7 +286,10 @@ class PersistedEntityBundle {
     var hash = 0x811c9dc5;
     for (final byte in bytes) {
       hash ^= byte;
-      hash = (hash * 0x01000193) & 0xFFFFFFFF;
+      // FNV-1a's full multiplication exceeds JavaScript's exact integer
+      // range. Split the prime so Dart VM and compiled web code produce the
+      // same 32-bit result.
+      hash = (hash * 0x0193 + ((hash & 0xFF) << 24)) & 0xFFFFFFFF;
     }
     return hash.toRadixString(16).padLeft(8, '0');
   }

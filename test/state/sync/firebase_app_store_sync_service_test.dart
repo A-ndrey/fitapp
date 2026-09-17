@@ -124,7 +124,7 @@ void main() {
 
     await service.push('user-1', legacySnapshot.state, 'ignored');
     final upgradedDocument = backend.documents['users/user-1/foods/tomato']!;
-    expect(upgradedDocument['contentHashVersion'], 3);
+    expect(upgradedDocument['contentHashVersion'], 4);
     expect((await service.fetch('user-1'))!.isLegacy, isFalse);
   });
 
@@ -154,7 +154,36 @@ void main() {
     await service.push('user-1', v2Snapshot.state, 'ignored');
 
     final upgradedDocument = backend.documents['users/user-1/foods/tomato']!;
-    expect(upgradedDocument['contentHashVersion'], 3);
+    expect(upgradedDocument['contentHashVersion'], 4);
+    expect((await service.fetch('user-1'))!.isLegacy, isFalse);
+  });
+
+  test('entity sync upgrades platform-dependent v3 hashes', () async {
+    SharedPreferences.setMockInitialValues(const {});
+    final backend = _FakeEntityRemoteSnapshotStore();
+    final payload = PersistedAppStateCodec.encodeFoodItem(
+      _stateWithFood('tomato').userFoods.single,
+    );
+    backend.documents['users/user-1/sync/manifest'] = <String, Object?>{
+      'schemaVersion': 2,
+      'committed': true,
+    };
+    backend.documents['users/user-1/foods/tomato'] = <String, Object?>{
+      'schemaVersion': 2,
+      'payload': payload,
+      'contentHash': 'platform-dependent-v3-hash',
+      'contentHashVersion': 3,
+      'updatedAt': DateTime.utc(2026, 5, 13),
+      'deletedAt': null,
+    };
+    final service = FirebaseAppStoreSyncService(backend: backend);
+
+    final v3Snapshot = await service.fetch('user-1');
+    expect(v3Snapshot!.isLegacy, isTrue);
+    await service.push('user-1', v3Snapshot.state, 'ignored');
+
+    final upgradedDocument = backend.documents['users/user-1/foods/tomato']!;
+    expect(upgradedDocument['contentHashVersion'], 4);
     expect((await service.fetch('user-1'))!.isLegacy, isFalse);
   });
 
@@ -171,7 +200,11 @@ void main() {
     );
   });
 
-  test('v3 validation canonicalizes Firestore numeric payloads', () async {
+  test('canonical hashes are stable across VM and web', () {
+    expect(PersistedEntityBundle.hashJson('hello'), 'df47ee8b');
+  });
+
+  test('v4 validation canonicalizes Firestore numeric payloads', () async {
     SharedPreferences.setMockInitialValues(const {});
     final backend = _FakeEntityRemoteSnapshotStore();
     final payload = PersistedAppStateCodec.encodeFoodItem(
@@ -185,7 +218,7 @@ void main() {
       'schemaVersion': 2,
       'payload': _convertWholeDoublesToInts(payload),
       'contentHash': PersistedEntityBundle.hashJson(payload),
-      'contentHashVersion': 3,
+      'contentHashVersion': 4,
       'updatedAt': DateTime.utc(2026, 5, 13),
       'deletedAt': null,
     };
@@ -212,7 +245,7 @@ void main() {
       'schemaVersion': 2,
       'payload': payload,
       'contentHash': 'invalid',
-      'contentHashVersion': 3,
+      'contentHashVersion': 4,
       'updatedAt': DateTime.utc(2026, 5, 13),
       'deletedAt': null,
     };
