@@ -169,7 +169,7 @@ class FirebaseAppStoreSyncService {
         'schemaVersion': 2,
         'payload': entry.value,
         'contentHash': desiredHashes[entry.key],
-        'contentHashVersion': 2,
+        'contentHashVersion': 3,
         'updatedAt': FieldValue.serverTimestamp(),
         'writerId': writerId,
         'deletedAt': null,
@@ -193,7 +193,7 @@ class FirebaseAppStoreSyncService {
         'schemaVersion': 2,
         'payload': null,
         'contentHash': 'deleted',
-        'contentHashVersion': 2,
+        'contentHashVersion': 3,
         'updatedAt': FieldValue.serverTimestamp(),
         'writerId': writerId,
         'deletedAt': FieldValue.serverTimestamp(),
@@ -258,6 +258,8 @@ class FirebaseAppStoreSyncService {
   ) {
     final entities = <String, Map<String, Object?>>{};
     final hashes = <String, String>{};
+    final storedContentHashes = <String, String>{};
+    final contentHashVersions = <String, int?>{};
     DateTime? latestUpdatedAt;
     String? activeLeaseOwner;
     DateTime? activeLeaseExpiration;
@@ -290,17 +292,17 @@ class FirebaseAppStoreSyncService {
       final normalizedPayload = Map<String, Object?>.from(payload);
       final contentHash = _readString(document, 'contentHash');
       final contentHashVersion = document['contentHashVersion'];
-      if (contentHashVersion != null && contentHashVersion != 2) {
+      if (contentHashVersion != null &&
+          contentHashVersion != 2 &&
+          contentHashVersion != 3) {
         throw FormatException(
           'Entity ${record.path} contentHashVersion is unsupported.',
         );
       }
-      final calculatedHash = PersistedEntityBundle.hashJson(normalizedPayload);
-      if (contentHashVersion == 2 && calculatedHash != contentHash) {
-        throw FormatException('Entity ${record.path} hash is invalid.');
-      }
       entities[relativePath] = normalizedPayload;
-      if (contentHashVersion == 2) {
+      storedContentHashes[relativePath] = contentHash;
+      contentHashVersions[relativePath] = contentHashVersion as int?;
+      if (contentHashVersion == 3) {
         hashes[relativePath] = contentHash;
       } else {
         containsLegacyContentHashes = true;
@@ -311,6 +313,25 @@ class FirebaseAppStoreSyncService {
       entities,
       knownExerciseIds: knownExerciseIds,
     );
+    final canonicalEntities = PersistedEntityBundle.encode(state);
+    for (final entry in contentHashVersions.entries) {
+      if (entry.value != 3) {
+        continue;
+      }
+      final canonicalPayload = canonicalEntities[entry.key];
+      final storedHash = storedContentHashes[entry.key];
+      if (canonicalPayload == null || storedHash == null) {
+        throw FormatException(
+          'Entity users/$userId/${entry.key} could not be canonicalized.',
+        );
+      }
+      final calculatedHash = PersistedEntityBundle.hashJson(canonicalPayload);
+      if (calculatedHash != storedHash) {
+        throw FormatException(
+          'Entity users/$userId/${entry.key} hash is invalid.',
+        );
+      }
+    }
     _activeLeaseOwners[userId] = activeLeaseOwner;
     _activeLeaseExpirations[userId] = activeLeaseExpiration;
     _knownEntityHashes[userId] = Map.unmodifiable(hashes);
