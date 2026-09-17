@@ -282,13 +282,31 @@ class PersistedEntityBundle {
   }
 
   static String hashJson(Object? value) {
-    final bytes = utf8.encode(jsonEncode(value));
+    final bytes = utf8.encode(jsonEncode(_canonicalizeJson(value)));
     var hash = 0x811c9dc5;
     for (final byte in bytes) {
       hash ^= byte;
       hash = (hash * 0x01000193) & 0xFFFFFFFF;
     }
     return hash.toRadixString(16).padLeft(8, '0');
+  }
+
+  static Object? _canonicalizeJson(Object? value) {
+    if (value is Map) {
+      final keys = value.keys.map((key) {
+        if (key is! String) {
+          throw const FormatException('JSON object keys must be strings.');
+        }
+        return key;
+      }).toList()..sort();
+      return <String, Object?>{
+        for (final key in keys) key: _canonicalizeJson(value[key]),
+      };
+    }
+    if (value is Iterable) {
+      return value.map(_canonicalizeJson).toList(growable: false);
+    }
+    return value;
   }
 
   static List<T> _decodeCollection<T>(

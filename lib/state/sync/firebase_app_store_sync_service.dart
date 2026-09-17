@@ -169,6 +169,7 @@ class FirebaseAppStoreSyncService {
         'schemaVersion': 2,
         'payload': entry.value,
         'contentHash': desiredHashes[entry.key],
+        'contentHashVersion': 2,
         'updatedAt': FieldValue.serverTimestamp(),
         'writerId': writerId,
         'deletedAt': null,
@@ -192,6 +193,7 @@ class FirebaseAppStoreSyncService {
         'schemaVersion': 2,
         'payload': null,
         'contentHash': 'deleted',
+        'contentHashVersion': 2,
         'updatedAt': FieldValue.serverTimestamp(),
         'writerId': writerId,
         'deletedAt': FieldValue.serverTimestamp(),
@@ -259,6 +261,7 @@ class FirebaseAppStoreSyncService {
     DateTime? latestUpdatedAt;
     String? activeLeaseOwner;
     DateTime? activeLeaseExpiration;
+    var containsLegacyContentHashes = false;
     for (final record in records) {
       final document = record.data;
       if (document['schemaVersion'] != 2) {
@@ -286,11 +289,23 @@ class FirebaseAppStoreSyncService {
       }
       final normalizedPayload = Map<String, Object?>.from(payload);
       final contentHash = _readString(document, 'contentHash');
-      if (PersistedEntityBundle.hashJson(normalizedPayload) != contentHash) {
+      final contentHashVersion = document['contentHashVersion'];
+      if (contentHashVersion != null && contentHashVersion != 2) {
+        throw FormatException(
+          'Entity ${record.path} contentHashVersion is unsupported.',
+        );
+      }
+      final calculatedHash = PersistedEntityBundle.hashJson(normalizedPayload);
+      if (contentHashVersion == 2 && calculatedHash != contentHash) {
         throw FormatException('Entity ${record.path} hash is invalid.');
       }
       entities[relativePath] = normalizedPayload;
-      hashes[relativePath] = contentHash;
+      if (contentHashVersion == 2) {
+        hashes[relativePath] = contentHash;
+      } else {
+        containsLegacyContentHashes = true;
+        hashes[relativePath] = 'legacy:$contentHash';
+      }
     }
     final state = PersistedEntityBundle.decode(
       entities,
@@ -303,6 +318,7 @@ class FirebaseAppStoreSyncService {
       state: state,
       updatedAt: latestUpdatedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
       snapshotHash: PersistedEntityBundle.snapshotHash(state),
+      isLegacy: containsLegacyContentHashes,
       entityHashes: Map.unmodifiable(hashes),
       activeWorkoutLeaseOwnerId: activeLeaseOwner,
       activeWorkoutLeaseExpiresAt: activeLeaseExpiration,
