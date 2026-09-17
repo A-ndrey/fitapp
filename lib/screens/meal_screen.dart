@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/catalog_item.dart';
@@ -10,6 +9,7 @@ import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/app_screen_scaffold.dart';
 import '../ui/core/widgets/empty_state.dart';
 import '../ui/nutrition/catalog_item_search_sheet.dart';
+import '../ui/nutrition/meal_day_header.dart';
 import '../ui/nutrition/nutrition_cards.dart';
 import '../ui/nutrition/nutrition_formatters.dart';
 import '../widgets/food_form.dart';
@@ -80,7 +80,7 @@ class MealScreen extends StatelessWidget {
                   else
                     ...historyGroups.expand(
                       (group) => <Widget>[
-                        _MealDayDivider(date: group.date),
+                        MealDayHeader(date: group.date, totals: group.totals),
                         ...group.entries.map(
                           (entry) => Padding(
                             padding: const EdgeInsets.only(
@@ -173,23 +173,6 @@ class MealScreen extends StatelessWidget {
           },
         );
       },
-    );
-  }
-}
-
-class _MealDayDivider extends StatelessWidget {
-  const _MealDayDivider({required this.date});
-
-  final DateTime date;
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).toString();
-    final label = DateFormat.yMMMMd(locale).format(date);
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 12),
-      child: Text(label, style: Theme.of(context).textTheme.titleSmall),
     );
   }
 }

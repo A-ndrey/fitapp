@@ -1720,6 +1720,12 @@ class MealHistoryGroup {
 
   final DateTime date;
   final List<MealEntry> entries;
+
+  /// Consumed nutrition from the snapshots logged for this day.
+  NutritionValues get totals => entries.fold(
+    NutritionValues.zero,
+    (total, entry) => total + entry.nutrition,
+  );
 }
 
 class MealItemRecommendations {
