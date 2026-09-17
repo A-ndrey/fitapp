@@ -64,6 +64,7 @@ void main() {
     AppAuthService? authService,
     Future<void> Function({required String password})? onDeleteAccount,
     Size? size,
+    String buildId = 'test-build-id',
   }) async {
     if (size != null) {
       await tester.binding.setSurfaceSize(size);
@@ -81,6 +82,7 @@ void main() {
           onSignUp: authService?.signUp,
           onSignOut: authService?.signOut,
           onDeleteAccount: onDeleteAccount,
+          buildId: buildId,
         ),
       ),
     );
@@ -108,6 +110,21 @@ void main() {
     expect(find.text('Sync now'), findsNothing);
     expect(find.text('Login'), findsOneWidget);
     expect(find.text('Logout'), findsNothing);
+  });
+
+  testWidgets('settings screen shows the exact loaded build at the bottom', (
+    tester,
+  ) async {
+    const buildId = '0123456789abcdef0123456789abcdef01234567';
+    await pumpScreen(
+      tester,
+      AppStore(),
+      size: const Size(900, 2000),
+      buildId: buildId,
+    );
+
+    expect(find.text('Build: $buildId'), findsOneWidget);
+    expect(find.byType(SelectableText), findsOneWidget);
   });
 
   testWidgets('more screen hides sync error status while signed out', (

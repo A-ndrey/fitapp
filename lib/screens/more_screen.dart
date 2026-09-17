@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app_build_info.dart';
 import '../l10n/app_localizations.dart';
 import '../models/app_preferences.dart';
 import '../state/app_store.dart';
@@ -23,6 +24,7 @@ class MoreScreen extends StatelessWidget {
     this.onSignUp,
     this.onSignOut,
     this.onDeleteAccount,
+    this.buildId = appBuildId,
   });
 
   final AppStore store;
@@ -42,6 +44,7 @@ class MoreScreen extends StatelessWidget {
   onSignUp;
   final Future<void> Function()? onSignOut;
   final Future<void> Function({required String password})? onDeleteAccount;
+  final String buildId;
 
   @override
   Widget build(BuildContext context) {
@@ -205,10 +208,34 @@ class MoreScreen extends StatelessWidget {
                   );
                 },
               ),
+              const AppPageSectionGap(),
+              _BuildIdLabel(buildId: buildId),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _BuildIdLabel extends StatelessWidget {
+  const _BuildIdLabel({required this.buildId});
+
+  final String buildId;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: SelectableText(
+        'Build: $buildId',
+        textAlign: TextAlign.center,
+        style: textTheme.labelSmall?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          fontFamily: 'monospace',
+        ),
+      ),
     );
   }
 }
