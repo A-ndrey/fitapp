@@ -1872,6 +1872,69 @@ void main() {
     expect(recommendation.lastCompletedAt, DateTime(2026, 4, 18, 8));
   });
 
+  test(
+    'workout history and recommendations use timestamps after sync',
+    () async {
+      final store = AppStore();
+      createRecommendationFixtures(store);
+      store.startWorkout(
+        trainingPlanId: 'chest-day',
+        startedAt: DateTime(2026, 4, 10, 8),
+      );
+      final oldChest = store.finishActiveWorkout(
+        finishedAt: DateTime(2026, 4, 10, 9),
+      );
+      store.startWorkout(
+        trainingPlanId: 'leg-day',
+        startedAt: DateTime(2026, 4, 15, 8),
+      );
+      final leg = store.finishActiveWorkout(
+        finishedAt: DateTime(2026, 4, 15, 9),
+      );
+      store.startWorkout(
+        trainingPlanId: 'chest-day',
+        startedAt: DateTime(2026, 4, 20, 8),
+      );
+      final newChest = store.finishActiveWorkout(
+        finishedAt: DateTime(2026, 4, 20, 9),
+      );
+      final current = store.persistedSnapshot;
+
+      await store.applyExternalPersistedState(
+        PersistedAppState(
+          userFoods: current.userFoods,
+          userDishes: current.userDishes,
+          userExercises: current.userExercises,
+          userTrainingPlans: current.userTrainingPlans,
+          mealEntries: current.mealEntries,
+          preferences: current.preferences,
+          activeWorkoutSession: null,
+          completedWorkoutSessions: [newChest, leg, oldChest],
+          mealEntryCounter: current.mealEntryCounter,
+          workoutSessionCounter: current.workoutSessionCounter,
+        ),
+        persist: false,
+      );
+
+      expect(store.completedWorkoutSessions.map((session) => session.id), [
+        oldChest.id,
+        leg.id,
+        newChest.id,
+      ]);
+      expect(
+        store
+            .completedWorkoutHistoryForExercise('bench-press')
+            .map((group) => group.session.id),
+        [newChest.id, oldChest.id],
+      );
+      final recommendation = store.todayWorkoutRecommendationAt(
+        DateTime(2026, 4, 21, 12),
+      );
+      expect(recommendation.plan.id, 'leg-day');
+      expect(recommendation.lastCompletedAt, DateTime(2026, 4, 15, 8));
+    },
+  );
+
   test('today workout recommendation prefers plans without history', () {
     final store = AppStore();
     createRecommendationFixtures(store);
