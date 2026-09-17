@@ -263,7 +263,6 @@ class FirebaseAppStoreSyncService {
     DateTime? latestUpdatedAt;
     String? activeLeaseOwner;
     DateTime? activeLeaseExpiration;
-    var containsLegacyContentHashes = false;
     for (final record in records) {
       final document = record.data;
       if (document['schemaVersion'] != 2) {
@@ -303,12 +302,6 @@ class FirebaseAppStoreSyncService {
       entities[relativePath] = normalizedPayload;
       storedContentHashes[relativePath] = contentHash;
       contentHashVersions[relativePath] = contentHashVersion as int?;
-      if (contentHashVersion == 4) {
-        hashes[relativePath] = contentHash;
-      } else {
-        containsLegacyContentHashes = true;
-        hashes[relativePath] = 'legacy:$contentHash';
-      }
     }
     final state = PersistedEntityBundle.decode(
       entities,
@@ -316,9 +309,6 @@ class FirebaseAppStoreSyncService {
     );
     final canonicalEntities = PersistedEntityBundle.encode(state);
     for (final entry in contentHashVersions.entries) {
-      if (entry.value != 4) {
-        continue;
-      }
       final canonicalPayload = canonicalEntities[entry.key];
       final storedHash = storedContentHashes[entry.key];
       if (canonicalPayload == null || storedHash == null) {
@@ -327,11 +317,15 @@ class FirebaseAppStoreSyncService {
         );
       }
       final calculatedHash = PersistedEntityBundle.hashJson(canonicalPayload);
-      if (calculatedHash != storedHash) {
+      if (entry.value == 4 && calculatedHash != storedHash) {
         throw FormatException(
           'Entity users/$userId/${entry.key} hash is invalid.',
         );
       }
+      // Older hashes were platform- or serialization-dependent. Use the
+      // current canonical hash for change detection without rewriting every
+      // unchanged entity in a single migration.
+      hashes[entry.key] = calculatedHash;
     }
     _activeLeaseOwners[userId] = activeLeaseOwner;
     _activeLeaseExpirations[userId] = activeLeaseExpiration;
@@ -340,7 +334,7 @@ class FirebaseAppStoreSyncService {
       state: state,
       updatedAt: latestUpdatedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
       snapshotHash: PersistedEntityBundle.snapshotHash(state),
-      isLegacy: containsLegacyContentHashes,
+      isLegacy: false,
       entityHashes: Map.unmodifiable(hashes),
       activeWorkoutLeaseOwnerId: activeLeaseOwner,
       activeWorkoutLeaseExpiresAt: activeLeaseExpiration,

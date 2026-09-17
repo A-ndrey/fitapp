@@ -90,7 +90,7 @@ void main() {
     },
   );
 
-  test('entity sync upgrades order-sensitive legacy content hashes', () async {
+  test('entity sync lazily accepts order-sensitive legacy hashes', () async {
     SharedPreferences.setMockInitialValues(const {});
     final backend = _FakeEntityRemoteSnapshotStore();
     final state = _stateWithFood('tomato');
@@ -119,16 +119,18 @@ void main() {
     final service = FirebaseAppStoreSyncService(backend: backend);
 
     final legacySnapshot = await service.fetch('user-1');
-    expect(legacySnapshot!.isLegacy, isTrue);
+    expect(legacySnapshot!.isLegacy, isFalse);
     expect(legacySnapshot.state.userFoods.single.id, 'tomato');
 
+    backend.lastBatchPaths.clear();
     await service.push('user-1', legacySnapshot.state, 'ignored');
     final upgradedDocument = backend.documents['users/user-1/foods/tomato']!;
-    expect(upgradedDocument['contentHashVersion'], 4);
+    expect(backend.lastBatchPaths, ['users/user-1/preferences/current']);
+    expect(upgradedDocument['contentHashVersion'], isNull);
     expect((await service.fetch('user-1'))!.isLegacy, isFalse);
   });
 
-  test('entity sync upgrades v2 hashes after numeric normalization', () async {
+  test('entity sync lazily accepts v2 hashes', () async {
     SharedPreferences.setMockInitialValues(const {});
     final backend = _FakeEntityRemoteSnapshotStore();
     final payload = PersistedAppStateCodec.encodeFoodItem(
@@ -150,15 +152,17 @@ void main() {
     final service = FirebaseAppStoreSyncService(backend: backend);
 
     final v2Snapshot = await service.fetch('user-1');
-    expect(v2Snapshot!.isLegacy, isTrue);
+    expect(v2Snapshot!.isLegacy, isFalse);
+    backend.lastBatchPaths.clear();
     await service.push('user-1', v2Snapshot.state, 'ignored');
 
     final upgradedDocument = backend.documents['users/user-1/foods/tomato']!;
-    expect(upgradedDocument['contentHashVersion'], 4);
+    expect(backend.lastBatchPaths, ['users/user-1/preferences/current']);
+    expect(upgradedDocument['contentHashVersion'], 2);
     expect((await service.fetch('user-1'))!.isLegacy, isFalse);
   });
 
-  test('entity sync upgrades platform-dependent v3 hashes', () async {
+  test('entity sync lazily accepts platform-dependent v3 hashes', () async {
     SharedPreferences.setMockInitialValues(const {});
     final backend = _FakeEntityRemoteSnapshotStore();
     final payload = PersistedAppStateCodec.encodeFoodItem(
@@ -179,12 +183,71 @@ void main() {
     final service = FirebaseAppStoreSyncService(backend: backend);
 
     final v3Snapshot = await service.fetch('user-1');
-    expect(v3Snapshot!.isLegacy, isTrue);
+    expect(v3Snapshot!.isLegacy, isFalse);
+    backend.lastBatchPaths.clear();
     await service.push('user-1', v3Snapshot.state, 'ignored');
 
     final upgradedDocument = backend.documents['users/user-1/foods/tomato']!;
-    expect(upgradedDocument['contentHashVersion'], 4);
+    expect(backend.lastBatchPaths, ['users/user-1/preferences/current']);
+    expect(upgradedDocument['contentHashVersion'], 3);
     expect((await service.fetch('user-1'))!.isLegacy, isFalse);
+  });
+
+  test('legacy hashes do not cause a bulk rewrite over 450 entities', () async {
+    SharedPreferences.setMockInitialValues(const {});
+    final backend = _FakeEntityRemoteSnapshotStore();
+    backend.documents['users/user-1/sync/manifest'] = <String, Object?>{
+      'schemaVersion': 2,
+      'committed': true,
+    };
+    for (var index = 0; index < 451; index++) {
+      final food = _food('food-$index');
+      backend.documents['users/user-1/foods/${food.id}'] = <String, Object?>{
+        'schemaVersion': 2,
+        'payload': PersistedAppStateCodec.encodeFoodItem(food),
+        'contentHash': 'platform-dependent-v3-hash-$index',
+        'contentHashVersion': 3,
+        'updatedAt': DateTime.utc(2026, 5, 13),
+        'deletedAt': null,
+      };
+    }
+    const preferences = AppPreferences.defaults();
+    backend.documents['users/user-1/preferences/current'] = <String, Object?>{
+      'schemaVersion': 2,
+      'payload': PersistedAppStateCodec.encodePreferences(preferences),
+      'contentHash': 'platform-dependent-preferences-hash',
+      'contentHashVersion': 3,
+      'updatedAt': DateTime.utc(2026, 5, 13),
+      'deletedAt': null,
+    };
+    final service = FirebaseAppStoreSyncService(backend: backend);
+    final remote = (await service.fetch('user-1'))!;
+    final updated = PersistedAppState(
+      userFoods: [...remote.state.userFoods, _food('new-food')],
+      userDishes: remote.state.userDishes,
+      userExercises: remote.state.userExercises,
+      userTrainingPlans: remote.state.userTrainingPlans,
+      mealEntries: remote.state.mealEntries,
+      preferences: remote.state.preferences,
+      activeWorkoutSession: remote.state.activeWorkoutSession,
+      completedWorkoutSessions: remote.state.completedWorkoutSessions,
+      mealEntryCounter: remote.state.mealEntryCounter,
+      workoutSessionCounter: remote.state.workoutSessionCounter,
+    );
+
+    backend.lastBatchPaths.clear();
+    final synced = await service.push('user-1', updated, 'ignored');
+
+    expect(backend.lastBatchPaths, ['users/user-1/foods/new-food']);
+    expect(synced.state.userFoods, hasLength(452));
+    expect(
+      backend.documents['users/user-1/foods/food-0']!['contentHashVersion'],
+      3,
+    );
+    expect(
+      backend.documents['users/user-1/foods/new-food']!['contentHashVersion'],
+      4,
+    );
   });
 
   test('canonical hashes treat whole doubles and integers equally', () {
@@ -462,16 +525,7 @@ void main() {
 
 PersistedAppState _stateWithFood(String id) {
   return PersistedAppState(
-    userFoods: [
-      FoodItem(
-        id: id,
-        name: id,
-        description: id,
-        servingSizeGrams: 100,
-        basis: NutritionBasis.per100g,
-        nutrition: NutritionValues.zero,
-      ),
-    ],
+    userFoods: [_food(id)],
     userDishes: const [],
     userExercises: const [],
     userTrainingPlans: const [],
@@ -481,6 +535,17 @@ PersistedAppState _stateWithFood(String id) {
     completedWorkoutSessions: const [],
     mealEntryCounter: 0,
     workoutSessionCounter: 0,
+  );
+}
+
+FoodItem _food(String id) {
+  return FoodItem(
+    id: id,
+    name: id,
+    description: id,
+    servingSizeGrams: 100,
+    basis: NutritionBasis.per100g,
+    nutrition: NutritionValues.zero,
   );
 }
 
