@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitapp/models/app_preferences.dart';
@@ -87,6 +88,69 @@ void main() {
       expect((await service.fetch('user-1'))!.state.userFoods, isEmpty);
     },
   );
+
+  test('entity sync upgrades order-sensitive legacy content hashes', () async {
+    SharedPreferences.setMockInitialValues(const {});
+    final backend = _FakeEntityRemoteSnapshotStore();
+    final state = _stateWithFood('tomato');
+    final originalPayload = PersistedAppStateCodec.encodeFoodItem(
+      state.userFoods.single,
+    );
+    final reorderedPayload = <String, Object?>{
+      for (final key in originalPayload.keys.toList().reversed)
+        key: originalPayload[key],
+    };
+    backend.documents['users/user-1/sync/manifest'] = <String, Object?>{
+      'schemaVersion': 2,
+      'committed': true,
+      'snapshotHash': 'legacy-snapshot-hash',
+      'updatedAt': DateTime.utc(2026, 5, 13),
+      'writerId': 'old-writer',
+    };
+    backend.documents['users/user-1/foods/tomato'] = <String, Object?>{
+      'schemaVersion': 2,
+      'payload': reorderedPayload,
+      'contentHash': _legacyHashJson(originalPayload),
+      'updatedAt': DateTime.utc(2026, 5, 13),
+      'writerId': 'old-writer',
+      'deletedAt': null,
+    };
+    final service = FirebaseAppStoreSyncService(backend: backend);
+
+    final legacySnapshot = await service.fetch('user-1');
+    expect(legacySnapshot!.isLegacy, isTrue);
+    expect(legacySnapshot.state.userFoods.single.id, 'tomato');
+
+    await service.push('user-1', legacySnapshot.state, 'ignored');
+    final upgradedDocument = backend.documents['users/user-1/foods/tomato']!;
+    expect(upgradedDocument['contentHashVersion'], 2);
+    expect((await service.fetch('user-1'))!.isLegacy, isFalse);
+  });
+
+  test('entity sync rejects invalid canonical content hashes', () async {
+    SharedPreferences.setMockInitialValues(const {});
+    final backend = _FakeEntityRemoteSnapshotStore();
+    final payload = PersistedAppStateCodec.encodeFoodItem(
+      _stateWithFood('tomato').userFoods.single,
+    );
+    backend.documents['users/user-1/sync/manifest'] = <String, Object?>{
+      'schemaVersion': 2,
+      'committed': true,
+    };
+    backend.documents['users/user-1/foods/tomato'] = <String, Object?>{
+      'schemaVersion': 2,
+      'payload': payload,
+      'contentHash': 'invalid',
+      'contentHashVersion': 2,
+      'updatedAt': DateTime.utc(2026, 5, 13),
+      'deletedAt': null,
+    };
+
+    expect(
+      () => FirebaseAppStoreSyncService(backend: backend).fetch('user-1'),
+      throwsFormatException,
+    );
+  });
 
   test(
     'InstallationIdStore returns one ID for concurrent first-use callers',
@@ -327,6 +391,16 @@ Map<String, Object?> _remoteDocument({
     'snapshotHash': snapshotHash,
     'payload': payload,
   };
+}
+
+String _legacyHashJson(Object? value) {
+  final bytes = utf8.encode(jsonEncode(value));
+  var hash = 0x811c9dc5;
+  for (final byte in bytes) {
+    hash ^= byte;
+    hash = (hash * 0x01000193) & 0xFFFFFFFF;
+  }
+  return hash.toRadixString(16).padLeft(8, '0');
 }
 
 Map<String, Object?> _persistedPayloadWithTrainingExercise(String exerciseId) {
