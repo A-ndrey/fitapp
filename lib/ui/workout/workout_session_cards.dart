@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_store.dart';
 import '../../models/workout_session.dart';
+import '../core/layout/app_breakpoints.dart';
+import '../core/widgets/swipe_action_card.dart';
 import 'workout_formatters.dart';
 
 class WorkoutSessionHeaderCard extends StatelessWidget {
@@ -90,6 +92,7 @@ class WorkoutExerciseProgressCard extends StatelessWidget {
     required this.setCountLabel,
     required this.tooltip,
     required this.onOpen,
+    this.onReplace,
     super.key,
   });
 
@@ -98,13 +101,18 @@ class WorkoutExerciseProgressCard extends StatelessWidget {
   final String setCountLabel;
   final String tooltip;
   final VoidCallback onOpen;
+  final VoidCallback? onReplace;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Tooltip(
+    final isCompact = AppBreakpoints.isCompact(
+      MediaQuery.sizeOf(context).width,
+    );
+    final l10n = AppLocalizations.of(context);
+    final card = Tooltip(
       message: tooltip,
       child: Card(
         clipBehavior: Clip.antiAlias,
@@ -151,12 +159,34 @@ class WorkoutExerciseProgressCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
+                if (!isCompact && onReplace != null)
+                  IconButton(
+                    tooltip:
+                        l10n?.workoutReplaceExerciseAction ??
+                        'Replace exercise',
+                    onPressed: onReplace,
+                    icon: const Icon(Icons.swap_horiz),
+                  ),
                 Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
               ],
             ),
           ),
         ),
       ),
+    );
+    return SwipeActionCard(
+      enabled: isCompact && onReplace != null,
+      actions: [
+        if (onReplace != null)
+          SwipeCardAction(
+            label: l10n?.workoutReplaceAction ?? 'Replace',
+            icon: Icons.swap_horiz,
+            backgroundColor: colorScheme.primaryContainer,
+            foregroundColor: colorScheme.onPrimaryContainer,
+            onPressed: onReplace!,
+          ),
+      ],
+      child: card,
     );
   }
 }

@@ -673,6 +673,60 @@ class AppStore extends ChangeNotifier {
     return session;
   }
 
+  /// Replaces an unstarted entry, rejecting stale forms and unconfirmed repeats.
+  void replaceActiveWorkoutExercise({
+    required String sessionId,
+    required int resultIndex,
+    required WorkoutExerciseResult expectedResult,
+    required Exercise replacement,
+    required TrainingExercise target,
+    bool allowDuplicate = false,
+  }) {
+    _assertActiveWorkoutIsWritable();
+    final session = _activeWorkoutSession;
+    if (session == null || session.id != sessionId) {
+      throw StateError('The active workout has changed. Please try again.');
+    }
+    if (resultIndex < 0 || resultIndex >= session.results.length) {
+      throw RangeError.index(resultIndex, session.results, 'resultIndex');
+    }
+    final current = session.results[resultIndex];
+    if (current.setLogs.isNotEmpty) {
+      throw StateError('Exercises with logged sets cannot be replaced.');
+    }
+    if (!identical(current, expectedResult)) {
+      throw StateError('This workout entry has changed. Please try again.');
+    }
+    if (!identical(_exercises[replacement.id], replacement)) {
+      throw StateError(
+        'The selected exercise has changed. Please select it again.',
+      );
+    }
+    if (replacement.id == current.exerciseId ||
+        target.exerciseId != replacement.id) {
+      throw ArgumentError('Select a different exercise with matching targets.');
+    }
+    if (!allowDuplicate &&
+        session.results.any((result) => result.exerciseId == replacement.id)) {
+      throw StateError(
+        'Confirm that this exercise is already in the workout before replacing it.',
+      );
+    }
+    _validateTrainingExercise(target, replacement.measurementType);
+    final results = List<WorkoutExerciseResult>.of(session.results);
+    results[resultIndex] = WorkoutExerciseResult(
+      exerciseId: replacement.id,
+      exerciseName: replacement.name,
+      measurementType: replacement.measurementType,
+      target: target,
+      setLogs: const [],
+    );
+    _activeWorkoutSession = session.copyWith(
+      results: List.unmodifiable(results),
+    );
+    _didMutatePersistedState(AppStateSlice.workout);
+  }
+
   void addActiveWorkoutSet({
     required int resultIndex,
     required WorkoutSetLog setLog,

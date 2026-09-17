@@ -1032,4 +1032,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get libraryEmptyImportMessage =>
       'This file does not contain any items.';
+
+  @override
+  String get workoutReplaceAction => 'Replace';
+
+  @override
+  String get workoutReplaceExerciseAction => 'Replace exercise';
+
+  @override
+  String get workoutDuplicateExerciseTitle => 'Exercise already in workout';
+
+  @override
+  String workoutDuplicateExerciseMessage(String exerciseName) {
+    return '$exerciseName is already in this workout. Replace anyway? Each entry will keep its own targets and sets.';
+  }
+
+  @override
+  String get workoutReplaceExerciseError => 'Could not replace exercise.';
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/exercise.dart';
+import '../models/training_plan.dart';
 import '../models/workout_session.dart';
 import '../state/app_store.dart';
 import '../ui/core/forms/form_error_messages.dart';
@@ -12,6 +13,8 @@ import '../ui/core/layout/adaptive_page.dart';
 import '../ui/core/widgets/section_header.dart';
 import '../ui/workout/workout_formatters.dart';
 import '../ui/workout/workout_session_cards.dart';
+import '../widgets/exercise_picker_sheet.dart';
+import '../widgets/training_exercise_dialog.dart';
 import 'workout_exercise_screen.dart';
 
 class WorkoutSessionScreen extends StatefulWidget {
@@ -33,6 +36,7 @@ class WorkoutSessionScreen extends StatefulWidget {
 class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   Timer? _timer;
   bool _isTakingOver = false;
+  bool _isReplacingExercise = false;
   bool get _isCurrentTab =>
       widget.isCurrentTabListenable?.value ?? widget.isCurrentTab;
 
@@ -189,6 +193,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     bottom: AppPageSpacing.itemGap,
                   ),
                   child: WorkoutExerciseProgressCard(
+                    key: ObjectKey(result),
                     exerciseLabel: exerciseLabel,
                     targetLabel: formatWorkoutTarget(
                       result.target,
@@ -204,6 +209,12 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     ),
                     tooltip: tooltipLabel,
                     onOpen: () => _openExercise(context, resultIndex),
+                    onReplace:
+                        isReadOnly ||
+                            result.setLogs.isNotEmpty ||
+                            _isReplacingExercise
+                        ? null
+                        : () => _replaceExercise(session, resultIndex),
                   ),
                 );
               }),
@@ -212,6 +223,101 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         );
       },
     );
+  }
+
+  Future<void> _replaceExercise(WorkoutSession session, int resultIndex) async {
+    final original = session.results[resultIndex];
+    final l10n = AppLocalizations.of(context);
+    setState(() => _isReplacingExercise = true);
+    try {
+      final replacement = await showModalBottomSheet<Exercise>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => ExercisePickerSheet(
+          exercises: widget.store.exercises
+              .where((exercise) => exercise.id != original.exerciseId)
+              .toList(growable: false),
+          initialMuscleGroups:
+              widget.store.exerciseById(original.exerciseId)?.muscleGroups ??
+              const [],
+        ),
+      );
+      if (!mounted || replacement == null) return;
+      final target = await Navigator.of(context).push<TrainingExercise>(
+        MaterialPageRoute<TrainingExercise>(
+          fullscreenDialog: true,
+          builder: (_) => TrainingExerciseDialog(
+            store: widget.store,
+            exercise: replacement,
+            initialExercise: original.target.forReplacement(replacement),
+            fullScreen: true,
+            title: l10n?.workoutReplaceExerciseAction ?? 'Replace exercise',
+            primaryActionLabel: l10n?.workoutReplaceAction ?? 'Replace',
+          ),
+        ),
+      );
+      if (!mounted || target == null) return;
+      final isDuplicate =
+          widget.store.activeWorkoutSession?.results.indexed.any(
+            (entry) =>
+                entry.$1 != resultIndex &&
+                entry.$2.exerciseId == replacement.id,
+          ) ??
+          false;
+      if (isDuplicate) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(
+              l10n?.workoutDuplicateExerciseTitle ??
+                  'Exercise already in workout',
+            ),
+            content: Text(
+              l10n?.workoutDuplicateExerciseMessage(replacement.name) ??
+                  '${replacement.name} is already in this workout. Replace anyway? Each entry will keep its own targets and sets.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(l10n?.commonCancel ?? 'Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(l10n?.workoutReplaceAction ?? 'Replace'),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || confirmed != true) return;
+      }
+      widget.store.replaceActiveWorkoutExercise(
+        sessionId: session.id,
+        resultIndex: resultIndex,
+        expectedResult: original,
+        replacement: replacement,
+        target: target,
+        allowDuplicate: isDuplicate,
+      );
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              humanReadableFormError(
+                error,
+                resourceName: 'exercise',
+                fallback:
+                    l10n?.workoutReplaceExerciseError ??
+                    'Could not replace exercise.',
+              ),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isReplacingExercise = false);
+    }
   }
 
   Future<void> _openExercise(BuildContext context, int resultIndex) async {

@@ -1381,5 +1381,17 @@
   "libraryEmptyImportMessage": "This file does not contain any items.",
   "@libraryEmptyImportMessage": {
     "description": "Empty state for an import document without items."
-  }
+  },
+  "workoutReplaceAction": "Replace",
+  "workoutReplaceExerciseAction": "Replace exercise",
+  "workoutDuplicateExerciseTitle": "Exercise already in workout",
+  "workoutDuplicateExerciseMessage": "{exerciseName} is already in this workout. Replace anyway? Each entry will keep its own targets and sets.",
+  "@workoutDuplicateExerciseMessage": {
+    "placeholders": {
+      "exerciseName": {
+        "type": "String"
+      }
+    }
+  },
+  "workoutReplaceExerciseError": "Could not replace exercise."
 }

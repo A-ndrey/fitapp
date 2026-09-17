@@ -1,3 +1,5 @@
+import 'exercise.dart';
+
 class TrainingExercise {
   const TrainingExercise({
     required this.exerciseId,
@@ -16,6 +18,38 @@ class TrainingExercise {
   final double? durationSeconds;
   final double? distanceMeters;
   final double? assistanceWeightGrams;
+
+  /// Keeps only targets supported by the replacement exercise's target form.
+  TrainingExercise forReplacement(Exercise exercise) {
+    final type = exercise.measurementType;
+    return TrainingExercise(
+      exerciseId: exercise.id,
+      sets: type == ExerciseMeasurementType.cardio ? null : sets,
+      reps: switch (type) {
+        ExerciseMeasurementType.strength ||
+        ExerciseMeasurementType.bodyweight ||
+        ExerciseMeasurementType.assisted => reps,
+        _ => null,
+      },
+      weightGrams: switch (type) {
+        ExerciseMeasurementType.strength ||
+        ExerciseMeasurementType.weightedDuration => weightGrams,
+        _ => null,
+      },
+      durationSeconds: switch (type) {
+        ExerciseMeasurementType.duration ||
+        ExerciseMeasurementType.weightedDuration ||
+        ExerciseMeasurementType.cardio => durationSeconds,
+        _ => null,
+      },
+      distanceMeters: type == ExerciseMeasurementType.cardio
+          ? distanceMeters
+          : null,
+      assistanceWeightGrams: type == ExerciseMeasurementType.assisted
+          ? assistanceWeightGrams
+          : null,
+    );
+  }
 
   TrainingExercise copyWith({
     String? exerciseId,

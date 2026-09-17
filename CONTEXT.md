@@ -27,6 +27,12 @@ The single workout currently in progress, including its planned targets and
 recorded sets.
 _Avoid_: Training plan, completed workout
 
+**Exercise Replacement**:
+A substitution of one exercise entry in the Active Workout before that entry
+has any recorded sets. The replacement belongs to that workout and does not
+change the reusable training plan.
+_Avoid_: Training plan edit, exercise library edit
+
 **Workout History**:
 The record of completed workouts and their self-contained exercise results. A
 completed workout remains meaningful when its source exercise or training plan
