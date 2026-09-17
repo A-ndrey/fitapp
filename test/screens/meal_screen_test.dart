@@ -3,6 +3,7 @@ import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/screens/meal_screen.dart';
 import 'package:fitapp/state/app_store.dart';
+import 'package:fitapp/ui/nutrition/meal_day_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
@@ -266,6 +267,67 @@ void main() {
     );
     expect(find.text('Servings'), findsOneWidget);
   });
+
+  testWidgets(
+    'daily summaries sum snapshots before rounding and update on removal',
+    (tester) async {
+      final store = AppStore.empty();
+      addTearDown(store.dispose);
+      seedRice(store);
+      final date = DateTime(2026, 9, 17);
+      final first = store.addMealByGrams(
+        itemId: 'rice',
+        grams: 100,
+        loggedAt: date,
+      );
+      final second = store.addMealByGrams(
+        itemId: 'rice',
+        grams: 100,
+        loggedAt: date.add(const Duration(hours: 1)),
+      );
+      store.addMealByGrams(
+        itemId: 'rice',
+        grams: 300,
+        loggedAt: date.subtract(const Duration(days: 1)),
+      );
+      store.deleteItem('rice');
+      await pumpScreen(tester, store: store);
+
+      final locale = Localizations.localeOf(
+        tester.element(find.byType(MealScreen)),
+      ).toString();
+      final dateLabel = DateFormat.yMMMMd(locale).format(date);
+      await tester.scrollUntilVisible(
+        find.text(dateLabel),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      final header = find.ancestor(
+        of: find.text(dateLabel),
+        matching: find.byType(MealDayHeader),
+      );
+      for (final value in ['260', '5', '1', '56']) {
+        expect(
+          find.descendant(of: header, matching: find.text(value)),
+          findsOneWidget,
+        );
+      }
+      expect(store.mealHistoryGroups.last.totals.calories, 390);
+
+      store.removeMealEntry(first.id);
+      await tester.pumpAndSettle();
+      for (final value in ['130', '3', '0', '28']) {
+        expect(
+          find.descendant(of: header, matching: find.text(value)),
+          findsOneWidget,
+        );
+      }
+      store.removeMealEntry(second.id);
+      await tester.pumpAndSettle();
+      expect(find.text(dateLabel), findsNothing);
+      expect(store.mealHistoryGroups.single.totals.calories, 390);
+    },
+  );
 
   testWidgets(
     'meal screen groups history by date and shows newest entries first',
