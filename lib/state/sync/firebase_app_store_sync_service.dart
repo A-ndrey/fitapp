@@ -199,12 +199,6 @@ class FirebaseAppStoreSyncService {
         'deletedAt': FieldValue.serverTimestamp(),
       };
     }
-    if (isCommitted && writes.length > 450) {
-      throw StateError(
-        'A single incremental sync cannot safely update more than 450 '
-        'entities.',
-      );
-    }
     await entityBackend.setAll(writes);
 
     final verified = await _readEntityState(entityBackend, userId);

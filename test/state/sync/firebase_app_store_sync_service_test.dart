@@ -250,6 +250,43 @@ void main() {
     );
   });
 
+  test('committed sync accepts more than 450 entity changes', () async {
+    SharedPreferences.setMockInitialValues(const {});
+    final backend = _FakeEntityRemoteSnapshotStore();
+    backend.documents['users/user-1/sync/manifest'] = <String, Object?>{
+      'schemaVersion': 2,
+      'committed': true,
+    };
+    final state = PersistedAppState(
+      userFoods: [
+        for (var index = 0; index < 451; index++) _food('food-$index'),
+      ],
+      userDishes: const [],
+      userExercises: const [],
+      userTrainingPlans: const [],
+      mealEntries: const [],
+      preferences: const AppPreferences.defaults(),
+      activeWorkoutSession: null,
+      completedWorkoutSessions: const [],
+      mealEntryCounter: 0,
+      workoutSessionCounter: 0,
+    );
+    final service = FirebaseAppStoreSyncService(backend: backend);
+
+    final synced = await service.push('user-1', state, 'ignored');
+
+    expect(backend.lastBatchPaths, hasLength(452));
+    expect(
+      backend.lastBatchPaths,
+      containsAll([
+        'users/user-1/foods/food-0',
+        'users/user-1/foods/food-450',
+        'users/user-1/preferences/current',
+      ]),
+    );
+    expect(synced.state.userFoods, hasLength(451));
+  });
+
   test('canonical hashes treat whole doubles and integers equally', () {
     expect(
       PersistedEntityBundle.hashJson({
