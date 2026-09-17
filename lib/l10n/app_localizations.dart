@@ -1825,6 +1825,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This file does not contain any items.'**
   String get libraryEmptyImportMessage;
+
+  /// No description provided for @workoutReplaceAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get workoutReplaceAction;
+
+  /// No description provided for @workoutReplaceExerciseAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace exercise'**
+  String get workoutReplaceExerciseAction;
+
+  /// No description provided for @workoutDuplicateExerciseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise already in workout'**
+  String get workoutDuplicateExerciseTitle;
+
+  /// No description provided for @workoutDuplicateExerciseMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{exerciseName} is already in this workout. Replace anyway? Each entry will keep its own targets and sets.'**
+  String workoutDuplicateExerciseMessage(String exerciseName);
+
+  /// No description provided for @workoutReplaceExerciseError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not replace exercise.'**
+  String get workoutReplaceExerciseError;
 }
 
 class _AppLocalizationsDelegate
