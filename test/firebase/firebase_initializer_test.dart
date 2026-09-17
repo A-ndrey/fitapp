@@ -1,16 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:fitapp/firebase/firebase_initializer.dart';
 import 'package:fitapp/firebase_options.dart';
 import 'package:fitapp/main.dart';
 import 'package:fitapp/models/app_preferences.dart';
+import 'package:fitapp/models/food_item.dart';
+import 'package:fitapp/models/nutrition.dart';
 import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/state/auth/app_auth_service.dart';
 import 'package:fitapp/state/persistence/app_store_persistence.dart';
 import 'package:fitapp/state/persistence/persisted_app_state.dart';
+import 'package:fitapp/state/persistence/persisted_app_state_codec.dart';
 import 'package:fitapp/state/persistence/shared_preferences_sync_metadata_store.dart';
 import 'package:fitapp/state/persistence/sync_metadata.dart';
 import 'package:fitapp/state/sync/app_store_sync_coordinator.dart';
+import 'package:fitapp/state/sync/app_store_sync_conflict.dart';
 import 'package:fitapp/state/sync/app_store_sync_status.dart';
 import 'package:fitapp/state/sync/firebase_app_store_sync_service.dart';
 import 'package:fitapp/state/sync/remote_snapshot.dart';
@@ -205,6 +210,279 @@ void main() {
     },
   );
 
+  testWidgets(
+    'device cache is hydrated before the first frame while Firebase initializes',
+    (tester) async {
+      final initializerCompleter = Completer<void>();
+      final persistence = _InMemoryDeviceAppStorePersistence(
+        state: _stateWithFood('cached-food'),
+        ownerUserId: 'user-1',
+      );
+      final startup = await prepareFitAppStartup(
+        firebaseInitializer: _RecordingFirebaseInitializer(
+          () => initializerCompleter.future,
+        ),
+        appStorePersistenceFactory: (_) => persistence,
+        syncMetadataStoreFactory: _FakeSyncMetadataStore.new,
+        syncServiceFactory: (_) => _RecordingSyncService(<String>[]),
+        authServiceFactory: (_) => _FakeAuthService.signedIn(),
+      );
+
+      await launchFitApp(
+        startup: startup,
+        appRunner: (app) async {
+          expect(
+            startup.store.items.map((item) => item.id),
+            contains('cached-food'),
+          );
+          await tester.pumpWidget(app);
+        },
+      );
+
+      expect(startup.syncAccess.coordinator, isNull);
+      initializerCompleter.complete();
+      await tester.pump();
+      await tester.pump();
+    },
+  );
+
+  test('signing out keeps the device cache visible and unchanged', () async {
+    final local = _stateWithFood('local-food');
+    final persistence = _InMemoryDeviceAppStorePersistence(
+      state: local,
+      ownerUserId: 'user-1',
+    );
+    final authService = _FakeAuthService.signedIn();
+    final startup = await _prepareDeviceStartup(
+      persistence: persistence,
+      authService: authService,
+      syncService: _RecordingSyncService(<String>[]),
+    );
+
+    await startup.startBackgroundSync();
+    await authService.signOut();
+    await _pumpEventQueue();
+
+    expect(startup.store.items.map((item) => item.id), contains('local-food'));
+    expect(persistence.state, same(local));
+    expect(persistence.ownerUserId, 'user-1');
+    expect(startup.syncAccess.coordinator, isNull);
+  });
+
+  test(
+    'different account blocks sync before any remote read or write',
+    () async {
+      final events = <String>[];
+      final persistence = _InMemoryDeviceAppStorePersistence(
+        state: _stateWithFood('local-food'),
+        ownerUserId: 'user-1',
+      );
+      final startup = await _prepareDeviceStartup(
+        persistence: persistence,
+        authService: _FakeAuthService.signedIn(uid: 'user-2'),
+        syncService: _RecordingSyncService(events),
+      );
+
+      await startup.startBackgroundSync();
+
+      expect(events, isEmpty);
+      expect(startup.syncAccess.coordinator, isNull);
+      expect(
+        startup.syncAccess.conflict?.reason,
+        AppStoreSyncConflictReason.differentAccount,
+      );
+    },
+  );
+
+  test(
+    'cache load failure blocks an empty snapshot from reaching remote',
+    () async {
+      final events = <String>[];
+      final persistence = _InMemoryDeviceAppStorePersistence(
+        loadError: const FormatException('broken manifest'),
+      );
+      final startup = await _prepareDeviceStartup(
+        persistence: persistence,
+        authService: _FakeAuthService.signedIn(),
+        syncService: _RecordingSyncService(events),
+      );
+
+      await startup.startBackgroundSync();
+
+      expect(events, isEmpty);
+      expect(startup.syncAccess.coordinator, isNull);
+      expect(startup.syncAccess.status.phase, AppStoreSyncPhase.error);
+      expect(
+        startup.syncAccess.status.lastErrorMessage,
+        contains('Local cache could not be loaded'),
+      );
+    },
+  );
+
+  test('authenticated UID selects an ambiguous legacy account cache', () async {
+    final selected = _stateWithFood('selected-food');
+    final persistence = _InMemoryDeviceAppStorePersistence(
+      legacyStates: <String, PersistedAppState>{
+        'user-1': _stateWithFood('other-food'),
+        'user-2': selected,
+      },
+    );
+    final startup = await _prepareDeviceStartup(
+      persistence: persistence,
+      authService: _FakeAuthService.signedIn(uid: 'user-2'),
+      syncService: _RecordingSyncService(<String>[]),
+    );
+
+    await startup.startBackgroundSync();
+
+    expect(
+      startup.store.items.map((item) => item.id),
+      contains('selected-food'),
+    );
+    expect(persistence.ownerUserId, 'user-2');
+  });
+
+  test(
+    'unowned local and remote data block sync until explicit choice',
+    () async {
+      final events = <String>[];
+      final persistence = _InMemoryDeviceAppStorePersistence(
+        state: _stateWithFood('local-food'),
+      );
+      final syncService = _RecordingSyncService(
+        events,
+        remoteState: _stateWithFood('remote-food'),
+      );
+      final startup = await _prepareDeviceStartup(
+        persistence: persistence,
+        authService: _FakeAuthService.signedIn(),
+        syncService: syncService,
+      );
+
+      await startup.startBackgroundSync();
+
+      expect(events, ['fetch-remote']);
+      expect(startup.syncAccess.coordinator, isNull);
+      expect(
+        startup.syncAccess.conflict?.reason,
+        AppStoreSyncConflictReason.unownedLocalAndRemoteData,
+      );
+      expect(persistence.ownerUserId, isNull);
+    },
+  );
+
+  test('empty unowned cache adopts remote data automatically', () async {
+    final remote = _stateWithFood('remote-food');
+    final persistence = _InMemoryDeviceAppStorePersistence(
+      state: const PersistedAppState.empty(),
+    );
+    final startup = await _prepareDeviceStartup(
+      persistence: persistence,
+      authService: _FakeAuthService.signedIn(),
+      syncService: _RecordingSyncService(<String>[], remoteState: remote),
+    );
+
+    await startup.startBackgroundSync();
+
+    expect(startup.store.items.map((item) => item.id), contains('remote-food'));
+    expect(persistence.state, same(remote));
+    expect(persistence.ownerUserId, 'user-1');
+    expect(startup.syncAccess.conflict, isNull);
+    expect(startup.syncAccess.coordinator, isNotNull);
+  });
+
+  test(
+    'unowned local data replaces an existing empty remote snapshot',
+    () async {
+      final local = _stateWithFood('local-food');
+      final persistence = _InMemoryDeviceAppStorePersistence(state: local);
+      final syncService = _RecordingSyncService(
+        <String>[],
+        remoteState: const PersistedAppState.empty(),
+      );
+      final startup = await _prepareDeviceStartup(
+        persistence: persistence,
+        authService: _FakeAuthService.signedIn(),
+        syncService: syncService,
+      );
+
+      await startup.startBackgroundSync();
+
+      expect(syncService.lastPushedState!.userFoods.single.id, 'local-food');
+      expect(
+        startup.store.items.map((item) => item.id),
+        contains('local-food'),
+      );
+      expect(persistence.ownerUserId, 'user-1');
+      expect(startup.syncAccess.conflict, isNull);
+    },
+  );
+
+  test(
+    'explicit account choice replaces local cache before sync starts',
+    () async {
+      final remote = _stateWithFood('remote-food');
+      final persistence = _InMemoryDeviceAppStorePersistence(
+        state: _stateWithFood('local-food'),
+        ownerUserId: 'user-1',
+      );
+      final syncService = _RecordingSyncService(
+        <String>[],
+        remoteState: remote,
+      );
+      final startup = await _prepareDeviceStartup(
+        persistence: persistence,
+        authService: _FakeAuthService.signedIn(uid: 'user-2'),
+        syncService: syncService,
+      );
+      await startup.startBackgroundSync();
+
+      await startup.syncAccess.replaceLocalWithAccountData();
+
+      expect(
+        startup.store.items.map((item) => item.id),
+        contains('remote-food'),
+      );
+      expect(
+        startup.store.items.map((item) => item.id),
+        isNot(contains('local-food')),
+      );
+      expect(persistence.state, same(remote));
+      expect(persistence.ownerUserId, 'user-2');
+      expect(startup.syncAccess.conflict, isNull);
+      expect(startup.syncAccess.coordinator, isNotNull);
+    },
+  );
+
+  test(
+    'explicit device choice replaces account data before sync starts',
+    () async {
+      final local = _stateWithFood('local-food');
+      final persistence = _InMemoryDeviceAppStorePersistence(
+        state: local,
+        ownerUserId: 'user-1',
+      );
+      final syncService = _RecordingSyncService(
+        <String>[],
+        remoteState: _stateWithFood('remote-food'),
+      );
+      final startup = await _prepareDeviceStartup(
+        persistence: persistence,
+        authService: _FakeAuthService.signedIn(uid: 'user-2'),
+        syncService: syncService,
+      );
+      await startup.startBackgroundSync();
+
+      await startup.syncAccess.replaceAccountWithLocalData();
+
+      expect(syncService.lastPushedState!.userFoods.single.id, 'local-food');
+      expect(syncService.remoteState!.userFoods.single.id, 'local-food');
+      expect(persistence.ownerUserId, 'user-2');
+      expect(startup.syncAccess.conflict, isNull);
+      expect(startup.syncAccess.coordinator, isNotNull);
+    },
+  );
+
   test(
     'deleteAccountData clears sync coordinator before deleting remote user state',
     () async {
@@ -250,6 +528,53 @@ void main() {
       expect(persistence.state, isNull);
     },
   );
+
+  test('account deletion can keep local device data as unowned', () async {
+    final local = _stateWithFood('local-food');
+    final persistence = _InMemoryDeviceAppStorePersistence(
+      state: local,
+      ownerUserId: 'user-1',
+    );
+    final startup = await _prepareDeviceStartup(
+      persistence: persistence,
+      authService: _FakeAuthService.signedIn(),
+      syncService: _RecordingSyncService(<String>[]),
+    );
+
+    await startup.deleteAccountData(
+      password: 'secret123',
+      deleteLocalData: false,
+    );
+
+    expect(persistence.state, isNotNull);
+    expect(persistence.state!.userFoods.single.id, 'local-food');
+    expect(persistence.ownerUserId, isNull);
+    expect(startup.store.items.map((item) => item.id), contains('local-food'));
+  });
+
+  test('account deletion can clear all local device data', () async {
+    final persistence = _InMemoryDeviceAppStorePersistence(
+      state: _stateWithFood('local-food'),
+      ownerUserId: 'user-1',
+    );
+    final startup = await _prepareDeviceStartup(
+      persistence: persistence,
+      authService: _FakeAuthService.signedIn(),
+      syncService: _RecordingSyncService(<String>[]),
+    );
+
+    await startup.deleteAccountData(
+      password: 'secret123',
+      deleteLocalData: true,
+    );
+
+    expect(persistence.state, isNull);
+    expect(persistence.ownerUserId, isNull);
+    expect(
+      startup.store.items.map((item) => item.id),
+      isNot(contains('local-food')),
+    );
+  });
 
   test(
     'deleteAccountData stops bound coordinator before later local saves can sync',
@@ -582,6 +907,63 @@ class _InMemoryAppStorePersistence implements AppStorePersistence {
   }
 }
 
+class _InMemoryDeviceAppStorePersistence implements DeviceAppStorePersistence {
+  _InMemoryDeviceAppStorePersistence({
+    this.state,
+    this.ownerUserId,
+    this.loadError,
+    this.legacyStates = const <String, PersistedAppState>{},
+  });
+
+  PersistedAppState? state;
+
+  @override
+  String? ownerUserId;
+
+  @override
+  Object? loadError;
+
+  final Map<String, PersistedAppState> legacyStates;
+
+  @override
+  Future<PersistedAppState?> load() async => state;
+
+  @override
+  Future<void> save(PersistedAppState state) async {
+    this.state = state;
+  }
+
+  @override
+  Future<PersistedAppState?> migrateLegacyAccount(String userId) async {
+    if (state != null) {
+      return state;
+    }
+    final migrated = legacyStates[userId];
+    if (migrated != null) {
+      state = migrated;
+      ownerUserId = userId;
+    }
+    return migrated;
+  }
+
+  @override
+  Future<void> replace(
+    PersistedAppState state, {
+    required String? ownerUserId,
+  }) async {
+    this.state = state;
+    this.ownerUserId = ownerUserId;
+    loadError = null;
+  }
+
+  @override
+  Future<void> clear() async {
+    state = null;
+    ownerUserId = null;
+    loadError = null;
+  }
+}
+
 class _FakeSyncMetadataStore implements SharedPreferencesSyncMetadataStore {
   SyncMetadata? metadata;
 
@@ -617,9 +999,11 @@ class _RecordingSyncAccess extends FitAppSyncAccess {
 }
 
 class _RecordingSyncService implements FirebaseAppStoreSyncService {
-  _RecordingSyncService(this.events);
+  _RecordingSyncService(this.events, {this.remoteState});
 
   final List<String> events;
+  PersistedAppState? remoteState;
+  PersistedAppState? lastPushedState;
 
   @override
   final RemoteSnapshotStore backend = _NoopRemoteSnapshotStore();
@@ -630,7 +1014,15 @@ class _RecordingSyncService implements FirebaseAppStoreSyncService {
   @override
   Future<RemoteSnapshot?> fetch(String installationId) async {
     events.add('fetch-remote');
-    return null;
+    final state = remoteState;
+    if (state == null) {
+      return null;
+    }
+    return RemoteSnapshot(
+      state: state,
+      updatedAt: DateTime.utc(2026, 5, 14, 12),
+      snapshotHash: _legacySnapshotHash(state),
+    );
   }
 
   @override
@@ -640,6 +1032,8 @@ class _RecordingSyncService implements FirebaseAppStoreSyncService {
     String snapshotHash,
   ) async {
     events.add('push-remote');
+    remoteState = state;
+    lastPushedState = state;
     return RemoteSnapshot(
       state: state,
       updatedAt: DateTime.utc(2026, 5, 14, 12),
@@ -703,13 +1097,14 @@ class _BlockingPushSyncService implements FirebaseAppStoreSyncService {
 
 class _FakeAuthService extends ChangeNotifier implements AppAuthService {
   _FakeAuthService.signedIn({
+    String uid = 'user-1',
     List<String>? events,
     AuthFailure? reauthError,
     AuthFailure? deleteError,
   }) : _events = events,
        _reauthError = reauthError,
        _deleteError = deleteError,
-       _state = const AppAuthState(uid: 'user-1', email: 'me@example.com');
+       _state = AppAuthState(uid: uid, email: 'me@example.com');
 
   final List<String>? _events;
   final AuthFailure? _reauthError;
@@ -767,6 +1162,54 @@ class _NoopRemoteSnapshotStore implements RemoteSnapshotStore {
 
   @override
   Future<void> delete(String path) async {}
+}
+
+Future<FitAppStartup> _prepareDeviceStartup({
+  required _InMemoryDeviceAppStorePersistence persistence,
+  required _FakeAuthService authService,
+  required _RecordingSyncService syncService,
+}) {
+  return prepareFitAppStartup(
+    firebaseInitializer: _RecordingFirebaseInitializer(() async {}),
+    appStorePersistenceFactory: (_) => persistence,
+    syncMetadataStoreFactory: _FakeSyncMetadataStore.new,
+    syncServiceFactory: (_) => syncService,
+    authServiceFactory: (_) => authService,
+  );
+}
+
+PersistedAppState _stateWithFood(String id) {
+  return PersistedAppState(
+    userFoods: [
+      FoodItem(
+        id: id,
+        name: id,
+        description: id,
+        servingSizeGrams: 100,
+        basis: NutritionBasis.per100g,
+        nutrition: NutritionValues.zero,
+      ),
+    ],
+    userDishes: const [],
+    userExercises: const [],
+    userTrainingPlans: const [],
+    mealEntries: const [],
+    preferences: const AppPreferences.defaults(),
+    activeWorkoutSession: null,
+    completedWorkoutSessions: const [],
+    mealEntryCounter: 0,
+    workoutSessionCounter: 0,
+  );
+}
+
+String _legacySnapshotHash(PersistedAppState state) {
+  final bytes = utf8.encode(jsonEncode(PersistedAppStateCodec.encode(state)));
+  var hash = 0x811c9dc5;
+  for (final byte in bytes) {
+    hash ^= byte;
+    hash = (hash * 0x01000193) & 0xFFFFFFFF;
+  }
+  return hash.toRadixString(16).padLeft(8, '0');
 }
 
 Future<void> _pumpEventQueue() async {

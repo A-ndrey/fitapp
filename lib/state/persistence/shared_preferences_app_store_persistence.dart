@@ -2,91 +2,151 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../app_state_components.dart';
 import 'app_store_persistence.dart';
 import 'persisted_app_state.dart';
 import 'persisted_app_state_codec.dart';
 import 'persisted_state_slices.dart';
-import '../app_state_components.dart';
 
 class SharedPreferencesAppStorePersistence
-    implements AccountScopedAppStorePersistence {
+    implements DeviceAppStorePersistence {
   SharedPreferencesAppStorePersistence({
     Set<String> knownExerciseIds = const {},
   }) : knownExerciseIds = Set.unmodifiable(knownExerciseIds);
 
   static const storageKey = 'app_store_state_v1';
-  static const _v2Prefix = 'app_store_state_v2';
+  static const _legacyV2Prefix = 'app_store_state_v2';
+  static const _v3Prefix = 'app_store_state_v3';
+  static const _deviceScope = 'device';
 
   final Set<String> knownExerciseIds;
-  String _scope = 'guest';
   int _generationCounter = 0;
+  String? _ownerUserId;
+  Object? _loadError;
 
   @override
-  String? get activeUserId =>
-      _scope.startsWith('user:') ? _scope.substring(5) : null;
+  String? get ownerUserId => _ownerUserId;
+
+  @override
+  Object? get loadError => _loadError;
 
   @override
   Future<PersistedAppState?> load() async {
-    final scope = _scope;
     final preferences = await SharedPreferences.getInstance();
-    final v2 = _loadV2(preferences, scope);
-    if (v2 != null) {
-      return v2;
-    }
-    if (scope != 'guest') {
+    _loadError = null;
+    try {
+      final deviceCache = _loadV3(preferences);
+      if (deviceCache != null) {
+        _ownerUserId = deviceCache.ownerUserId;
+        return deviceCache.state;
+      }
+
+      final legacyUsers = _legacyAccountUserIds(preferences);
+      if (legacyUsers.length == 1) {
+        return await _migrateLegacyAccount(preferences, legacyUsers.single);
+      }
+
+      if (legacyUsers.isEmpty) {
+        return await _migrateUnscopedV1(preferences);
+      }
+      return null;
+    } catch (error) {
+      _loadError = error;
       return null;
     }
-    final raw = preferences.getString(storageKey);
-    if (raw == null) {
-      return null;
-    }
-    final legacy = _decodeLegacy(raw);
-    await _saveV2(preferences, scope, legacy);
-    return legacy;
   }
 
   @override
   Future<void> save(PersistedAppState state) async {
-    final scope = _scope;
     final preferences = await SharedPreferences.getInstance();
-    await _saveV2(preferences, scope, state);
+    await _saveV3(preferences, state, ownerUserId: _ownerUserId);
   }
 
   @override
-  Future<PersistedAppState?> activateGuest() async {
-    final preferences = await SharedPreferences.getInstance();
-    final state = _loadV2(preferences, 'guest');
-    _scope = 'guest';
-    if (state != null) {
-      return state;
+  Future<PersistedAppState?> migrateLegacyAccount(String userId) async {
+    if (userId.trim().isEmpty) {
+      throw ArgumentError.value(userId, 'userId', 'Must not be empty.');
     }
+    final preferences = await SharedPreferences.getInstance();
+    final deviceCache = _loadV3(preferences);
+    if (deviceCache != null) {
+      _ownerUserId = deviceCache.ownerUserId;
+      _loadError = null;
+      return deviceCache.state;
+    }
+    if (!_legacyAccountUserIds(preferences).contains(userId)) {
+      return null;
+    }
+    try {
+      final state = await _migrateLegacyAccount(preferences, userId);
+      _loadError = null;
+      return state;
+    } catch (error) {
+      _loadError = error;
+      return null;
+    }
+  }
+
+  @override
+  Future<void> replace(
+    PersistedAppState state, {
+    required String? ownerUserId,
+  }) async {
+    if (ownerUserId != null && ownerUserId.trim().isEmpty) {
+      throw ArgumentError.value(
+        ownerUserId,
+        'ownerUserId',
+        'Must not be empty.',
+      );
+    }
+    final preferences = await SharedPreferences.getInstance();
+    await _saveV3(preferences, state, ownerUserId: ownerUserId);
+  }
+
+  @override
+  Future<void> clear() async {
+    final preferences = await SharedPreferences.getInstance();
+    final keys = preferences
+        .getKeys()
+        .where(
+          (key) =>
+              key == storageKey ||
+              key.startsWith('$_legacyV2Prefix:') ||
+              key.startsWith('$_v3Prefix:'),
+        )
+        .toList(growable: false);
+    for (final key in keys) {
+      final didRemove = await preferences.remove(key);
+      if (!didRemove) {
+        throw StateError('Failed to remove persisted app state.');
+      }
+    }
+    _ownerUserId = null;
+    _loadError = null;
+  }
+
+  Future<PersistedAppState> _migrateLegacyAccount(
+    SharedPreferences preferences,
+    String userId,
+  ) async {
+    final state = _loadV2(preferences, 'user:$userId');
+    if (state == null) {
+      throw StateError('Legacy account cache disappeared during migration.');
+    }
+    await _saveV3(preferences, state, ownerUserId: userId);
+    return state;
+  }
+
+  Future<PersistedAppState?> _migrateUnscopedV1(
+    SharedPreferences preferences,
+  ) async {
     final raw = preferences.getString(storageKey);
     if (raw == null) {
       return null;
     }
     final legacy = _decodeLegacy(raw);
-    await _saveV2(preferences, 'guest', legacy);
+    await _saveV3(preferences, legacy, ownerUserId: null);
     return legacy;
-  }
-
-  @override
-  Future<PersistedAppState?> activateAccount(
-    String userId, {
-    PersistedAppState? seed,
-  }) async {
-    if (userId.trim().isEmpty) {
-      throw ArgumentError.value(userId, 'userId', 'Must not be empty.');
-    }
-    final scope = 'user:$userId';
-    final preferences = await SharedPreferences.getInstance();
-    final existing = _loadV2(preferences, scope);
-    if (existing != null || seed == null) {
-      _scope = scope;
-      return existing;
-    }
-    await _saveV2(preferences, scope, seed);
-    _scope = scope;
-    return seed;
   }
 
   PersistedAppState _decodeLegacy(String raw) {
@@ -100,8 +160,30 @@ class SharedPreferencesAppStorePersistence
     );
   }
 
+  _DeviceCache? _loadV3(SharedPreferences preferences) {
+    final rawManifest = preferences.getString(_v3ManifestKey);
+    if (rawManifest == null) {
+      return null;
+    }
+    final decodedManifest = jsonDecode(rawManifest);
+    if (decodedManifest is! Map) {
+      throw const FormatException('Persisted v3 manifest must be an object.');
+    }
+    if (decodedManifest['schemaVersion'] != 3) {
+      throw const FormatException('Persisted v3 schemaVersion must be 3.');
+    }
+    final owner = decodedManifest['ownerUserId'];
+    if (owner != null && owner is! String) {
+      throw const FormatException('Persisted v3 ownerUserId is invalid.');
+    }
+    return _DeviceCache(
+      state: _decodeManifestSlices(preferences, decodedManifest, version: 3),
+      ownerUserId: owner as String?,
+    );
+  }
+
   PersistedAppState? _loadV2(SharedPreferences preferences, String scope) {
-    final rawManifest = preferences.getString(_manifestKey(scope));
+    final rawManifest = preferences.getString(_v2ManifestKey(scope));
     if (rawManifest == null) {
       return null;
     }
@@ -112,9 +194,17 @@ class SharedPreferencesAppStorePersistence
     if (decodedManifest['schemaVersion'] != 2) {
       throw const FormatException('Persisted v2 schemaVersion must be 2.');
     }
-    final encodedKeys = decodedManifest['slices'];
+    return _decodeManifestSlices(preferences, decodedManifest, version: 2);
+  }
+
+  PersistedAppState _decodeManifestSlices(
+    SharedPreferences preferences,
+    Map<dynamic, dynamic> manifest, {
+    required int version,
+  }) {
+    final encodedKeys = manifest['slices'];
     if (encodedKeys is! Map) {
-      throw const FormatException('Persisted v2 slices must be an object.');
+      throw FormatException('Persisted v$version slices must be an object.');
     }
     final slices = <AppStateSlice, Object?>{};
     for (final slice in AppStateSlice.values) {
@@ -134,12 +224,12 @@ class SharedPreferencesAppStorePersistence
     );
   }
 
-  Future<void> _saveV2(
+  Future<void> _saveV3(
     SharedPreferences preferences,
-    String scope,
-    PersistedAppState state,
-  ) async {
-    final currentPointers = _readCurrentPointers(preferences, scope);
+    PersistedAppState state, {
+    required String? ownerUserId,
+  }) async {
+    final currentPointers = _readCurrentV3Pointers(preferences);
     final nextPointers = <String, String>{};
     final encodedSlices = PersistedStateSlices.encode(state);
     final generation =
@@ -152,7 +242,7 @@ class SharedPreferencesAppStorePersistence
         nextPointers[slice.name] = currentKey;
         continue;
       }
-      final nextKey = '$_v2Prefix:$scope:$generation:${slice.name}';
+      final nextKey = '$_v3Prefix:$_deviceScope:$generation:${slice.name}';
       final didSave = await preferences.setString(nextKey, raw);
       if (!didSave) {
         throw StateError('Failed to persist ${slice.name} state.');
@@ -161,38 +251,39 @@ class SharedPreferencesAppStorePersistence
     }
 
     final candidateManifest = <String, Object?>{
-      'schemaVersion': 2,
+      'schemaVersion': 3,
+      'ownerUserId': ownerUserId,
       'slices': nextPointers,
     };
     final verified = _decodePointers(preferences, nextPointers);
     final expected = jsonEncode(PersistedAppStateCodec.encode(state));
     final actual = jsonEncode(PersistedAppStateCodec.encode(verified));
     if (actual != expected) {
-      throw StateError('Persisted v2 verification failed.');
+      throw StateError('Persisted v3 verification failed.');
     }
     final didCommit = await preferences.setString(
-      _manifestKey(scope),
+      _v3ManifestKey,
       jsonEncode(candidateManifest),
     );
     if (!didCommit) {
-      throw StateError('Failed to commit persisted v2 manifest.');
+      throw StateError('Failed to commit persisted v3 manifest.');
     }
-    await _removeStaleSlices(preferences, scope, nextPointers.values.toSet());
+    _ownerUserId = ownerUserId;
+    _loadError = null;
+    await _removeStaleV3Slices(preferences, nextPointers.values.toSet());
   }
 
-  Future<void> _removeStaleSlices(
+  Future<void> _removeStaleV3Slices(
     SharedPreferences preferences,
-    String scope,
     Set<String> retainedKeys,
   ) async {
-    final prefix = '$_v2Prefix:$scope:';
-    final manifestKey = _manifestKey(scope);
+    const prefix = '$_v3Prefix:$_deviceScope:';
     final staleKeys = preferences
         .getKeys()
         .where(
           (key) =>
               key.startsWith(prefix) &&
-              key != manifestKey &&
+              key != _v3ManifestKey &&
               !retainedKeys.contains(key),
         )
         .toList(growable: false);
@@ -201,21 +292,20 @@ class SharedPreferencesAppStorePersistence
     }
   }
 
-  Map<String, String> _readCurrentPointers(
-    SharedPreferences preferences,
-    String scope,
-  ) {
-    final rawManifest = preferences.getString(_manifestKey(scope));
+  Map<String, String> _readCurrentV3Pointers(SharedPreferences preferences) {
+    final rawManifest = preferences.getString(_v3ManifestKey);
     if (rawManifest == null) {
       return <String, String>{};
     }
     final decoded = jsonDecode(rawManifest);
-    if (decoded is! Map || decoded['slices'] is! Map) {
-      throw const FormatException('Persisted v2 manifest is invalid.');
+    if (decoded is! Map ||
+        decoded['schemaVersion'] != 3 ||
+        decoded['slices'] is! Map) {
+      throw const FormatException('Persisted v3 manifest is invalid.');
     }
     return (decoded['slices'] as Map).map((key, value) {
       if (key is! String || value is! String) {
-        throw const FormatException('Persisted v2 pointer is invalid.');
+        throw const FormatException('Persisted v3 pointer is invalid.');
       }
       return MapEntry(key, value);
     });
@@ -240,5 +330,32 @@ class SharedPreferencesAppStorePersistence
     );
   }
 
-  static String _manifestKey(String scope) => '$_v2Prefix:$scope:manifest';
+  Set<String> _legacyAccountUserIds(SharedPreferences preferences) {
+    const prefix = '$_legacyV2Prefix:user:';
+    const suffix = ':manifest';
+    return preferences
+        .getKeys()
+        .where((key) {
+          return key.startsWith(prefix) && key.endsWith(suffix);
+        })
+        .map((key) {
+          return key.substring(prefix.length, key.length - suffix.length);
+        })
+        .where((userId) {
+          return userId.isNotEmpty;
+        })
+        .toSet();
+  }
+
+  static String get _v3ManifestKey => '$_v3Prefix:$_deviceScope:manifest';
+
+  static String _v2ManifestKey(String scope) =>
+      '$_legacyV2Prefix:$scope:manifest';
+}
+
+class _DeviceCache {
+  const _DeviceCache({required this.state, required this.ownerUserId});
+
+  final PersistedAppState state;
+  final String? ownerUserId;
 }

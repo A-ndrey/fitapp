@@ -330,6 +330,7 @@ class AppStore extends ChangeNotifier {
   Future<void> applyExternalPersistedState(
     PersistedAppState state, {
     bool notifyPersistedStateObserver = true,
+    bool persist = true,
   }) async {
     _validateExternalPersistedStateCompatibility(state);
     _validatePersistedState(state);
@@ -339,6 +340,9 @@ class AppStore extends ChangeNotifier {
       _componentFor(slice).markChanged();
     }
     notifyListeners();
+    if (!persist) {
+      return;
+    }
     await _schedulePersistenceSave(
       notifyPersistedStateObserver: notifyPersistedStateObserver,
     );
