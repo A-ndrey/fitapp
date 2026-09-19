@@ -12,6 +12,7 @@ import '../models/meal_entry.dart';
 import '../models/nutrition.dart';
 import '../models/training_plan.dart';
 import '../models/workout_session.dart';
+import '../models/workout_statistics.dart';
 import 'app_state_components.dart';
 import 'persistence/app_store_persistence.dart';
 import 'persistence/persisted_app_state.dart';
@@ -493,6 +494,9 @@ class AppStore extends ChangeNotifier {
     );
   }
 
+  WorkoutPeriodStats workoutStatisticsFor(WorkoutPeriod period) =>
+      WorkoutPeriodStats.calculate(_completedWorkoutSessions, period);
+
   NutritionValues get dailyTotals {
     var total = NutritionValues.zero;
     for (final entry in todayMealEntries) {
@@ -656,6 +660,7 @@ class AppStore extends ChangeNotifier {
           exerciseId: exercise.id,
           exerciseName: exercise.name,
           measurementType: exercise.measurementType,
+          muscleGroups: List.unmodifiable(exercise.muscleGroups),
           target: plannedExercise,
           setLogs: const [],
         ),
@@ -718,6 +723,7 @@ class AppStore extends ChangeNotifier {
       exerciseId: replacement.id,
       exerciseName: replacement.name,
       measurementType: replacement.measurementType,
+      muscleGroups: List.unmodifiable(replacement.muscleGroups),
       target: target,
       setLogs: const [],
     );
@@ -748,6 +754,7 @@ class AppStore extends ChangeNotifier {
       exerciseId: current.exerciseId,
       exerciseName: current.exerciseName,
       measurementType: current.measurementType,
+      muscleGroups: current.muscleGroups,
       target: current.target,
       setLogs: List<WorkoutSetLog>.unmodifiable(<WorkoutSetLog>[
         ...current.setLogs,
@@ -783,6 +790,7 @@ class AppStore extends ChangeNotifier {
       exerciseId: current.exerciseId,
       exerciseName: current.exerciseName,
       measurementType: current.measurementType,
+      muscleGroups: current.muscleGroups,
       target: current.target,
       setLogs: List<WorkoutSetLog>.unmodifiable(updatedSetLogs),
     );
@@ -1634,7 +1642,14 @@ class AppStore extends ChangeNotifier {
               'Missing exercise snapshot for ${result.exerciseId}.',
             );
           }
-          return result.copyWith(measurementType: measurementType);
+          return result.copyWith(
+            measurementType: measurementType,
+            muscleGroups: List.unmodifiable(
+              result.muscleGroups ??
+                  _exercises[result.exerciseId]?.muscleGroups ??
+                  const <MuscleGroup>[],
+            ),
+          );
         }),
       ),
     );

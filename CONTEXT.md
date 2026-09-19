@@ -37,7 +37,23 @@ _Avoid_: Training plan edit, exercise library edit
 The record of completed workouts and their self-contained exercise results. A
 completed workout remains meaningful when its source exercise or training plan
 changes or is removed from the Training Library.
+Muscle groups are part of the historical exercise result and remain unchanged
+by later library edits. Older results use groups recovered from the available
+library; unrecoverable groups remain unknown.
 _Avoid_: Training Library, active workout
+
+**Muscle Group Set Count**:
+The number of performed sets involving a muscle group within a selected period.
+Each set counts once for every muscle group assigned to its exercise, so counts
+across groups may exceed the number of performed sets.
+_Avoid_: Muscle activation, physiological load
+
+**Muscle Region Set Count**:
+The number of distinct performed sets involving one of seven regions: chest,
+back, shoulders, arms, core, glutes, or legs. Arms combine biceps, triceps, and
+forearms; legs combine general legs, quads, hamstrings, and calves. A set involving
+several groups in the same region counts once for that region.
+_Avoid_: Sum of muscle group counts
 
 ## Personalization
 
