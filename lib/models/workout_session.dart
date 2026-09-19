@@ -49,6 +49,7 @@ class WorkoutExerciseResult {
     required this.exerciseId,
     required this.exerciseName,
     this.measurementType,
+    this.muscleGroups,
     required this.target,
     required this.setLogs,
   });
@@ -56,6 +57,9 @@ class WorkoutExerciseResult {
   final String exerciseId;
   final String exerciseName;
   final ExerciseMeasurementType? measurementType;
+
+  /// Null means a legacy result awaiting migration; empty means unknown.
+  final List<MuscleGroup>? muscleGroups;
   final TrainingExercise target;
   final List<WorkoutSetLog> setLogs;
 
@@ -63,6 +67,7 @@ class WorkoutExerciseResult {
     String? exerciseId,
     String? exerciseName,
     ExerciseMeasurementType? measurementType,
+    List<MuscleGroup>? muscleGroups,
     TrainingExercise? target,
     List<WorkoutSetLog>? setLogs,
   }) {
@@ -70,6 +75,7 @@ class WorkoutExerciseResult {
       exerciseId: exerciseId ?? this.exerciseId,
       exerciseName: exerciseName ?? this.exerciseName,
       measurementType: measurementType ?? this.measurementType,
+      muscleGroups: muscleGroups ?? this.muscleGroups,
       target: target ?? this.target,
       setLogs: setLogs ?? this.setLogs,
     );

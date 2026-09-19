@@ -1393,5 +1393,46 @@
       }
     }
   },
-  "workoutReplaceExerciseError": "Could not replace exercise."
+  "workoutReplaceExerciseError": "Could not replace exercise.",
+  "workoutPeriodWeek": "Week",
+  "workoutPeriodMonth": "Month",
+  "workoutPeriodPrevious": "Previous period",
+  "workoutPeriodNext": "Next period",
+  "workoutPeriodCurrent": "Current period",
+  "workoutPeriodEmpty": "No workouts in this period.",
+  "workoutBalanceTitle": "Muscle balance",
+  "workoutBalanceDescription": "Logged sets by muscle region",
+  "workoutBalanceCountingNote": "Each set counts once per region. A set can involve several regions, so counts may exceed total sets.",
+  "workoutBalanceNoSets": "No sets logged in this period.",
+  "workoutBalanceNoMuscles": "No muscle groups available for the logged sets.",
+  "workoutGroupDetails": "Sets by muscle group",
+  "workoutOtherGroups": "Other groups",
+  "workoutUnknownGroup": "Unknown group",
+  "workoutPeriodWorkouts": "Workouts",
+  "workoutPeriodTime": "Time",
+  "workoutPeriodSets": "Sets",
+  "workoutMuscleChest": "Chest",
+  "workoutMuscleBack": "Back",
+  "workoutMuscleShoulders": "Shoulders",
+  "workoutMuscleArms": "Arms",
+  "workoutMuscleCore": "Core",
+  "workoutMuscleGlutes": "Glutes",
+  "workoutMuscleLegs": "Legs",
+  "workoutMuscleBiceps": "Biceps",
+  "workoutMuscleTriceps": "Triceps",
+  "workoutMuscleForearms": "Forearms",
+  "workoutMuscleQuads": "Quads",
+  "workoutMuscleHamstrings": "Hamstrings",
+  "workoutMuscleCalves": "Calves",
+  "workoutMuscleCardio": "Cardio",
+  "workoutMuscleFullBody": "Full body",
+  "workoutRadarScale": "Scale: 0–{maximum} sets",
+  "@workoutRadarScale": {
+    "placeholders": {
+      "maximum": {
+        "type": "int"
+      }
+    }
+  },
+  "workoutBalanceHelp": "How sets are counted"
 }

@@ -1125,7 +1125,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('workout overview stats grid renders optional latest content', (
+  testWidgets('workout overview stats grid renders period metrics', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -1136,17 +1136,17 @@ void main() {
             child: WorkoutStatsGrid(
               completedCount: 2,
               totalDuration: Duration(hours: 1, minutes: 15),
-              latestSessionName: 'Chest day',
+              setCount: 12,
             ),
           ),
         ),
       ),
     );
 
-    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Workouts'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
-    expect(find.text('sessions'), findsOneWidget);
-    expect(find.text('Total time'), findsOneWidget);
+    expect(find.text('Sets'), findsOneWidget);
+    expect(find.text('Time'), findsOneWidget);
     expect(find.text('1 h 15 min'), findsOneWidget);
     expect(find.text('Latest'), findsNothing);
     expect(find.text('Chest day'), findsNothing);
@@ -1160,16 +1160,17 @@ void main() {
             child: WorkoutStatsGrid(
               completedCount: 0,
               totalDuration: Duration.zero,
+              setCount: 0,
             ),
           ),
         ),
       ),
     );
 
-    expect(find.text('Completed'), findsOneWidget);
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('sessions'), findsOneWidget);
-    expect(find.text('Total time'), findsOneWidget);
+    expect(find.text('Workouts'), findsOneWidget);
+    expect(find.text('0'), findsNWidgets(2));
+    expect(find.text('Sets'), findsOneWidget);
+    expect(find.text('Time'), findsOneWidget);
     expect(find.text('0 min'), findsOneWidget);
     expect(find.text('Latest'), findsNothing);
     expect(find.text('Chest day'), findsNothing);
@@ -1204,10 +1205,10 @@ void main() {
         findsNothing,
       );
       expect(find.text('Stats'), findsOneWidget);
-      expect(find.text('No completed sessions yet.'), findsOneWidget);
-      expect(find.text('Completed'), findsOneWidget);
-      expect(find.text('0'), findsOneWidget);
-      expect(find.text('Total time'), findsOneWidget);
+      expect(find.text('No workouts in this period.'), findsOneWidget);
+      expect(find.text('Workouts'), findsOneWidget);
+      expect(find.text('0'), findsNWidgets(2));
+      expect(find.text('Time'), findsOneWidget);
       expect(find.text('0 min'), findsOneWidget);
       expect(find.text('History'), findsOneWidget);
       expect(find.text('No completed workouts yet'), findsOneWidget);
@@ -1511,10 +1512,7 @@ void main() {
   ) async {
     final store = AppStore();
     ensureChestDayPlan(store);
-    store.startWorkout(
-      trainingPlanId: 'chest-day',
-      startedAt: DateTime(2026, 4, 19, 10),
-    );
+    store.startWorkout(trainingPlanId: 'chest-day', startedAt: DateTime.now());
 
     await pumpWorkoutScreen(tester, store: store);
     await openActiveWorkout(tester);
@@ -1526,8 +1524,8 @@ void main() {
     expect(find.text('Active workout'), findsNothing);
     expect(find.text('Training log'), findsNothing);
     expect(find.text('Stats'), findsOneWidget);
-    expect(find.text('Latest: Chest day'), findsOneWidget);
-    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Latest: Chest day'), findsNothing);
+    expect(find.text('Workouts'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
     expect(find.text('Latest'), findsNothing);
   });
@@ -1535,10 +1533,7 @@ void main() {
   testWidgets('finishes active session after switching tabs', (tester) async {
     final store = AppStore();
     ensureChestDayPlan(store);
-    store.startWorkout(
-      trainingPlanId: 'chest-day',
-      startedAt: DateTime(2026, 4, 19, 10),
-    );
+    store.startWorkout(trainingPlanId: 'chest-day', startedAt: DateTime.now());
 
     await tester.pumpWidget(MaterialApp(home: TestFitHome(store: store)));
     await tester.pumpAndSettle();
@@ -1563,8 +1558,8 @@ void main() {
     expect(find.text('Workout session'), findsNothing);
     expect(find.text('Training log'), findsNothing);
     expect(find.text('Stats'), findsOneWidget);
-    expect(find.text('Latest: Chest day'), findsOneWidget);
-    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Latest: Chest day'), findsNothing);
+    expect(find.text('Workouts'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
   });
 

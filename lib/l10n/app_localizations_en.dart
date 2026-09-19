@@ -1049,4 +1049,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workoutReplaceExerciseError => 'Could not replace exercise.';
+
+  @override
+  String get workoutPeriodWeek => 'Week';
+
+  @override
+  String get workoutPeriodMonth => 'Month';
+
+  @override
+  String get workoutPeriodPrevious => 'Previous period';
+
+  @override
+  String get workoutPeriodNext => 'Next period';
+
+  @override
+  String get workoutPeriodCurrent => 'Current period';
+
+  @override
+  String get workoutPeriodEmpty => 'No workouts in this period.';
+
+  @override
+  String get workoutBalanceTitle => 'Muscle balance';
+
+  @override
+  String get workoutBalanceDescription => 'Logged sets by muscle region';
+
+  @override
+  String get workoutBalanceCountingNote =>
+      'Each set counts once per region. A set can involve several regions, so counts may exceed total sets.';
+
+  @override
+  String get workoutBalanceNoSets => 'No sets logged in this period.';
+
+  @override
+  String get workoutBalanceNoMuscles =>
+      'No muscle groups available for the logged sets.';
+
+  @override
+  String get workoutGroupDetails => 'Sets by muscle group';
+
+  @override
+  String get workoutOtherGroups => 'Other groups';
+
+  @override
+  String get workoutUnknownGroup => 'Unknown group';
+
+  @override
+  String get workoutPeriodWorkouts => 'Workouts';
+
+  @override
+  String get workoutPeriodTime => 'Time';
+
+  @override
+  String get workoutPeriodSets => 'Sets';
+
+  @override
+  String get workoutMuscleChest => 'Chest';
+
+  @override
+  String get workoutMuscleBack => 'Back';
+
+  @override
+  String get workoutMuscleShoulders => 'Shoulders';
+
+  @override
+  String get workoutMuscleArms => 'Arms';
+
+  @override
+  String get workoutMuscleCore => 'Core';
+
+  @override
+  String get workoutMuscleGlutes => 'Glutes';
+
+  @override
+  String get workoutMuscleLegs => 'Legs';
+
+  @override
+  String get workoutMuscleBiceps => 'Biceps';
+
+  @override
+  String get workoutMuscleTriceps => 'Triceps';
+
+  @override
+  String get workoutMuscleForearms => 'Forearms';
+
+  @override
+  String get workoutMuscleQuads => 'Quads';
+
+  @override
+  String get workoutMuscleHamstrings => 'Hamstrings';
+
+  @override
+  String get workoutMuscleCalves => 'Calves';
+
+  @override
+  String get workoutMuscleCardio => 'Cardio';
+
+  @override
+  String get workoutMuscleFullBody => 'Full body';
+
+  @override
+  String workoutRadarScale(int maximum) {
+    return 'Scale: 0–$maximum sets';
+  }
+
+  @override
+  String get workoutBalanceHelp => 'How sets are counted';
 }
