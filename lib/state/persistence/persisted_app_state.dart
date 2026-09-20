@@ -158,6 +158,9 @@ class PersistedAppState {
       results: List.unmodifiable(
         session.results.map((result) {
           return result.copyWith(
+            muscleGroups: result.muscleGroups == null
+                ? null
+                : List.unmodifiable(result.muscleGroups!),
             target: result.target.copyWith(),
             setLogs: List.unmodifiable(
               result.setLogs.map((setLog) {

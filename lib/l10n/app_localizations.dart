@@ -1855,6 +1855,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not replace exercise.'**
   String get workoutReplaceExerciseError;
+
+  /// No description provided for @workoutPeriodWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get workoutPeriodWeek;
+
+  /// No description provided for @workoutPeriodMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get workoutPeriodMonth;
+
+  /// No description provided for @workoutPeriodPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous period'**
+  String get workoutPeriodPrevious;
+
+  /// No description provided for @workoutPeriodNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next period'**
+  String get workoutPeriodNext;
+
+  /// No description provided for @workoutPeriodCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current period'**
+  String get workoutPeriodCurrent;
+
+  /// No description provided for @workoutPeriodEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No workouts in this period.'**
+  String get workoutPeriodEmpty;
+
+  /// No description provided for @workoutBalanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Muscle balance'**
+  String get workoutBalanceTitle;
+
+  /// No description provided for @workoutBalanceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged sets by muscle region'**
+  String get workoutBalanceDescription;
+
+  /// No description provided for @workoutBalanceCountingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Each set counts once per region. A set can involve several regions, so counts may exceed total sets.'**
+  String get workoutBalanceCountingNote;
+
+  /// No description provided for @workoutBalanceNoSets.
+  ///
+  /// In en, this message translates to:
+  /// **'No sets logged in this period.'**
+  String get workoutBalanceNoSets;
+
+  /// No description provided for @workoutBalanceNoMuscles.
+  ///
+  /// In en, this message translates to:
+  /// **'No muscle groups available for the logged sets.'**
+  String get workoutBalanceNoMuscles;
+
+  /// No description provided for @workoutGroupDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets by muscle group'**
+  String get workoutGroupDetails;
+
+  /// No description provided for @workoutOtherGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Other groups'**
+  String get workoutOtherGroups;
+
+  /// No description provided for @workoutUnknownGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown group'**
+  String get workoutUnknownGroup;
+
+  /// No description provided for @workoutPeriodWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Workouts'**
+  String get workoutPeriodWorkouts;
+
+  /// No description provided for @workoutPeriodTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get workoutPeriodTime;
+
+  /// No description provided for @workoutPeriodSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets'**
+  String get workoutPeriodSets;
+
+  /// No description provided for @workoutMuscleChest.
+  ///
+  /// In en, this message translates to:
+  /// **'Chest'**
+  String get workoutMuscleChest;
+
+  /// No description provided for @workoutMuscleBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get workoutMuscleBack;
+
+  /// No description provided for @workoutMuscleShoulders.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoulders'**
+  String get workoutMuscleShoulders;
+
+  /// No description provided for @workoutMuscleArms.
+  ///
+  /// In en, this message translates to:
+  /// **'Arms'**
+  String get workoutMuscleArms;
+
+  /// No description provided for @workoutMuscleCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Core'**
+  String get workoutMuscleCore;
+
+  /// No description provided for @workoutMuscleGlutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Glutes'**
+  String get workoutMuscleGlutes;
+
+  /// No description provided for @workoutMuscleLegs.
+  ///
+  /// In en, this message translates to:
+  /// **'Legs'**
+  String get workoutMuscleLegs;
+
+  /// No description provided for @workoutMuscleBiceps.
+  ///
+  /// In en, this message translates to:
+  /// **'Biceps'**
+  String get workoutMuscleBiceps;
+
+  /// No description provided for @workoutMuscleTriceps.
+  ///
+  /// In en, this message translates to:
+  /// **'Triceps'**
+  String get workoutMuscleTriceps;
+
+  /// No description provided for @workoutMuscleForearms.
+  ///
+  /// In en, this message translates to:
+  /// **'Forearms'**
+  String get workoutMuscleForearms;
+
+  /// No description provided for @workoutMuscleQuads.
+  ///
+  /// In en, this message translates to:
+  /// **'Quads'**
+  String get workoutMuscleQuads;
+
+  /// No description provided for @workoutMuscleHamstrings.
+  ///
+  /// In en, this message translates to:
+  /// **'Hamstrings'**
+  String get workoutMuscleHamstrings;
+
+  /// No description provided for @workoutMuscleCalves.
+  ///
+  /// In en, this message translates to:
+  /// **'Calves'**
+  String get workoutMuscleCalves;
+
+  /// No description provided for @workoutMuscleCardio.
+  ///
+  /// In en, this message translates to:
+  /// **'Cardio'**
+  String get workoutMuscleCardio;
+
+  /// No description provided for @workoutMuscleFullBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Full body'**
+  String get workoutMuscleFullBody;
+
+  /// No description provided for @workoutRadarScale.
+  ///
+  /// In en, this message translates to:
+  /// **'Scale: 0–{maximum} sets'**
+  String workoutRadarScale(int maximum);
+
+  /// No description provided for @workoutBalanceHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'How sets are counted'**
+  String get workoutBalanceHelp;
 }
 
 class _AppLocalizationsDelegate

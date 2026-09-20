@@ -443,6 +443,10 @@ class PersistedAppStateCodec {
     return <String, Object?>{
       'exerciseId': result.exerciseId,
       'exerciseName': result.exerciseName,
+      if (result.muscleGroups != null)
+        'muscleGroups': result.muscleGroups!
+            .map((group) => group.name)
+            .toList(growable: false),
       if (result.measurementType != null)
         'measurementType': result.measurementType!.name,
       'target': _encodeTrainingExercise(result.target),
@@ -457,6 +461,17 @@ class PersistedAppStateCodec {
     return WorkoutExerciseResult(
       exerciseId: _readString(payload, 'exerciseId'),
       exerciseName: _readString(payload, 'exerciseName'),
+      muscleGroups: payload['muscleGroups'] == null
+          ? null
+          : List.unmodifiable(
+              _readList(payload, 'muscleGroups').map(
+                (value) => _readEnum(
+                  _asString(value, 'WorkoutExerciseResult.muscleGroups'),
+                  MuscleGroup.values,
+                  'WorkoutExerciseResult.muscleGroups',
+                ),
+              ),
+            ),
       measurementType: payload['measurementType'] == null
           ? null
           : _readEnum(

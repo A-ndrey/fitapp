@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/workout_session.dart';
 import '../core/layout/app_breakpoints.dart';
-import '../core/layout/responsive_layout.dart';
-import '../core/widgets/metric_card.dart';
 import '../core/widgets/swipe_action_card.dart';
 import 'workout_formatters.dart';
 import 'workout_session_cards.dart';
@@ -86,14 +84,14 @@ class WorkoutStatsGrid extends StatelessWidget {
   const WorkoutStatsGrid({
     required this.completedCount,
     required this.totalDuration,
-    this.latestSessionName,
+    required this.setCount,
     super.key,
     this.l10n,
   });
 
   final int completedCount;
   final Duration totalDuration;
-  final String? latestSessionName;
+  final int setCount;
   final AppLocalizations? l10n;
 
   @override
@@ -103,25 +101,85 @@ class WorkoutStatsGrid extends StatelessWidget {
       hourUnit: l10n?.workoutHourUnit ?? 'h',
       minuteUnit: l10n?.workoutMinuteUnit ?? 'min',
     );
-    final cards = <Widget>[
-      MetricCard(
-        label: l10n?.workoutCompletedMetricLabel ?? 'Completed',
-        value: completedCount.toString(),
-        suffix:
-            l10n?.workoutSessionCountSuffix(completedCount) ??
-            (completedCount == 1 ? 'session' : 'sessions'),
-        icon: Icons.check_circle_outline,
-        color: Theme.of(context).colorScheme.primary,
+    final cards = [
+      _WorkoutMetric(
+        label: l10n?.workoutPeriodWorkouts ?? 'Workouts',
+        value: '$completedCount',
       ),
-      MetricCard(
-        label: l10n?.workoutTotalTimeMetricLabel ?? 'Total time',
-        value: duration,
-        icon: Icons.timer_outlined,
-        color: Theme.of(context).colorScheme.secondary,
+      _WorkoutMetric(label: l10n?.workoutPeriodTime ?? 'Time', value: duration),
+      _WorkoutMetric(
+        label: l10n?.workoutPeriodSets ?? 'Sets',
+        value: '$setCount',
       ),
     ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minimumWidth = 85 * MediaQuery.textScalerOf(context).scale(1);
+        if (constraints.maxWidth < minimumWidth * 3 + 16) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < cards.length; i++) ...[
+                if (i > 0) const SizedBox(height: 8),
+                cards[i],
+              ],
+            ],
+          );
+        }
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < cards.length; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                Expanded(child: cards[i]),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
 
-    return ResponsiveWrap(maxItemExtent: 260, spacing: 12, children: cards);
+class _WorkoutMetric extends StatelessWidget {
+  const _WorkoutMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      label: '$label, $value',
+      child: ExcludeSemantics(
+        child: Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  value,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/training_plan.dart';
 import '../models/workout_session.dart';
+import '../models/workout_statistics.dart';
 import '../state/app_store.dart';
 import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/layout/adaptive_page.dart';
@@ -13,6 +14,7 @@ import '../ui/core/widgets/empty_state.dart';
 import '../ui/core/widgets/section_header.dart';
 import '../ui/workout/workout_formatters.dart';
 import '../ui/workout/workout_overview_cards.dart';
+import '../ui/workout/workout_statistics_section.dart';
 import 'completed_workout_screen.dart';
 import 'workout_session_screen.dart';
 
@@ -34,6 +36,8 @@ class WorkoutScreen extends StatefulWidget {
 
 class _WorkoutScreenState extends State<WorkoutScreen> {
   Timer? _timer;
+  WorkoutPeriodType _periodType = WorkoutPeriodType.week;
+  int _periodOffset = 0;
   bool get _isCurrentTab =>
       widget.isCurrentTabListenable?.value ?? widget.isCurrentTab;
 
@@ -92,7 +96,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       animation: widget.store,
       builder: (context, _) {
         final mediaQuery = MediaQuery.of(context);
-        final stats = widget.store.workoutStats;
+        final period = WorkoutPeriod.containing(
+          DateTime.now(),
+          _periodType,
+        ).shift(_periodOffset);
+        final stats = widget.store.workoutStatisticsFor(period);
         final activeSession = widget.store.activeWorkoutSession;
         final completedSessions = widget.store.completedWorkoutSessions;
         final l10n = AppLocalizations.of(context);
@@ -131,21 +139,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 ),
                 const AppPageSectionGap(),
               ],
-              SectionHeader(
-                title: l10n?.workoutStatsTitle ?? 'Stats',
-                subtitle: stats.latestSession == null
-                    ? l10n?.workoutNoCompletedSessionsSubtitle ??
-                          'No completed sessions yet.'
-                    : l10n?.workoutLatestSessionSubtitle(
-                            stats.latestSession!.trainingPlanName,
-                          ) ??
-                          'Latest: ${stats.latestSession!.trainingPlanName}',
-              ),
-              WorkoutStatsGrid(
-                completedCount: stats.completedCount,
-                totalDuration: stats.totalDuration,
-                latestSessionName: stats.latestSession?.trainingPlanName,
-                l10n: l10n,
+              WorkoutStatisticsSection(
+                period: period,
+                stats: stats,
+                isCurrentPeriod: _periodOffset == 0,
+                onTypeChanged: (type) => setState(() {
+                  _periodType = type;
+                  _periodOffset = 0;
+                }),
+                onPrevious: () => setState(() => _periodOffset--),
+                onNext: _periodOffset < 0
+                    ? () => setState(() => _periodOffset++)
+                    : null,
+                onCurrent: () => setState(() => _periodOffset = 0),
               ),
               const AppPageSectionGap(),
               SectionHeader(title: l10n?.workoutHistoryTitle ?? 'History'),
