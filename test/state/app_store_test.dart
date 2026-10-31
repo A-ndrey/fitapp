@@ -2453,6 +2453,46 @@ void main() {
     expect(groups.last.entries.single.id, previousDayEntry.id);
   });
 
+  test('meal search sorts all matches by latest log then alphabetically', () {
+    final store = AppStore.empty();
+    addTearDown(store.dispose);
+    store.createFood(tomato());
+    store.createFood(cucumber());
+    final date = DateTime(2026, 5, 17);
+    expect(store.searchMealItems('').map((item) => item.id), [
+      'cucumber',
+      'tomato',
+    ]);
+    final newest = store.addMealByGrams(
+      itemId: 'tomato',
+      grams: 100,
+      loggedAt: date,
+    );
+    store.addMealByGrams(
+      itemId: 'tomato',
+      grams: 100,
+      loggedAt: date.subtract(const Duration(days: 2)),
+    );
+    store.addMealByGrams(
+      itemId: 'cucumber',
+      grams: 100,
+      loggedAt: date.subtract(const Duration(days: 1)),
+    );
+    expect(store.searchMealItems('').map((item) => item.id), [
+      'tomato',
+      'cucumber',
+    ]);
+    expect(store.searchMealItems('fresh').map((item) => item.id), [
+      'tomato',
+      'cucumber',
+    ]);
+    store.removeMealEntry(newest.id);
+    expect(store.searchMealItems('').map((item) => item.id), [
+      'cucumber',
+      'tomato',
+    ]);
+  });
+
   test('meal item recommendations reflect recency and weighted frequency', () {
     final store = AppStore.empty();
     final now = DateTime(2026, 5, 17, 12);

@@ -25,6 +25,7 @@ Future<CatalogItemSearchSheetResult?> showCatalogItemSearchSheet({
   required List<CatalogItem> frequentItems,
   required String frequentLabel,
   bool allowCreate = false,
+  bool sortByMealRecency = false,
   String Function(String query)? createActionLabelBuilder,
 }) {
   return showModalBottomSheet<CatalogItemSearchSheetResult>(
@@ -42,6 +43,7 @@ Future<CatalogItemSearchSheetResult?> showCatalogItemSearchSheet({
         frequentItems: frequentItems,
         frequentLabel: frequentLabel,
         allowCreate: allowCreate,
+        sortByMealRecency: sortByMealRecency,
         createActionLabelBuilder: createActionLabelBuilder,
       );
     },
@@ -59,6 +61,7 @@ class _CatalogItemSearchSheet extends StatefulWidget {
     required this.frequentItems,
     required this.frequentLabel,
     required this.allowCreate,
+    required this.sortByMealRecency,
     this.createActionLabelBuilder,
   });
 
@@ -71,6 +74,7 @@ class _CatalogItemSearchSheet extends StatefulWidget {
   final List<CatalogItem> frequentItems;
   final String frequentLabel;
   final bool allowCreate;
+  final bool sortByMealRecency;
   final String Function(String query)? createActionLabelBuilder;
 
   @override
@@ -90,7 +94,9 @@ class _CatalogItemSearchSheetState extends State<_CatalogItemSearchSheet> {
   @override
   Widget build(BuildContext context) {
     final query = _searchController.text.trim();
-    final results = widget.store.searchItems(query);
+    final results = widget.sortByMealRecency
+        ? widget.store.searchMealItems(query)
+        : widget.store.searchItems(query);
     final hasExactMatch = _hasExactNameMatch(results, query);
     final showCreateAction =
         widget.allowCreate && query.isNotEmpty && !hasExactMatch;

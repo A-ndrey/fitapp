@@ -87,6 +87,36 @@ void main() {
     );
   }
 
+  testWidgets('meal picker replaces recent group with sorted results', (
+    tester,
+  ) async {
+    final store = AppStore.empty();
+    addTearDown(store.dispose);
+    seedRice(store);
+    seedRiceBowl(store);
+    store.addMealByGrams(itemId: 'rice-bowl', grams: 100);
+    await pumpScreen(tester, store: store);
+    await tapAddMealAction(tester);
+
+    List<String> resultNames() => tester
+        .widgetList<ListTile>(find.byType(ListTile))
+        .map((tile) => (tile.title! as Text).data!)
+        .toList();
+
+    expect(find.text('Recent foods'), findsNothing);
+    expect(find.text('Frequent foods'), findsOneWidget);
+    expect(find.widgetWithText(ActionChip, 'Rice bowl'), findsOneWidget);
+    expect(resultNames(), ['Rice bowl', 'Rice']);
+
+    await tester.enterText(
+      find.bySemanticsLabel('Search foods and recipes'),
+      'Rice',
+    );
+    await tester.pumpAndSettle();
+    expect(resultNames(), ['Rice bowl', 'Rice']);
+    expect(find.text('Frequent foods'), findsNothing);
+  });
+
   testWidgets('meal logging defaults servings to 1', (tester) async {
     final store = AppStore();
     seedRice(store);
