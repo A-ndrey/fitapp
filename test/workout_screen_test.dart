@@ -1235,6 +1235,45 @@ void main() {
     },
   );
 
+  testWidgets('plan picker keeps descriptions and exercise previews compact', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final store = AppStore();
+    ensureChestDayPlan(store);
+    final description = List.filled(30, 'Long training description').join(' ');
+    store.createTrainingPlan(
+      TrainingPlan(
+        id: 'preview-plan',
+        name: 'Preview plan',
+        description: description,
+        exercises: const [
+          TrainingExercise(exerciseId: 'bench-press'),
+          TrainingExercise(exerciseId: 'pushups'),
+          TrainingExercise(exerciseId: 'bench-press'),
+          TrainingExercise(exerciseId: 'pushups'),
+        ],
+      ),
+    );
+    await pumpWorkoutScreen(tester, store: store);
+    await openStartWorkoutPicker(tester);
+
+    final descriptionText = tester.widget<Text>(find.text(description));
+    expect(descriptionText.maxLines, 1);
+    expect(descriptionText.overflow, TextOverflow.ellipsis);
+    final preview = find.text('Bench press • Pushups • Bench press • …');
+    expect(preview, findsOneWidget);
+    expect(tester.widget<Text>(preview).maxLines, 1);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Preview plan'));
+    await tester.pumpAndSettle();
+    expect(store.activeWorkoutSession?.trainingPlanId, 'preview-plan');
+  });
+
   testWidgets('opens workout session immediately after starting a workout', (
     tester,
   ) async {

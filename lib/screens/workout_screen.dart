@@ -211,7 +211,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 (trainingPlan) => ListTile(
                   leading: const Icon(Icons.playlist_add_check_outlined),
                   title: Text(trainingPlan.name),
-                  subtitle: Text(trainingPlan.description),
+                  subtitle: _TrainingPlanPreview(
+                    plan: trainingPlan,
+                    store: widget.store,
+                  ),
                   onTap: () => Navigator.of(sheetContext).pop(trainingPlan),
                 ),
               ),
@@ -317,5 +320,41 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         ),
       );
     }
+  }
+}
+
+class _TrainingPlanPreview extends StatelessWidget {
+  const _TrainingPlanPreview({required this.plan, required this.store});
+
+  final TrainingPlan plan;
+  final AppStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = plan.description.trim();
+    final exerciseNames = plan.exercises
+        .map((entry) => store.exerciseById(entry.exerciseId)?.name)
+        .whereType<String>()
+        .toList();
+    final preview = [
+      ...exerciseNames.take(3),
+      if (exerciseNames.length > 3) '…',
+    ].join(' • ');
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (description.isNotEmpty)
+          Text(description, maxLines: 1, overflow: TextOverflow.ellipsis),
+        if (preview.isNotEmpty)
+          Text(
+            preview,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+      ],
+    );
   }
 }
