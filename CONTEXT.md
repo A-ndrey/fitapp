@@ -57,6 +57,13 @@ _Avoid_: Sum of muscle group counts
 
 ## Personalization
 
+**Previous Replacement**:
+An exercise with at least one recorded set in a completed workout, used in place
+of the exercise originally present in that workout entry, regardless of training
+plan. Intermediate substitutions and replacements of other source exercises do
+not belong to this set.
+_Avoid_: Any previously replaced exercise
+
 **Preferences**:
 The user's appearance, language, measurement units, and daily nutrition
 targets.

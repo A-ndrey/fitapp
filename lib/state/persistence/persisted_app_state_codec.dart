@@ -443,6 +443,10 @@ class PersistedAppStateCodec {
     return <String, Object?>{
       'exerciseId': result.exerciseId,
       'exerciseName': result.exerciseName,
+      if (result.originalExerciseId != null)
+        'originalExerciseId': result.originalExerciseId,
+      if (result.replacedAt != null)
+        'replacedAt': result.replacedAt!.toIso8601String(),
       if (result.muscleGroups != null)
         'muscleGroups': result.muscleGroups!
             .map((group) => group.name)
@@ -461,6 +465,10 @@ class PersistedAppStateCodec {
     return WorkoutExerciseResult(
       exerciseId: _readString(payload, 'exerciseId'),
       exerciseName: _readString(payload, 'exerciseName'),
+      originalExerciseId: payload['originalExerciseId'] == null
+          ? null
+          : _readString(payload, 'originalExerciseId'),
+      replacedAt: _readNullableDateTime(payload, 'replacedAt'),
       muscleGroups: payload['muscleGroups'] == null
           ? null
           : List.unmodifiable(

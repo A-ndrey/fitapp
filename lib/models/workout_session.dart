@@ -50,6 +50,8 @@ class WorkoutExerciseResult {
     required this.exerciseName,
     this.measurementType,
     this.muscleGroups,
+    this.originalExerciseId,
+    this.replacedAt,
     required this.target,
     required this.setLogs,
   });
@@ -60,6 +62,12 @@ class WorkoutExerciseResult {
 
   /// Null means a legacy result awaiting migration; empty means unknown.
   final List<MuscleGroup>? muscleGroups;
+
+  /// Exercise in this position before its first replacement, if known.
+  final String? originalExerciseId;
+
+  /// Time the current exercise was confirmed as a replacement.
+  final DateTime? replacedAt;
   final TrainingExercise target;
   final List<WorkoutSetLog> setLogs;
 
@@ -68,6 +76,8 @@ class WorkoutExerciseResult {
     String? exerciseName,
     ExerciseMeasurementType? measurementType,
     List<MuscleGroup>? muscleGroups,
+    String? originalExerciseId,
+    DateTime? replacedAt,
     TrainingExercise? target,
     List<WorkoutSetLog>? setLogs,
   }) {
@@ -76,6 +86,8 @@ class WorkoutExerciseResult {
       exerciseName: exerciseName ?? this.exerciseName,
       measurementType: measurementType ?? this.measurementType,
       muscleGroups: muscleGroups ?? this.muscleGroups,
+      originalExerciseId: originalExerciseId ?? this.originalExerciseId,
+      replacedAt: replacedAt ?? this.replacedAt,
       target: target ?? this.target,
       setLogs: setLogs ?? this.setLogs,
     );

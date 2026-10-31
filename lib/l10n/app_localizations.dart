@@ -1856,6 +1856,18 @@ abstract class AppLocalizations {
   /// **'Could not replace exercise.'**
   String get workoutReplaceExerciseError;
 
+  /// No description provided for @exercisePickerPreviousReplacements.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous replacements'**
+  String get exercisePickerPreviousReplacements;
+
+  /// No description provided for @exercisePickerOtherExercises.
+  ///
+  /// In en, this message translates to:
+  /// **'All other exercises'**
+  String get exercisePickerOtherExercises;
+
   /// No description provided for @workoutPeriodWeek.
   ///
   /// In en, this message translates to:
