@@ -1051,6 +1051,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutReplaceExerciseError => 'Could not replace exercise.';
 
   @override
+  String get exercisePickerPreviousReplacements => 'Previous replacements';
+
+  @override
+  String get exercisePickerOtherExercises => 'All other exercises';
+
+  @override
   String get workoutPeriodWeek => 'Week';
 
   @override

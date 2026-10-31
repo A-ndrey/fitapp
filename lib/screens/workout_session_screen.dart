@@ -241,6 +241,12 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
           initialMuscleGroups:
               widget.store.exerciseById(original.exerciseId)?.muscleGroups ??
               const [],
+          previousReplacementIds: widget.store
+              .previousReplacementsForExercise(
+                original.originalExerciseId ?? original.exerciseId,
+              )
+              .map((exercise) => exercise.id)
+              .toList(growable: false),
         ),
       );
       if (!mounted || replacement == null) return;

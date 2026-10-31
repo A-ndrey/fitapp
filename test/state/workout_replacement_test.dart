@@ -22,9 +22,13 @@ class _MemoryPersistence implements AppStorePersistence {
   }
 }
 
-void replaceFirst(AppStore store, {bool allowDuplicate = false}) {
+void replaceFirst(
+  AppStore store, {
+  bool allowDuplicate = false,
+  String replacementId = 'pushups',
+}) {
   final session = store.activeWorkoutSession!;
-  final replacement = store.exerciseById('pushups')!;
+  final replacement = store.exerciseById(replacementId)!;
   store.replaceActiveWorkoutExercise(
     sessionId: session.id,
     resultIndex: 0,
@@ -54,6 +58,9 @@ void main() {
       expect(active.id, original.id);
       expect(active.startedAt, original.startedAt);
       expect(active.results.single.exerciseName, 'Pushups');
+      expect(active.results.single.originalExerciseId, 'bench');
+      expect(active.results.single.replacedAt, isNotNull);
+      expect(store.previousReplacementsForExercise('bench'), isEmpty);
       expect(
         active.results.single.measurementType,
         ExerciseMeasurementType.bodyweight,
@@ -81,6 +88,14 @@ void main() {
       addTearDown(remote.dispose);
       await remote.applyExternalPersistedState(syncState);
       expect(remote.activeWorkoutSession!.results.single.target.reps, 8);
+      expect(
+        remote.activeWorkoutSession!.results.single.originalExerciseId,
+        'bench',
+      );
+      expect(
+        remote.activeWorkoutSession!.results.single.replacedAt,
+        active.results.single.replacedAt,
+      );
       remote.addActiveWorkoutSet(
         resultIndex: 0,
         setLog: const WorkoutSetLog(reps: 8),
@@ -88,6 +103,14 @@ void main() {
       final completed = remote.finishActiveWorkout();
       expect(completed.results.single.exerciseId, 'pushups');
       expect(completed.results.single.setLogs.single.reps, 8);
+      expect(completed.results.single.originalExerciseId, 'bench');
+      expect(
+        completed.results.single.replacedAt,
+        active.results.single.replacedAt,
+      );
+      expect(remote.previousReplacementsForExercise('bench').map((e) => e.id), [
+        'pushups',
+      ]);
       expect(remote.completedWorkoutHistoryForExercise('bench'), isEmpty);
       expect(
         remote.completedWorkoutHistoryForExercise('pushups'),
@@ -105,6 +128,13 @@ void main() {
             .single
             .exerciseName,
         'Pushups',
+      );
+      final otherDevice = AppStore.empty();
+      addTearDown(otherDevice.dispose);
+      await otherDevice.applyExternalPersistedState(completedSync);
+      expect(
+        otherDevice.previousReplacementsForExercise('bench').map((e) => e.id),
+        ['pushups'],
       );
     },
   );
@@ -237,9 +267,72 @@ void main() {
     expect(store.activeWorkoutSession!.results.single.exerciseId, 'bench');
     expect(store.activeWorkoutSession!.results.single.target.reps, 8);
     expect(
+      store.activeWorkoutSession!.results.single.originalExerciseId,
+      'bench',
+    );
+    expect(
       store.activeWorkoutSession!.results.single.target.weightGrams,
       isNull,
     );
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: const WorkoutSetLog(reps: 8, weightGrams: 60000),
+    );
+    store.finishActiveWorkout();
+    expect(store.previousReplacementsForExercise('bench'), isEmpty);
+  });
+
+  test(
+    'replacement chain survives restart and only the final exercise counts',
+    () async {
+      final persistence = _MemoryPersistence();
+      final store = workoutReplacementFixture(persistence: persistence);
+      addTearDown(store.dispose);
+      replaceFirst(store);
+      await store.flushPersistence();
+      final restored = await AppStore.hydrated(persistence: persistence);
+      addTearDown(restored.dispose);
+      replaceFirst(restored, replacementId: 'fly');
+      final replaced = restored.activeWorkoutSession!.results.single;
+      expect(replaced.originalExerciseId, 'bench');
+      restored.addActiveWorkoutSet(
+        resultIndex: 0,
+        setLog: const WorkoutSetLog(reps: 8, weightGrams: 10000),
+      );
+      expect(restored.previousReplacementsForExercise('bench'), isEmpty);
+      restored.removeActiveWorkoutSet(resultIndex: 0, setIndex: 0);
+      expect(
+        restored.activeWorkoutSession!.results.single.originalExerciseId,
+        'bench',
+      );
+      expect(
+        restored.activeWorkoutSession!.results.single.replacedAt,
+        replaced.replacedAt,
+      );
+      restored.addActiveWorkoutSet(
+        resultIndex: 0,
+        setLog: const WorkoutSetLog(reps: 8, weightGrams: 10000),
+      );
+      restored.finishActiveWorkout();
+      expect(
+        restored.previousReplacementsForExercise('bench').map((e) => e.id),
+        ['fly'],
+      );
+      expect(restored.previousReplacementsForExercise('pushups'), isEmpty);
+    },
+  );
+
+  test('completing without sets does not remember a replacement', () {
+    final store = workoutReplacementFixture();
+    addTearDown(store.dispose);
+    replaceFirst(store);
+    store.addActiveWorkoutSet(
+      resultIndex: 0,
+      setLog: const WorkoutSetLog(reps: 8),
+    );
+    store.removeActiveWorkoutSet(resultIndex: 0, setIndex: 0);
+    store.finishActiveWorkout();
+    expect(store.previousReplacementsForExercise('bench'), isEmpty);
   });
 
   test('compatible targets are retained for all six measurement types', () {

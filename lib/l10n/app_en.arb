@@ -1394,6 +1394,8 @@
     }
   },
   "workoutReplaceExerciseError": "Could not replace exercise.",
+  "exercisePickerPreviousReplacements": "Previous replacements",
+  "exercisePickerOtherExercises": "All other exercises",
   "workoutPeriodWeek": "Week",
   "workoutPeriodMonth": "Month",
   "workoutPeriodPrevious": "Previous period",

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/exercise.dart';
+import '../ui/core/widgets/section_header.dart';
 import '../ui/library/library_formatters.dart';
 
 /// Selects a library exercise using search and editable muscle filters.
@@ -9,10 +11,15 @@ class ExercisePickerSheet extends StatefulWidget {
     super.key,
     required this.exercises,
     this.initialMuscleGroups = const [],
+    this.previousReplacementIds,
   });
 
   final List<Exercise> exercises;
   final List<MuscleGroup> initialMuscleGroups;
+
+  /// Most recent first. Null keeps the regular picker without section headings.
+  /// These exercises bypass muscle filters, but still match the search query.
+  final List<String>? previousReplacementIds;
 
   @override
   State<ExercisePickerSheet> createState() => _ExercisePickerSheetState();
@@ -37,8 +44,19 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
   @override
   Widget build(BuildContext context) {
     final query = _searchController.text.trim().toLowerCase();
+    final l10n = AppLocalizations.of(context);
+    final available = {
+      for (final exercise in widget.exercises) exercise.id: exercise,
+    };
+    final previousIds = widget.previousReplacementIds?.toSet() ?? <String>{};
+    final previous = <Exercise>[
+      for (final id in previousIds)
+        if (available[id] case final exercise?)
+          if (query.isEmpty || _matchesExercise(exercise, query)) exercise,
+    ];
     final exercises = widget.exercises
         .where((exercise) {
+          if (previousIds.contains(exercise.id)) return false;
           final matchesQuery =
               query.isEmpty || _matchesExercise(exercise, query);
           final matchesMuscleGroups = _selectedMuscleGroups.every(
@@ -47,6 +65,22 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
           return matchesQuery && matchesMuscleGroups;
         })
         .toList(growable: false);
+    final sections = <({String? title, List<Exercise> exercises})>[
+      if (previous.isNotEmpty)
+        (
+          title:
+              l10n?.exercisePickerPreviousReplacements ??
+              'Previous replacements',
+          exercises: previous,
+        ),
+      if (exercises.isNotEmpty)
+        (
+          title: widget.previousReplacementIds == null
+              ? null
+              : l10n?.exercisePickerOtherExercises ?? 'All other exercises',
+          exercises: exercises,
+        ),
+    ];
     final theme = Theme.of(context);
 
     return Padding(
@@ -56,14 +90,11 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
           constraints: BoxConstraints(
             maxHeight: MediaQuery.sizeOf(context).height * 0.85,
           ),
-          child: ListView.separated(
+          child: CustomScrollView(
             shrinkWrap: true,
-            itemCount: exercises.isEmpty ? 2 : exercises.length + 1,
-            separatorBuilder: (context, index) =>
-                index == 0 ? const SizedBox.shrink() : const Divider(height: 1),
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return Padding(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -113,21 +144,43 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
                       ),
                     ],
                   ),
-                );
-              }
-              if (exercises.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
-                  child: Text('No exercises match these filters'),
-                );
-              }
-              final exercise = exercises[index - 1];
-              return ListTile(
-                title: Text(exercise.name),
-                subtitle: _ExercisePickerResultSubtitle(exercise: exercise),
-                onTap: () => Navigator.of(context).pop(exercise),
-              );
-            },
+                ),
+              ),
+              if (sections.isEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    child: Text('No exercises match these filters'),
+                  ),
+                ),
+              for (final section in sections) ...[
+                if (section.title case final title?)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      child: Semantics(
+                        header: true,
+                        child: SectionHeader(title: title),
+                      ),
+                    ),
+                  ),
+                SliverList.separated(
+                  itemCount: section.exercises.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final exercise = section.exercises[index];
+                    return ListTile(
+                      title: Text(exercise.name),
+                      subtitle: _ExercisePickerResultSubtitle(
+                        exercise: exercise,
+                      ),
+                      onTap: () => Navigator.of(context).pop(exercise),
+                    );
+                  },
+                ),
+              ],
+            ],
           ),
         ),
       ),

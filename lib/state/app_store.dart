@@ -408,6 +408,39 @@ class AppStore extends ChangeNotifier {
     return List.unmodifiable(groups);
   }
 
+  /// Available replacements for the original exercise, most recently chosen first.
+  ///
+  /// Only completed workouts with logged sets contribute. Removing a workout
+  /// removes its contribution without maintaining a separate preference log.
+  List<Exercise> previousReplacementsForExercise(String originalExerciseId) {
+    final latestSelections = <String, DateTime>{};
+    for (final session in _completedWorkoutSessions) {
+      if (session.finishedAt == null) continue;
+      for (final result in session.results) {
+        final replacedAt = result.replacedAt;
+        if (result.originalExerciseId != originalExerciseId ||
+            result.exerciseId == originalExerciseId ||
+            result.setLogs.isEmpty ||
+            replacedAt == null ||
+            !_exercises.containsKey(result.exerciseId)) {
+          continue;
+        }
+        final previous = latestSelections[result.exerciseId];
+        if (previous == null || replacedAt.isAfter(previous)) {
+          latestSelections[result.exerciseId] = replacedAt;
+        }
+      }
+    }
+    final ids = latestSelections.keys.toList()
+      ..sort((left, right) {
+        final byTime = latestSelections[right]!.compareTo(
+          latestSelections[left]!,
+        );
+        return byTime != 0 ? byTime : left.compareTo(right);
+      });
+    return List.unmodifiable(ids.map((id) => _exercises[id]!));
+  }
+
   TodayWorkoutRecommendation? get todayWorkoutRecommendation {
     if (_trainingPlans.isEmpty) {
       return null;
@@ -724,6 +757,8 @@ class AppStore extends ChangeNotifier {
       exerciseName: replacement.name,
       measurementType: replacement.measurementType,
       muscleGroups: List.unmodifiable(replacement.muscleGroups),
+      originalExerciseId: current.originalExerciseId ?? current.exerciseId,
+      replacedAt: DateTime.now(),
       target: target,
       setLogs: const [],
     );
@@ -750,12 +785,7 @@ class AppStore extends ChangeNotifier {
     _validateWorkoutSetLog(setLog, measurementType);
     final updatedResults = List<WorkoutExerciseResult>.of(session.results);
     final current = updatedResults[resultIndex];
-    updatedResults[resultIndex] = WorkoutExerciseResult(
-      exerciseId: current.exerciseId,
-      exerciseName: current.exerciseName,
-      measurementType: current.measurementType,
-      muscleGroups: current.muscleGroups,
-      target: current.target,
+    updatedResults[resultIndex] = current.copyWith(
       setLogs: List<WorkoutSetLog>.unmodifiable(<WorkoutSetLog>[
         ...current.setLogs,
         setLog,
@@ -786,12 +816,7 @@ class AppStore extends ChangeNotifier {
     final updatedSetLogs = List<WorkoutSetLog>.of(current.setLogs)
       ..removeAt(setIndex);
     final updatedResults = List<WorkoutExerciseResult>.of(session.results);
-    updatedResults[resultIndex] = WorkoutExerciseResult(
-      exerciseId: current.exerciseId,
-      exerciseName: current.exerciseName,
-      measurementType: current.measurementType,
-      muscleGroups: current.muscleGroups,
-      target: current.target,
+    updatedResults[resultIndex] = current.copyWith(
       setLogs: List<WorkoutSetLog>.unmodifiable(updatedSetLogs),
     );
     _activeWorkoutSession = session.copyWith(
