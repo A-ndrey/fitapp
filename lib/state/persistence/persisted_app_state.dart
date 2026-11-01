@@ -63,7 +63,7 @@ class PersistedAppState {
   final int workoutSessionCounter;
 
   static FoodItem _cloneFoodItem(FoodItem item) {
-    return item.copyWith();
+    return item.copyWith(barcodes: List.unmodifiable(item.barcodes));
   }
 
   static DishItem _cloneDishItem(DishItem item) {

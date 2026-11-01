@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/food_item.dart';
+import '../models/food_barcode.dart';
 import '../models/nutrition.dart';
 import '../state/app_store.dart';
 import '../ui/core/forms/form_error_messages.dart';
 import '../ui/core/input/numeric_input_formatters.dart';
 import '../ui/core/widgets/form_shell.dart';
 import 'catalog_form_shared.dart';
+import 'food_barcode_section.dart';
 
 class FoodForm extends StatefulWidget {
   const FoodForm({
@@ -15,12 +17,14 @@ class FoodForm extends StatefulWidget {
     required this.store,
     this.initialName = '',
     this.initialFood,
+    this.initialBarcode,
     this.fullScreen = false,
   });
 
   final AppStore store;
   final String initialName;
   final FoodItem? initialFood;
+  final String? initialBarcode;
   final bool fullScreen;
 
   @override
@@ -37,12 +41,21 @@ class _FoodFormState extends State<FoodForm> {
   late final TextEditingController _carbsController;
   NutritionBasis _basis = NutritionBasis.per100g;
   String? _errorText;
+  late final List<String> _barcodes;
   bool get _isEditing => widget.initialFood != null;
 
   @override
   void initState() {
     super.initState();
     final food = widget.initialFood;
+    _barcodes = [...?food?.barcodes];
+    final initialBarcode = widget.initialBarcode;
+    if (initialBarcode != null &&
+        !_barcodes.any(
+          (code) => FoodBarcode.key(code) == FoodBarcode.key(initialBarcode),
+        )) {
+      _barcodes.add(initialBarcode);
+    }
     _nameController = TextEditingController(
       text: food?.name ?? widget.initialName,
     );
@@ -180,6 +193,29 @@ class _FoodFormState extends State<FoodForm> {
           ],
         ),
       ),
+      FoodBarcodeSection(
+        barcodes: _barcodes,
+        onAdd: (code) {
+          final owner = widget.store.foodByBarcode(code);
+          if (owner != null && owner.id != widget.initialFood?.id) {
+            setState(
+              () => _errorText =
+                  l10n?.barcodeAlreadyBound(owner.name) ??
+                  'This barcode is already linked to ${owner.name}.',
+            );
+            return;
+          }
+          setState(() {
+            _errorText = null;
+            if (!_barcodes.any(
+              (existing) => FoodBarcode.key(existing) == FoodBarcode.key(code),
+            )) {
+              _barcodes.add(code);
+            }
+          });
+        },
+        onRemove: (code) => setState(() => _barcodes.remove(code)),
+      ),
       if (_errorText != null) InlineErrorBanner(message: _errorText!),
     ];
 
@@ -224,6 +260,7 @@ class _FoodFormState extends State<FoodForm> {
       description: description,
       servingSizeGrams: servingSize,
       basis: _basis,
+      barcodes: List.unmodifiable(_barcodes),
       nutrition: NutritionValues(
         calories: calories,
         protein: protein,
@@ -239,13 +276,18 @@ class _FoodFormState extends State<FoodForm> {
       }
     } on ArgumentError catch (error) {
       setState(() {
-        _errorText = humanReadableFormError(
-          error,
-          resourceName: 'food',
-          fallback:
-              AppLocalizations.of(context)?.foodCouldNotSave ??
-              'Could not save food.',
-        );
+        _errorText = error is BarcodeAlreadyBound
+            ? AppLocalizations.of(
+                    context,
+                  )?.barcodeAlreadyBound(error.foodName) ??
+                  'This barcode is already linked to ${error.foodName}.'
+            : humanReadableFormError(
+                error,
+                resourceName: 'food',
+                fallback:
+                    AppLocalizations.of(context)?.foodCouldNotSave ??
+                    'Could not save food.',
+              );
       });
       return;
     }

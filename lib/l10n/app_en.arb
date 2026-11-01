@@ -1436,5 +1436,44 @@
       }
     }
   },
-  "workoutBalanceHelp": "How sets are counted"
+  "workoutBalanceHelp": "How sets are counted",
+  "barcodeScan": "Scan barcode",
+  "barcodeScanHint": "Point the rear camera at the barcode on the packaging, or enter its digits below.",
+  "barcodeStartCamera": "Start camera",
+  "barcodeStopCamera": "Stop camera",
+  "barcodeCameraUnavailable": "Camera unavailable. Allow camera access in your browser, or enter the barcode below.",
+  "barcodeDigits": "Barcode digits",
+  "barcodeInvalid": "Enter 8, 12, 13 or 14 digits.",
+  "barcodeUse": "Use barcode",
+  "barcodeSectionTitle": "Barcodes (optional)",
+  "barcodeSectionHint": "Find this food quickly when logging a meal.",
+  "barcodeRemove": "Remove barcode",
+  "barcodeAdd": "Add barcode",
+  "barcodeAlreadyBound": "This barcode is already linked to {foodName}. Remove it from that food first.",
+  "@barcodeAlreadyBound": {
+    "placeholders": {
+      "foodName": {
+        "type": "String"
+      }
+    }
+  },
+  "barcodeNotFound": "Product not found",
+  "barcodeNotFoundMessage": "No food is linked to {barcode}. Create a food or link it to one in your library.",
+  "@barcodeNotFoundMessage": {
+    "placeholders": {
+      "barcode": {
+        "type": "String"
+      }
+    }
+  },
+  "barcodeLinkExisting": "Link existing food",
+  "barcodeCreateFood": "Create food",
+  "barcodeChooseFood": "Choose a food for barcode {barcode}.",
+  "@barcodeChooseFood": {
+    "placeholders": {
+      "barcode": {
+        "type": "String"
+      }
+    }
+  }
 }

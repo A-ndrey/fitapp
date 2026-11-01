@@ -8,6 +8,7 @@ class FoodItem {
     required this.servingSizeGrams,
     required this.basis,
     required this.nutrition,
+    this.barcodes = const [],
   });
 
   final String id;
@@ -16,6 +17,7 @@ class FoodItem {
   final double servingSizeGrams;
   final NutritionBasis basis;
   final NutritionValues nutrition;
+  final List<String> barcodes;
 
   NutritionValues get nutritionPerServing {
     if (basis == NutritionBasis.per100g) {
@@ -45,6 +47,7 @@ class FoodItem {
     double? servingSizeGrams,
     NutritionBasis? basis,
     NutritionValues? nutrition,
+    List<String>? barcodes,
   }) {
     return FoodItem(
       id: id ?? this.id,
@@ -53,6 +56,7 @@ class FoodItem {
       servingSizeGrams: servingSizeGrams ?? this.servingSizeGrams,
       basis: basis ?? this.basis,
       nutrition: nutrition ?? this.nutrition,
+      barcodes: barcodes ?? this.barcodes,
     );
   }
 }

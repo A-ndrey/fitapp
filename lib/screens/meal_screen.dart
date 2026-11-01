@@ -13,6 +13,7 @@ import '../ui/nutrition/meal_day_header.dart';
 import '../ui/nutrition/nutrition_cards.dart';
 import '../ui/nutrition/nutrition_formatters.dart';
 import '../widgets/food_form.dart';
+import '../widgets/barcode_input_screen.dart';
 
 class MealScreen extends StatelessWidget {
   const MealScreen({super.key, required this.store});
@@ -121,11 +122,16 @@ class MealScreen extends StatelessWidget {
       frequentItems: recommendations.frequent,
       frequentLabel: 'Frequent foods',
       allowCreate: true,
+      allowBarcode: true,
       sortByMealRecency: true,
       createActionLabelBuilder: (query) =>
           l10n?.mealCreateItem(query) ?? 'Create "$query"',
     );
     if (!context.mounted || result == null) {
+      return;
+    }
+    if (result.scanBarcode) {
+      await _openBarcodeFlow(context);
       return;
     }
     if (result.item != null) {
@@ -175,6 +181,84 @@ class MealScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _openBarcodeFlow(BuildContext context) async {
+    final code = await showBarcodeInput(context);
+    if (!context.mounted || code == null) return;
+    final food = store.foodByBarcode(code);
+    if (food != null) {
+      await _showLogAmountDialog(context, CatalogItem.food(food));
+      return;
+    }
+    final l10n = AppLocalizations.of(context);
+    final create = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n?.barcodeNotFound ?? 'Product not found'),
+        content: Text(
+          l10n?.barcodeNotFoundMessage(code) ??
+              'No food is linked to $code. Create a food or link it to one in your library.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n?.commonCancel ?? 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n?.barcodeLinkExisting ?? 'Link existing food'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n?.barcodeCreateFood ?? 'Create food'),
+          ),
+        ],
+      ),
+    );
+    if (!context.mounted || create == null) return;
+    String? foodId;
+    if (create) {
+      foodId = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) =>
+              FoodForm(store: store, initialBarcode: code, fullScreen: true),
+        ),
+      );
+    } else {
+      final result = await showCatalogItemSearchSheet(
+        context: context,
+        store: store,
+        title: l10n?.barcodeLinkExisting ?? 'Link existing food',
+        subtitle:
+            l10n?.barcodeChooseFood(code) ?? 'Choose a food for barcode $code.',
+        searchFieldLabel: l10n?.foodSearchFoodsLabel ?? 'Search foods',
+        recentItems: const [],
+        recentLabel: '',
+        frequentItems: const [],
+        frequentLabel: '',
+        foodsOnly: true,
+      );
+      if (!context.mounted || result?.item == null) return;
+      foodId = result!.item!.id;
+      try {
+        store.bindFoodBarcode(foodId: foodId, barcode: code);
+      } on BarcodeAlreadyBound catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n?.barcodeAlreadyBound(error.foodName) ??
+                  'This barcode is already linked to ${error.foodName}.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
+    if (!context.mounted || foodId == null) return;
+    final item = store.itemById(foodId);
+    if (item != null) await _showLogAmountDialog(context, item);
   }
 }
 

@@ -6,12 +6,22 @@ import '../../state/app_store.dart';
 import '../library/library_formatters.dart';
 
 class CatalogItemSearchSheetResult {
-  const CatalogItemSearchSheetResult.item(this.item) : createName = '';
+  const CatalogItemSearchSheetResult.item(this.item)
+    : createName = '',
+      scanBarcode = false;
 
-  const CatalogItemSearchSheetResult.create(this.createName) : item = null;
+  const CatalogItemSearchSheetResult.create(this.createName)
+    : item = null,
+      scanBarcode = false;
+
+  const CatalogItemSearchSheetResult.scan()
+    : item = null,
+      createName = '',
+      scanBarcode = true;
 
   final CatalogItem? item;
   final String createName;
+  final bool scanBarcode;
 }
 
 Future<CatalogItemSearchSheetResult?> showCatalogItemSearchSheet({
@@ -25,6 +35,8 @@ Future<CatalogItemSearchSheetResult?> showCatalogItemSearchSheet({
   required List<CatalogItem> frequentItems,
   required String frequentLabel,
   bool allowCreate = false,
+  bool allowBarcode = false,
+  bool foodsOnly = false,
   bool sortByMealRecency = false,
   String Function(String query)? createActionLabelBuilder,
 }) {
@@ -43,6 +55,8 @@ Future<CatalogItemSearchSheetResult?> showCatalogItemSearchSheet({
         frequentItems: frequentItems,
         frequentLabel: frequentLabel,
         allowCreate: allowCreate,
+        allowBarcode: allowBarcode,
+        foodsOnly: foodsOnly,
         sortByMealRecency: sortByMealRecency,
         createActionLabelBuilder: createActionLabelBuilder,
       );
@@ -61,6 +75,8 @@ class _CatalogItemSearchSheet extends StatefulWidget {
     required this.frequentItems,
     required this.frequentLabel,
     required this.allowCreate,
+    required this.allowBarcode,
+    required this.foodsOnly,
     required this.sortByMealRecency,
     this.createActionLabelBuilder,
   });
@@ -74,6 +90,8 @@ class _CatalogItemSearchSheet extends StatefulWidget {
   final List<CatalogItem> frequentItems;
   final String frequentLabel;
   final bool allowCreate;
+  final bool allowBarcode;
+  final bool foodsOnly;
   final bool sortByMealRecency;
   final String Function(String query)? createActionLabelBuilder;
 
@@ -94,9 +112,12 @@ class _CatalogItemSearchSheetState extends State<_CatalogItemSearchSheet> {
   @override
   Widget build(BuildContext context) {
     final query = _searchController.text.trim();
-    final results = widget.sortByMealRecency
+    final matches = widget.sortByMealRecency
         ? widget.store.searchMealItems(query)
         : widget.store.searchItems(query);
+    final results = matches
+        .where((item) => !widget.foodsOnly || item.isFood)
+        .toList();
     final hasExactMatch = _hasExactNameMatch(results, query);
     final showCreateAction =
         widget.allowCreate && query.isNotEmpty && !hasExactMatch;
@@ -138,6 +159,19 @@ class _CatalogItemSearchSheetState extends State<_CatalogItemSearchSheet> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (widget.allowBarcode) ...[
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.of(
+                          context,
+                        ).pop(const CatalogItemSearchSheetResult.scan()),
+                        icon: const Icon(Icons.qr_code_scanner),
+                        label: Text(
+                          AppLocalizations.of(context)?.barcodeScan ??
+                              'Scan barcode',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     if (query.isEmpty) ...[
                       if (widget.recentItems.isNotEmpty) ...[
                         _SheetLabel(title: widget.recentLabel),

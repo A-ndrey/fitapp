@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitapp/models/app_preferences.dart';
 import 'package:fitapp/models/food_item.dart';
 import 'package:fitapp/models/nutrition.dart';
+import 'package:fitapp/state/app_store.dart';
 import 'package:fitapp/state/persistence/persisted_app_state.dart';
 import 'package:fitapp/state/persistence/persisted_app_state_codec.dart';
 import 'package:fitapp/state/sync/firebase_app_store_sync_service.dart';
@@ -23,6 +24,42 @@ void main() {
     SharedPreferencesStorePlatform.instance =
         InMemorySharedPreferencesStore.empty();
   });
+
+  test(
+    'barcode updates sync without rewriting unchanged legacy foods',
+    () async {
+      SharedPreferences.setMockInitialValues(const {});
+      final backend = _FakeEntityRemoteSnapshotStore();
+      final service = FirebaseAppStoreSyncService(backend: backend);
+      final store = AppStore()
+        ..createFood(_food('milk'))
+        ..createFood(_food('rice'));
+      addTearDown(store.dispose);
+      await service.push('barcode-user', store.persistedSnapshot, 'ignored');
+      backend.lastBatchPaths.clear();
+      await service.push('barcode-user', store.persistedSnapshot, 'ignored');
+      expect(backend.lastBatchPaths, isEmpty);
+      store.bindFoodBarcode(foodId: 'milk', barcode: '0012345678905');
+      store.bindFoodBarcode(foodId: 'milk', barcode: '96385074');
+      await service.push('barcode-user', store.persistedSnapshot, 'ignored');
+      expect(backend.lastBatchPaths, ['users/barcode-user/foods/milk']);
+      final reloaded = await FirebaseAppStoreSyncService(
+        backend: backend,
+      ).fetch('barcode-user');
+      expect(
+        reloaded!.state.userFoods
+            .firstWhere((food) => food.id == 'milk')
+            .barcodes,
+        ['0012345678905', '96385074'],
+      );
+      expect(
+        reloaded.state.userFoods
+            .firstWhere((food) => food.id == 'rice')
+            .barcodes,
+        isEmpty,
+      );
+    },
+  );
 
   test(
     'InstallationIdStore returns a stable ID after save and reload',

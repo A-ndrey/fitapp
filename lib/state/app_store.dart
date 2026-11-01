@@ -8,6 +8,7 @@ import '../models/catalog_item.dart';
 import '../models/dish_item.dart';
 import '../models/exercise.dart';
 import '../models/food_item.dart';
+import '../models/food_barcode.dart';
 import '../models/meal_entry.dart';
 import '../models/nutrition.dart';
 import '../models/training_plan.dart';
@@ -18,6 +19,14 @@ import 'persistence/app_store_persistence.dart';
 import 'persistence/persisted_app_state.dart';
 
 typedef PersistedAppStateObserver = void Function(PersistedAppState state);
+
+class BarcodeAlreadyBound extends ArgumentError {
+  BarcodeAlreadyBound(this.barcode, this.foodName)
+    : super('Barcode $barcode is already bound to $foodName.');
+
+  final String barcode;
+  final String foodName;
+}
 
 class AppStore extends ChangeNotifier {
   AppStore({
@@ -560,7 +569,11 @@ class AppStore extends ChangeNotifier {
         .where(
           (item) =>
               item.name.toLowerCase().contains(normalizedQuery) ||
-              item.description.toLowerCase().contains(normalizedQuery),
+              item.description.toLowerCase().contains(normalizedQuery) ||
+              (item.food?.barcodes.any(
+                    (code) => code.contains(normalizedQuery),
+                  ) ??
+                  false),
         )
         .toList(growable: false);
   }
@@ -884,7 +897,7 @@ class AppStore extends ChangeNotifier {
     if (_catalog.containsKey(food.id)) {
       throw ArgumentError('Duplicate item id: ${food.id}');
     }
-    _catalog[food.id] = CatalogItem.food(food);
+    _catalog[food.id] = CatalogItem.food(_freezeFood(food));
     _didMutatePersistedState(AppStateSlice.foodLibrary);
   }
 
@@ -899,7 +912,7 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Item id is not a food: ${food.id}');
     }
     _assertCatalogNameIsAvailable(food.name, excludingId: food.id);
-    _catalog[food.id] = CatalogItem.food(food);
+    _catalog[food.id] = CatalogItem.food(_freezeFood(food));
     _didMutatePersistedState(AppStateSlice.foodLibrary);
   }
 
@@ -1360,7 +1373,48 @@ class AppStore extends ChangeNotifier {
       throw ArgumentError('Serving size must be greater than zero.');
     }
     _validateNutrition(food.nutrition);
+    final keys = <String>{};
+    for (final code in food.barcodes) {
+      if (!FoodBarcode.isValid(code)) {
+        throw ArgumentError('Invalid food barcode: $code');
+      }
+      if (!keys.add(FoodBarcode.key(code))) {
+        throw ArgumentError('A barcode can only be added once.');
+      }
+      final owner = foodByBarcode(code);
+      if (owner != null && owner.id != food.id) {
+        throw BarcodeAlreadyBound(code, owner.name);
+      }
+    }
   }
+
+  FoodItem? foodByBarcode(String barcode) {
+    if (!FoodBarcode.isValid(barcode)) return null;
+    final key = FoodBarcode.key(barcode);
+    for (final item in _catalog.values) {
+      final food = item.food;
+      if (food != null &&
+          food.barcodes.any((code) => FoodBarcode.key(code) == key)) {
+        return food;
+      }
+    }
+    return null;
+  }
+
+  void bindFoodBarcode({required String foodId, required String barcode}) {
+    final food = _catalog[foodId]?.food;
+    if (food == null) throw ArgumentError('Missing food id: $foodId');
+    if (food.barcodes.any(
+      (code) => FoodBarcode.key(code) == FoodBarcode.key(barcode),
+    )) {
+      return;
+    }
+    updateFood(food.copyWith(barcodes: [...food.barcodes, barcode.trim()]));
+  }
+
+  FoodItem _freezeFood(FoodItem food) => food.copyWith(
+    barcodes: List.unmodifiable(food.barcodes.map((code) => code.trim())),
+  );
 
   void _assertCatalogNameIsAvailable(String name, {String? excludingId}) {
     final normalizedName = _normalizeUniqueName(name);
