@@ -565,6 +565,35 @@ class AppStore extends ChangeNotifier {
         .toList(growable: false);
   }
 
+  /// Finds meal picker items ordered by their latest logged meal.
+  List<CatalogItem> searchMealItems(String query) {
+    final lastLoggedAt = <String, DateTime>{};
+    for (final entry in _mealEntries) {
+      final previous = lastLoggedAt[entry.sourceItemId];
+      if (previous == null || entry.loggedAt.isAfter(previous)) {
+        lastLoggedAt[entry.sourceItemId] = entry.loggedAt;
+      }
+    }
+    final results = searchItems(query).toList();
+    results.sort((left, right) {
+      final leftDate = lastLoggedAt[left.id];
+      final rightDate = lastLoggedAt[right.id];
+      if (leftDate != null && rightDate != null) {
+        final comparison = rightDate.compareTo(leftDate);
+        if (comparison != 0) return comparison;
+      } else if (leftDate != null) {
+        return -1;
+      } else if (rightDate != null) {
+        return 1;
+      }
+      final comparison = left.name.toLowerCase().compareTo(
+        right.name.toLowerCase(),
+      );
+      return comparison != 0 ? comparison : left.id.compareTo(right.id);
+    });
+    return results;
+  }
+
   List<Exercise> searchExercises(String query) {
     final normalizedQuery = query.trim().toLowerCase();
     if (normalizedQuery.isEmpty) {
