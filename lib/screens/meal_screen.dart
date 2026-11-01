@@ -117,12 +117,13 @@ class MealScreen extends StatelessWidget {
           'Search saved foods and recipes, or create a new food from your query.',
       searchFieldLabel:
           l10n?.mealSearchFieldLabel ?? 'Search foods and recipes',
-      recentItems: recommendations.recent,
+      recentItems: const [],
       recentLabel: 'Recent foods',
       frequentItems: recommendations.frequent,
       frequentLabel: 'Frequent foods',
       allowCreate: true,
       allowBarcode: true,
+      sortByMealRecency: true,
       createActionLabelBuilder: (query) =>
           l10n?.mealCreateItem(query) ?? 'Create "$query"',
     );

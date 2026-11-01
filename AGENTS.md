@@ -91,3 +91,17 @@ Useful existing areas:
 - Do not force-add ignored docs files.
 - Keep design, spec, and planning notes under `docs/` local-only unless the
   user explicitly asks to change that policy.
+
+## Local Demonstrations
+
+When the user asks to demonstrate a feature (for example, "продемонстрируй",
+"покажи в браузере", or "demo"):
+
+- Start the local Flutter web app with an explicit port, preferably 7357:
+  `flutter run -d web-server --web-hostname 127.0.0.1 --web-port 7357`.
+- Open the running app in the Codex built-in browser.
+- Populate representative local demo data and navigate to the requested feature
+  so its behavior is immediately visible. Preserve existing user data; use an
+  empty local origin or add clearly identifiable demo records.
+- Verify the visible result in the browser, leave the server running, and report
+  the URL, port, and what the demo illustrates.

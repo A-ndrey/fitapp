@@ -37,6 +37,7 @@ Future<CatalogItemSearchSheetResult?> showCatalogItemSearchSheet({
   bool allowCreate = false,
   bool allowBarcode = false,
   bool foodsOnly = false,
+  bool sortByMealRecency = false,
   String Function(String query)? createActionLabelBuilder,
 }) {
   return showModalBottomSheet<CatalogItemSearchSheetResult>(
@@ -56,6 +57,7 @@ Future<CatalogItemSearchSheetResult?> showCatalogItemSearchSheet({
         allowCreate: allowCreate,
         allowBarcode: allowBarcode,
         foodsOnly: foodsOnly,
+        sortByMealRecency: sortByMealRecency,
         createActionLabelBuilder: createActionLabelBuilder,
       );
     },
@@ -75,6 +77,7 @@ class _CatalogItemSearchSheet extends StatefulWidget {
     required this.allowCreate,
     required this.allowBarcode,
     required this.foodsOnly,
+    required this.sortByMealRecency,
     this.createActionLabelBuilder,
   });
 
@@ -89,6 +92,7 @@ class _CatalogItemSearchSheet extends StatefulWidget {
   final bool allowCreate;
   final bool allowBarcode;
   final bool foodsOnly;
+  final bool sortByMealRecency;
   final String Function(String query)? createActionLabelBuilder;
 
   @override
@@ -108,8 +112,10 @@ class _CatalogItemSearchSheetState extends State<_CatalogItemSearchSheet> {
   @override
   Widget build(BuildContext context) {
     final query = _searchController.text.trim();
-    final results = widget.store
-        .searchItems(query)
+    final matches = widget.sortByMealRecency
+        ? widget.store.searchMealItems(query)
+        : widget.store.searchItems(query);
+    final results = matches
         .where((item) => !widget.foodsOnly || item.isFood)
         .toList();
     final hasExactMatch = _hasExactNameMatch(results, query);
