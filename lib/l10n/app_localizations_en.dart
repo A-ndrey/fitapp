@@ -1161,4 +1161,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workoutBalanceHelp => 'How sets are counted';
+
+  @override
+  String get barcodeScan => 'Scan barcode';
+
+  @override
+  String get barcodeScanHint =>
+      'Point the rear camera at the barcode on the packaging, or enter its digits below.';
+
+  @override
+  String get barcodeStartCamera => 'Start camera';
+
+  @override
+  String get barcodeStopCamera => 'Stop camera';
+
+  @override
+  String get barcodeCameraUnavailable =>
+      'Camera unavailable. Allow camera access in your browser, or enter the barcode below.';
+
+  @override
+  String get barcodeDigits => 'Barcode digits';
+
+  @override
+  String get barcodeInvalid => 'Enter 8, 12, 13 or 14 digits.';
+
+  @override
+  String get barcodeUse => 'Use barcode';
+
+  @override
+  String get barcodeSectionTitle => 'Barcodes (optional)';
+
+  @override
+  String get barcodeSectionHint =>
+      'Find this food quickly when logging a meal.';
+
+  @override
+  String get barcodeRemove => 'Remove barcode';
+
+  @override
+  String get barcodeAdd => 'Add barcode';
+
+  @override
+  String barcodeAlreadyBound(String foodName) {
+    return 'This barcode is already linked to $foodName. Remove it from that food first.';
+  }
+
+  @override
+  String get barcodeNotFound => 'Product not found';
+
+  @override
+  String barcodeNotFoundMessage(String barcode) {
+    return 'No food is linked to $barcode. Create a food or link it to one in your library.';
+  }
+
+  @override
+  String get barcodeLinkExisting => 'Link existing food';
+
+  @override
+  String get barcodeCreateFood => 'Create food';
+
+  @override
+  String barcodeChooseFood(String barcode) {
+    return 'Choose a food for barcode $barcode.';
+  }
 }

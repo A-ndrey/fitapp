@@ -44,6 +44,27 @@ const oats = FoodItem(
 
 void main() {
   group('LibraryTransferService', () {
+    test('food exports and imports preserve barcode bindings', () {
+      final source = AppStore()
+        ..createFood(oats.copyWith(barcodes: ['0012345678905', '96385074']));
+      final target = AppStore();
+      addTearDown(source.dispose);
+      addTearDown(target.dispose);
+      final document = LibraryTransferService(
+        source,
+      ).exportCategory(LibraryCategory.foods);
+      final service = LibraryTransferService(target);
+      final preview = service.preview(document);
+      final result = service.apply(
+        preview,
+        selectedKeys: {preview.entries.single.key},
+      );
+      expect(result.failures, isEmpty);
+      expect(target.itemById(oats.id)!.food!.barcodes, [
+        '0012345678905',
+        '96385074',
+      ]);
+    });
     test('exports a self-contained plan and imports its missing exercise', () {
       final sourceStore = AppStore()
         ..createExercise(benchPress)

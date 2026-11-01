@@ -2071,6 +2071,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How sets are counted'**
   String get workoutBalanceHelp;
+
+  /// No description provided for @barcodeScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan barcode'**
+  String get barcodeScan;
+
+  /// No description provided for @barcodeScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the rear camera at the barcode on the packaging, or enter its digits below.'**
+  String get barcodeScanHint;
+
+  /// No description provided for @barcodeStartCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Start camera'**
+  String get barcodeStartCamera;
+
+  /// No description provided for @barcodeStopCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop camera'**
+  String get barcodeStopCamera;
+
+  /// No description provided for @barcodeCameraUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera unavailable. Allow camera access in your browser, or enter the barcode below.'**
+  String get barcodeCameraUnavailable;
+
+  /// No description provided for @barcodeDigits.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode digits'**
+  String get barcodeDigits;
+
+  /// No description provided for @barcodeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 8, 12, 13 or 14 digits.'**
+  String get barcodeInvalid;
+
+  /// No description provided for @barcodeUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use barcode'**
+  String get barcodeUse;
+
+  /// No description provided for @barcodeSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcodes (optional)'**
+  String get barcodeSectionTitle;
+
+  /// No description provided for @barcodeSectionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Find this food quickly when logging a meal.'**
+  String get barcodeSectionHint;
+
+  /// No description provided for @barcodeRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove barcode'**
+  String get barcodeRemove;
+
+  /// No description provided for @barcodeAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add barcode'**
+  String get barcodeAdd;
+
+  /// No description provided for @barcodeAlreadyBound.
+  ///
+  /// In en, this message translates to:
+  /// **'This barcode is already linked to {foodName}. Remove it from that food first.'**
+  String barcodeAlreadyBound(String foodName);
+
+  /// No description provided for @barcodeNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Product not found'**
+  String get barcodeNotFound;
+
+  /// No description provided for @barcodeNotFoundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No food is linked to {barcode}. Create a food or link it to one in your library.'**
+  String barcodeNotFoundMessage(String barcode);
+
+  /// No description provided for @barcodeLinkExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Link existing food'**
+  String get barcodeLinkExisting;
+
+  /// No description provided for @barcodeCreateFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Create food'**
+  String get barcodeCreateFood;
+
+  /// No description provided for @barcodeChooseFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a food for barcode {barcode}.'**
+  String barcodeChooseFood(String barcode);
 }
 
 class _AppLocalizationsDelegate

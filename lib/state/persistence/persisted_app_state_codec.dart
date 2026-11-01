@@ -144,6 +144,7 @@ class PersistedAppStateCodec {
       'servingSizeGrams': item.servingSizeGrams,
       'basis': item.basis.name,
       'nutrition': _encodeNutritionValues(item.nutrition),
+      if (item.barcodes.isNotEmpty) 'barcodes': item.barcodes.toList(),
     };
   }
 
@@ -160,6 +161,16 @@ class PersistedAppStateCodec {
         'FoodItem.basis',
       ),
       nutrition: _decodeNutritionValues(payload['nutrition']),
+      barcodes: payload.containsKey('barcodes')
+          ? List.unmodifiable(
+              _readList(payload, 'barcodes').map((value) {
+                if (value is! String) {
+                  throw const FormatException('Food barcodes must be strings.');
+                }
+                return value;
+              }),
+            )
+          : const [],
     );
   }
 

@@ -345,6 +345,7 @@ class LibraryTransferService {
     'description': food.description,
     'servingSizeGrams': food.servingSizeGrams,
     'basis': food.basis.name,
+    if (food.barcodes.isNotEmpty) 'barcodes': food.barcodes.toList(),
     'nutrition': <String, Object?>{
       'calories': food.nutrition.calories,
       'protein': food.nutrition.protein,
@@ -455,6 +456,14 @@ class LibraryTransferService {
         NutritionBasis.values,
         'food.basis',
       ),
+      barcodes: _readOptionalList(map, 'barcodes')
+          .map((value) {
+            if (value is! String) {
+              throw const FormatException('Food barcodes must be strings.');
+            }
+            return value;
+          })
+          .toList(growable: false),
       nutrition: NutritionValues(
         calories: _readDouble(nutrition, 'calories'),
         protein: _readDouble(nutrition, 'protein'),
